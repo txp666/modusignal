@@ -15,7 +15,7 @@ modusignal 是一个静态在线设备/信号调试平台。它通过浏览器�
 
 当前内置设备：
 
-- `aomaster`：AOMaster 4-20mA / 0-10V 模拟量信号发生器，协议待补充
+- `aomaster`：AOMaster 4-20mA / 0-10V 模拟量信号发生器，Modbus RTU 驱动
 - `custom`：自定义设备，使用本地保存的模板和解析配置
 
 设备层与传输层正交：设备只产出/解析字节，不关心数据怎么传；传输层负责建立连接与收发字节。
@@ -24,10 +24,21 @@ modusignal 是一个静态在线设备/信号调试平台。它通过浏览器�
 
 ```text
 index.html
-  页面结构、导航、设备页面 UI、连接参数容器
+  应用壳：顶栏、侧栏、页面挂载点
+
+pages/
+  home.html / request.html
+  devices/aomaster.html · modbus.html · custom.html
+  shared/workbench.html（监测面板 + 收发调试）
+
+src/page-loader.js
+  启动时 fetch 并注入上述 HTML 片段
 
 src/app.js
   应用状态、页面路由、DOM 绑定、传输事件、日志、曲线联动、传输参数动态渲染
+
+src/echarts-charts.js
+  ECharts 曲线封装
 
 src/transports/transport.js
   BaseTransport 接口（connect/disconnect/write + connected/disconnected/rx/tx/error 事件）
@@ -38,14 +49,11 @@ src/transports/serial.js
 src/transports/registry.js
   传输注册表与扩展点：listTransports / getTransportDescriptor / createTransportSession
 
-src/chart.js
-  无依赖 canvas 实时曲线
-
 src/protocols.js
   设备注册表和统一协议入口
 
 src/devices/aomaster.js
-  AOMaster profile、命令构造占位、遥测解析入口
+  AOMaster profile、Modbus RTU 命令构造、实际输出回读解析
 
 src/devices/custom-device.js
   自定义设备配置、模板发送、正则/自动数值解析
@@ -59,7 +67,8 @@ src/config.js
 `src/app.js` 使用轻量页面状态：
 
 - `home`：项目主页，包含 GitHub 链接和设备入口
-- `aomaster`：AOMaster 专属页面
+- `aomaster`：AOMaster 专属页面（信号波形、阶跃序列、双曲线）
+- `modbus`：Modbus RTU 专属页面
 - `custom`：自定义设备专属页面
 - `request`：新增设备请求页面
 
@@ -139,8 +148,8 @@ export function createMyDeviceSetOutputCommand(state) {
 
 ## 添加设备 UI
 
-1. 在 `index.html` 的设备库中添加一个 `data-page-target` 和 `data-device-id` 按钮。
-2. 为设备添加专属页面说明和控件。
+1. 在 `pages/devices/<id>.html` 添加设备专属 UI，并在 `src/page-loader.js` 的 `PAGE_PATHS.devices` 中注册路径。
+2. 在侧栏设备库（`renderDeviceLibrary`）或主页卡片中添加入口（`data-page-target` / `data-device-id`）。
 3. 在 `src/app.js` 的页面状态中处理该设备。
 4. 保持连接、日志和曲线复用现有组件。
 

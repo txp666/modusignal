@@ -1,0 +1,73 @@
+<div class="device-workbench-column">
+  <section class="panel chart-panel device-workbench">
+    <div class="panel-heading split">
+      <div>
+        <h2>监测面板</h2>
+        <p id="chartPanelSummary">自动尝试从接收数据中提取数值并绘制最近 120 个采样点。</p>
+      </div>
+      <button id="clearChart" class="icon-button" type="button" aria-label="清空曲线" title="清空曲线">⌫</button>
+    </div>
+
+    <div class="chart-panel-body">
+      <div id="singleChartBlock" class="chart-view">
+        <div id="telemetryChart" class="echart-host line-host" aria-label="实时曲线"></div>
+        <div class="chart-meta">
+          <span id="chartValue">暂无数据</span>
+          <span>最近 120 个采样点 · ECharts</span>
+        </div>
+      </div>
+      <div id="dualChartBlock" class="chart-view dual-chart-stack" hidden>
+        <div class="chart-block">
+          <div class="chart-block-heading">
+            <strong>设定预览</strong>
+            <span id="setpointChartValue">暂无设定</span>
+          </div>
+          <div id="setpointChart" class="echart-host line-host" aria-label="设定预览曲线"></div>
+        </div>
+        <div class="chart-block">
+          <div class="chart-block-heading">
+            <strong>实时输出</strong>
+            <span id="actualChartValue">暂无数据</span>
+          </div>
+          <div id="actualChart" class="echart-host line-host" aria-label="实时输出曲线"></div>
+        </div>
+        <div class="chart-meta">
+          <span>轮询回读设备实际值；最近 120 个采样点 · ECharts</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel console-panel device-workbench">
+    <div class="panel-heading split">
+      <div>
+        <h2>收发调试</h2>
+        <p>支持 ASCII 与 HEX，适合协议确认前做调试。</p>
+      </div>
+      <button id="clearLog" class="icon-button" type="button" aria-label="清空日志" title="清空日志">⌧</button>
+    </div>
+    <div id="serialLog" class="serial-log" aria-live="polite"></div>
+    <div class="send-grid">
+      <label>
+        格式
+        <select id="sendFormat">
+          <option value="ascii" selected>ASCII</option>
+          <option value="hex">HEX</option>
+        </select>
+      </label>
+      <label>
+        行尾
+        <select id="lineEnding">
+          <option value="">无</option>
+          <option value="\n">LF</option>
+          <option value="\r\n" selected>CRLF</option>
+        </select>
+      </label>
+      <label class="send-command">
+        命令
+        <input id="manualCommand" type="text" placeholder="例如：READ? 或 01 03 00 00" />
+      </label>
+      <button id="sendManual" type="button" disabled>发送</button>
+    </div>
+  </section>
+</div>

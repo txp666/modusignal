@@ -1,0 +1,156 @@
+<section id="customPage" class="device-page" data-page-id="custom">
+  <section class="panel control-panel">
+    <div class="panel-heading split">
+      <div>
+        <h2>设定输出</h2>
+        <p data-field="deviceSummary">自定义设备模板可发送。</p>
+      </div>
+      <span data-field="driverState" class="state-pill">模板可发送</span>
+    </div>
+
+    <div class="setpoint-row" data-field="setpointRow">
+      <label class="range-label">
+        <span data-field="setpointLabel">设定值</span>
+        <strong data-field="setpointReadout">50</strong>
+      </label>
+      <input data-field="setpointSlider" type="range" min="0" max="100" step="0.1" value="50" />
+      <div class="numeric-entry">
+        <input data-field="setpointInput" type="number" min="0" max="100" step="0.1" value="50" />
+        <span data-field="setpointUnit">值</span>
+      </div>
+    </div>
+
+    <div class="preset-row" data-field="presetRow" aria-label="快速设定">
+      <button type="button" data-preset="min">最小</button>
+      <button type="button" data-preset="mid">中点</button>
+      <button type="button" data-preset="max">最大</button>
+    </div>
+
+    <div class="command-preview">
+      <div>
+        <span>驱动命令预览</span>
+        <code data-field="protocolPreview">SET 50</code>
+      </div>
+      <button data-field="sendDriverCommand" type="button" disabled>发送设定</button>
+    </div>
+  </section>
+
+  <section class="panel custom-panel">
+    <div class="panel-heading split">
+      <div>
+        <h2>设备配置</h2>
+        <p>设定范围、发送模板和回包解析规则。</p>
+      </div>
+      <div class="panel-actions">
+        <button id="resetCustomConfig" class="ghost-button" type="button">恢复默认</button>
+        <button id="saveCustomConfig" type="button">保存</button>
+      </div>
+    </div>
+    <div class="config-grid">
+      <label>
+        设备名称
+        <input id="customDeviceName" type="text" value="自定义设备" />
+      </label>
+      <label>
+        设备类型
+        <input id="customDeviceType" type="text" value="通用串口设备" />
+      </label>
+      <label>
+        通道名称
+        <input id="customChannelLabel" type="text" value="设定值" />
+      </label>
+      <label>
+        单位
+        <input id="customUnit" type="text" placeholder="例如：mA、V、℃" />
+      </label>
+    </div>
+    <div class="config-grid compact">
+      <label>
+        最小值
+        <input id="customMin" type="number" step="0.001" value="0" />
+      </label>
+      <label>
+        最大值
+        <input id="customMax" type="number" step="0.001" value="100" />
+      </label>
+      <label>
+        步进
+        <input id="customStep" type="number" step="0.001" min="0.000001" value="0.1" />
+      </label>
+      <label>
+        默认值
+        <input id="customDefaultValue" type="number" step="0.001" value="50" />
+      </label>
+    </div>
+    <div class="subsection-heading">
+      <h3>发送模板</h3>
+      <span>支持 {value}、{value:2}、{unit}、{mode}</span>
+    </div>
+    <div class="template-grid">
+      <label>
+        格式
+        <select id="customCommandFormat">
+          <option value="ascii" selected>ASCII</option>
+          <option value="hex">HEX</option>
+        </select>
+      </label>
+      <label>
+        行尾
+        <select id="customCommandLineEnding">
+          <option value="">无</option>
+          <option value="\n">LF</option>
+          <option value="\r\n" selected>CRLF</option>
+        </select>
+      </label>
+      <label class="template-input">
+        模板
+        <input id="customCommandTemplate" type="text" value="SET {value}" />
+      </label>
+    </div>
+    <div class="subsection-heading">
+      <h3>回包解析</h3>
+      <span>解析结果会进入曲线查看</span>
+    </div>
+    <div class="config-grid compact">
+      <label>
+        解析方式
+        <select id="customParserType">
+          <option value="autoNumber" selected>自动提取最后一个数字</option>
+          <option value="regex">正则捕获</option>
+        </select>
+      </label>
+      <label>
+        字段名
+        <input id="customParserFieldName" type="text" value="测量值" />
+      </label>
+      <label>
+        解析单位
+        <input id="customParserUnit" type="text" />
+      </label>
+      <label>
+        捕获组
+        <input id="customParserGroup" type="number" min="0" step="1" value="1" />
+      </label>
+      <label class="regex-input">
+        正则
+        <input id="customParserRegex" type="text" value="([-+]?\d+(?:\.\d+)?)" />
+      </label>
+      <label>
+        比例
+        <input id="customParserScale" type="number" step="0.000001" value="1" />
+      </label>
+      <label>
+        偏移
+        <input id="customParserOffset" type="number" step="0.000001" value="0" />
+      </label>
+    </div>
+    <div class="parser-test">
+      <label>
+        解析测试
+        <input id="customParserSample" type="text" value="VALUE: 12.34" />
+      </label>
+      <button id="testCustomParser" type="button">测试</button>
+      <output id="customParserPreview">等待测试</output>
+    </div>
+  </section>
+</section>

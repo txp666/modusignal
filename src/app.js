@@ -1,11 +1,24 @@
 import { assetUrl } from "./asset-url.js";
-import { LiveChart } from "./chart.js";
+import { loadAppPages } from "./page-loader.js";
 import {
   createTransportSession,
   DEFAULT_TRANSPORT_ID,
   getTransportDescriptor,
   listTransports,
 } from "./transports/registry.js";
+import {
+  AOMASTER_MAX_STEP_SEQUENCE,
+  buildDefaultStepSequence,
+  describeAomasterSummary,
+  createAOMasterReadCommand,
+  formatSetpoint,
+  formatStepSequence,
+  generateWaveformPreview,
+  getAomasterWaveformLabel,
+  normalizeAomasterWaveState,
+  normalizeStepSequence,
+  resetAomasterRxBuffer,
+} from "./devices/aomaster.js";
 import {
   describeModbusSummary,
   getModbusMode,
@@ -17,6 +30,7 @@ import {
   bytesToHex,
   createDeviceSetOutputCommand,
   CUSTOM_DEVICE_ID,
+  DEFAULT_AOMASTER_CONFIG,
   DEFAULT_CUSTOM_CONFIG,
   DEFAULT_DEVICE_ID,
   DEFAULT_MODBUS_CONFIG,
@@ -25,6 +39,7 @@ import {
   listDeviceLibrary,
   MODBUS_DEVICE_ID,
   MODUSIGNAL_APP,
+  normalizeAomasterConfig,
   normalizeCustomConfig,
   normalizeModbusConfig,
   parseDeviceTelemetry,
@@ -33,93 +48,125 @@ import {
 
 const CUSTOM_CONFIG_STORAGE_KEY = "modusignal.customDevice.v1";
 const MODBUS_CONFIG_STORAGE_KEY = "modusignal.modbusDevice.v1";
+const AOMASTER_CONFIG_STORAGE_KEY = "modusignal.aomasterDevice.v1";
 
-const elements = {
-  appShell: document.querySelector(".app-shell"),
-  secureState: document.querySelector("#secureState"),
-  connectButton: document.querySelector("#connectButton"),
-  disconnectButton: document.querySelector("#disconnectButton"),
-  connectionState: document.querySelector("#connectionState"),
-  deviceLibrary: document.querySelector("#deviceLibrary"),
-  pages: [...document.querySelectorAll("[data-page-id]")],
-  customDeviceNavName: document.querySelector("#customDeviceNavName"),
-  githubLink: document.querySelector("#githubLink"),
-  newDeviceRequestLink: document.querySelector("#newDeviceRequestLink"),
-  deviceRequestTemplate: document.querySelector("#deviceRequestTemplate"),
-  copyRequestTemplate: document.querySelector("#copyRequestTemplate"),
-  footerCopyright: document.querySelector("#footerCopyright"),
-  footerLicenseLink: document.querySelector("#footerLicenseLink"),
-  footerVersion: document.querySelector("#footerVersion"),
-  transportSelect: document.querySelector("#transportSelect"),
-  transportFields: document.querySelector("#transportFields"),
-  driverState: document.querySelector("#driverState"),
-  selectedDeviceSummary: document.querySelector("#selectedDeviceSummary"),
-  aomasterIntroPanel: document.querySelector("#aomasterIntroPanel"),
-  modbusConfigPanel: document.querySelector("#modbusConfigPanel"),
-  modeRow: document.querySelector("#modeRow"),
-  setpointRow: document.querySelector(".setpoint-row"),
-  presetRow: document.querySelector(".preset-row"),
-  outputModes: [...document.querySelectorAll("input[name='outputMode']")],
-  setpointLabel: document.querySelector("#setpointLabel"),
-  setpointReadout: document.querySelector("#setpointReadout"),
-  setpointSlider: document.querySelector("#setpointSlider"),
-  setpointInput: document.querySelector("#setpointInput"),
-  setpointUnit: document.querySelector("#setpointUnit"),
-  protocolPreview: document.querySelector("#protocolPreview"),
-  sendDriverCommand: document.querySelector("#sendDriverCommand"),
-  customConfigPanel: document.querySelector("#customConfigPanel"),
-  customDeviceName: document.querySelector("#customDeviceName"),
-  customDeviceType: document.querySelector("#customDeviceType"),
-  customChannelLabel: document.querySelector("#customChannelLabel"),
-  customUnit: document.querySelector("#customUnit"),
-  customMin: document.querySelector("#customMin"),
-  customMax: document.querySelector("#customMax"),
-  customStep: document.querySelector("#customStep"),
-  customDefaultValue: document.querySelector("#customDefaultValue"),
-  customCommandFormat: document.querySelector("#customCommandFormat"),
-  customCommandLineEnding: document.querySelector("#customCommandLineEnding"),
-  customCommandTemplate: document.querySelector("#customCommandTemplate"),
-  customParserType: document.querySelector("#customParserType"),
-  customParserFieldName: document.querySelector("#customParserFieldName"),
-  customParserUnit: document.querySelector("#customParserUnit"),
-  customParserGroup: document.querySelector("#customParserGroup"),
-  customParserRegex: document.querySelector("#customParserRegex"),
-  customParserScale: document.querySelector("#customParserScale"),
-  customParserOffset: document.querySelector("#customParserOffset"),
-  customParserSample: document.querySelector("#customParserSample"),
-  customParserPreview: document.querySelector("#customParserPreview"),
-  saveCustomConfig: document.querySelector("#saveCustomConfig"),
-  resetCustomConfig: document.querySelector("#resetCustomConfig"),
-  testCustomParser: document.querySelector("#testCustomParser"),
-  modbusSlaveId: document.querySelector("#modbusSlaveId"),
-  modbusFunctionCode: document.querySelector("#modbusFunctionCode"),
-  modbusAddress: document.querySelector("#modbusAddress"),
-  modbusQuantity: document.querySelector("#modbusQuantity"),
-  modbusDataType: document.querySelector("#modbusDataType"),
-  modbusByteOrder: document.querySelector("#modbusByteOrder"),
-  modbusScale: document.querySelector("#modbusScale"),
-  modbusOffset: document.querySelector("#modbusOffset"),
-  modbusFieldName: document.querySelector("#modbusFieldName"),
-  modbusUnit: document.querySelector("#modbusUnit"),
-  modbusPollIntervalMs: document.querySelector("#modbusPollIntervalMs"),
-  saveModbusConfig: document.querySelector("#saveModbusConfig"),
-  resetModbusConfig: document.querySelector("#resetModbusConfig"),
-  telemetryChart: document.querySelector("#telemetryChart"),
-  chartValue: document.querySelector("#chartValue"),
-  clearChart: document.querySelector("#clearChart"),
-  serialLog: document.querySelector("#serialLog"),
-  clearLog: document.querySelector("#clearLog"),
-  sendFormat: document.querySelector("#sendFormat"),
-  lineEnding: document.querySelector("#lineEnding"),
-  manualCommand: document.querySelector("#manualCommand"),
-  sendManual: document.querySelector("#sendManual"),
-};
+const DEVICE_PAGE_IDS = [DEFAULT_DEVICE_ID, CUSTOM_DEVICE_ID, MODBUS_DEVICE_ID];
 
-const chart = new LiveChart(elements.telemetryChart);
+/** @type {Record<string, HTMLElement | HTMLElement[] | null>} */
+const elements = {};
+
+function cacheElements() {
+  Object.assign(elements, {
+    appShell: document.querySelector(".app-shell"),
+    deviceShell: document.querySelector("#deviceShell"),
+    secureState: document.querySelector("#secureState"),
+    connectButton: document.querySelector("#connectButton"),
+    disconnectButton: document.querySelector("#disconnectButton"),
+    connectionState: document.querySelector("#connectionState"),
+    deviceLibrary: document.querySelector("#deviceLibrary"),
+    pages: [...document.querySelectorAll("[data-page-id]")],
+    customDeviceNavName: document.querySelector("#customDeviceNavName"),
+    githubLink: document.querySelector("#githubLink"),
+    newDeviceRequestLink: document.querySelector("#newDeviceRequestLink"),
+    deviceRequestTemplate: document.querySelector("#deviceRequestTemplate"),
+    copyRequestTemplate: document.querySelector("#copyRequestTemplate"),
+    footerCopyright: document.querySelector("#footerCopyright"),
+    footerLicenseLink: document.querySelector("#footerLicenseLink"),
+    footerVersion: document.querySelector("#footerVersion"),
+    transportSelect: document.querySelector("#transportSelect"),
+    transportFields: document.querySelector("#transportFields"),
+    modeRow: document.querySelector("#aomasterPage .mode-row"),
+    outputModeSelect: document.querySelector("#outputModeSelect"),
+    waveformRow: document.querySelector("#waveformRow"),
+    waveformSelect: document.querySelector("#waveformSelect"),
+    constantSetpointBlock: document.querySelector("#constantSetpointBlock"),
+    waveformParamsBlock: document.querySelector("#waveformParamsBlock"),
+    waveAnalogParams: document.querySelector("#waveAnalogParams"),
+    stepSequenceBlock: document.querySelector("#stepSequenceBlock"),
+    stepSequenceList: document.querySelector("#stepSequenceList"),
+    addStepButton: document.querySelector("#addStepButton"),
+    stepDwellMs: document.querySelector("#stepDwellMs"),
+    stepLoops: document.querySelector("#stepLoops"),
+    waveLow: document.querySelector("#waveLow"),
+    waveHigh: document.querySelector("#waveHigh"),
+    wavePeriodMs: document.querySelector("#wavePeriodMs"),
+    waveDuty: document.querySelector("#waveDuty"),
+    waveDutyField: document.querySelector("#waveDutyField"),
+    setpointLabel: document.querySelector("#setpointLabel"),
+    setpointReadout: document.querySelector("#setpointReadout"),
+    setpointSlider: document.querySelector("#setpointSlider"),
+    setpointInput: document.querySelector("#setpointInput"),
+    setpointUnit: document.querySelector("#setpointUnit"),
+    aomasterSlaveId: document.querySelector("#aomasterSlaveId"),
+    aomasterPollIntervalMs: document.querySelector("#aomasterPollIntervalMs"),
+    saveAomasterConfig: document.querySelector("#saveAomasterConfig"),
+    resetAomasterConfig: document.querySelector("#resetAomasterConfig"),
+    customDeviceName: document.querySelector("#customDeviceName"),
+    customDeviceType: document.querySelector("#customDeviceType"),
+    customChannelLabel: document.querySelector("#customChannelLabel"),
+    customUnit: document.querySelector("#customUnit"),
+    customMin: document.querySelector("#customMin"),
+    customMax: document.querySelector("#customMax"),
+    customStep: document.querySelector("#customStep"),
+    customDefaultValue: document.querySelector("#customDefaultValue"),
+    customCommandFormat: document.querySelector("#customCommandFormat"),
+    customCommandLineEnding: document.querySelector("#customCommandLineEnding"),
+    customCommandTemplate: document.querySelector("#customCommandTemplate"),
+    customParserType: document.querySelector("#customParserType"),
+    customParserFieldName: document.querySelector("#customParserFieldName"),
+    customParserUnit: document.querySelector("#customParserUnit"),
+    customParserGroup: document.querySelector("#customParserGroup"),
+    customParserRegex: document.querySelector("#customParserRegex"),
+    customParserScale: document.querySelector("#customParserScale"),
+    customParserOffset: document.querySelector("#customParserOffset"),
+    customParserSample: document.querySelector("#customParserSample"),
+    customParserPreview: document.querySelector("#customParserPreview"),
+    saveCustomConfig: document.querySelector("#saveCustomConfig"),
+    resetCustomConfig: document.querySelector("#resetCustomConfig"),
+    testCustomParser: document.querySelector("#testCustomParser"),
+    modbusSlaveId: document.querySelector("#modbusSlaveId"),
+    modbusFunctionCode: document.querySelector("#modbusFunctionCode"),
+    modbusAddress: document.querySelector("#modbusAddress"),
+    modbusQuantity: document.querySelector("#modbusQuantity"),
+    modbusDataType: document.querySelector("#modbusDataType"),
+    modbusByteOrder: document.querySelector("#modbusByteOrder"),
+    modbusScale: document.querySelector("#modbusScale"),
+    modbusOffset: document.querySelector("#modbusOffset"),
+    modbusFieldName: document.querySelector("#modbusFieldName"),
+    modbusUnit: document.querySelector("#modbusUnit"),
+    modbusPollIntervalMs: document.querySelector("#modbusPollIntervalMs"),
+    saveModbusConfig: document.querySelector("#saveModbusConfig"),
+    resetModbusConfig: document.querySelector("#resetModbusConfig"),
+    telemetryChart: document.querySelector("#telemetryChart"),
+    chartValue: document.querySelector("#chartValue"),
+    chartPanelSummary: document.querySelector("#chartPanelSummary"),
+    singleChartBlock: document.querySelector("#singleChartBlock"),
+    dualChartBlock: document.querySelector("#dualChartBlock"),
+    setpointChartCanvas: document.querySelector("#setpointChart"),
+    actualChartCanvas: document.querySelector("#actualChart"),
+    setpointChartValue: document.querySelector("#setpointChartValue"),
+    actualChartValue: document.querySelector("#actualChartValue"),
+    clearChart: document.querySelector("#clearChart"),
+    serialLog: document.querySelector("#serialLog"),
+    clearLog: document.querySelector("#clearLog"),
+    sendFormat: document.querySelector("#sendFormat"),
+    lineEnding: document.querySelector("#lineEnding"),
+    manualCommand: document.querySelector("#manualCommand"),
+    sendManual: document.querySelector("#sendManual"),
+  });
+}
+
+let chart = null;
+let setpointChart = null;
+let actualChart = null;
+let allCharts = [];
+let chartsReady = false;
 let customConfig = loadCustomConfig();
 let modbusConfig = loadModbusConfig();
+let aomasterConfig = loadAomasterConfig();
 let session = null;
 let modbusPollTimer = null;
+let aomasterPollTimer = null;
 
 const state = {
   pageId: "home",
@@ -127,25 +174,58 @@ const state = {
   transportId: DEFAULT_TRANSPORT_ID,
   mode: "current",
   setpoint: 12,
+  waveform: "constant",
+  waveLow: 4,
+  waveHigh: 20,
+  wavePeriodMs: 1000,
+  waveDuty: 50,
+  stepSequence: [4, 8, 12, 16, 20],
+  stepDwellMs: 500,
+  stepLoops: 1,
 };
 
-initialize();
+boot();
+
+async function boot() {
+  try {
+    await loadAppPages();
+    cacheElements();
+    initialize();
+  } catch (error) {
+    console.error("应用启动失败", error);
+    document.body.insertAdjacentHTML(
+      "beforeend",
+      `<div class="boot-error" role="alert">页面加载失败：${error.message}</div>`,
+    );
+  }
+}
 
 function initialize() {
-  elements.githubLink.href = MODUSIGNAL_APP.githubUrl;
-  elements.newDeviceRequestLink.href = MODUSIGNAL_APP.newDeviceRequestUrl;
+  if (elements.githubLink) {
+    elements.githubLink.href = MODUSIGNAL_APP.githubUrl;
+  }
+  if (elements.newDeviceRequestLink) {
+    elements.newDeviceRequestLink.href = MODUSIGNAL_APP.newDeviceRequestUrl;
+  }
   renderFooterCopyright();
-  elements.footerLicenseLink.textContent = MODUSIGNAL_APP.licenseName;
-  elements.footerLicenseLink.href = MODUSIGNAL_APP.licenseUrl;
-  elements.footerVersion.textContent = MODUSIGNAL_APP.assetVersion;
+  if (elements.footerLicenseLink) {
+    elements.footerLicenseLink.textContent = MODUSIGNAL_APP.licenseName;
+    elements.footerLicenseLink.href = MODUSIGNAL_APP.licenseUrl;
+  }
+  if (elements.footerVersion) {
+    elements.footerVersion.textContent = MODUSIGNAL_APP.assetVersion;
+  }
   populateCustomConfigForm(customConfig);
   populateModbusConfigForm(modbusConfig);
+  populateAomasterConfigForm(aomasterConfig);
   populateTransportSelect();
   renderDeviceLibrary();
+  renderHomeDeviceCards();
+  bindEvents();
   setTransport(state.transportId);
   updatePageUi();
-  updateDeviceUi();
-  bindEvents();
+  safeUpdateDeviceUi();
+  void initMonitoringCharts();
   appendLog(
     "info",
     "系统",
@@ -153,25 +233,95 @@ function initialize() {
   );
 }
 
+function on(element, eventName, handler) {
+  if (element) {
+    element.addEventListener(eventName, handler);
+  }
+}
+
+function safeUpdateDeviceUi() {
+  try {
+    updateDeviceUi();
+  } catch (error) {
+    console.error("updateDeviceUi failed", error);
+  }
+}
+
+async function initMonitoringCharts() {
+  try {
+    const { EchartsLiveChart } = await import("./echarts-charts.js");
+    chart = new EchartsLiveChart(elements.telemetryChart, {
+      color: "#0f766e",
+      areaColor: "rgba(15, 118, 110, 0.12)",
+      emptyText: "连接设备并开启轮询后显示实时曲线",
+      title: "实时曲线",
+    });
+    setpointChart = new EchartsLiveChart(elements.setpointChartCanvas, {
+      color: "#2563eb",
+      areaColor: "rgba(37, 99, 235, 0.12)",
+      emptyText: "调整设定值以预览曲线",
+      title: "设定预览",
+    });
+    actualChart = new EchartsLiveChart(elements.actualChartCanvas, {
+      color: "#0f766e",
+      areaColor: "rgba(15, 118, 110, 0.12)",
+      emptyText: "连接设备并开启轮询后显示实时输出",
+      title: "实时输出",
+    });
+    allCharts = [chart, setpointChart, actualChart];
+    chartsReady = true;
+    bindChartResize();
+    safeUpdateDeviceUi();
+    requestChartResize();
+  } catch (error) {
+    chartsReady = false;
+    console.error("initMonitoringCharts failed", error);
+    if (elements.chartPanelSummary) {
+      elements.chartPanelSummary.textContent = `图表模块加载失败：${error.message}`;
+    }
+  }
+}
+
 function bindEvents() {
-  elements.connectButton.addEventListener("click", connect);
-  elements.disconnectButton.addEventListener("click", disconnect);
-  elements.transportSelect.addEventListener("change", (event) => setTransport(event.target.value));
-  elements.sendDriverCommand.addEventListener("click", sendDeviceCommand);
-  elements.setpointSlider.addEventListener("input", (event) => updateSetpoint(Number(event.target.value)));
-  elements.setpointInput.addEventListener("change", (event) => updateSetpoint(Number(event.target.value)));
-  elements.sendManual.addEventListener("click", sendManualCommand);
-  elements.copyRequestTemplate.addEventListener("click", copyRequestTemplate);
-  elements.clearLog.addEventListener("click", () => {
+  on(elements.connectButton, "click", connect);
+  on(elements.disconnectButton, "click", disconnect);
+  on(elements.transportSelect, "change", (event) => setTransport(event.target.value));
+  on(elements.deviceShell, "input", (event) => {
+    if (event.target.matches('[data-field="setpointSlider"]')) {
+      updateSetpoint(Number(event.target.value));
+    }
+  });
+  on(elements.deviceShell, "change", (event) => {
+    if (event.target.matches('[data-field="setpointInput"]')) {
+      updateSetpoint(Number(event.target.value));
+    }
+  });
+  on(elements.deviceShell, "click", (event) => {
+    if (event.target.closest('[data-field="sendDriverCommand"]')) {
+      sendDeviceCommand();
+      return;
+    }
+
+    const preset = event.target.closest("[data-preset]");
+    if (!preset) {
+      return;
+    }
+
+    const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
+    updateSetpoint(config.presets[preset.dataset.preset]);
+  });
+  on(elements.sendManual, "click", sendManualCommand);
+  on(elements.copyRequestTemplate, "click", copyRequestTemplate);
+  on(elements.clearLog, "click", () => {
     elements.serialLog.innerHTML = "";
     appendLog("info", "系统", "日志已清空");
   });
-  elements.clearChart.addEventListener("click", () => {
-    chart.clear();
-    elements.chartValue.textContent = "暂无数据";
+  on(elements.clearChart, "click", () => {
+    clearAllCharts();
+    appendLog("info", "系统", "曲线已清空");
   });
 
-  elements.appShell.addEventListener("click", (event) => {
+  on(elements.appShell, "click", (event) => {
     const target = event.target.closest("[data-page-target]");
     if (!target) {
       return;
@@ -185,66 +335,114 @@ function bindEvents() {
     navigateToPage(target.dataset.pageTarget);
   });
 
-  elements.outputModes.forEach((input) => {
-    input.addEventListener("change", () => {
-      if (input.checked) {
-        state.mode = input.value;
-        const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
-        state.setpoint = config.presets.mid;
-        updateDeviceUi();
-      }
-    });
+  on(elements.outputModeSelect, "change", () => {
+    state.mode = elements.outputModeSelect.value;
+    applyAomasterModeDefaults();
+    clearAomasterCharts();
+    syncAomasterChartRanges();
+    updateDeviceUi();
   });
 
-  document.querySelectorAll("[data-preset]").forEach((button) => {
+  on(elements.waveformSelect, "change", () => {
+    state.waveform = elements.waveformSelect.value;
+    if (state.waveform === "step" && state.stepSequence.length < 2) {
+      state.stepSequence = buildDefaultStepSequence(state.mode);
+    }
+    updateAomasterWaveformUi();
+    renderStepSequenceList();
+    refreshAomasterPreviewChart();
+    updateSetpointUi();
+  });
+
+  getAomasterWaveControls().filter(Boolean).forEach((control) => {
+    control.addEventListener("input", updateAomasterWaveDraft);
+    control.addEventListener("change", updateAomasterWaveDraft);
+  });
+
+  document.querySelectorAll("[data-wave-preset]").forEach((button) => {
     button.addEventListener("click", () => {
-      const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
-      updateSetpoint(config.presets[button.dataset.preset]);
+      applyAomasterWavePreset(button.dataset.wavePreset);
     });
   });
 
-  getCustomConfigControls().forEach((control) => {
+  on(elements.addStepButton, "click", () => {
+    addAomasterStepPoint();
+  });
+
+  document.querySelectorAll("[data-step-preset]").forEach((button) => {
+    button.addEventListener("click", () => {
+      applyAomasterStepPreset(button.dataset.stepPreset);
+    });
+  });
+
+  getCustomConfigControls().filter(Boolean).forEach((control) => {
     control.addEventListener("input", updateCustomDraftConfig);
     control.addEventListener("change", updateCustomDraftConfig);
   });
 
-  elements.saveCustomConfig.addEventListener("click", saveCustomConfig);
-  elements.resetCustomConfig.addEventListener("click", resetCustomConfig);
-  elements.testCustomParser.addEventListener("click", testCustomParser);
+  on(elements.saveCustomConfig, "click", saveCustomConfig);
+  on(elements.resetCustomConfig, "click", resetCustomConfig);
+  on(elements.testCustomParser, "click", testCustomParser);
 
-  getModbusConfigControls().forEach((control) => {
+  getModbusConfigControls().filter(Boolean).forEach((control) => {
     control.addEventListener("input", updateModbusDraftConfig);
     control.addEventListener("change", updateModbusDraftConfig);
   });
 
-  elements.saveModbusConfig.addEventListener("click", saveModbusConfig);
-  elements.resetModbusConfig.addEventListener("click", resetModbusConfig);
+  on(elements.saveModbusConfig, "click", saveModbusConfig);
+  on(elements.resetModbusConfig, "click", resetModbusConfig);
+
+  getAomasterConfigControls().filter(Boolean).forEach((control) => {
+    control.addEventListener("input", updateAomasterDraftConfig);
+    control.addEventListener("change", updateAomasterDraftConfig);
+  });
+
+  on(elements.saveAomasterConfig, "click", saveAomasterConfig);
+  on(elements.resetAomasterConfig, "click", resetAomasterConfig);
 }
 
 function bindSessionEvents(target) {
   target.addEventListener("connected", () => {
     updateConnectionUi(true);
     updateModbusPolling();
+    updateAomasterPolling();
     appendLog("info", "连接", "已连接");
   });
 
   target.addEventListener("disconnected", () => {
     stopModbusPolling();
+    stopAomasterPolling();
     resetModbusRxBuffer();
+    resetAomasterRxBuffer();
     updateConnectionUi(false);
     appendLog("info", "连接", "已断开");
   });
 
   target.addEventListener("rx", (event) => {
     const { bytes, text } = event.detail;
-    const display =
-      state.deviceId === MODBUS_DEVICE_ID ? bytesToHex(bytes) : text.trim() ? text : bytesToHex(bytes);
+    const useHexDisplay = state.deviceId === MODBUS_DEVICE_ID || state.deviceId === DEFAULT_DEVICE_ID;
+    const display = useHexDisplay ? bytesToHex(bytes) : text.trim() ? text : bytesToHex(bytes);
     appendLog("rx", "RX", display);
 
-    const telemetry = parseDeviceTelemetry(state.deviceId, text, customConfig, modbusConfig, bytes);
+    const telemetry = parseDeviceTelemetry(
+      state.deviceId,
+      text,
+      customConfig,
+      modbusConfig,
+      bytes,
+      state,
+      aomasterConfig,
+    );
     if (telemetry) {
-      chart.add(telemetry.value);
-      elements.chartValue.textContent = `${telemetry.fieldName} ${telemetry.value.toFixed(3)}${telemetry.unit ? ` ${telemetry.unit}` : ""}`;
+      if (state.deviceId === DEFAULT_DEVICE_ID) {
+        actualChart?.add(telemetry.value);
+        const formatted = `${formatSetpoint(state.mode, telemetry.value)} ${telemetry.unit}`;
+        elements.actualChartValue.textContent = `${telemetry.fieldName} ${formatted}`;
+      } else {
+        chart?.add(telemetry.value);
+        const formatted = `${telemetry.value.toFixed(3)}${telemetry.unit ? ` ${telemetry.unit}` : ""}`;
+        elements.chartValue.textContent = `${telemetry.fieldName} ${formatted}`;
+      }
     }
   });
 
@@ -327,7 +525,9 @@ function readTransportOptions() {
 
 function selectDevice(deviceId) {
   stopModbusPolling();
+  stopAomasterPolling();
   resetModbusRxBuffer();
+  resetAomasterRxBuffer();
   state.deviceId = deviceId;
   state.pageId = deviceId;
 
@@ -340,16 +540,16 @@ function selectDevice(deviceId) {
     const config = getModeConfig(state.mode, deviceId, customConfig, modbusConfig);
     state.setpoint = config.presets.mid;
   } else {
-    state.mode = document.querySelector("input[name='outputMode']:checked")?.value ?? "current";
-    const config = getModeConfig(state.mode, deviceId, customConfig, modbusConfig);
-    state.setpoint = config.presets.mid;
+    state.mode = elements.outputModeSelect?.value || "current";
+    applyAomasterModeDefaults(false);
   }
 
-  chart.clear();
-  elements.chartValue.textContent = "暂无数据";
+  clearAllCharts();
+  syncAomasterChartRanges();
   updatePageUi();
   updateDeviceUi();
   updateModbusPolling();
+  updateAomasterPolling();
   appendLog("info", "设备", `已切换到 ${getDeviceProfile(state.deviceId, customConfig, modbusConfig).name}`);
 }
 
@@ -402,19 +602,38 @@ function updateDeviceUi() {
     elements.customDeviceNavName.textContent = normalizeCustomConfig(customConfig).name;
   }
 
-  elements.customConfigPanel.hidden = !isCustom;
-  elements.modbusConfigPanel.hidden = !isModbus;
-  elements.aomasterIntroPanel.hidden = !isAomaster;
-  elements.modeRow.hidden = !isAomaster;
-  elements.setpointRow.hidden = modbusIsRead;
-  elements.presetRow.hidden = modbusIsRead;
+  const setpointRow = queryDeviceField("setpointRow");
+  const presetRow = queryDeviceField("presetRow");
+  if (setpointRow) {
+    setpointRow.hidden = modbusIsRead;
+  }
+  if (presetRow) {
+    presetRow.hidden = modbusIsRead;
+  }
 
-  if (isCustom) {
-    elements.selectedDeviceSummary.textContent = `当前选择 ${profile.name}；设定范围、发送模板和回包解析规则可在下方配置。`;
-  } else if (isModbus) {
-    elements.selectedDeviceSummary.textContent = `当前选择 Modbus RTU；${describeModbusSummary(modbusConfig)}。`;
-  } else {
-    elements.selectedDeviceSummary.textContent = `当前选择 ${profile.name}；协议未定时，参数先记录在页面状态，可通过手动命令调试。`;
+  if (elements.singleChartBlock) {
+    elements.singleChartBlock.hidden = isAomaster;
+  }
+  if (elements.dualChartBlock) {
+    elements.dualChartBlock.hidden = !isAomaster;
+  }
+  if (elements.chartPanelSummary) {
+    elements.chartPanelSummary.textContent = isAomaster
+      ? "ECharts 曲线预览设定波形，并跟踪轮询回读的实际输出。"
+      : "ECharts 曲线自动解析设备回读数值。";
+  }
+
+  const summary = queryDeviceField("deviceSummary");
+  if (summary) {
+    if (isCustom) {
+      summary.textContent = `${profile.name}；设定范围、发送模板和回包解析可在本页配置。`;
+    } else if (isModbus) {
+      summary.textContent = describeModbusSummary(modbusConfig);
+    } else if (isAomaster) {
+      summary.textContent = `${describeAomasterSummary(aomasterConfig)}`;
+    } else {
+      summary.textContent = profile.name;
+    }
   }
 
   document.querySelectorAll("[data-device-id]").forEach((button) => {
@@ -422,27 +641,71 @@ function updateDeviceUi() {
   });
 
   if (isAomaster) {
-    const selectedMode = elements.outputModes.find((input) => input.value === state.mode) ?? elements.outputModes[0];
-    selectedMode.checked = true;
+    populateOutputModeSelect();
+    if (elements.outputModeSelect) {
+      elements.outputModeSelect.value = state.mode;
+    }
+    if (elements.waveformSelect) {
+      elements.waveformSelect.value = state.mode === "frequency" ? "constant" : state.waveform;
+    }
+    if (state.mode === "frequency") {
+      state.waveform = "constant";
+    }
+    populateAomasterWaveformForm();
+    updateAomasterWaveformUi();
+    syncAomasterChartRanges();
+    refreshAomasterPreviewChart();
   }
 
+  if (!isAomaster && chart) {
+    const chartConfig = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
+    chart.setMeta({ title: "实时曲线", unit: chartConfig.unit });
+  }
+
+  requestChartResize();
   updateSetpointUi();
 }
 
 function updatePageUi() {
-  const activePageId = isDevicePageActive() ? "device" : state.pageId;
+  const isDevice = isDevicePageActive();
+
+  elements.pages = [...document.querySelectorAll("[data-page-id]")];
+  elements.deviceShell.classList.toggle("active", isDevice);
 
   elements.pages.forEach((page) => {
-    page.classList.toggle("active", page.dataset.pageId === activePageId);
+    if (page.classList.contains("device-page")) {
+      page.classList.toggle("active", isDevice && page.dataset.pageId === state.deviceId);
+      return;
+    }
+
+    page.classList.toggle("active", !isDevice && page.dataset.pageId === state.pageId);
   });
 
   document.querySelectorAll("[data-page-target]").forEach((target) => {
     const targetPage = target.dataset.pageTarget;
     const isActive =
       targetPage === state.pageId ||
-      (isDevicePageActive() && target.dataset.deviceId === state.deviceId);
+      (isDevice && target.dataset.deviceId === state.deviceId);
     target.classList.toggle("active", isActive);
   });
+}
+
+function createDeviceIcon(entry) {
+  const icon = document.createElement("span");
+  icon.setAttribute("aria-hidden", "true");
+
+  if (entry.profile.image) {
+    icon.className = "device-icon has-image";
+    const image = document.createElement("img");
+    image.src = assetUrl(entry.profile.image);
+    image.alt = "";
+    icon.append(image);
+  } else {
+    icon.className = "device-icon";
+    icon.textContent = entry.profile.name.slice(0, 1).toUpperCase();
+  }
+
+  return icon;
 }
 
 function renderDeviceLibrary() {
@@ -455,19 +718,7 @@ function renderDeviceLibrary() {
     button.dataset.pageTarget = entry.pageTarget;
     button.dataset.deviceId = entry.deviceId;
 
-    const icon = document.createElement("span");
-    icon.setAttribute("aria-hidden", "true");
-
-    if (entry.profile.image) {
-      icon.className = "device-icon has-image";
-      const image = document.createElement("img");
-      image.src = assetUrl(entry.profile.image);
-      image.alt = "";
-      icon.append(image);
-    } else {
-      icon.className = "device-icon";
-      icon.textContent = entry.profile.name.slice(0, 1).toUpperCase();
-    }
+    const icon = createDeviceIcon(entry);
 
     const text = document.createElement("span");
     const title = document.createElement("strong");
@@ -488,8 +739,76 @@ function renderDeviceLibrary() {
   });
 }
 
+function renderHomeDeviceCards() {
+  const grid = document.querySelector("#homeDeviceGrid");
+  if (!grid) {
+    return;
+  }
+
+  grid.innerHTML = "";
+
+  listDeviceLibrary(customConfig).forEach((entry) => {
+    const button = document.createElement("button");
+    button.className = "home-card";
+    button.type = "button";
+    button.dataset.pageTarget = entry.pageTarget;
+    button.dataset.deviceId = entry.deviceId;
+
+    const body = document.createElement("span");
+    body.className = "home-card-body";
+
+    const title = document.createElement("strong");
+    title.textContent = entry.profile.name;
+
+    const summary = document.createElement("span");
+    if (entry.deviceId === DEFAULT_DEVICE_ID) {
+      summary.textContent = "阶跃/斜坡/方波等波形输出，双曲线预览与 20 ms 回读。";
+    } else if (entry.deviceId === MODBUS_DEVICE_ID) {
+      summary.textContent = "RTU 寄存器读写，支持轮询读取与曲线显示。";
+    } else {
+      summary.textContent = "用模板发送和解析规则快速适配未知串口设备。";
+    }
+
+    body.append(title, summary);
+    button.append(createDeviceIcon(entry), body);
+    grid.append(button);
+  });
+
+  const requestButton = document.createElement("button");
+  requestButton.className = "home-card";
+  requestButton.type = "button";
+  requestButton.dataset.pageTarget = "request";
+
+  const requestIcon = document.createElement("span");
+  requestIcon.className = "device-icon";
+  requestIcon.setAttribute("aria-hidden", "true");
+  requestIcon.textContent = "R";
+
+  const requestBody = document.createElement("span");
+  requestBody.className = "home-card-body";
+
+  const requestTitle = document.createElement("strong");
+  requestTitle.textContent = "新增设备请求";
+
+  const requestSummary = document.createElement("span");
+  requestSummary.textContent = "整理设备资料、协议、截图和期望 UI，方便贡献设备驱动。";
+
+  requestBody.append(requestTitle, requestSummary);
+  requestButton.append(requestIcon, requestBody);
+  grid.append(requestButton);
+}
+
 function isDevicePageActive() {
-  return [DEFAULT_DEVICE_ID, CUSTOM_DEVICE_ID, MODBUS_DEVICE_ID].includes(state.pageId);
+  return DEVICE_PAGE_IDS.includes(state.pageId);
+}
+
+function queryDeviceField(name) {
+  const page = document.querySelector(`.device-page[data-page-id="${state.deviceId}"]`);
+  if (!page) {
+    return null;
+  }
+
+  return page.querySelector(`[data-field="${name}"]`) ?? page.querySelector(`#${name}`);
 }
 
 function updateSetpoint(value) {
@@ -502,35 +821,80 @@ function updateSetpoint(value) {
 function updateSetpointUi() {
   const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
   const formatted = state.setpoint.toFixed(decimalPlaces(config.step));
+  const setpointLabel = queryDeviceField("setpointLabel") ?? elements.setpointLabel;
+  const setpointReadout = queryDeviceField("setpointReadout") ?? elements.setpointReadout;
+  const setpointUnit = queryDeviceField("setpointUnit") ?? elements.setpointUnit;
+  const setpointSlider = queryDeviceField("setpointSlider") ?? elements.setpointSlider;
+  const setpointInput = queryDeviceField("setpointInput") ?? elements.setpointInput;
+  const protocolPreview = queryDeviceField("protocolPreview");
+  const sendDriverCommand = queryDeviceField("sendDriverCommand");
+  const driverState = queryDeviceField("driverState");
 
-  elements.setpointLabel.textContent = config.label;
-  elements.setpointReadout.textContent = `${formatted}${config.unit ? ` ${config.unit}` : ""}`;
-  elements.setpointUnit.textContent = config.unit || "值";
-  elements.setpointSlider.min = String(config.min);
-  elements.setpointSlider.max = String(config.max);
-  elements.setpointSlider.step = String(config.step);
-  elements.setpointSlider.value = String(state.setpoint);
-  elements.setpointInput.min = String(config.min);
-  elements.setpointInput.max = String(config.max);
-  elements.setpointInput.step = String(config.step);
-  elements.setpointInput.value = formatted;
+  if (setpointLabel) {
+    setpointLabel.textContent = config.label;
+  }
+  if (setpointReadout) {
+    setpointReadout.textContent = `${formatted}${config.unit ? ` ${config.unit}` : ""}`;
+  }
+  if (setpointUnit) {
+    setpointUnit.textContent = config.unit || "值";
+  }
+  if (setpointSlider) {
+    setpointSlider.min = String(config.min);
+    setpointSlider.max = String(config.max);
+    setpointSlider.step = String(config.step);
+    setpointSlider.value = String(state.setpoint);
+  }
+  if (setpointInput) {
+    setpointInput.min = String(config.min);
+    setpointInput.max = String(config.max);
+    setpointInput.step = String(config.step);
+    setpointInput.value = formatted;
+  }
 
-  const command = createDeviceSetOutputCommand(state.deviceId, state, customConfig, modbusConfig);
-  elements.protocolPreview.textContent = command.preview;
-  elements.sendDriverCommand.disabled = !command.supported || !session?.connected;
+  if (state.deviceId === DEFAULT_DEVICE_ID) {
+    refreshAomasterPreviewChart();
+  }
+
+  const command = createDeviceSetOutputCommand(state.deviceId, state, customConfig, modbusConfig, aomasterConfig);
+  if (protocolPreview) {
+    protocolPreview.textContent = command.preview;
+  }
+  if (sendDriverCommand) {
+    sendDriverCommand.disabled = !command.supported || !session?.connected;
+  }
 
   if (state.deviceId === MODBUS_DEVICE_ID) {
     const normalized = normalizeModbusConfig(modbusConfig);
     const isRead = isReadFunctionCode(normalized.functionCode);
-    elements.sendDriverCommand.textContent = isRead ? "读取寄存器" : "写入寄存器";
-    elements.driverState.textContent = "Modbus RTU";
-    elements.driverState.classList.remove("warning");
+    if (sendDriverCommand) {
+      sendDriverCommand.textContent = isRead ? "读取寄存器" : "写入寄存器";
+    }
+    if (driverState) {
+      driverState.textContent = "Modbus RTU";
+      driverState.classList.remove("warning");
+    }
     return;
   }
 
-  elements.sendDriverCommand.textContent = "发送设定";
-  elements.driverState.textContent = command.supported ? "模板可发送" : "协议待配置";
-  elements.driverState.classList.toggle("warning", !command.supported);
+  if (state.deviceId === DEFAULT_DEVICE_ID) {
+    if (sendDriverCommand) {
+      sendDriverCommand.textContent = "发送设定";
+    }
+    if (driverState) {
+      driverState.textContent = "Modbus RTU";
+      driverState.classList.remove("warning");
+    }
+    return;
+  }
+
+  if (sendDriverCommand) {
+    sendDriverCommand.textContent = "发送设定";
+  }
+  if (driverState) {
+    driverState.textContent = command.supported ? "模板可发送" : "协议待配置";
+    driverState.classList.toggle("warning", !command.supported);
+  }
 }
 
 function updateConnectionUi(connected) {
@@ -559,6 +923,8 @@ function saveCustomConfig() {
   customConfig = readCustomConfigForm();
   localStorage.setItem(CUSTOM_CONFIG_STORAGE_KEY, JSON.stringify(customConfig));
   populateCustomConfigForm(customConfig);
+  renderDeviceLibrary();
+  renderHomeDeviceCards();
   updateDeviceUi();
   appendLog("info", "设备", "自定义设备配置已保存");
 }
@@ -567,6 +933,8 @@ function resetCustomConfig() {
   customConfig = normalizeCustomConfig(DEFAULT_CUSTOM_CONFIG);
   localStorage.setItem(CUSTOM_CONFIG_STORAGE_KEY, JSON.stringify(customConfig));
   populateCustomConfigForm(customConfig);
+  renderDeviceLibrary();
+  renderHomeDeviceCards();
 
   if (state.deviceId === CUSTOM_DEVICE_ID) {
     state.setpoint = customConfig.defaultValue;
@@ -614,13 +982,16 @@ async function disconnect() {
 
 async function sendDeviceCommand() {
   try {
-    const command = createDeviceSetOutputCommand(state.deviceId, state, customConfig, modbusConfig);
-    if (!command.supported || !command.bytes) {
+    const command = createDeviceSetOutputCommand(state.deviceId, state, customConfig, modbusConfig, aomasterConfig);
+    const frames = command.frames ?? (command.bytes ? [command.bytes] : []);
+    if (!command.supported || frames.length === 0) {
       appendLog("error", "发送", command.preview || "当前设备没有可发送的驱动命令");
       return;
     }
 
-    await session.write(command.bytes);
+    for (const frame of frames) {
+      await session.write(frame);
+    }
   } catch (error) {
     appendLog("error", "发送", error.message);
   }
@@ -818,6 +1189,91 @@ function getModbusConfigControls() {
   ];
 }
 
+function stopAomasterPolling() {
+  if (aomasterPollTimer) {
+    clearInterval(aomasterPollTimer);
+    aomasterPollTimer = null;
+  }
+}
+
+function updateAomasterPolling() {
+  stopAomasterPolling();
+
+  const normalized = normalizeAomasterConfig(aomasterConfig);
+  if (state.deviceId !== DEFAULT_DEVICE_ID || !session?.connected) {
+    return;
+  }
+
+  if (normalized.pollIntervalMs <= 0) {
+    return;
+  }
+
+  aomasterPollTimer = window.setInterval(() => {
+    sendAomasterReadCommand().catch((error) => appendLog("error", "AOMaster", error.message));
+  }, normalized.pollIntervalMs);
+}
+
+async function sendAomasterReadCommand() {
+  if (!session?.connected) {
+    return;
+  }
+
+  const bytes = createAOMasterReadCommand(aomasterConfig);
+  await session.write(bytes);
+}
+
+function updateAomasterDraftConfig() {
+  aomasterConfig = readAomasterConfigForm();
+  resetAomasterRxBuffer();
+  updateDeviceUi();
+  updateAomasterPolling();
+}
+
+function saveAomasterConfig() {
+  aomasterConfig = readAomasterConfigForm();
+  localStorage.setItem(AOMASTER_CONFIG_STORAGE_KEY, JSON.stringify(aomasterConfig));
+  populateAomasterConfigForm(aomasterConfig);
+  updateDeviceUi();
+  updateAomasterPolling();
+  appendLog("info", "设备", "AOMaster 配置已保存");
+}
+
+function resetAomasterConfig() {
+  aomasterConfig = normalizeAomasterConfig(DEFAULT_AOMASTER_CONFIG);
+  localStorage.setItem(AOMASTER_CONFIG_STORAGE_KEY, JSON.stringify(aomasterConfig));
+  populateAomasterConfigForm(aomasterConfig);
+  resetAomasterRxBuffer();
+  updateDeviceUi();
+  updateAomasterPolling();
+  appendLog("info", "设备", "AOMaster 配置已恢复默认");
+}
+
+function loadAomasterConfig() {
+  try {
+    const saved = localStorage.getItem(AOMASTER_CONFIG_STORAGE_KEY);
+    return normalizeAomasterConfig(saved ? JSON.parse(saved) : DEFAULT_AOMASTER_CONFIG);
+  } catch {
+    return normalizeAomasterConfig(DEFAULT_AOMASTER_CONFIG);
+  }
+}
+
+function readAomasterConfigForm() {
+  return normalizeAomasterConfig({
+    slaveId: elements.aomasterSlaveId.value,
+    pollIntervalMs: elements.aomasterPollIntervalMs.value,
+  });
+}
+
+function populateAomasterConfigForm(config) {
+  const normalized = normalizeAomasterConfig(config);
+  elements.aomasterSlaveId.value = String(normalized.slaveId);
+  elements.aomasterPollIntervalMs.value = String(normalized.pollIntervalMs);
+}
+
+function getAomasterConfigControls() {
+  return [elements.aomasterSlaveId, elements.aomasterPollIntervalMs];
+}
+
 function getCustomConfigControls() {
   return [
     elements.customDeviceName,
@@ -839,6 +1295,343 @@ function getCustomConfigControls() {
     elements.customParserScale,
     elements.customParserOffset,
   ];
+}
+
+function applyAomasterModeDefaults(resetWaveform = true) {
+  const config = getModeConfig(state.mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
+  state.setpoint = config.presets.mid;
+  state.waveLow = config.min;
+  state.waveHigh = config.max;
+  state.stepSequence = buildDefaultStepSequence(state.mode);
+  if (resetWaveform && state.mode === "frequency") {
+    state.waveform = "constant";
+  }
+  populateAomasterWaveformForm();
+  renderStepSequenceList();
+}
+
+function populateAomasterWaveformForm() {
+  const config = getModeConfig(state.mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
+  const waveState = normalizeAomasterWaveState(state, state.mode);
+  state.setpoint = waveState.setpoint;
+  state.waveLow = waveState.waveLow;
+  state.waveHigh = waveState.waveHigh;
+  state.wavePeriodMs = waveState.wavePeriodMs;
+  state.waveDuty = waveState.waveDuty;
+  state.waveform = waveState.waveform;
+  state.stepSequence = waveState.stepSequence;
+  state.stepDwellMs = waveState.stepDwellMs;
+  state.stepLoops = waveState.stepLoops;
+
+  if (elements.waveLow) {
+    elements.waveLow.min = String(config.min);
+    elements.waveLow.max = String(config.max);
+    elements.waveLow.step = String(config.step);
+    elements.waveLow.value = String(waveState.waveLow);
+  }
+  if (elements.waveHigh) {
+    elements.waveHigh.min = String(config.min);
+    elements.waveHigh.max = String(config.max);
+    elements.waveHigh.step = String(config.step);
+    elements.waveHigh.value = String(waveState.waveHigh);
+  }
+  if (elements.wavePeriodMs) {
+    elements.wavePeriodMs.value = String(waveState.wavePeriodMs);
+  }
+  if (elements.waveDuty) {
+    elements.waveDuty.value = String(waveState.waveDuty);
+  }
+  if (elements.waveformSelect) {
+    elements.waveformSelect.value = waveState.waveform;
+  }
+  if (elements.stepDwellMs) {
+    elements.stepDwellMs.value = String(waveState.stepDwellMs);
+  }
+  if (elements.stepLoops) {
+    elements.stepLoops.value = String(waveState.stepLoops);
+  }
+  renderStepSequenceList();
+}
+
+function renderStepSequenceList() {
+  if (!elements.stepSequenceList) {
+    return;
+  }
+
+  const config = getModeConfig(state.mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
+  const sequence = normalizeStepSequence(state.stepSequence, state.mode);
+  state.stepSequence = sequence;
+  elements.stepSequenceList.innerHTML = "";
+
+  sequence.forEach((value, index) => {
+    const row = document.createElement("div");
+    row.className = "step-sequence-item";
+
+    const label = document.createElement("strong");
+    label.textContent = `#${index + 1}`;
+
+    const input = document.createElement("input");
+    input.type = "number";
+    input.dataset.stepValue = String(index);
+    input.min = String(config.min);
+    input.max = String(config.max);
+    input.step = String(config.step);
+    input.value = String(value);
+    input.addEventListener("input", updateAomasterWaveDraft);
+    input.addEventListener("change", updateAomasterWaveDraft);
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.textContent = "删除";
+    removeButton.disabled = sequence.length <= 2;
+    removeButton.addEventListener("click", () => {
+      removeAomasterStepPoint(index);
+    });
+
+    row.append(label, input, removeButton);
+    elements.stepSequenceList.append(row);
+  });
+}
+
+function readStepSequenceFromForm() {
+  return [...elements.stepSequenceList.querySelectorAll("[data-step-value]")].map((input) => Number(input.value));
+}
+
+function addAomasterStepPoint() {
+  if (state.stepSequence.length >= AOMASTER_MAX_STEP_SEQUENCE) {
+    appendLog("error", "阶跃", `最多支持 ${AOMASTER_MAX_STEP_SEQUENCE} 个阶跃点`);
+    return;
+  }
+
+  const config = getModeConfig(state.mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
+  state.stepSequence = [...state.stepSequence, config.presets.mid];
+  renderStepSequenceList();
+  refreshAomasterPreviewChart();
+  updateSetpointUi();
+}
+
+function removeAomasterStepPoint(index) {
+  if (state.stepSequence.length <= 2) {
+    return;
+  }
+
+  state.stepSequence = state.stepSequence.filter((_, stepIndex) => stepIndex !== index);
+  renderStepSequenceList();
+  refreshAomasterPreviewChart();
+  updateSetpointUi();
+}
+
+function applyAomasterStepPreset(preset) {
+  const config = getModeConfig(state.mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
+  const span = (config.max - config.min) / 4;
+
+  if (preset === "five") {
+    state.stepSequence = buildDefaultStepSequence(state.mode);
+  } else if (preset === "up-down") {
+    state.stepSequence = [
+      config.min,
+      config.min + span,
+      config.min + span * 2,
+      config.max,
+      config.presets.mid,
+      config.min,
+    ];
+  } else if (preset === "pulse") {
+    state.stepSequence = [config.min, config.max, config.min, config.max, config.min];
+    state.stepDwellMs = 200;
+  }
+
+  populateAomasterWaveformForm();
+  updateAomasterWaveformUi();
+  refreshAomasterPreviewChart();
+  updateSetpointUi();
+}
+
+function updateAomasterWaveformUi() {
+  const isFrequency = state.mode === "frequency";
+  const isConstant = state.waveform === "constant";
+  const isStep = state.waveform === "step";
+  elements.waveformSelect.disabled = isFrequency;
+  elements.constantSetpointBlock.hidden = !isConstant;
+  elements.waveformParamsBlock.hidden = isConstant;
+  elements.waveAnalogParams.hidden = isStep;
+  elements.stepSequenceBlock.hidden = !isStep;
+  elements.waveDutyField.hidden = state.waveform !== "square";
+}
+
+function updateAomasterWaveDraft() {
+  state.waveform = elements.waveformSelect.value;
+  state.waveLow = Number(elements.waveLow.value);
+  state.waveHigh = Number(elements.waveHigh.value);
+  state.wavePeriodMs = Number(elements.wavePeriodMs.value);
+  state.waveDuty = Number(elements.waveDuty.value);
+  state.stepDwellMs = Number(elements.stepDwellMs.value);
+  state.stepLoops = Number(elements.stepLoops.value);
+  if (state.waveform === "step") {
+    state.stepSequence = readStepSequenceFromForm();
+  }
+  const waveState = normalizeAomasterWaveState(state, state.mode);
+  state.waveLow = waveState.waveLow;
+  state.waveHigh = waveState.waveHigh;
+  state.wavePeriodMs = waveState.wavePeriodMs;
+  state.waveDuty = waveState.waveDuty;
+  state.stepSequence = waveState.stepSequence;
+  state.stepDwellMs = waveState.stepDwellMs;
+  state.stepLoops = waveState.stepLoops;
+  populateAomasterWaveformForm();
+  updateAomasterWaveformUi();
+  refreshAomasterPreviewChart();
+  updateSetpointUi();
+}
+
+function applyAomasterWavePreset(preset) {
+  const config = getModeConfig(state.mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
+  if (preset === "min-max") {
+    state.waveLow = config.min;
+    state.waveHigh = config.max;
+  } else if (preset === "mid") {
+    const span = (config.max - config.min) / 4;
+    state.waveLow = config.presets.mid - span;
+    state.waveHigh = config.presets.mid + span;
+  } else if (preset === "narrow") {
+    const center = config.presets.mid;
+    const span = (config.max - config.min) / 10;
+    state.waveLow = center - span;
+    state.waveHigh = center + span;
+    state.waveDuty = 10;
+  }
+  populateAomasterWaveformForm();
+  refreshAomasterPreviewChart();
+  updateSetpointUi();
+}
+
+function refreshAomasterPreviewChart() {
+  if (state.deviceId !== DEFAULT_DEVICE_ID || !setpointChart) {
+    return;
+  }
+
+  const config = getModeConfig(state.mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
+  const previewValues = generateWaveformPreview(state);
+  setpointChart.setPoints(previewValues);
+  setpointChart.setMeta({ unit: config.unit });
+  syncAomasterChartRanges();
+
+  if (state.waveform === "constant") {
+    elements.setpointChartValue.textContent = `设定 ${formatSetpoint(state.mode, state.setpoint)} ${config.unit}`;
+  } else if (state.waveform === "step") {
+    const loopLabel = state.stepLoops === 0 ? "无限循环" : `${state.stepLoops} 次`;
+    elements.setpointChartValue.textContent = `阶跃 ${formatStepSequence(state.mode, state.stepSequence)} ${config.unit} · ${state.stepDwellMs} ms/步 · ${loopLabel}`;
+  } else {
+    elements.setpointChartValue.textContent = `${getAomasterWaveformLabel(state.waveform)} ${formatSetpoint(state.mode, state.waveLow)}~${formatSetpoint(state.mode, state.waveHigh)} ${config.unit}`;
+  }
+
+  if (actualChart) {
+    actualChart.setMeta({ unit: config.unit });
+  }
+
+  requestChartResize();
+}
+
+function bindChartResize() {
+  window.addEventListener("resize", requestChartResize);
+  if (typeof ResizeObserver !== "undefined") {
+    const observer = new ResizeObserver(() => requestChartResize());
+    observer.observe(elements.deviceShell);
+    const chartHosts = document.querySelectorAll(
+      "#telemetryChart, #setpointChart, #actualChart, .chart-panel-body",
+    );
+    chartHosts.forEach((host) => observer.observe(host));
+  }
+}
+
+let chartResizeTimer = null;
+
+function requestChartResize() {
+  if (!chartsReady || !allCharts.length) {
+    return;
+  }
+
+  if (chartResizeTimer) {
+    window.cancelAnimationFrame(chartResizeTimer);
+  }
+  chartResizeTimer = window.requestAnimationFrame(() => {
+    allCharts.filter(Boolean).forEach((item) => item.resize());
+    window.requestAnimationFrame(() => {
+      allCharts.filter(Boolean).forEach((item) => item.resize());
+    });
+  });
+}
+
+function getAomasterWaveControls() {
+  return [
+    elements.waveformSelect,
+    elements.waveLow,
+    elements.waveHigh,
+    elements.wavePeriodMs,
+    elements.waveDuty,
+    elements.stepDwellMs,
+    elements.stepLoops,
+  ];
+}
+
+function populateOutputModeSelect() {
+  if (!elements.outputModeSelect) {
+    return;
+  }
+
+  const profile = getDeviceProfile(DEFAULT_DEVICE_ID, customConfig, modbusConfig);
+  const currentValue = state.mode;
+
+  elements.outputModeSelect.innerHTML = "";
+  Object.entries(profile.modes).forEach(([modeId, modeConfig]) => {
+    const option = document.createElement("option");
+    option.value = modeId;
+    option.textContent = modeConfig.label;
+    elements.outputModeSelect.append(option);
+  });
+
+  if (profile.modes[currentValue]) {
+    elements.outputModeSelect.value = currentValue;
+  } else {
+    state.mode = Object.keys(profile.modes)[0] ?? "current";
+    elements.outputModeSelect.value = state.mode;
+  }
+}
+
+function syncAomasterChartRanges() {
+  if (!setpointChart || !actualChart) {
+    return;
+  }
+
+  const config = getModeConfig(state.mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
+  const min =
+    state.waveform === "step"
+      ? Math.min(...state.stepSequence)
+      : state.waveform === "constant"
+        ? config.min
+        : Math.min(state.waveLow, state.waveHigh);
+  const max =
+    state.waveform === "step"
+      ? Math.max(...state.stepSequence)
+      : state.waveform === "constant"
+        ? config.max
+        : Math.max(state.waveLow, state.waveHigh);
+  setpointChart.setRange(min, max);
+  actualChart.setRange(min, max);
+}
+
+function clearAomasterCharts() {
+  setpointChart?.clear();
+  actualChart?.clear();
+  elements.setpointChartValue.textContent = "暂无设定";
+  elements.actualChartValue.textContent = "暂无数据";
+}
+
+function clearAllCharts() {
+  chart?.clear();
+  clearAomasterCharts();
+  elements.chartValue.textContent = "暂无数据";
+  requestChartResize();
 }
 
 function decimalPlaces(step) {
@@ -875,6 +1668,10 @@ function appendLog(kind, direction, payload) {
   content.textContent = payload;
 
   line.append(time, dir, content);
+  if (!elements.serialLog) {
+    return;
+  }
+
   elements.serialLog.append(line);
   elements.serialLog.scrollTop = elements.serialLog.scrollHeight;
 

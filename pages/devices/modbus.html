@@ -1,0 +1,115 @@
+<section id="modbusPage" class="device-page" data-page-id="modbus">
+  <section class="panel control-panel">
+    <div class="panel-heading split">
+      <div>
+        <h2>寄存器操作</h2>
+        <p data-field="deviceSummary">读取从站 1 保持寄存器。</p>
+      </div>
+      <span data-field="driverState" class="state-pill">Modbus RTU</span>
+    </div>
+
+    <div class="setpoint-row" data-field="setpointRow">
+      <label class="range-label">
+        <span data-field="setpointLabel">写入值</span>
+        <strong data-field="setpointReadout">0</strong>
+      </label>
+      <input data-field="setpointSlider" type="range" min="0" max="65535" step="1" value="0" />
+      <div class="numeric-entry">
+        <input data-field="setpointInput" type="number" min="0" max="65535" step="1" value="0" />
+        <span data-field="setpointUnit">值</span>
+      </div>
+    </div>
+
+    <div class="preset-row" data-field="presetRow" aria-label="快速设定">
+      <button type="button" data-preset="min">最小</button>
+      <button type="button" data-preset="mid">中点</button>
+      <button type="button" data-preset="max">最大</button>
+    </div>
+
+    <div class="command-preview">
+      <div>
+        <span>驱动命令预览</span>
+        <code data-field="protocolPreview">01 03 00 00 ...</code>
+      </div>
+      <button data-field="sendDriverCommand" type="button" disabled>读取寄存器</button>
+    </div>
+  </section>
+
+  <section class="panel custom-panel">
+    <div class="panel-heading split">
+      <div>
+        <h2>通讯参数</h2>
+        <p>配置从站、功能码、地址、数据类型与轮询间隔。</p>
+      </div>
+      <div class="panel-actions">
+        <button id="resetModbusConfig" class="ghost-button" type="button">恢复默认</button>
+        <button id="saveModbusConfig" type="button">保存</button>
+      </div>
+    </div>
+    <div class="config-grid compact">
+      <label>
+        从站地址
+        <input id="modbusSlaveId" type="number" min="1" max="247" step="1" value="1" />
+      </label>
+      <label>
+        功能码
+        <select id="modbusFunctionCode">
+          <option value="3" selected>03 读保持寄存器</option>
+          <option value="4">04 读输入寄存器</option>
+          <option value="6">06 写单寄存器</option>
+          <option value="16">16 写多寄存器</option>
+        </select>
+      </label>
+      <label>
+        起始地址
+        <input id="modbusAddress" type="number" min="0" max="65535" step="1" value="0" />
+      </label>
+      <label>
+        寄存器数量
+        <input id="modbusQuantity" type="number" min="1" max="125" step="1" value="1" />
+      </label>
+    </div>
+    <div class="config-grid compact">
+      <label>
+        数据类型
+        <select id="modbusDataType">
+          <option value="uint16" selected>UInt16</option>
+          <option value="int16">Int16</option>
+          <option value="float32">Float32</option>
+        </select>
+      </label>
+      <label>
+        字节序
+        <select id="modbusByteOrder">
+          <option value="AB" selected>AB / ABCD</option>
+          <option value="BA">BA</option>
+          <option value="DCBA">DCBA</option>
+          <option value="BADC">BADC</option>
+          <option value="CDAB">CDAB</option>
+        </select>
+      </label>
+      <label>
+        比例
+        <input id="modbusScale" type="number" step="0.000001" value="1" />
+      </label>
+      <label>
+        偏移
+        <input id="modbusOffset" type="number" step="0.000001" value="0" />
+      </label>
+    </div>
+    <div class="config-grid">
+      <label>
+        字段名
+        <input id="modbusFieldName" type="text" value="寄存器值" />
+      </label>
+      <label>
+        单位
+        <input id="modbusUnit" type="text" placeholder="例如：℃、bar" />
+      </label>
+      <label>
+        轮询间隔 (ms)
+        <input id="modbusPollIntervalMs" type="number" min="0" step="100" value="0" />
+      </label>
+    </div>
+  </section>
+</section>

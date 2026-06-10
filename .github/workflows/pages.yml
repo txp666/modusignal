@@ -37,6 +37,8 @@ jobs:
           cp logo.ico _site/
           cp LICENSE.txt _site/
           cp -R src _site/
+          cp -R pages _site/
+          cp -R vendor _site/
           cp -R images _site/
           cp CNAME _site/
           touch _site/.nojekyll

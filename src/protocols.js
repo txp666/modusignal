@@ -1,5 +1,12 @@
 import { MODUSIGNAL_APP } from "./config.js";
-import { AOMASTER_DEVICE_ID, AOMASTER_PROFILE, createAOMasterSetOutputCommand, parseAOMasterTelemetry } from "./devices/aomaster.js";
+import {
+  AOMASTER_DEVICE_ID,
+  AOMASTER_PROFILE,
+  createAOMasterSetOutputCommand,
+  DEFAULT_AOMASTER_CONFIG,
+  normalizeAomasterConfig,
+  parseAOMasterTelemetry,
+} from "./devices/aomaster.js";
 import {
   createCustomProfile,
   createCustomSetOutputCommand,
@@ -22,10 +29,12 @@ const textEncoder = new TextEncoder();
 
 export {
   CUSTOM_DEVICE_ID,
+  DEFAULT_AOMASTER_CONFIG,
   DEFAULT_CUSTOM_CONFIG,
   DEFAULT_MODBUS_CONFIG,
   MODBUS_DEVICE_ID,
   MODUSIGNAL_APP,
+  normalizeAomasterConfig,
   normalizeCustomConfig,
   normalizeModbusConfig,
 };
@@ -94,6 +103,7 @@ export function createDeviceSetOutputCommand(
   state,
   customConfig = DEFAULT_CUSTOM_CONFIG,
   modbusConfig = DEFAULT_MODBUS_CONFIG,
+  aomasterConfig = DEFAULT_AOMASTER_CONFIG,
 ) {
   if (deviceId === CUSTOM_DEVICE_ID) {
     return createCustomSetOutputCommand(state, customConfig, {
@@ -108,7 +118,7 @@ export function createDeviceSetOutputCommand(
   }
 
   if (deviceId === AOMASTER_DEVICE_ID) {
-    return createAOMasterSetOutputCommand(state);
+    return createAOMasterSetOutputCommand(state, aomasterConfig, { bytesToHex });
   }
 
   return {
@@ -124,6 +134,8 @@ export function parseDeviceTelemetry(
   customConfig = DEFAULT_CUSTOM_CONFIG,
   modbusConfig = DEFAULT_MODBUS_CONFIG,
   bytes = null,
+  deviceState = null,
+  aomasterConfig = DEFAULT_AOMASTER_CONFIG,
 ) {
   if (deviceId === CUSTOM_DEVICE_ID) {
     return parseCustomTelemetry(text, customConfig, parseNumericTelemetry);
@@ -134,7 +146,7 @@ export function parseDeviceTelemetry(
   }
 
   if (deviceId === AOMASTER_DEVICE_ID) {
-    return parseAOMasterTelemetry(text, parseNumericTelemetry);
+    return parseAOMasterTelemetry(bytes, aomasterConfig, deviceState?.mode);
   }
 
   return null;

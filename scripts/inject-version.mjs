@@ -60,9 +60,32 @@ function replaceAssetVersion(content, version) {
 }
 
 function injectIntoTree(root, version) {
-  const indexPath = join(root, "index.html");
-  if (existsSync(indexPath)) {
-    writeFileSync(indexPath, replaceAssetVersion(readFileSync(indexPath, "utf8"), version));
+  const htmlFiles = [];
+
+  function walkHtmlFiles(dir) {
+    if (!existsSync(dir)) {
+      return;
+    }
+
+    for (const name of readdirSync(dir)) {
+      const filePath = join(dir, name);
+      const stats = statSync(filePath);
+
+      if (stats.isDirectory()) {
+        walkHtmlFiles(filePath);
+        continue;
+      }
+
+      if (name.endsWith(".html")) {
+        htmlFiles.push(filePath);
+      }
+    }
+  }
+
+  walkHtmlFiles(root);
+
+  for (const filePath of htmlFiles) {
+    writeFileSync(filePath, replaceAssetVersion(readFileSync(filePath, "utf8"), version));
   }
 
   const versionPath = join(root, "src", "version.js");

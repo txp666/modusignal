@@ -7,6 +7,9 @@ export class LiveChart {
     this.color = options.color ?? "#0f766e";
     this.gridColor = options.gridColor ?? "#d7dde4";
     this.textColor = options.textColor ?? "#687381";
+    this.emptyText = options.emptyText ?? "等待串口数据";
+    this.fixedMin = null;
+    this.fixedMax = null;
     this.draw();
   }
 
@@ -29,6 +32,25 @@ export class LiveChart {
     this.draw();
   }
 
+  setPoints(values) {
+    this.points = values.map((value, index) => ({
+      value,
+      time: index,
+    }));
+    this.draw();
+  }
+
+  setRange(min, max) {
+    if (Number.isFinite(min) && Number.isFinite(max) && min !== max) {
+      this.fixedMin = min;
+      this.fixedMax = max;
+    } else {
+      this.fixedMin = null;
+      this.fixedMax = null;
+    }
+    this.draw();
+  }
+
   draw() {
     const { canvas, ctx } = this;
     const width = canvas.width;
@@ -41,17 +63,17 @@ export class LiveChart {
 
     this.drawGrid(width, height, padding);
 
-    if (this.points.length < 2) {
+    if (this.points.length === 0) {
       ctx.fillStyle = this.textColor;
       ctx.font = "16px Segoe UI, Arial, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("等待串口数据", width / 2, height / 2);
+      ctx.fillText(this.emptyText, width / 2, height / 2);
       return;
     }
 
     const values = this.points.map((point) => point.value);
-    let min = Math.min(...values);
-    let max = Math.max(...values);
+    let min = this.fixedMin ?? Math.min(...values);
+    let max = this.fixedMax ?? Math.max(...values);
 
     if (min === max) {
       min -= 1;
@@ -60,6 +82,31 @@ export class LiveChart {
 
     const xStep = (width - padding * 2) / Math.max(this.maxPoints - 1, 1);
     const yScale = (height - padding * 2) / (max - min);
+
+    if (this.points.length === 1) {
+      const point = this.points[0];
+      const x = padding;
+      const y = height - padding - (point.value - min) * yScale;
+
+      ctx.strokeStyle = this.color;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(padding, y);
+      ctx.lineTo(width - padding, y);
+      ctx.stroke();
+
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = this.textColor;
+      ctx.font = "13px Segoe UI, Arial, sans-serif";
+      ctx.textAlign = "left";
+      ctx.fillText(max.toFixed(3), 8, padding + 4);
+      ctx.fillText(min.toFixed(3), 8, height - padding + 4);
+      return;
+    }
 
     ctx.strokeStyle = this.color;
     ctx.lineWidth = 3;
