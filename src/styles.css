@@ -56,8 +56,33 @@ button:disabled {
 .app-shell {
   display: grid;
   grid-template-columns: 18rem minmax(0, 1fr);
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto 1fr auto;
   min-height: 100vh;
+}
+
+.site-footer {
+  grid-column: 1 / -1;
+  padding: 0.85rem 1.25rem 1.1rem;
+  border-top: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.72);
+  text-align: center;
+}
+
+.site-footer p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.site-footer a {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  color: var(--accent-strong);
+  text-decoration: underline;
 }
 
 .topbar {

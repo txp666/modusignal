@@ -46,6 +46,8 @@ const elements = {
   newDeviceRequestLink: document.querySelector("#newDeviceRequestLink"),
   deviceRequestTemplate: document.querySelector("#deviceRequestTemplate"),
   copyRequestTemplate: document.querySelector("#copyRequestTemplate"),
+  footerCopyright: document.querySelector("#footerCopyright"),
+  footerLicenseLink: document.querySelector("#footerLicenseLink"),
   transportSelect: document.querySelector("#transportSelect"),
   transportFields: document.querySelector("#transportFields"),
   driverState: document.querySelector("#driverState"),
@@ -130,6 +132,9 @@ initialize();
 function initialize() {
   elements.githubLink.href = MODUSIGNAL_APP.githubUrl;
   elements.newDeviceRequestLink.href = MODUSIGNAL_APP.newDeviceRequestUrl;
+  renderFooterCopyright();
+  elements.footerLicenseLink.textContent = MODUSIGNAL_APP.licenseName;
+  elements.footerLicenseLink.href = MODUSIGNAL_APP.licenseUrl;
   populateCustomConfigForm(customConfig);
   populateModbusConfigForm(modbusConfig);
   populateTransportSelect();
@@ -836,6 +841,18 @@ function getCustomConfigControls() {
 function decimalPlaces(step) {
   const text = String(step);
   return Math.min(6, Math.max(0, text.includes(".") ? text.split(".")[1].length : 0));
+}
+
+function renderFooterCopyright() {
+  const year = new Date().getFullYear();
+  elements.footerCopyright.textContent = `© ${year} `;
+
+  const authorLink = document.createElement("a");
+  authorLink.href = MODUSIGNAL_APP.copyrightUrl;
+  authorLink.textContent = MODUSIGNAL_APP.copyrightHolder;
+  authorLink.target = "_blank";
+  authorLink.rel = "noreferrer";
+  elements.footerCopyright.append(authorLink);
 }
 
 function appendLog(kind, direction, payload) {

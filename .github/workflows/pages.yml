@@ -35,6 +35,7 @@ jobs:
           mkdir _site
           cp index.html _site/
           cp logo.ico _site/
+          cp LICENSE.txt _site/
           cp -R src _site/
           cp -R images _site/
           cp CNAME _site/
