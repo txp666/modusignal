@@ -1,6 +1,10 @@
+import { BaseTransport } from "./transport.js";
+
 const decoder = new TextDecoder();
 
-export class SerialSession extends EventTarget {
+export const SERIAL_TRANSPORT_ID = "serial";
+
+export class SerialTransport extends BaseTransport {
   constructor() {
     super();
     this.port = null;
@@ -19,7 +23,7 @@ export class SerialSession extends EventTarget {
   }
 
   async connect(options) {
-    if (!SerialSession.isSupported()) {
+    if (!SerialTransport.isSupported()) {
       throw new Error("当前浏览器不支持 Web Serial，请使用 Chrome 或 Edge 的 HTTPS 页面。");
     }
 
@@ -74,7 +78,7 @@ export class SerialSession extends EventTarget {
 
   async write(bytes) {
     if (!this.writer) {
-      throw new Error("串口未连接");
+      throw new Error("连接未建立");
     }
 
     await this.writer.write(bytes);
@@ -110,8 +114,44 @@ export class SerialSession extends EventTarget {
       this.reader = null;
     }
   }
-
-  emit(type, detail = {}) {
-    this.dispatchEvent(new CustomEvent(type, { detail }));
-  }
 }
+
+export const SERIAL_TRANSPORT = {
+  id: SERIAL_TRANSPORT_ID,
+  label: "串口 (Web Serial)",
+  requiresSecureContext: true,
+  isSupported: () => SerialTransport.isSupported(),
+  fields: [
+    {
+      key: "baudRate",
+      label: "波特率",
+      type: "select",
+      default: 115200,
+      options: [9600, 19200, 38400, 57600, 115200],
+    },
+    { key: "dataBits", label: "数据位", type: "select", default: 8, options: [7, 8] },
+    { key: "stopBits", label: "停止位", type: "select", default: 1, options: [1, 2] },
+    {
+      key: "parity",
+      label: "校验",
+      type: "select",
+      default: "none",
+      options: [
+        { value: "none", label: "None" },
+        { value: "even", label: "Even" },
+        { value: "odd", label: "Odd" },
+      ],
+    },
+    {
+      key: "flowControl",
+      label: "流控",
+      type: "select",
+      default: "none",
+      options: [
+        { value: "none", label: "None" },
+        { value: "hardware", label: "Hardware" },
+      ],
+    },
+  ],
+  createSession: () => new SerialTransport(),
+};

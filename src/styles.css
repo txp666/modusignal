@@ -88,20 +88,16 @@ button:disabled {
 }
 
 .brand-block {
-  gap: 0.8rem;
+  gap: 1rem;
   min-width: 0;
 }
 
-.brand-mark {
-  display: grid;
-  place-items: center;
-  width: 2.75rem;
-  height: 2.75rem;
-  border-radius: 0.5rem;
-  background: var(--text);
-  color: #fff;
-  font-weight: 800;
-  letter-spacing: 0;
+.brand-logo {
+  display: block;
+  flex: 0 0 auto;
+  height: 3.25rem;
+  width: auto;
+  max-width: min(100%, 20rem);
 }
 
 h1,
@@ -131,6 +127,11 @@ label {
 .brand-block p,
 .panel-heading p {
   font-size: 0.86rem;
+}
+
+.brand-block p {
+  padding-left: 0.15rem;
+  white-space: nowrap;
 }
 
 .topbar-actions {
@@ -481,23 +482,76 @@ button:focus-visible {
   font-size: 0.88rem;
 }
 
-.architecture-flow {
+.arch-diagram {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 0.5rem;
+  justify-items: center;
+  gap: 0.45rem;
   margin: 1rem 0;
 }
 
-.architecture-flow span {
+.arch-node {
   display: grid;
+  gap: 0.15rem;
   place-items: center;
-  min-height: 3rem;
+  text-align: center;
+  width: 100%;
+  max-width: 24rem;
+  padding: 0.6rem 0.8rem;
   border: 1px solid var(--line);
-  border-radius: 0.45rem;
+  border-radius: 0.5rem;
   background: var(--surface-muted);
   color: var(--text);
   font-weight: 800;
-  text-align: center;
+}
+
+.arch-node small {
+  font-weight: 600;
+  font-size: 0.74rem;
+  color: var(--muted);
+}
+
+.arch-core {
+  border-color: var(--blue);
+  background: var(--surface);
+}
+
+.arch-arrow {
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.arch-split {
+  display: flex;
+  justify-content: center;
+  gap: clamp(2rem, 28%, 9rem);
+}
+
+.arch-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+.arch-group {
+  display: grid;
+  justify-items: center;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  border: 1px dashed var(--line);
+  border-radius: 0.6rem;
+}
+
+.arch-group-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--blue);
+}
+
+.arch-group .arch-node {
+  max-width: none;
 }
 
 .request-template {
@@ -543,6 +597,19 @@ button:focus-visible {
   background: var(--text);
   color: #fff;
   font-weight: 800;
+  overflow: hidden;
+}
+
+.device-icon.has-image {
+  background: var(--surface-muted);
+  border: 1px solid var(--line);
+}
+
+.device-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .device-item.upcoming .device-icon {
@@ -752,8 +819,12 @@ code {
 
   .device-page.active,
   .home-grid,
-  .architecture-flow {
+  .arch-columns {
     grid-template-columns: 1fr;
+  }
+
+  .arch-split {
+    gap: 4rem;
   }
 
   .control-panel,

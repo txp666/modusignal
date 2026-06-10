@@ -1,5 +1,16 @@
 import { LiveChart } from "./chart.js";
-import { SerialSession } from "./serial.js";
+import {
+  createTransportSession,
+  DEFAULT_TRANSPORT_ID,
+  getTransportDescriptor,
+  listTransports,
+} from "./transports/registry.js";
+import {
+  describeModbusSummary,
+  getModbusMode,
+  resetModbusRxBuffer,
+} from "./devices/modbus-device.js";
+import { isReadFunctionCode } from "./modbus/modbus.js";
 import {
   buildManualPayload,
   bytesToHex,
@@ -7,38 +18,43 @@ import {
   CUSTOM_DEVICE_ID,
   DEFAULT_CUSTOM_CONFIG,
   DEFAULT_DEVICE_ID,
+  DEFAULT_MODBUS_CONFIG,
   getDeviceProfile,
   getModeConfig,
+  listDeviceLibrary,
+  MODBUS_DEVICE_ID,
   MODUSIGNAL_APP,
   normalizeCustomConfig,
+  normalizeModbusConfig,
   parseDeviceTelemetry,
   resolveLineEnding,
 } from "./protocols.js";
 
 const CUSTOM_CONFIG_STORAGE_KEY = "modusignal.customDevice.v1";
+const MODBUS_CONFIG_STORAGE_KEY = "modusignal.modbusDevice.v1";
 
 const elements = {
+  appShell: document.querySelector(".app-shell"),
   secureState: document.querySelector("#secureState"),
   connectButton: document.querySelector("#connectButton"),
   disconnectButton: document.querySelector("#disconnectButton"),
   connectionState: document.querySelector("#connectionState"),
+  deviceLibrary: document.querySelector("#deviceLibrary"),
   pages: [...document.querySelectorAll("[data-page-id]")],
-  pageTargets: [...document.querySelectorAll("[data-page-target]")],
-  deviceItems: [...document.querySelectorAll("[data-device-id]")],
   customDeviceNavName: document.querySelector("#customDeviceNavName"),
   githubLink: document.querySelector("#githubLink"),
   newDeviceRequestLink: document.querySelector("#newDeviceRequestLink"),
   deviceRequestTemplate: document.querySelector("#deviceRequestTemplate"),
   copyRequestTemplate: document.querySelector("#copyRequestTemplate"),
-  baudRate: document.querySelector("#baudRate"),
-  dataBits: document.querySelector("#dataBits"),
-  stopBits: document.querySelector("#stopBits"),
-  parity: document.querySelector("#parity"),
-  flowControl: document.querySelector("#flowControl"),
+  transportSelect: document.querySelector("#transportSelect"),
+  transportFields: document.querySelector("#transportFields"),
   driverState: document.querySelector("#driverState"),
   selectedDeviceSummary: document.querySelector("#selectedDeviceSummary"),
   aomasterIntroPanel: document.querySelector("#aomasterIntroPanel"),
+  modbusConfigPanel: document.querySelector("#modbusConfigPanel"),
   modeRow: document.querySelector("#modeRow"),
+  setpointRow: document.querySelector(".setpoint-row"),
+  presetRow: document.querySelector(".preset-row"),
   outputModes: [...document.querySelectorAll("input[name='outputMode']")],
   setpointLabel: document.querySelector("#setpointLabel"),
   setpointReadout: document.querySelector("#setpointReadout"),
@@ -71,6 +87,19 @@ const elements = {
   saveCustomConfig: document.querySelector("#saveCustomConfig"),
   resetCustomConfig: document.querySelector("#resetCustomConfig"),
   testCustomParser: document.querySelector("#testCustomParser"),
+  modbusSlaveId: document.querySelector("#modbusSlaveId"),
+  modbusFunctionCode: document.querySelector("#modbusFunctionCode"),
+  modbusAddress: document.querySelector("#modbusAddress"),
+  modbusQuantity: document.querySelector("#modbusQuantity"),
+  modbusDataType: document.querySelector("#modbusDataType"),
+  modbusByteOrder: document.querySelector("#modbusByteOrder"),
+  modbusScale: document.querySelector("#modbusScale"),
+  modbusOffset: document.querySelector("#modbusOffset"),
+  modbusFieldName: document.querySelector("#modbusFieldName"),
+  modbusUnit: document.querySelector("#modbusUnit"),
+  modbusPollIntervalMs: document.querySelector("#modbusPollIntervalMs"),
+  saveModbusConfig: document.querySelector("#saveModbusConfig"),
+  resetModbusConfig: document.querySelector("#resetModbusConfig"),
   telemetryChart: document.querySelector("#telemetryChart"),
   chartValue: document.querySelector("#chartValue"),
   clearChart: document.querySelector("#clearChart"),
@@ -82,13 +111,16 @@ const elements = {
   sendManual: document.querySelector("#sendManual"),
 };
 
-const session = new SerialSession();
 const chart = new LiveChart(elements.telemetryChart);
 let customConfig = loadCustomConfig();
+let modbusConfig = loadModbusConfig();
+let session = null;
+let modbusPollTimer = null;
 
 const state = {
   pageId: "home",
   deviceId: DEFAULT_DEVICE_ID,
+  transportId: DEFAULT_TRANSPORT_ID,
   mode: "current",
   setpoint: 12,
 };
@@ -99,17 +131,24 @@ function initialize() {
   elements.githubLink.href = MODUSIGNAL_APP.githubUrl;
   elements.newDeviceRequestLink.href = MODUSIGNAL_APP.newDeviceRequestUrl;
   populateCustomConfigForm(customConfig);
-  updateSecureState();
+  populateModbusConfigForm(modbusConfig);
+  populateTransportSelect();
+  renderDeviceLibrary();
+  setTransport(state.transportId);
   updatePageUi();
   updateDeviceUi();
-  updateConnectionUi(false);
   bindEvents();
-  appendLog("info", "系统", `${MODUSIGNAL_APP.name} 已就绪，当前设备：${getDeviceProfile(state.deviceId, customConfig).name}`);
+  appendLog(
+    "info",
+    "系统",
+    `${MODUSIGNAL_APP.name} 已就绪，当前设备：${getDeviceProfile(state.deviceId, customConfig, modbusConfig).name}`,
+  );
 }
 
 function bindEvents() {
-  elements.connectButton.addEventListener("click", connectSerial);
-  elements.disconnectButton.addEventListener("click", disconnectSerial);
+  elements.connectButton.addEventListener("click", connect);
+  elements.disconnectButton.addEventListener("click", disconnect);
+  elements.transportSelect.addEventListener("change", (event) => setTransport(event.target.value));
   elements.sendDriverCommand.addEventListener("click", sendDeviceCommand);
   elements.setpointSlider.addEventListener("input", (event) => updateSetpoint(Number(event.target.value)));
   elements.setpointInput.addEventListener("change", (event) => updateSetpoint(Number(event.target.value)));
@@ -124,21 +163,25 @@ function bindEvents() {
     elements.chartValue.textContent = "暂无数据";
   });
 
-  elements.pageTargets.forEach((target) => {
-    target.addEventListener("click", () => {
-      if (target.dataset.deviceId) {
-        selectDevice(target.dataset.deviceId);
-      } else {
-        navigateToPage(target.dataset.pageTarget);
-      }
-    });
+  elements.appShell.addEventListener("click", (event) => {
+    const target = event.target.closest("[data-page-target]");
+    if (!target) {
+      return;
+    }
+
+    if (target.dataset.deviceId) {
+      selectDevice(target.dataset.deviceId);
+      return;
+    }
+
+    navigateToPage(target.dataset.pageTarget);
   });
 
   elements.outputModes.forEach((input) => {
     input.addEventListener("change", () => {
       if (input.checked) {
         state.mode = input.value;
-        const config = getModeConfig(state.mode, state.deviceId, customConfig);
+        const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
         state.setpoint = config.presets.mid;
         updateDeviceUi();
       }
@@ -147,7 +190,7 @@ function bindEvents() {
 
   document.querySelectorAll("[data-preset]").forEach((button) => {
     button.addEventListener("click", () => {
-      const config = getModeConfig(state.mode, state.deviceId, customConfig);
+      const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
       updateSetpoint(config.presets[button.dataset.preset]);
     });
   });
@@ -161,47 +204,136 @@ function bindEvents() {
   elements.resetCustomConfig.addEventListener("click", resetCustomConfig);
   elements.testCustomParser.addEventListener("click", testCustomParser);
 
-  session.addEventListener("connected", () => {
+  getModbusConfigControls().forEach((control) => {
+    control.addEventListener("input", updateModbusDraftConfig);
+    control.addEventListener("change", updateModbusDraftConfig);
+  });
+
+  elements.saveModbusConfig.addEventListener("click", saveModbusConfig);
+  elements.resetModbusConfig.addEventListener("click", resetModbusConfig);
+}
+
+function bindSessionEvents(target) {
+  target.addEventListener("connected", () => {
     updateConnectionUi(true);
-    appendLog("info", "串口", "已连接");
+    updateModbusPolling();
+    appendLog("info", "连接", "已连接");
   });
 
-  session.addEventListener("disconnected", () => {
+  target.addEventListener("disconnected", () => {
+    stopModbusPolling();
+    resetModbusRxBuffer();
     updateConnectionUi(false);
-    appendLog("info", "串口", "已断开");
+    appendLog("info", "连接", "已断开");
   });
 
-  session.addEventListener("rx", (event) => {
+  target.addEventListener("rx", (event) => {
     const { bytes, text } = event.detail;
-    const display = text.trim() ? text : bytesToHex(bytes);
+    const display =
+      state.deviceId === MODBUS_DEVICE_ID ? bytesToHex(bytes) : text.trim() ? text : bytesToHex(bytes);
     appendLog("rx", "RX", display);
 
-    const telemetry = parseDeviceTelemetry(state.deviceId, text, customConfig);
+    const telemetry = parseDeviceTelemetry(state.deviceId, text, customConfig, modbusConfig, bytes);
     if (telemetry) {
       chart.add(telemetry.value);
       elements.chartValue.textContent = `${telemetry.fieldName} ${telemetry.value.toFixed(3)}${telemetry.unit ? ` ${telemetry.unit}` : ""}`;
     }
   });
 
-  session.addEventListener("tx", (event) => {
+  target.addEventListener("tx", (event) => {
     appendLog("tx", "TX", bytesToHex(event.detail.bytes));
   });
 
-  session.addEventListener("error", (event) => {
+  target.addEventListener("error", (event) => {
     appendLog("error", "错误", event.detail.error?.message ?? String(event.detail.error));
   });
 }
 
-function selectDevice(deviceId) {
-  state.deviceId = deviceId === CUSTOM_DEVICE_ID ? CUSTOM_DEVICE_ID : DEFAULT_DEVICE_ID;
-  state.pageId = state.deviceId;
+async function setTransport(transportId) {
+  if (session && session.connected) {
+    await session.disconnect().catch((error) => appendLog("error", "连接", error.message));
+  }
 
-  if (state.deviceId === CUSTOM_DEVICE_ID) {
+  state.transportId = getTransportDescriptor(transportId).id;
+  elements.transportSelect.value = state.transportId;
+  session = createTransportSession(state.transportId);
+  bindSessionEvents(session);
+  renderTransportFields();
+  updateSecureState();
+  updateConnectionUi(false);
+}
+
+function populateTransportSelect() {
+  elements.transportSelect.innerHTML = "";
+  listTransports().forEach((descriptor) => {
+    const option = document.createElement("option");
+    option.value = descriptor.id;
+    option.textContent = descriptor.label;
+    elements.transportSelect.append(option);
+  });
+  elements.transportSelect.value = state.transportId;
+}
+
+function renderTransportFields() {
+  const descriptor = getTransportDescriptor(state.transportId);
+  elements.transportFields.innerHTML = "";
+
+  descriptor.fields.forEach((field) => {
+    const label = document.createElement("label");
+    label.textContent = field.label;
+
+    const control = field.type === "select" ? document.createElement("select") : document.createElement("input");
+    control.dataset.fieldKey = field.key;
+    control.dataset.fieldType = typeof field.default === "number" ? "number" : "string";
+
+    if (field.type === "select") {
+      (field.options ?? []).forEach((option) => {
+        const value = typeof option === "object" ? option.value : option;
+        const text = typeof option === "object" ? option.label : String(option);
+        const el = document.createElement("option");
+        el.value = String(value);
+        el.textContent = text;
+        if (value === field.default) {
+          el.selected = true;
+        }
+        control.append(el);
+      });
+    } else {
+      control.type = field.type === "number" ? "number" : "text";
+      control.value = field.default ?? "";
+    }
+
+    label.append(control);
+    elements.transportFields.append(label);
+  });
+}
+
+function readTransportOptions() {
+  const options = {};
+  elements.transportFields.querySelectorAll("[data-field-key]").forEach((control) => {
+    const { fieldKey, fieldType } = control.dataset;
+    options[fieldKey] = fieldType === "number" ? Number(control.value) : control.value;
+  });
+  return options;
+}
+
+function selectDevice(deviceId) {
+  stopModbusPolling();
+  resetModbusRxBuffer();
+  state.deviceId = deviceId;
+  state.pageId = deviceId;
+
+  if (deviceId === CUSTOM_DEVICE_ID) {
     state.mode = "custom";
     state.setpoint = normalizeCustomConfig(customConfig).defaultValue;
+  } else if (deviceId === MODBUS_DEVICE_ID) {
+    const normalized = normalizeModbusConfig(modbusConfig);
+    state.mode = getModbusMode(normalized.functionCode);
+    const config = getModeConfig(state.mode, deviceId, customConfig, modbusConfig);
+    state.setpoint = config.presets.mid;
   } else {
     state.mode = document.querySelector("input[name='outputMode']:checked")?.value ?? "current";
-    const config = getModeConfig(state.mode, state.deviceId, customConfig);
+    const config = getModeConfig(state.mode, deviceId, customConfig, modbusConfig);
     state.setpoint = config.presets.mid;
   }
 
@@ -209,11 +341,12 @@ function selectDevice(deviceId) {
   elements.chartValue.textContent = "暂无数据";
   updatePageUi();
   updateDeviceUi();
-  appendLog("info", "设备", `已切换到 ${getDeviceProfile(state.deviceId, customConfig).name}`);
+  updateModbusPolling();
+  appendLog("info", "设备", `已切换到 ${getDeviceProfile(state.deviceId, customConfig, modbusConfig).name}`);
 }
 
 function navigateToPage(pageId) {
-  if (pageId === "aomaster" || pageId === CUSTOM_DEVICE_ID) {
+  if (pageId === DEFAULT_DEVICE_ID || pageId === CUSTOM_DEVICE_ID || pageId === MODBUS_DEVICE_ID) {
     selectDevice(pageId);
     return;
   }
@@ -224,42 +357,63 @@ function navigateToPage(pageId) {
 }
 
 function updateSecureState() {
-  const supported = SerialSession.isSupported();
+  const descriptor = getTransportDescriptor(state.transportId);
 
-  if (!window.isSecureContext) {
+  if (descriptor.requiresSecureContext && !window.isSecureContext) {
     elements.secureState.textContent = "需要 HTTPS 或 localhost";
     elements.secureState.classList.add("warning");
     elements.connectButton.disabled = true;
     return;
   }
 
-  if (!supported) {
-    elements.secureState.textContent = "浏览器不支持 Web Serial";
+  if (!descriptor.isSupported()) {
+    elements.secureState.textContent = `当前环境不支持${descriptor.label}`;
     elements.secureState.classList.add("warning");
     elements.connectButton.disabled = true;
     return;
   }
 
-  elements.secureState.textContent = "Web Serial 可用";
+  elements.secureState.textContent = `${descriptor.label} 可用`;
   elements.secureState.classList.remove("warning");
 }
 
-function updateDeviceUi() {
-  const profile = getDeviceProfile(state.deviceId, customConfig);
-  const isCustom = state.deviceId === CUSTOM_DEVICE_ID;
-  elements.customDeviceNavName.textContent = normalizeCustomConfig(customConfig).name;
-  elements.customConfigPanel.hidden = !isCustom;
-  elements.aomasterIntroPanel.hidden = isCustom;
-  elements.modeRow.hidden = isCustom;
-  elements.selectedDeviceSummary.textContent = isCustom
-    ? `当前选择 ${profile.name}；设定范围、发送模板和回包解析规则可在下方配置。`
-    : `当前选择 ${profile.name}；协议未定时，参数先记录在页面状态，可通过手动命令调试。`;
+function transportReady() {
+  const descriptor = getTransportDescriptor(state.transportId);
+  return descriptor.isSupported() && (!descriptor.requiresSecureContext || window.isSecureContext);
+}
 
-  elements.deviceItems.forEach((button) => {
+function updateDeviceUi() {
+  const profile = getDeviceProfile(state.deviceId, customConfig, modbusConfig);
+  const isCustom = state.deviceId === CUSTOM_DEVICE_ID;
+  const isModbus = state.deviceId === MODBUS_DEVICE_ID;
+  const isAomaster = state.deviceId === DEFAULT_DEVICE_ID;
+  const normalizedModbus = normalizeModbusConfig(modbusConfig);
+  const modbusIsRead = isModbus && isReadFunctionCode(normalizedModbus.functionCode);
+
+  if (elements.customDeviceNavName) {
+    elements.customDeviceNavName.textContent = normalizeCustomConfig(customConfig).name;
+  }
+
+  elements.customConfigPanel.hidden = !isCustom;
+  elements.modbusConfigPanel.hidden = !isModbus;
+  elements.aomasterIntroPanel.hidden = !isAomaster;
+  elements.modeRow.hidden = !isAomaster;
+  elements.setpointRow.hidden = modbusIsRead;
+  elements.presetRow.hidden = modbusIsRead;
+
+  if (isCustom) {
+    elements.selectedDeviceSummary.textContent = `当前选择 ${profile.name}；设定范围、发送模板和回包解析规则可在下方配置。`;
+  } else if (isModbus) {
+    elements.selectedDeviceSummary.textContent = `当前选择 Modbus RTU；${describeModbusSummary(modbusConfig)}。`;
+  } else {
+    elements.selectedDeviceSummary.textContent = `当前选择 ${profile.name}；协议未定时，参数先记录在页面状态，可通过手动命令调试。`;
+  }
+
+  document.querySelectorAll("[data-device-id]").forEach((button) => {
     button.classList.toggle("active", button.dataset.deviceId === state.deviceId && isDevicePageActive());
   });
 
-  if (!isCustom) {
+  if (isAomaster) {
     const selectedMode = elements.outputModes.find((input) => input.value === state.mode) ?? elements.outputModes[0];
     selectedMode.checked = true;
   }
@@ -274,7 +428,7 @@ function updatePageUi() {
     page.classList.toggle("active", page.dataset.pageId === activePageId);
   });
 
-  elements.pageTargets.forEach((target) => {
+  document.querySelectorAll("[data-page-target]").forEach((target) => {
     const targetPage = target.dataset.pageTarget;
     const isActive =
       targetPage === state.pageId ||
@@ -283,19 +437,62 @@ function updatePageUi() {
   });
 }
 
+function renderDeviceLibrary() {
+  elements.deviceLibrary.innerHTML = "";
+
+  listDeviceLibrary(customConfig).forEach((entry) => {
+    const button = document.createElement("button");
+    button.className = "device-item";
+    button.type = "button";
+    button.dataset.pageTarget = entry.pageTarget;
+    button.dataset.deviceId = entry.deviceId;
+
+    const icon = document.createElement("span");
+    icon.setAttribute("aria-hidden", "true");
+
+    if (entry.profile.image) {
+      icon.className = "device-icon has-image";
+      const image = document.createElement("img");
+      image.src = entry.profile.image;
+      image.alt = "";
+      icon.append(image);
+    } else {
+      icon.className = "device-icon";
+      icon.textContent = entry.profile.name.slice(0, 1).toUpperCase();
+    }
+
+    const text = document.createElement("span");
+    const title = document.createElement("strong");
+    title.textContent = entry.profile.name;
+
+    if (entry.deviceId === CUSTOM_DEVICE_ID) {
+      title.id = "customDeviceNavName";
+      elements.customDeviceNavName = title;
+    }
+
+    const subtitle = document.createElement("small");
+    subtitle.textContent =
+      entry.deviceId === CUSTOM_DEVICE_ID ? "模板发送 / 自定义解析" : entry.profile.type;
+
+    text.append(title, subtitle);
+    button.append(icon, text);
+    elements.deviceLibrary.append(button);
+  });
+}
+
 function isDevicePageActive() {
-  return state.pageId === DEFAULT_DEVICE_ID || state.pageId === CUSTOM_DEVICE_ID;
+  return [DEFAULT_DEVICE_ID, CUSTOM_DEVICE_ID, MODBUS_DEVICE_ID].includes(state.pageId);
 }
 
 function updateSetpoint(value) {
-  const config = getModeConfig(state.mode, state.deviceId, customConfig);
+  const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
   const bounded = Math.min(config.max, Math.max(config.min, value));
   state.setpoint = Number.isFinite(bounded) ? bounded : config.presets.mid;
   updateSetpointUi();
 }
 
 function updateSetpointUi() {
-  const config = getModeConfig(state.mode, state.deviceId, customConfig);
+  const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
   const formatted = state.setpoint.toFixed(decimalPlaces(config.step));
 
   elements.setpointLabel.textContent = config.label;
@@ -310,17 +507,29 @@ function updateSetpointUi() {
   elements.setpointInput.step = String(config.step);
   elements.setpointInput.value = formatted;
 
-  const command = createDeviceSetOutputCommand(state.deviceId, state, customConfig);
+  const command = createDeviceSetOutputCommand(state.deviceId, state, customConfig, modbusConfig);
   elements.protocolPreview.textContent = command.preview;
-  elements.sendDriverCommand.disabled = !command.supported || !session.connected;
+  elements.sendDriverCommand.disabled = !command.supported || !session?.connected;
+
+  if (state.deviceId === MODBUS_DEVICE_ID) {
+    const normalized = normalizeModbusConfig(modbusConfig);
+    const isRead = isReadFunctionCode(normalized.functionCode);
+    elements.sendDriverCommand.textContent = isRead ? "读取寄存器" : "写入寄存器";
+    elements.driverState.textContent = "Modbus RTU";
+    elements.driverState.classList.remove("warning");
+    return;
+  }
+
+  elements.sendDriverCommand.textContent = "发送设定";
   elements.driverState.textContent = command.supported ? "模板可发送" : "协议待配置";
   elements.driverState.classList.toggle("warning", !command.supported);
 }
 
 function updateConnectionUi(connected) {
-  elements.connectButton.disabled = connected || !window.isSecureContext || !SerialSession.isSupported();
+  elements.connectButton.disabled = connected || !transportReady();
   elements.disconnectButton.disabled = !connected;
   elements.sendManual.disabled = !connected;
+  elements.transportSelect.disabled = connected;
   elements.connectionState.textContent = connected ? "已连接" : "未连接";
   elements.connectionState.classList.toggle("connected", connected);
   updateSetpointUi();
@@ -331,7 +540,7 @@ function updateCustomDraftConfig() {
 
   if (state.deviceId === CUSTOM_DEVICE_ID) {
     state.mode = "custom";
-    const config = getModeConfig(state.mode, state.deviceId, customConfig);
+    const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
     state.setpoint = Math.min(config.max, Math.max(config.min, state.setpoint));
   }
 
@@ -383,28 +592,21 @@ async function copyRequestTemplate() {
   }
 }
 
-async function connectSerial() {
+async function connect() {
   try {
-    const options = {
-      baudRate: Number(elements.baudRate.value),
-      dataBits: Number(elements.dataBits.value),
-      stopBits: Number(elements.stopBits.value),
-      parity: elements.parity.value,
-      flowControl: elements.flowControl.value,
-    };
-    await session.connect(options);
+    await session.connect(readTransportOptions());
   } catch (error) {
     appendLog("error", "连接", error.message);
   }
 }
 
-async function disconnectSerial() {
+async function disconnect() {
   await session.disconnect();
 }
 
 async function sendDeviceCommand() {
   try {
-    const command = createDeviceSetOutputCommand(state.deviceId, state, customConfig);
+    const command = createDeviceSetOutputCommand(state.deviceId, state, customConfig, modbusConfig);
     if (!command.supported || !command.bytes) {
       appendLog("error", "发送", command.preview || "当前设备没有可发送的驱动命令");
       return;
@@ -486,6 +688,126 @@ function populateCustomConfigForm(config) {
   elements.customParserScale.value = String(normalized.parser.scale);
   elements.customParserOffset.value = String(normalized.parser.offset);
   elements.customParserPreview.textContent = "等待测试";
+}
+
+function stopModbusPolling() {
+  if (modbusPollTimer) {
+    clearInterval(modbusPollTimer);
+    modbusPollTimer = null;
+  }
+}
+
+function updateModbusPolling() {
+  stopModbusPolling();
+
+  const normalized = normalizeModbusConfig(modbusConfig);
+  if (state.deviceId !== MODBUS_DEVICE_ID || !session?.connected) {
+    return;
+  }
+
+  if (!isReadFunctionCode(normalized.functionCode) || normalized.pollIntervalMs <= 0) {
+    return;
+  }
+
+  modbusPollTimer = window.setInterval(() => {
+    sendDeviceCommand().catch((error) => appendLog("error", "Modbus", error.message));
+  }, normalized.pollIntervalMs);
+}
+
+function updateModbusDraftConfig() {
+  modbusConfig = readModbusConfigForm();
+
+  if (state.deviceId === MODBUS_DEVICE_ID) {
+    const normalized = normalizeModbusConfig(modbusConfig);
+    state.mode = getModbusMode(normalized.functionCode);
+    const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
+    state.setpoint = Math.min(config.max, Math.max(config.min, state.setpoint));
+    resetModbusRxBuffer();
+  }
+
+  updateDeviceUi();
+  updateModbusPolling();
+}
+
+function saveModbusConfig() {
+  modbusConfig = readModbusConfigForm();
+  localStorage.setItem(MODBUS_CONFIG_STORAGE_KEY, JSON.stringify(modbusConfig));
+  populateModbusConfigForm(modbusConfig);
+  updateDeviceUi();
+  updateModbusPolling();
+  appendLog("info", "设备", "Modbus 配置已保存");
+}
+
+function resetModbusConfig() {
+  modbusConfig = normalizeModbusConfig(DEFAULT_MODBUS_CONFIG);
+  localStorage.setItem(MODBUS_CONFIG_STORAGE_KEY, JSON.stringify(modbusConfig));
+  populateModbusConfigForm(modbusConfig);
+  resetModbusRxBuffer();
+
+  if (state.deviceId === MODBUS_DEVICE_ID) {
+    state.mode = getModbusMode(modbusConfig.functionCode);
+    state.setpoint = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig).presets.mid;
+  }
+
+  updateDeviceUi();
+  updateModbusPolling();
+  appendLog("info", "设备", "Modbus 配置已恢复默认");
+}
+
+function loadModbusConfig() {
+  try {
+    const saved = localStorage.getItem(MODBUS_CONFIG_STORAGE_KEY);
+    return normalizeModbusConfig(saved ? JSON.parse(saved) : DEFAULT_MODBUS_CONFIG);
+  } catch {
+    return normalizeModbusConfig(DEFAULT_MODBUS_CONFIG);
+  }
+}
+
+function readModbusConfigForm() {
+  return normalizeModbusConfig({
+    slaveId: elements.modbusSlaveId.value,
+    functionCode: elements.modbusFunctionCode.value,
+    address: elements.modbusAddress.value,
+    quantity: elements.modbusQuantity.value,
+    dataType: elements.modbusDataType.value,
+    byteOrder: elements.modbusByteOrder.value,
+    scale: elements.modbusScale.value,
+    offset: elements.modbusOffset.value,
+    fieldName: elements.modbusFieldName.value,
+    unit: elements.modbusUnit.value,
+    pollIntervalMs: elements.modbusPollIntervalMs.value,
+  });
+}
+
+function populateModbusConfigForm(config) {
+  const normalized = normalizeModbusConfig(config);
+  elements.modbusSlaveId.value = String(normalized.slaveId);
+  elements.modbusFunctionCode.value = String(normalized.functionCode);
+  elements.modbusAddress.value = String(normalized.address);
+  elements.modbusQuantity.value = String(normalized.quantity);
+  elements.modbusDataType.value = normalized.dataType;
+  elements.modbusByteOrder.value = normalized.byteOrder;
+  elements.modbusScale.value = String(normalized.scale);
+  elements.modbusOffset.value = String(normalized.offset);
+  elements.modbusFieldName.value = normalized.fieldName;
+  elements.modbusUnit.value = normalized.unit;
+  elements.modbusPollIntervalMs.value = String(normalized.pollIntervalMs);
+}
+
+function getModbusConfigControls() {
+  return [
+    elements.modbusSlaveId,
+    elements.modbusFunctionCode,
+    elements.modbusAddress,
+    elements.modbusQuantity,
+    elements.modbusDataType,
+    elements.modbusByteOrder,
+    elements.modbusScale,
+    elements.modbusOffset,
+    elements.modbusFieldName,
+    elements.modbusUnit,
+    elements.modbusPollIntervalMs,
+  ];
 }
 
 function getCustomConfigControls() {

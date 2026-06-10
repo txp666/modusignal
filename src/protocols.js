@@ -8,37 +8,103 @@ import {
   normalizeCustomConfig,
   parseCustomTelemetry,
 } from "./devices/custom-device.js";
+import {
+  createModbusProfile,
+  createModbusSetOutputCommand,
+  DEFAULT_MODBUS_CONFIG,
+  MODBUS_DEVICE_ID,
+  MODBUS_PROFILE,
+  normalizeModbusConfig,
+  parseModbusTelemetry,
+} from "./devices/modbus-device.js";
 
 const textEncoder = new TextEncoder();
 
-export { CUSTOM_DEVICE_ID, DEFAULT_CUSTOM_CONFIG, MODUSIGNAL_APP, normalizeCustomConfig };
+export {
+  CUSTOM_DEVICE_ID,
+  DEFAULT_CUSTOM_CONFIG,
+  DEFAULT_MODBUS_CONFIG,
+  MODBUS_DEVICE_ID,
+  MODUSIGNAL_APP,
+  normalizeCustomConfig,
+  normalizeModbusConfig,
+};
 
 export const DEFAULT_DEVICE_ID = AOMASTER_DEVICE_ID;
 
 export const DEVICE_PROFILES = {
   [AOMASTER_DEVICE_ID]: AOMASTER_PROFILE,
+  [MODBUS_DEVICE_ID]: MODBUS_PROFILE,
 };
 
-export function getDeviceProfile(deviceId = DEFAULT_DEVICE_ID, customConfig = DEFAULT_CUSTOM_CONFIG) {
+export function getDeviceProfile(
+  deviceId = DEFAULT_DEVICE_ID,
+  customConfig = DEFAULT_CUSTOM_CONFIG,
+  modbusConfig = DEFAULT_MODBUS_CONFIG,
+) {
   if (deviceId === CUSTOM_DEVICE_ID) {
     return createCustomProfile(customConfig);
+  }
+
+  if (deviceId === MODBUS_DEVICE_ID) {
+    return createModbusProfile(modbusConfig);
   }
 
   return DEVICE_PROFILES[deviceId] ?? DEVICE_PROFILES[DEFAULT_DEVICE_ID];
 }
 
-export function getModeConfig(mode, deviceId = DEFAULT_DEVICE_ID, customConfig = DEFAULT_CUSTOM_CONFIG) {
-  const profile = getDeviceProfile(deviceId, customConfig);
-  return profile.modes[mode] ?? profile.modes.custom ?? profile.modes.current;
+export function listDeviceLibrary(customConfig = DEFAULT_CUSTOM_CONFIG, modbusConfig = DEFAULT_MODBUS_CONFIG) {
+  const entries = [
+    ...Object.values(DEVICE_PROFILES).map((profile) => ({
+      deviceId: profile.id,
+      pageTarget: profile.id,
+      profile,
+    })),
+    {
+      deviceId: CUSTOM_DEVICE_ID,
+      pageTarget: CUSTOM_DEVICE_ID,
+      profile: createCustomProfile(customConfig),
+    },
+  ];
+
+  return entries.sort((left, right) => {
+    const leftHasImage = Boolean(left.profile.image);
+    const rightHasImage = Boolean(right.profile.image);
+
+    if (leftHasImage !== rightHasImage) {
+      return leftHasImage ? -1 : 1;
+    }
+
+    return left.profile.name.localeCompare(right.profile.name, "zh-CN");
+  });
 }
 
-export function createDeviceSetOutputCommand(deviceId, state, customConfig = DEFAULT_CUSTOM_CONFIG) {
+export function getModeConfig(
+  mode,
+  deviceId = DEFAULT_DEVICE_ID,
+  customConfig = DEFAULT_CUSTOM_CONFIG,
+  modbusConfig = DEFAULT_MODBUS_CONFIG,
+) {
+  const profile = getDeviceProfile(deviceId, customConfig, modbusConfig);
+  return profile.modes[mode] ?? profile.modes.custom ?? profile.modes.current ?? profile.modes.readHolding;
+}
+
+export function createDeviceSetOutputCommand(
+  deviceId,
+  state,
+  customConfig = DEFAULT_CUSTOM_CONFIG,
+  modbusConfig = DEFAULT_MODBUS_CONFIG,
+) {
   if (deviceId === CUSTOM_DEVICE_ID) {
     return createCustomSetOutputCommand(state, customConfig, {
       bytesToHex,
       parseHexPayload,
       resolveLineEnding,
     });
+  }
+
+  if (deviceId === MODBUS_DEVICE_ID) {
+    return createModbusSetOutputCommand(state, modbusConfig, { bytesToHex });
   }
 
   if (deviceId === AOMASTER_DEVICE_ID) {
@@ -52,9 +118,19 @@ export function createDeviceSetOutputCommand(deviceId, state, customConfig = DEF
   };
 }
 
-export function parseDeviceTelemetry(deviceId, text, customConfig = DEFAULT_CUSTOM_CONFIG) {
+export function parseDeviceTelemetry(
+  deviceId,
+  text,
+  customConfig = DEFAULT_CUSTOM_CONFIG,
+  modbusConfig = DEFAULT_MODBUS_CONFIG,
+  bytes = null,
+) {
   if (deviceId === CUSTOM_DEVICE_ID) {
     return parseCustomTelemetry(text, customConfig, parseNumericTelemetry);
+  }
+
+  if (deviceId === MODBUS_DEVICE_ID) {
+    return parseModbusTelemetry(bytes, modbusConfig);
   }
 
   if (deviceId === AOMASTER_DEVICE_ID) {

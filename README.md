@@ -1,19 +1,31 @@
-# modusignal 在线串口平台
+<p align="center">
+  <img src="./images/modusignal-logo.svg" alt="modusignal" width="480" />
+</p>
 
-modusignal 是一个基于浏览器 Web Serial API 的在线串口平台，用来通过网页连接使用者本地串口设备。AOMaster 只是当前内置的第一个设备 profile，面向 4-20mA / 0-10V 信号发生器。项目先保留协议扩展点，在通讯协议确定前提供手动 ASCII / HEX 收发、参数记录和曲线查看框架。
+<p align="center">在线设备调试平台（串口·TCP·MQTT）</p>
+
+# modusignal 在线设备调试平台
+
+modusignal 是一个浏览器端在线设备/信号调试平台，统一抽象多种传输方式（串口·TCP·MQTT），用来通过网页连接使用者的设备。**当前已实现串口（Web Serial），TCP / MQTT / WebSocket 为已留好的扩展点**。AOMaster 只是当前内置的第一个设备 profile，面向 4-20mA / 0-10V 信号发生器。项目先保留协议扩展点，在通讯协议确定前提供手动 ASCII / HEX 收发、参数记录和曲线查看框架。
 
 ## 当前功能
 
-- Web Serial 串口连接、断开、接收和发送
-- 常用串口参数配置：波特率、数据位、停止位、校验、流控
+- 统一传输抽象：连接、断开、接收和发送（已实现串口，其余传输为扩展点）
+- 连接参数面板：按所选传输的 descriptor 动态渲染（串口含波特率、数据位、停止位、校验、流控）
 - 多页面设备 UI：主页、AOMaster 页面、自定义设备页面、新设备请求页面
 - 设备库框架：当前内置 AOMaster 与自定义设备，后续设备放在 `src/devices/`
 - AOMaster 输出模式框架：4-20mA 与 0-10V
 - 自定义设备：可配置设备名、类型、设定范围、单位、发送模板和解析规则
 - 手动命令发送：ASCII / HEX，支持行尾选择
-- 串口日志：TX / RX / 系统 / 错误
+- 收发日志：TX / RX / 系统 / 错误
 - 实时曲线：按当前设备解析接收数据并绘制最近 120 个采样点
 - 协议驱动占位：后续可在 `src/protocols.js` 中补充 AOMaster 正式命令
+
+## 传输方式与扩展
+
+传输层与设备层正交，加一种传输不需要改设备驱动或页面逻辑：在 `src/transports/` 新建继承 `BaseTransport` 的 session 类并导出 descriptor，再到 `src/transports/registry.js` 注册即可（详见 `AI.md` 的「添加传输」）。
+
+浏览器能力边界：纯静态页面只能用 Web Serial、WebSocket、MQTT over WebSocket；原始 TCP/UDP 需自建 WS↔TCP 桥接或转桌面端（Tauri/Electron）；HTTPS 页面只能连 `wss://`。
 
 ## 自定义设备
 
@@ -34,7 +46,7 @@ HEX 模板：01 06 00 01 {value:0}
 
 ## 浏览器要求
 
-Web Serial 需要安全上下文：
+串口（Web Serial）需要安全上下文：
 
 - 线上使用 GitHub Pages 的 HTTPS 地址
 - 本地开发使用 `localhost`

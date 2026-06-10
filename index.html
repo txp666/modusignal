@@ -5,28 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="modusignal 在线串口平台，可通过浏览器连接本地串口设备，当前内置 AOMaster 4-20mA / 0-10V 信号发生器框架。"
+      content="modusignal 在线设备/信号调试平台，统一传输抽象（串口·TCP·MQTT），可通过浏览器连接本地设备，当前内置 AOMaster 4-20mA / 0-10V 信号发生器框架。"
     />
-    <title>modusignal 在线串口</title>
+    <title>modusignal 在线设备调试</title>
+    <link rel="icon" href="./images/modusignal-logo.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="./src/styles.css" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <span class="brand-mark" aria-hidden="true">MS</span>
-          <div>
-            <h1>modusignal</h1>
-            <p>在线串口平台</p>
-          </div>
+          <img class="brand-logo" src="./images/modusignal-logo.svg" alt="modusignal" width="1500" height="460" />
+          <p>在线设备调试平台（串口·TCP·MQTT）</p>
         </div>
         <div class="topbar-actions">
           <span id="secureState" class="state-pill">检测环境</span>
           <button id="connectButton" class="primary-button" type="button">
             <span aria-hidden="true">↔</span>
-            连接串口
+            连接
           </button>
-          <button id="disconnectButton" class="icon-button" type="button" disabled aria-label="断开串口" title="断开串口">
+          <button id="disconnectButton" class="icon-button" type="button" disabled aria-label="断开连接" title="断开连接">
             ⏻
           </button>
         </div>
@@ -58,67 +56,18 @@
             <h2>设备库</h2>
             <span id="connectionState" class="status-dot">未连接</span>
           </div>
-          <button class="device-item" type="button" data-page-target="aomaster" data-device-id="aomaster">
-            <span class="device-icon" aria-hidden="true">A</span>
-            <span>
-              <strong>AOMaster</strong>
-              <small>模拟量信号发生器</small>
-            </span>
-          </button>
-          <button class="device-item" type="button" data-page-target="custom" data-device-id="custom">
-            <span class="device-icon" aria-hidden="true">C</span>
-            <span>
-              <strong id="customDeviceNavName">自定义设备</strong>
-              <small>模板发送 / 自定义解析</small>
-            </span>
-          </button>
+          <div id="deviceLibrary" class="device-library"></div>
         </section>
 
         <section class="panel">
           <div class="panel-heading">
-            <h2>串口参数</h2>
+            <h2>连接参数</h2>
           </div>
           <label>
-            波特率
-            <select id="baudRate">
-              <option value="9600">9600</option>
-              <option value="19200">19200</option>
-              <option value="38400">38400</option>
-              <option value="57600">57600</option>
-              <option value="115200" selected>115200</option>
-            </select>
+            传输方式
+            <select id="transportSelect"></select>
           </label>
-          <div class="settings-grid">
-            <label>
-              数据位
-              <select id="dataBits">
-                <option value="7">7</option>
-                <option value="8" selected>8</option>
-              </select>
-            </label>
-            <label>
-              停止位
-              <select id="stopBits">
-                <option value="1" selected>1</option>
-                <option value="2">2</option>
-              </select>
-            </label>
-          </div>
-          <label>
-            校验
-            <select id="parity">
-              <option value="none" selected>None</option>
-              <option value="even">Even</option>
-              <option value="odd">Odd</option>
-            </select>
-          </label>
-          <label>
-            流控
-            <select id="flowControl">
-              <option value="none" selected>None</option>
-              <option value="hardware">Hardware</option>
-            </select>
-          </label>
+          <div id="transportFields" class="transport-fields"></div>
         </section>
       </aside>
 
@@ -127,8 +76,8 @@
           <div class="panel home-overview">
             <div class="panel-heading split">
               <div>
-                <h2>modusignal 在线串口</h2>
-                <p>通过浏览器连接本地串口设备，把设备驱动、调试收发和曲线查看放在一个在线工具里。</p>
+                <h2>modusignal 在线设备调试</h2>
+                <p>通过浏览器连接设备，统一传输抽象（串口·TCP·MQTT），把设备驱动、调试收发和曲线查看放在一个在线工具里。</p>
               </div>
               <div class="panel-actions">
                 <a id="githubLink" class="action-link" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
@@ -139,6 +88,10 @@
               <button class="home-card" type="button" data-page-target="aomaster" data-device-id="aomaster">
                 <strong>AOMaster</strong>
                 <span>4-20mA / 0-10V 信号发生器页面，保留正式协议接入点。</span>
+              </button>
+              <button class="home-card" type="button" data-page-target="modbus" data-device-id="modbus">
+                <strong>Modbus</strong>
+                <span>RTU 寄存器读写，支持轮询读取与曲线显示。</span>
               </button>
               <button class="home-card" type="button" data-page-target="custom" data-device-id="custom">
                 <strong>自定义设备</strong>
@@ -153,14 +106,53 @@
 
           <div class="panel architecture-card">
             <h2>当前架构</h2>
-            <div class="architecture-flow">
-              <span>页面</span>
-              <span>设备注册表</span>
-              <span>设备驱动</span>
-              <span>Web Serial</span>
-              <span>曲线/日志</span>
+            <div class="arch-diagram" role="img" aria-label="modusignal 架构框图：页面 UI 经 app.js 调度，分为正交的设备层与传输层，数据汇入曲线与日志">
+              <div class="arch-node arch-top">
+                页面 UI
+                <small>index.html</small>
+              </div>
+              <div class="arch-arrow">↑↓</div>
+              <div class="arch-node arch-core">
+                app.js 调度
+                <small>状态 · 路由 · 事件 · 日志/曲线联动</small>
+              </div>
+              <div class="arch-arrow arch-split">
+                <span>设备 ↓</span>
+                <span>传输 ↓</span>
+              </div>
+              <div class="arch-columns">
+                <div class="arch-group">
+                  <span class="arch-group-title">设备层</span>
+                  <div class="arch-node">
+                    设备注册表
+                    <small>protocols.js</small>
+                  </div>
+                  <div class="arch-arrow">↓</div>
+                  <div class="arch-node">
+                    设备驱动
+                    <small>devices/aomaster · custom</small>
+                  </div>
+                </div>
+                <div class="arch-group">
+                  <span class="arch-group-title">传输层</span>
+                  <div class="arch-node">
+                    传输注册表
+                    <small>transports/registry.js</small>
+                  </div>
+                  <div class="arch-arrow">↓</div>
+                  <div class="arch-node">
+                    串口 · TCP · MQTT
+                    <small>BaseTransport 实现</small>
+                  </div>
+                </div>
+              </div>
+              <div class="arch-arrow">解析 / 收发 ↓</div>
+              <div class="arch-node arch-bottom">
+                曲线 / 日志
+                <small>chart.js · 日志面板</small>
+              </div>
             </div>
-            <p>每个设备可以拥有自己的页面 UI，同时通过统一的 profile、命令构造和遥测解析接口接入。</p>
+            <p>设备层与传输层正交：设备只产出/解析字节，通过统一的 profile、命令构造和遥测解析接口接入；传输方式可在连接参数中切换。</p>
           </div>
         </section>
 
@@ -169,7 +161,7 @@
             <div class="panel-heading split">
               <div>
                 <h2>AOMaster 页面</h2>
-                <p>面向 4-20mA / 0-10V 模拟量信号发生器。当前协议未定，页面先提供输出框架、串口调试和曲线查看。</p>
+                <p>面向 4-20mA / 0-10V 模拟量信号发生器。当前协议未定，页面先提供输出框架、收发调试和曲线查看。</p>
               </div>
               <span class="state-pill warning">协议待补充</span>
             </div>
@@ -349,6 +341,87 @@
           </div>
           </section>
 
+          <section id="modbusConfigPanel" class="panel custom-panel" hidden>
+          <div class="panel-heading split">
+            <div>
+              <h2>Modbus RTU</h2>
+              <p>通过串口发送 Modbus RTU 帧，读取结果自动解码并进入曲线查看。</p>
+            </div>
+            <div class="panel-actions">
+              <button id="resetModbusConfig" class="ghost-button" type="button">恢复默认</button>
+              <button id="saveModbusConfig" type="button">保存</button>
+            </div>
+          </div>
+
+          <div class="config-grid compact">
+            <label>
+              从站地址
+              <input id="modbusSlaveId" type="number" min="1" max="247" step="1" value="1" />
+            </label>
+            <label>
+              功能码
+              <select id="modbusFunctionCode">
+                <option value="3" selected>03 读保持寄存器</option>
+                <option value="4">04 读输入寄存器</option>
+                <option value="6">06 写单寄存器</option>
+                <option value="16">16 写多寄存器</option>
+              </select>
+            </label>
+            <label>
+              起始地址
+              <input id="modbusAddress" type="number" min="0" max="65535" step="1" value="0" />
+            </label>
+            <label>
+              寄存器数量
+              <input id="modbusQuantity" type="number" min="1" max="125" step="1" value="1" />
+            </label>
+          </div>
+
+          <div class="config-grid compact">
+            <label>
+              数据类型
+              <select id="modbusDataType">
+                <option value="uint16" selected>UInt16</option>
+                <option value="int16">Int16</option>
+                <option value="float32">Float32</option>
+              </select>
+            </label>
+            <label>
+              字节序
+              <select id="modbusByteOrder">
+                <option value="AB" selected>AB / ABCD</option>
+                <option value="BA">BA</option>
+                <option value="DCBA">DCBA</option>
+                <option value="BADC">BADC</option>
+                <option value="CDAB">CDAB</option>
+              </select>
+            </label>
+            <label>
+              比例
+              <input id="modbusScale" type="number" step="0.000001" value="1" />
+            </label>
+            <label>
+              偏移
+              <input id="modbusOffset" type="number" step="0.000001" value="0" />
+            </label>
+          </div>
+
+          <div class="config-grid">
+            <label>
+              字段名
+              <input id="modbusFieldName" type="text" value="寄存器值" />
+            </label>
+            <label>
+              单位
+              <input id="modbusUnit" type="text" placeholder="例如：℃、bar" />
+            </label>
+            <label>
+              轮询间隔 (ms)
+              <input id="modbusPollIntervalMs" type="number" min="0" step="100" value="0" />
+            </label>
+          </div>
+          </section>
+
           <section class="panel chart-panel">
           <div class="panel-heading split">
             <div>
@@ -367,7 +440,7 @@
           <section class="panel console-panel">
           <div class="panel-heading split">
             <div>
-              <h2>串口收发</h2>
+              <h2>收发调试</h2>
               <p>支持 ASCII 与 HEX，适合在设备协议确认前做调试。</p>
             </div>
             <button id="clearLog" class="icon-button" type="button" aria-label="清空日志" title="清空日志">⌧</button>
@@ -405,7 +478,7 @@
             <div class="panel-heading split">
               <div>
                 <h2>新增设备请求</h2>
-                <p>提交新设备前，请尽量准备协议、串口参数、典型命令、回包样例和期望页面 UI。</p>
+                <p>提交新设备前，请尽量准备协议、连接/串口参数、典型命令、回包样例和期望页面 UI。</p>
               </div>
               <a id="newDeviceRequestLink" class="action-link" href="https://github.com/" target="_blank" rel="noreferrer">去 GitHub 提交</a>
             </div>
@@ -414,7 +487,8 @@
                 请求模板
                 <textarea id="deviceRequestTemplate" readonly>设备名称：
 设备类型：
-默认串口参数：
+传输方式（串口/TCP/MQTT 等）：
+默认连接参数：
 需要的页面控件：
 发送命令示例：
 回包示例：

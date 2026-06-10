@@ -4,6 +4,7 @@ export const AOMASTER_PROFILE = {
   id: AOMASTER_DEVICE_ID,
   name: "AOMaster",
   type: "模拟量信号发生器",
+  image: "./images/AOMaster.png",
   protocolStatus: "pending",
   modes: {
     current: {
