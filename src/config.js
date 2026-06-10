@@ -1,3 +1,5 @@
+import { ASSET_VERSION } from "./version.js";
+
 export const MODUSIGNAL_APP = {
   name: "modusignal",
   description: "在线串口平台",
@@ -7,4 +9,5 @@ export const MODUSIGNAL_APP = {
   copyrightUrl: "https://space.bilibili.com/509795217",
   licenseName: "Apache License 2.0",
   licenseUrl: "./LICENSE.txt",
+  assetVersion: ASSET_VERSION,
 };

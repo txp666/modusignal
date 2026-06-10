@@ -1,3 +1,4 @@
+import { assetUrl } from "./asset-url.js";
 import { LiveChart } from "./chart.js";
 import {
   createTransportSession,
@@ -48,6 +49,7 @@ const elements = {
   copyRequestTemplate: document.querySelector("#copyRequestTemplate"),
   footerCopyright: document.querySelector("#footerCopyright"),
   footerLicenseLink: document.querySelector("#footerLicenseLink"),
+  footerVersion: document.querySelector("#footerVersion"),
   transportSelect: document.querySelector("#transportSelect"),
   transportFields: document.querySelector("#transportFields"),
   driverState: document.querySelector("#driverState"),
@@ -135,6 +137,7 @@ function initialize() {
   renderFooterCopyright();
   elements.footerLicenseLink.textContent = MODUSIGNAL_APP.licenseName;
   elements.footerLicenseLink.href = MODUSIGNAL_APP.licenseUrl;
+  elements.footerVersion.textContent = MODUSIGNAL_APP.assetVersion;
   populateCustomConfigForm(customConfig);
   populateModbusConfigForm(modbusConfig);
   populateTransportSelect();
@@ -458,7 +461,7 @@ function renderDeviceLibrary() {
     if (entry.profile.image) {
       icon.className = "device-icon has-image";
       const image = document.createElement("img");
-      image.src = entry.profile.image;
+      image.src = assetUrl(entry.profile.image);
       image.alt = "";
       icon.append(image);
     } else {
