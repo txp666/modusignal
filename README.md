@@ -66,24 +66,6 @@ python -m http.server 4173
 http://localhost:4173
 ```
 
-## GitHub Pages 部署
-
-仓库已包含 `.github/workflows/pages.yml`。推送到 `main` 分支后，GitHub Actions 会自动发布静态站点。
-
-首次使用时需要在 GitHub 仓库中打开：
-
-```text
-Settings -> Pages -> Build and deployment -> Source -> GitHub Actions
-```
-
-项目已包含 `CNAME`，自定义域名为：
-
-```text
-modusignal.cn
-```
-
-域名 DNS 需要按 GitHub Pages 要求指向 GitHub Pages。项目内 GitHub 链接配置在 `src/config.js`。
-
 ## 设备与协议接入点
 
 设备驱动放在 `src/devices/`，统一由 `src/protocols.js` 注册和分发。AOMaster 协议确定后，优先补充：
