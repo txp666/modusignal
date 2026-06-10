@@ -1,47 +1,67 @@
+import { MODUSIGNAL_APP } from "./config.js";
+import { AOMASTER_DEVICE_ID, AOMASTER_PROFILE, createAOMasterSetOutputCommand, parseAOMasterTelemetry } from "./devices/aomaster.js";
+import {
+  createCustomProfile,
+  createCustomSetOutputCommand,
+  CUSTOM_DEVICE_ID,
+  DEFAULT_CUSTOM_CONFIG,
+  normalizeCustomConfig,
+  parseCustomTelemetry,
+} from "./devices/custom-device.js";
+
 const textEncoder = new TextEncoder();
 
-export const AOMASTER_PROFILE = {
-  id: "aomaster",
-  name: "AOMaster",
-  protocolStatus: "pending",
-  modes: {
-    current: {
-      label: "电流设定",
-      unit: "mA",
-      min: 4,
-      max: 20,
-      step: 0.001,
-      presets: {
-        min: 4,
-        mid: 12,
-        max: 20,
-      },
-    },
-    voltage: {
-      label: "电压设定",
-      unit: "V",
-      min: 0,
-      max: 10,
-      step: 0.001,
-      presets: {
-        min: 0,
-        mid: 5,
-        max: 10,
-      },
-    },
-  },
+export { CUSTOM_DEVICE_ID, DEFAULT_CUSTOM_CONFIG, MODUSIGNAL_APP, normalizeCustomConfig };
+
+export const DEFAULT_DEVICE_ID = AOMASTER_DEVICE_ID;
+
+export const DEVICE_PROFILES = {
+  [AOMASTER_DEVICE_ID]: AOMASTER_PROFILE,
 };
 
-export function getModeConfig(mode) {
-  return AOMASTER_PROFILE.modes[mode] ?? AOMASTER_PROFILE.modes.current;
+export function getDeviceProfile(deviceId = DEFAULT_DEVICE_ID, customConfig = DEFAULT_CUSTOM_CONFIG) {
+  if (deviceId === CUSTOM_DEVICE_ID) {
+    return createCustomProfile(customConfig);
+  }
+
+  return DEVICE_PROFILES[deviceId] ?? DEVICE_PROFILES[DEFAULT_DEVICE_ID];
 }
 
-export function createAOMasterSetOutputCommand() {
+export function getModeConfig(mode, deviceId = DEFAULT_DEVICE_ID, customConfig = DEFAULT_CUSTOM_CONFIG) {
+  const profile = getDeviceProfile(deviceId, customConfig);
+  return profile.modes[mode] ?? profile.modes.custom ?? profile.modes.current;
+}
+
+export function createDeviceSetOutputCommand(deviceId, state, customConfig = DEFAULT_CUSTOM_CONFIG) {
+  if (deviceId === CUSTOM_DEVICE_ID) {
+    return createCustomSetOutputCommand(state, customConfig, {
+      bytesToHex,
+      parseHexPayload,
+      resolveLineEnding,
+    });
+  }
+
+  if (deviceId === AOMASTER_DEVICE_ID) {
+    return createAOMasterSetOutputCommand(state);
+  }
+
   return {
     supported: false,
-    preview: "等待协议定义",
+    preview: "未选择可发送的设备驱动",
     bytes: null,
   };
+}
+
+export function parseDeviceTelemetry(deviceId, text, customConfig = DEFAULT_CUSTOM_CONFIG) {
+  if (deviceId === CUSTOM_DEVICE_ID) {
+    return parseCustomTelemetry(text, customConfig, parseNumericTelemetry);
+  }
+
+  if (deviceId === AOMASTER_DEVICE_ID) {
+    return parseAOMasterTelemetry(text, parseNumericTelemetry);
+  }
+
+  return null;
 }
 
 export function parseNumericTelemetry(text) {
@@ -88,4 +108,16 @@ export function parseHexPayload(input) {
 
 export function bytesToHex(bytes) {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0").toUpperCase()).join(" ");
+}
+
+export function resolveLineEnding(value) {
+  if (value === "\\n") {
+    return "\n";
+  }
+
+  if (value === "\\r\\n") {
+    return "\r\n";
+  }
+
+  return "";
 }

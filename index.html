@@ -5,19 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="AOMaster 在线串口工作台，面向 4-20mA 与 0-10V 信号发生器的浏览器端通讯框架。"
+      content="modusignal 在线串口平台，可通过浏览器连接本地串口设备，当前内置 AOMaster 4-20mA / 0-10V 信号发生器框架。"
     />
-    <title>AOMaster 串口工作台</title>
+    <title>modusignal 在线串口</title>
     <link rel="stylesheet" href="./src/styles.css" />
   </head>
   <body>
     <div class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <span class="brand-mark" aria-hidden="true">AO</span>
+          <span class="brand-mark" aria-hidden="true">MS</span>
           <div>
-            <h1>AOMaster</h1>
-            <p>在线串口工作台</p>
+            <h1>modusignal</h1>
+            <p>在线串口平台</p>
           </div>
         </div>
         <div class="topbar-actions">
@@ -35,21 +35,41 @@
       <aside class="sidebar" aria-label="设备导航">
         <section class="panel device-panel">
           <div class="panel-heading">
-            <h2>设备</h2>
+            <h2>项目</h2>
+          </div>
+          <button class="device-item active" type="button" data-page-target="home">
+            <span class="device-icon" aria-hidden="true">M</span>
+            <span>
+              <strong>主页</strong>
+              <small>项目概览 / GitHub / 请求设备</small>
+            </span>
+          </button>
+          <button class="device-item" type="button" data-page-target="request">
+            <span class="device-icon" aria-hidden="true">R</span>
+            <span>
+              <strong>请求新设备</strong>
+              <small>提交协议和 UI 需求</small>
+            </span>
+          </button>
+        </section>
+
+        <section class="panel device-panel">
+          <div class="panel-heading">
+            <h2>设备库</h2>
             <span id="connectionState" class="status-dot">未连接</span>
           </div>
-          <button class="device-item active" type="button">
+          <button class="device-item" type="button" data-page-target="aomaster" data-device-id="aomaster">
             <span class="device-icon" aria-hidden="true">A</span>
             <span>
               <strong>AOMaster</strong>
-              <small>4-20mA / 0-10V 输出</small>
+              <small>模拟量信号发生器</small>
             </span>
           </button>
-          <button class="device-item upcoming" type="button" disabled>
-            <span class="device-icon" aria-hidden="true">+</span>
+          <button class="device-item" type="button" data-page-target="custom" data-device-id="custom">
+            <span class="device-icon" aria-hidden="true">C</span>
             <span>
-              <strong>更多设备</strong>
-              <small>预留驱动接口</small>
+              <strong id="customDeviceNavName">自定义设备</strong>
+              <small>模板发送 / 自定义解析</small>
             </span>
           </button>
         </section>
@@ -103,16 +123,71 @@
       </aside>
 
       <main class="workspace">
-        <section class="panel control-panel">
+        <section id="homePage" class="page home-page active" data-page-id="home">
+          <div class="panel home-overview">
+            <div class="panel-heading split">
+              <div>
+                <h2>modusignal 在线串口</h2>
+                <p>通过浏览器连接本地串口设备，把设备驱动、调试收发和曲线查看放在一个在线工具里。</p>
+              </div>
+              <div class="panel-actions">
+                <a id="githubLink" class="action-link" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
+                <button class="ghost-button" type="button" data-page-target="request">请求新设备</button>
+              </div>
+            </div>
+            <div class="home-grid">
+              <button class="home-card" type="button" data-page-target="aomaster" data-device-id="aomaster">
+                <strong>AOMaster</strong>
+                <span>4-20mA / 0-10V 信号发生器页面，保留正式协议接入点。</span>
+              </button>
+              <button class="home-card" type="button" data-page-target="custom" data-device-id="custom">
+                <strong>自定义设备</strong>
+                <span>用模板发送和解析规则快速适配未知串口设备。</span>
+              </button>
+              <button class="home-card" type="button" data-page-target="request">
+                <strong>新增设备请求</strong>
+                <span>整理设备资料、协议、截图和期望 UI，方便贡献设备驱动。</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="panel architecture-card">
+            <h2>当前架构</h2>
+            <div class="architecture-flow">
+              <span>页面</span>
+              <span>设备注册表</span>
+              <span>设备驱动</span>
+              <span>Web Serial</span>
+              <span>曲线/日志</span>
+            </div>
+            <p>每个设备可以拥有自己的页面 UI，同时通过统一的 profile、命令构造和遥测解析接口接入。</p>
+          </div>
+        </section>
+
+        <section id="devicePage" class="page device-page" data-page-id="device">
+          <section id="aomasterIntroPanel" class="panel device-intro">
+            <div class="panel-heading split">
+              <div>
+                <h2>AOMaster 页面</h2>
+                <p>面向 4-20mA / 0-10V 模拟量信号发生器。当前协议未定，页面先提供输出框架、串口调试和曲线查看。</p>
+              </div>
+              <span class="state-pill warning">协议待补充</span>
+            </div>
+            <div class="device-media">
+              <img src="./images/AOMaster.png" alt="AOMaster 设备图片" />
+            </div>
+          </section>
+
+          <section class="panel control-panel">
           <div class="panel-heading split">
             <div>
-              <h2>AOMaster 输出</h2>
-              <p>协议未定时，参数会先记录在页面状态，可通过下方手动命令发送。</p>
+              <h2>设备输出</h2>
+              <p id="selectedDeviceSummary">当前选择 AOMaster；协议未定时，参数先记录在页面状态，可通过下方手动命令发送。</p>
             </div>
             <span id="driverState" class="state-pill warning">协议待配置</span>
           </div>
 
-          <div class="mode-row" role="radiogroup" aria-label="输出模式">
+          <div id="modeRow" class="mode-row" role="radiogroup" aria-label="输出模式">
             <label class="segmented-option">
               <input type="radio" name="outputMode" value="current" checked />
               <span>4-20mA</span>
@@ -148,9 +223,133 @@
             </div>
             <button id="sendDriverCommand" type="button" disabled>发送设定</button>
           </div>
-        </section>
+          </section>
 
-        <section class="panel chart-panel">
+          <section id="customConfigPanel" class="panel custom-panel" hidden>
+          <div class="panel-heading split">
+            <div>
+              <h2>自定义设备页面</h2>
+              <p>用于没有内置驱动的设备：配置设定范围、发送模板和回包解析规则。</p>
+            </div>
+            <div class="panel-actions">
+              <button id="resetCustomConfig" class="ghost-button" type="button">恢复默认</button>
+              <button id="saveCustomConfig" type="button">保存</button>
+            </div>
+          </div>
+
+          <div class="config-grid">
+            <label>
+              设备名称
+              <input id="customDeviceName" type="text" value="自定义设备" />
+            </label>
+            <label>
+              设备类型
+              <input id="customDeviceType" type="text" value="通用串口设备" />
+            </label>
+            <label>
+              通道名称
+              <input id="customChannelLabel" type="text" value="设定值" />
+            </label>
+            <label>
+              单位
+              <input id="customUnit" type="text" placeholder="例如：mA、V、℃" />
+            </label>
+          </div>
+
+          <div class="config-grid compact">
+            <label>
+              最小值
+              <input id="customMin" type="number" step="0.001" value="0" />
+            </label>
+            <label>
+              最大值
+              <input id="customMax" type="number" step="0.001" value="100" />
+            </label>
+            <label>
+              步进
+              <input id="customStep" type="number" step="0.001" min="0.000001" value="0.1" />
+            </label>
+            <label>
+              默认值
+              <input id="customDefaultValue" type="number" step="0.001" value="50" />
+            </label>
+          </div>
+
+          <div class="subsection-heading">
+            <h3>发送模板</h3>
+            <span>支持 {value}、{value:2}、{unit}、{mode}</span>
+          </div>
+          <div class="template-grid">
+            <label>
+              格式
+              <select id="customCommandFormat">
+                <option value="ascii" selected>ASCII</option>
+                <option value="hex">HEX</option>
+              </select>
+            </label>
+            <label>
+              行尾
+              <select id="customCommandLineEnding">
+                <option value="">无</option>
+                <option value="\n">LF</option>
+                <option value="\r\n" selected>CRLF</option>
+              </select>
+            </label>
+            <label class="template-input">
+              模板
+              <input id="customCommandTemplate" type="text" value="SET {value}" />
+            </label>
+          </div>
+
+          <div class="subsection-heading">
+            <h3>回包解析</h3>
+            <span>解析结果会进入曲线查看</span>
+          </div>
+          <div class="config-grid compact">
+            <label>
+              解析方式
+              <select id="customParserType">
+                <option value="autoNumber" selected>自动提取最后一个数字</option>
+                <option value="regex">正则捕获</option>
+              </select>
+            </label>
+            <label>
+              字段名
+              <input id="customParserFieldName" type="text" value="测量值" />
+            </label>
+            <label>
+              解析单位
+              <input id="customParserUnit" type="text" />
+            </label>
+            <label>
+              捕获组
+              <input id="customParserGroup" type="number" min="0" step="1" value="1" />
+            </label>
+            <label class="regex-input">
+              正则
+              <input id="customParserRegex" type="text" value="([-+]?\d+(?:\.\d+)?)" />
+            </label>
+            <label>
+              比例
+              <input id="customParserScale" type="number" step="0.000001" value="1" />
+            </label>
+            <label>
+              偏移
+              <input id="customParserOffset" type="number" step="0.000001" value="0" />
+            </label>
+          </div>
+
+          <div class="parser-test">
+            <label>
+              解析测试
+              <input id="customParserSample" type="text" value="VALUE: 12.34" />
+            </label>
+            <button id="testCustomParser" type="button">测试</button>
+            <output id="customParserPreview">等待测试</output>
+          </div>
+          </section>
+
+          <section class="panel chart-panel">
           <div class="panel-heading split">
             <div>
               <h2>曲线查看</h2>
@@ -163,13 +362,13 @@
             <span id="chartValue">暂无数据</span>
             <span>最近 120 个采样点</span>
           </div>
-        </section>
+          </section>
 
-        <section class="panel console-panel">
+          <section class="panel console-panel">
           <div class="panel-heading split">
             <div>
               <h2>串口收发</h2>
-              <p>支持 ASCII 与 HEX，适合在 AOMaster 协议确认前做调试。</p>
+              <p>支持 ASCII 与 HEX，适合在设备协议确认前做调试。</p>
             </div>
             <button id="clearLog" class="icon-button" type="button" aria-label="清空日志" title="清空日志">⌧</button>
           </div>
@@ -197,6 +396,34 @@
               <input id="manualCommand" type="text" placeholder="例如：READ? 或 01 03 00 00" />
             </label>
             <button id="sendManual" type="button" disabled>发送</button>
+          </div>
+          </section>
+        </section>
+
+        <section id="requestPage" class="page request-page" data-page-id="request">
+          <div class="panel request-panel">
+            <div class="panel-heading split">
+              <div>
+                <h2>新增设备请求</h2>
+                <p>提交新设备前，请尽量准备协议、串口参数、典型命令、回包样例和期望页面 UI。</p>
+              </div>
+              <a id="newDeviceRequestLink" class="action-link" href="https://github.com/" target="_blank" rel="noreferrer">去 GitHub 提交</a>
+            </div>
+            <div class="request-template">
+              <label>
+                请求模板
+                <textarea id="deviceRequestTemplate" readonly>设备名称：
+设备类型：
+默认串口参数：
+需要的页面控件：
+发送命令示例：
+回包示例：
+解析字段：
+安全注意事项：
+参考资料链接：</textarea>
+              </label>
+              <button id="copyRequestTemplate" type="button">复制模板</button>
+            </div>
           </div>
         </section>
       </main>
