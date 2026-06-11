@@ -166,6 +166,7 @@ const AOMASTER_CONFIG_STORAGE_KEY = "modusignal.aomasterDevice.v1";
 const CHART_CONFIG_STORAGE_KEY = "modusignal.chart.v1";
 const AOMASTER_VALUE_DISPLAY_STORAGE_KEY = "modusignal.aomasterValueDisplayMode.v1";
 const SIDEBAR_PANELS_STORAGE_KEY = "modusignal.sidebarPanels.v1";
+const MOBILE_LAYOUT_QUERY = "(max-width: 1050px)";
 
 /** @type {Record<string, HTMLElement | HTMLElement[] | null>} */
 const elements = {};
@@ -1752,22 +1753,50 @@ function bindEvents() {
   bindChartConfigEvents();
 }
 
-function bindSidebarPanelCollapse() {
-  const saved = loadSidebarPanelState();
+function isMobileLayout() {
+  return window.matchMedia(MOBILE_LAYOUT_QUERY).matches;
+}
 
-  document.querySelectorAll(".sidebar-panel[data-sidebar-panel]").forEach((panel) => {
+function getSidebarPanels() {
+  return [...document.querySelectorAll(".sidebar-panel[data-sidebar-panel]")].flatMap((panel) => {
     const panelId = panel.dataset.sidebarPanel;
     const toggle = panel.querySelector(".sidebar-collapse-toggle");
     if (!toggle || !panelId) {
-      return;
+      return [];
     }
 
-    setSidebarPanelCollapsed(panel, toggle, saved[panelId] === true);
+    return [{ panel, panelId, toggle }];
+  });
+}
 
+function applySidebarPanelLayout({ persistOnDesktop = false } = {}) {
+  const saved = loadSidebarPanelState();
+  const mobile = isMobileLayout();
+
+  getSidebarPanels().forEach(({ panel, panelId, toggle }) => {
+    const collapsed = mobile ? true : saved[panelId] === true;
+    setSidebarPanelCollapsed(panel, toggle, collapsed);
+  });
+
+  if (persistOnDesktop && !mobile) {
+    persistSidebarPanelState();
+  }
+}
+
+function bindSidebarPanelCollapse() {
+  applySidebarPanelLayout();
+
+  getSidebarPanels().forEach(({ panel, toggle }) => {
     toggle.addEventListener("click", () => {
       setSidebarPanelCollapsed(panel, toggle, !panel.classList.contains("collapsed"));
-      persistSidebarPanelState();
+      if (!isMobileLayout()) {
+        persistSidebarPanelState();
+      }
     });
+  });
+
+  window.matchMedia(MOBILE_LAYOUT_QUERY).addEventListener("change", () => {
+    applySidebarPanelLayout();
   });
 }
 
@@ -2958,7 +2987,6 @@ function readCustomConfigForm() {
     commandFormat: elements.customCommandFormat.value,
     commandTemplate: elements.customCommandTemplate.value,
     commandLineEnding: elements.customCommandLineEnding.value,
-    unit: elements.customUnit.value,
     ...readDebugCurveConfigForm("custom", elements),
   });
 }

@@ -1714,6 +1714,18 @@ code {
     grid-template-columns: 1fr;
   }
 
+  .brand-block {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .brand-block p {
+    white-space: normal;
+    padding-left: 0;
+    line-height: 1.4;
+  }
+
   .sidebar {
     border-right: 0;
     border-bottom: 1px solid var(--line);
@@ -1747,6 +1759,10 @@ code {
 }
 
 @media (max-width: 700px) {
+  .brand-logo {
+    height: 2.5rem;
+  }
+
   .topbar {
     align-items: flex-start;
     flex-direction: column;

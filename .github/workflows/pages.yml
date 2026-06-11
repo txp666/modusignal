@@ -25,26 +25,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Configure Pages
         uses: actions/configure-pages@v6
         with:
           enablement: true
 
-      - name: Prepare static site
-        run: |
-          mkdir _site
-          cp index.html _site/
-          cp robots.txt _site/
-          cp sitemap.xml _site/
-          cp logo.ico _site/
-          cp LICENSE.txt _site/
-          cp -R src _site/
-          cp -R pages _site/
-          cp -R vendor _site/
-          cp -R images _site/
-          cp CNAME _site/
-          touch _site/.nojekyll
-          node scripts/inject-version.mjs --root _site
+      - name: Build static site
+        run: npm run build
 
       - name: Upload static site
         uses: actions/upload-pages-artifact@v5

@@ -130,6 +130,8 @@ WebSocket 与 MQTT 无额外插件要求；HTTPS 页面连接远程服务时请�
 
 ## 本地预览
 
+### 开发模式（ES Module 直出）
+
 不需要安装依赖。启动一个本地静态服务器即可：
 
 ```powershell
@@ -141,6 +143,16 @@ python -m http.server 4173
 ```text
 http://localhost:4173
 ```
+
+### 生产构建（与 GitHub Pages 一致）
+
+```powershell
+npm ci
+npm run build
+npm run preview
+```
+
+构建产物在 `_site/`：`app.js` 与依赖打包合并，ECharts 按需懒加载为独立 chunk，首屏请求数从约 30 个降至 2～3 个。
 
 ## 设备与协议接入点
 
