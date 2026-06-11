@@ -2,46 +2,69 @@
   <img src="./images/modusignal-logo.svg" alt="modusignal" width="480" />
 </p>
 
-<p align="center">在线设备调试平台（串口·HART·TCP·MQTT）</p>
+<p align="center">在线设备调试平台（串口·WebSocket·HART·MQTT）</p>
 
 # modusignal 在线设备调试平台
 
-modusignal 是一个浏览器端在线设备/信号调试平台，统一抽象多种传输方式（串口·TCP·MQTT），用来通过网页连接使用者的设备。**当前已实现串口（Web Serial），TCP / MQTT / WebSocket 为已留好的扩展点**。内置 AOMaster、Modbus RTU、HART 通用设备与自定义设备 profile，可按设备切换默认串口参数与轮询间隔。
+modusignal 是一个浏览器端在线设备/信号调试平台，统一抽象多种传输方式（串口·WebSocket·MQTT），用来通过网页连接使用者的设备。**当前已实现串口（Web Serial）与 WebSocket**；MQTT 为扩展点。内置 AOMaster、Modbus RTU、HART 通用设备、WebSocket 调试与自定义设备 profile；切换设备时会自动切换该设备的默认通讯方式与连接参数。
 
 ## 当前功能
 
-- 统一传输抽象：连接、断开、接收和发送（已实现串口，其余传输为扩展点）
-- 连接参数面板：按所选传输的 descriptor 动态渲染（串口含波特率、数据位、停止位、校验、流控）；切换设备时自动套用该设备的默认串口参数
-- 多页面设备 UI：主页、AOMaster / Modbus / HART / 自定义设备各自独立 HTML（`pages/`），共享曲线与日志工作台
-- 设备库框架：内置 AOMaster、Modbus RTU、HART 与自定义设备，后续设备放在 `src/devices/`
+- 统一传输抽象：连接、断开、接收和发送（已实现串口、WebSocket）
+- 连接参数面板：按所选传输的 descriptor 动态渲染（串口含波特率、数据位、停止位、校验、流控；WebSocket 含服务地址）
+- 设备默认通讯：各设备 profile 声明 `defaultTransportId`；切换设备时自动切换传输并套用默认连接参数（其余设备为串口，WebSocket 调试为 WebSocket）
+- 多页面设备 UI：主页、AOMaster / Modbus / HART / WebSocket 调试 / 自定义设备各自独立 HTML（`pages/`），共享曲线与日志工作台
+- 设备库框架：内置 AOMaster、Modbus RTU、HART、WebSocket 调试与自定义设备，后续设备放在 `src/devices/`
 - AOMaster 多信号类型与波形：恒定、阶跃、斜坡、方波、三角波、正弦波；双曲线（波形预览 + 实时输出）
 - Modbus RTU：读/写保持寄存器与输入寄存器，可配置地址、数据类型与轮询
 - HART 通用设备：设备搜索、通用命令、PV/SV/TV/QV 多曲线
+- WebSocket 调试：快捷 JSON/文本发送、心跳轮询、JSON 路径解析与曲线
 - 自定义设备：可配置设备名、类型、设定范围、单位、发送模板和解析规则
-- 监测轮询：读模式设备可在工作台手动开始/停止轮询，间隔按设备配置
-- 手动命令发送：ASCII / HEX，支持行尾选择
+- 监测轮询：读模式设备与 WebSocket 调试可在工作台手动开始/停止轮询，间隔按设备配置
+- 手动命令发送：ASCII / JSON / HEX，支持行尾选择（JSON 走 WebSocket 文本帧）
 - 收发日志：TX / RX / 系统 / 错误
 - 实时曲线：按当前设备解析接收数据并绘制（默认保留 3000 点、显示 240 点，可配置）
-- 协议驱动：AOMaster Modbus RTU；通用 Modbus RTU；HART 帧编解码；自定义模板可用于其他设备
+- 协议驱动：AOMaster Modbus RTU；通用 Modbus RTU；HART 帧编解码；WebSocket JSON/文本解析；自定义模板可用于其他设备
 
 ## 内置设备默认参数
 
-切换设备时，串口参数与轮询间隔会自动切换为下表默认值（已保存的浏览器配置需点「恢复默认」才会更新）：
+切换设备时，**默认通讯方式**、连接参数与轮询间隔会自动切换为下表默认值（已保存的浏览器配置需点「恢复默认」才会更新）：
 
-| 设备 | 默认串口 | 默认轮询间隔 | 说明 |
-| --- | --- | --- | --- |
-| AOMaster | 115200 8N1 | 50 ms | Modbus RTU 从站，回读寄存器 0x0006 |
-| 自定义 | 115200 8N1 | 500 ms | 配置项已预留；当前页面不支持自动轮询 |
-| Modbus RTU | 9600 8N1 | 500 ms | 读模式下可轮询 |
-| HART | 1200 8O1 | 1000 ms | 需先搜索到设备方可轮询 |
+| 设备 | 默认通讯 | 默认连接参数 | 默认轮询间隔 | 说明 |
+| --- | --- | --- | --- | --- |
+| AOMaster | 串口 | 115200 8N1 | 50 ms | Modbus RTU 从站，回读寄存器 0x0006 |
+| 自定义 | 串口 | 115200 8N1 | 500 ms | 配置项已预留；当前页面不支持自动轮询 |
+| Modbus RTU | 串口 | 9600 8N1 | 500 ms | 读模式下可轮询 |
+| HART | 串口 | 1200 8O1 | 1000 ms | 需先搜索到设备方可轮询 |
+| WebSocket 调试 | WebSocket | `ws://127.0.0.1:8080` | 0（手动） | 可配置心跳轮询与 JSON 解析路径 |
 
-常量定义位置：`src/devices/*-device.js` 中的 `*_TRANSPORT_DEFAULTS` 与 `DEFAULT_*_CONFIG.pollIntervalMs`。
+常量定义位置：
+
+- 默认通讯：`src/devices/*-device.js` 中 profile 的 `defaultTransportId`
+- 连接参数：`src/devices/*-device.js` 的 `*_TRANSPORT_DEFAULTS` 与 `src/app.js` 的 `DEVICE_TRANSPORT_DEFAULTS`
+- 轮询间隔：`DEFAULT_*_CONFIG.pollIntervalMs`
 
 ## 传输方式与扩展
 
 传输层与设备层正交，加一种传输不需要改设备驱动或页面逻辑：在 `src/transports/` 新建继承 `BaseTransport` 的 session 类并导出 descriptor，再到 `src/transports/registry.js` 注册即可（详见 `AI.md` 的「添加传输」）。
 
-浏览器能力边界：纯静态页面只能用 Web Serial、WebSocket、MQTT over WebSocket；原始 TCP/UDP 需自建 WS↔TCP 桥接或转桌面端（Tauri/Electron）；HTTPS 页面只能连 `wss://`。
+当前已注册：
+
+| 传输 | ID | 说明 |
+| --- | --- | --- |
+| 串口 | `serial` | Web Serial，需 HTTPS 或 localhost |
+| WebSocket | `websocket` | 浏览器原生 WebSocket；字符串/JSON 发文本帧，HEX 发二进制帧 |
+
+浏览器能力边界：纯静态页面可用 Web Serial、WebSocket、MQTT over WebSocket（扩展点）。远程 `ws://` 在 HTTPS 页面可能被浏览器拦截，公网服务建议用 `wss://`；本地 `ws://127.0.0.1` 通常可用。
+
+## WebSocket 调试设备
+
+适用于直连 WebSocket 服务、联调 JSON 协议或 echo 服务：
+
+1. 侧栏进入 **WebSocket 调试**（会自动选中 WebSocket 传输）
+2. 填写 WebSocket 地址并连接
+3. 使用快捷按钮或收发调试区发送 JSON/文本/HEX
+4. 在设备页配置 **JSON 数值路径**（如 `value`）可将回包绘制到曲线；配置轮询间隔与心跳消息后可开启轮询
 
 ## 自定义设备
 
@@ -67,6 +90,8 @@ HEX 模板：01 06 00 01 {value:0}
 - 线上使用 GitHub Pages 的 HTTPS 地址
 - 本地开发使用 `localhost`
 - 推荐 Chrome 或 Edge
+
+WebSocket 无额外插件要求；HTTPS 页面连接远程服务时请优先使用 `wss://`。
 
 ## 本地预览
 
@@ -103,8 +128,9 @@ http://localhost:4173
 
 新增其他设备时，优先补充：
 
-- `src/devices/<id>.js` 的 profile 与 `create*SetOutputCommand`
+- `src/devices/<id>.js` 的 profile（含 `defaultTransportId`）与 `create*SetOutputCommand`
 - 设备回包解析函数
+- `src/app.js` 中 `DEVICE_TRANSPORT_DEFAULTS` 注册
 - 曲线字段选择
 
 建议每种设备维护独立 profile，保持页面层只依赖统一的驱动接口。

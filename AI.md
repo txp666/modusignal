@@ -4,9 +4,9 @@
 
 ## 项目目标
 
-modusignal 是一个静态在线设备/信号调试平台。它通过浏览器连接使用者的设备，统一抽象多种传输方式（串口、TCP、MQTT 等），提供：
+modusignal 是一个静态在线设备/信号调试平台。它通过浏览器连接使用者的设备，统一抽象多种传输方式（串口、WebSocket、MQTT 等），提供：
 
-- 多传输连接、断开、收发日志（当前已实现串口，TCP/MQTT/WebSocket 为扩展点）
+- 多传输连接、断开、收发日志（已实现串口、WebSocket；MQTT 为扩展点）
 - 设备专属页面 UI
 - 设备命令构造
 - 回包解析和曲线查看
@@ -15,14 +15,19 @@ modusignal 是一个静态在线设备/信号调试平台。它通过浏览器�
 
 当前内置设备：
 
-- `aomaster`：AOMaster 4-20mA / 0-10V 模拟量信号发生器，Modbus RTU 驱动
-- `modbus`：通用 Modbus RTU 寄存器读写
-- `hart`：HART 通用设备，支持搜索、通用命令与 PV/SV/TV/QV 轮询
-- `custom`：自定义设备，使用本地保存的模板和解析配置
+- `aomaster`：AOMaster 4-20mA / 0-10V 模拟量信号发生器，Modbus RTU 驱动，默认串口
+- `modbus`：通用 Modbus RTU 寄存器读写，默认串口
+- `hart`：HART 通用设备，支持搜索、通用命令与 PV/SV/TV/QV 轮询，默认串口
+- `websocket`：WebSocket 消息调试，快捷发送与 JSON 解析，默认 WebSocket
+- `custom`：自定义设备，使用本地保存的模板和解析配置，默认串口
 
-各设备可声明独立的默认串口参数（`*_TRANSPORT_DEFAULTS`）与轮询间隔（`DEFAULT_*_CONFIG.pollIntervalMs`）。切换设备时 `src/app.js` 会通过 `DEVICE_TRANSPORT_DEFAULTS` 自动更新连接面板。
+各设备 profile 可声明：
 
-设备层与传输层正交：设备只产出/解析字节，不关心数据怎么传；传输层负责建立连接与收发字节。
+- `defaultTransportId`：默认通讯方式（`serial` / `websocket` 等），由 `getDeviceDefaultTransportId()` 读取；切换设备时 `applyDeviceDefaultTransport()` 自动切换传输
+- `*_TRANSPORT_DEFAULTS`：各传输下的默认连接参数，在 `src/app.js` 的 `DEVICE_TRANSPORT_DEFAULTS` 注册
+- `DEFAULT_*_CONFIG.pollIntervalMs`：轮询间隔
+
+设备层与传输层正交：设备只产出/解析字节或文本，不关心数据怎么传；传输层负责建立连接与收发。
 
 ## 当前架构
 
@@ -32,7 +37,7 @@ index.html
 
 pages/
   home.html / request.html
-  devices/aomaster.html · modbus.html · hart.html · custom.html
+  devices/aomaster.html · modbus.html · hart.html · websocket.html · custom.html
   shared/workbench.html（监测面板 + 收发调试）
 
 src/page-loader.js
@@ -48,13 +53,16 @@ src/transports/transport.js
   BaseTransport 接口（connect/disconnect/write + connected/disconnected/rx/tx/error 事件）
 
 src/transports/serial.js
-  SerialTransport（Web Serial 封装）与串口 descriptor（连接参数 schema）
+  SerialTransport（Web Serial 封装）与串口 descriptor
+
+src/transports/websocket.js
+  WebSocketTransport；字符串/JSON 发文本帧，Uint8Array 发二进制帧
 
 src/transports/registry.js
-  传输注册表与扩展点：listTransports / getTransportDescriptor / createTransportSession
+  传输注册表：listTransports / getTransportDescriptor / createTransportSession
 
 src/protocols.js
-  设备注册表和统一协议入口
+  设备注册表、getDeviceDefaultTransportId、统一协议入口
 
 src/devices/aomaster.js
   AOMaster profile、Modbus RTU 命令构造、实际输出回读解析
@@ -64,6 +72,9 @@ src/devices/modbus-device.js
 
 src/devices/hart-device.js
   HART profile、搜索/轮询命令、PV/SV/TV/QV 解析
+
+src/devices/websocket-device.js
+  WebSocket 调试 profile、心跳命令、JSON/文本遥测解析
 
 src/devices/custom-device.js
   自定义设备配置、模板发送、正则/自动数值解析
@@ -80,6 +91,7 @@ src/config.js
 - `aomaster`：AOMaster 专属页面（信号波形、阶跃序列、双曲线）
 - `modbus`：Modbus RTU 专属页面
 - `hart`：HART 通用设备专属页面
+- `websocket`：WebSocket 调试专属页面
 - `custom`：自定义设备专属页面
 - `request`：新增设备请求页面
 
@@ -87,79 +99,50 @@ src/config.js
 
 ## 设备驱动接口
 
-一个设备驱动文件（`src/devices/<id>.js`）按需要分三块能力，**只有 profile 元信息是必须的**，输出设定和回包解析都按设备实际功能选配：
+一个设备驱动文件（`src/devices/<id>.js`）按需要分三块能力，**profile 元信息是必须的**，输出设定和回包解析都按设备实际功能选配：
 
 | 能力 | 是否必须 | 提供方式 |
 | --- | --- | --- |
-| 设备元信息（id / name / type / protocolStatus） | 必须 | `*_PROFILE` |
+| 设备元信息（id / name / type / protocolStatus / defaultTransportId） | 必须 | `*_PROFILE` |
 | 设定与输出命令（滑条、预设、发送字节） | 可选 | `profile.modes` + `create*SetOutputCommand` |
 | 回包解析（曲线、读数） | 可选 | `parse*Telemetry` |
 
-### 最小驱动：只读遥测、无设定
+### 默认通讯方式
 
-如果设备只上报数据、不需要从页面下发设定，**可以完全省略 `modes` 和 `create*SetOutputCommand`**。此时设定面板不可用，命令构造分发会返回「设备不支持设定输出」，页面仍可显示日志与曲线：
+在 profile 上声明 `defaultTransportId`，与 `src/transports/registry.js` 中已注册的传输 ID 一致：
 
 ```js
-export const MY_DEVICE_ID = "my-device";
-
 export const MY_DEVICE_PROFILE = {
   id: MY_DEVICE_ID,
   name: "My Device",
   type: "设备类型",
   protocolStatus: "ready",
+  defaultTransportId: "serial", // 或 "websocket"
 };
-
-export function parseMyDeviceTelemetry(text, parseNumericTelemetry) {
-  const value = parseNumericTelemetry(text);
-  return value === null ? null : { fieldName: "测量值", unit: "", value, rawValue: value };
-}
 ```
+
+切换设备时 `selectDevice()` → `applyDeviceDefaultTransport()` 会：
+
+1. 若当前传输与设备默认不一致，调用 `setTransport(defaultTransportId)`
+2. 否则调用 `applyDeviceTransportDefaults()` 更新连接参数表单
+
+### 最小驱动：只读遥测、无设定
+
+如果设备只上报数据、不需要从页面下发设定，**可以完全省略 `modes` 和 `create*SetOutputCommand`**。参考 `src/devices/websocket-device.js`（无 modes，通过快捷发送与收发调试区手动发消息）。
 
 ### 完整驱动：带设定与输出命令
 
-需要从页面下发设定时，再补上 `modes`（每个 mode 即一组「设定」滑条配置）和命令构造函数：
-
-```js
-export const MY_DEVICE_PROFILE = {
-  id: MY_DEVICE_ID,
-  name: "My Device",
-  type: "设备类型",
-  protocolStatus: "ready",
-  // modes 可选：每个键是一种设定模式，值描述滑条范围与预设
-  modes: {
-    default: {
-      label: "设定",
-      unit: "",
-      min: 0,
-      max: 100,
-      step: 1,
-      presets: { min: 0, mid: 50, max: 100 },
-    },
-  },
-};
-
-export function createMyDeviceSetOutputCommand(state) {
-  return {
-    supported: true, // 协议未定时返回 false，页面会提示「协议待配置」
-    preview: "发送预览",
-    bytes: new Uint8Array(),
-  };
-}
-```
-
-> 约定：`create*SetOutputCommand` 始终返回 `{ supported, preview, bytes }`，协议未确认时用 `supported: false` 占位（参考 `src/devices/aomaster.js`），不要写死会影响设备输出的字节。
+需要从页面下发设定时，再补上 `modes` 和命令构造函数。约定：`create*SetOutputCommand` 始终返回 `{ supported, preview, bytes }`；`bytes` 可为 `Uint8Array` 或 `string`（WebSocket 文本帧）。
 
 ### 在 `src/protocols.js` 注册
 
-- 把 profile 加入 `DEVICE_PROFILES`
-- 在 `parseDeviceTelemetry` 分发到本设备的 `parse*Telemetry`（无解析则不分发）
-- **仅当设备有设定输出时**，在 `createDeviceSetOutputCommand` 分发命令构造；否则交由默认分支返回不支持
+- 把 profile 加入 `DEVICE_PROFILES`（`custom` 除外）
+- 在 `parseDeviceTelemetry` 分发到本设备的 `parse*Telemetry`
+- 在 `createDeviceSetOutputCommand` 分发命令构造（无设定则跳过）
 
-> 自定义设备（`custom`）是特例：profile、设定范围、模板和解析都由用户表单实时生成，不进 `DEVICE_PROFILES`，由 `getDeviceProfile` / 各分发函数单独处理。
+## 设备默认连接参数与轮询
 
-## 设备默认串口与轮询
-
-需要为设备指定常用串口参数或轮询间隔时，在 `src/devices/<id>.js` 中导出：
+在 `src/devices/<id>.js` 中导出各传输的默认连接参数：
 
 ```js
 export const MY_DEVICE_TRANSPORT_DEFAULTS = {
@@ -170,63 +153,59 @@ export const MY_DEVICE_TRANSPORT_DEFAULTS = {
   flowControl: "none",
 };
 
-export const DEFAULT_MY_DEVICE_CONFIG = {
-  // ...
-  pollIntervalMs: 500,
+export const MY_DEVICE_WEBSOCKET_TRANSPORT_DEFAULTS = {
+  url: "ws://127.0.0.1:8080",
 };
 ```
 
-在 `src/app.js` 的 `DEVICE_TRANSPORT_DEFAULTS` 中注册 transport 默认值；切换设备时 `applyDeviceTransportDefaults()` 会更新连接面板。轮询间隔通过各设备的 `normalize*Config` 与页面表单读写，由 `getCurrentPollIntervalMs()` 统一读取。
+在 `src/app.js` 的 `DEVICE_TRANSPORT_DEFAULTS` 中按传输 ID 注册：
+
+```js
+[MY_DEVICE_ID]: {
+  serial: MY_DEVICE_TRANSPORT_DEFAULTS,
+  websocket: MY_DEVICE_WEBSOCKET_TRANSPORT_DEFAULTS,
+},
+```
 
 当前默认值：
 
-| 设备 | 串口 | 轮询 (ms) |
-| --- | --- | --- |
-| AOMaster | 115200 8N1 | 50 |
-| 自定义 | 115200 8N1 | 500（配置预留，暂不支持轮询） |
-| Modbus | 9600 8N1 | 500 |
-| HART | 1200 8O1 | 1000 |
+| 设备 | 默认通讯 | 串口 / WebSocket 参数 | 轮询 (ms) |
+| --- | --- | --- | --- |
+| AOMaster | serial | 115200 8N1 | 50 |
+| 自定义 | serial | 115200 8N1 | 500（暂不支持轮询） |
+| Modbus | serial | 9600 8N1 | 500 |
+| HART | serial | 1200 8O1 | 1000 |
+| WebSocket 调试 | websocket | ws://127.0.0.1:8080 | 0（可配置心跳轮询） |
 
 ## 添加设备 UI
 
 1. 在 `pages/devices/<id>.html` 添加设备专属 UI，并在 `src/page-loader.js` 的 `PAGE_PATHS.devices` 中注册路径。
-2. 在侧栏设备库（`renderDeviceLibrary`）或主页卡片中添加入口（`data-page-target` / `data-device-id`）。
-3. 在 `src/app.js` 的页面状态中处理该设备。
+2. 设备库与主页卡片通过 `listDeviceLibrary()` 自动收录 `DEVICE_PROFILES` 中的设备。
+3. 在 `src/app.js` 增加 `DEVICE_PAGE_IDS`、页面状态绑定、轮询与配置表单。
 4. 保持连接、日志和曲线复用现有组件。
 
 ## 添加传输
 
 传输层与设备层正交：加一种传输不需要改设备驱动或页面逻辑。
 
-1. 在 `src/transports/` 新建一个 session 类，继承 `BaseTransport`，实现 `connect/disconnect/write` 与 `get connected`，并在收发时 `emit("rx"/"tx"/...)`（参考 `serial.js`）。
-2. 导出一个 descriptor，用 `fields` 声明连接参数（页面据此自动渲染并收集）：
+1. 在 `src/transports/` 新建 session 类，继承 `BaseTransport`，实现 `connect/disconnect/write` 与 `get connected`，并在收发时 `emit("rx"/"tx"/...)`。
+2. `write(data)` 接受 `Uint8Array | string`；WebSocket 实现中字符串走文本帧。
+3. 导出 descriptor，用 `fields` 声明连接参数。
+4. 在 `src/transports/registry.js` 的 `TRANSPORTS` 中注册。
 
-```js
-export const WEBSOCKET_TRANSPORT = {
-  id: "websocket",
-  label: "WebSocket",
-  requiresSecureContext: false,
-  isSupported: () => "WebSocket" in window,
-  fields: [
-    { key: "url", label: "地址", type: "text", default: "wss://example.com/ws" },
-  ],
-  createSession: () => new WebSocketTransport(),
-};
-```
-
-3. 在 `src/transports/registry.js` 的 `TRANSPORTS` 中注册该 descriptor，连接参数面板的下拉就会自动出现该选项。
+WebSocket 已实现，见 `src/transports/websocket.js`。
 
 ### 浏览器能力与约束
 
-- 纯静态浏览器页面只能用：Web Serial、WebSocket、MQTT over WebSocket（如 mqtt.js 连 `wss://`）。
-- 原始 TCP/UDP 浏览器无法直连，需要自建 WS↔TCP 桥接服务，或将来转桌面端（Tauri/Electron）由原生层提供 session 实现。
-- HTTPS 页面只能连接 `wss://`（连 `ws://` 会被混合内容拦截）。
-- `descriptor.requiresSecureContext` 用于声明是否必须安全上下文（串口为 `true`）。
+- 纯静态浏览器页面可用：Web Serial、WebSocket、MQTT over WebSocket（扩展点）。
+- Web Serial 需 HTTPS 或 localhost（`requiresSecureContext: true`）。
+- WebSocket 远程 `ws://` 在 HTTPS 页面可能被浏览器拦截；UI 会提示，但不硬拦截；本地 `127.0.0.1` 通常可用。
+- 收发调试区 `buildManualPayload()` 支持 `ascii` / `json` / `hex`；JSON 校验后作为字符串发送。
 
 ## 注意事项
 
 - Web Serial 只能在 HTTPS 或 localhost 安全上下文使用。
 - 不要在协议未确认时写死会影响设备输出的命令。
 - 需要写设备输出时，要校验范围并在 UI 中展示命令预览。
-- 自定义设备配置保存在浏览器 `localStorage`，不是云端配置。
+- 自定义设备与 WebSocket 调试配置保存在浏览器 `localStorage`，不是云端配置。
 - `src/config.js` 中的 GitHub 链接目前是占位，配置真实仓库后应更新。

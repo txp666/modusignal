@@ -3,7 +3,7 @@
     <div class="panel-heading split">
       <div>
         <h2>modusignal 在线设备调试</h2>
-        <p>通过浏览器连接设备，统一传输抽象（串口·TCP·MQTT），把设备驱动、调试收发和曲线查看放在一个在线工具里。</p>
+        <p>通过浏览器连接设备，统一传输抽象（串口·WebSocket·MQTT），把设备驱动、调试收发和曲线查看放在一个在线工具里。</p>
       </div>
       <div class="panel-actions">
         <a id="githubLink" class="action-link" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
@@ -39,7 +39,7 @@
           <div class="arch-arrow">↓</div>
           <div class="arch-node">
             设备驱动
-            <small>devices/aomaster · modbus · custom</small>
+            <small>devices/aomaster · modbus · hart · websocket · custom</small>
           </div>
         </div>
         <div class="arch-group">
@@ -50,7 +50,7 @@
           </div>
           <div class="arch-arrow">↓</div>
           <div class="arch-node">
-            串口 · TCP · MQTT
+            串口 · WebSocket · MQTT
             <small>BaseTransport 实现</small>
           </div>
         </div>
@@ -61,6 +61,6 @@
         <small>ECharts · 日志面板</small>
       </div>
     </div>
-    <p>设备层与传输层正交：设备只产出/解析字节，通过统一的 profile、命令构造和遥测解析接口接入；传输方式可在连接参数中切换。</p>
+    <p>设备层与传输层正交：设备只产出/解析字节，通过统一的 profile、命令构造和遥测解析接口接入；各设备可声明默认通讯方式，亦可在连接参数中手动切换。</p>
   </div>
 </section>
