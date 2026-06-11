@@ -22,17 +22,17 @@ function resolveVersion() {
   }
 }
 
-function patchImportLines(content, version) {
-  return content
-    .split("\n")
-    .map((line) => {
-      if (!/^\s*(import|export)\s+/.test(line)) {
-        return line;
-      }
+function patchRelativeModuleSpecifier(specifier, version) {
+  return specifier.replace(/(from\s+)(["'])(\.[^"']+\.js)(?:\?v=[^"']*)?\2/g, `$1$2$3?v=${version}$2`);
+}
 
-      return line.replace(/(from\s+)(["'])(\.[^"']+\.js)(?:\?v=[^"']*)?\2/, `$1$2$3?v=${version}$2`);
-    })
-    .join("\n");
+function patchImportLines(content, version) {
+  let patched = patchRelativeModuleSpecifier(content, version);
+  patched = patched.replace(
+    /(import\s*\(\s*)(["'])(\.[^"']+\.js)(?:\?v=[^"']*)?\2/g,
+    `$1$2$3?v=${version}$2`,
+  );
+  return patched;
 }
 
 function walkJsFiles(dir) {
