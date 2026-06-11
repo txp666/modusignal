@@ -21,6 +21,11 @@ export const MODBUS_TRANSPORT_DEFAULTS = {
   flowControl: "none",
 };
 
+/** Modbus 经 WebSocket 网关时的默认地址 */
+export const MODBUS_WEBSOCKET_TRANSPORT_DEFAULTS = {
+  url: "ws://127.0.0.1:8080",
+};
+
 export const DEFAULT_MODBUS_CONFIG = {
   slaveId: 1,
   functionCode: 3,
@@ -43,6 +48,7 @@ export const MODBUS_PROFILE = {
   type: "RTU 寄存器读写",
   image: "./images/modusignal-logo.svg",
   protocolStatus: "ready",
+  defaultTransportId: "serial",
   modes: {
     readHolding: {
       label: "读保持寄存器",

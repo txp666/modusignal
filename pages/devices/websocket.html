@@ -1,0 +1,63 @@
+<section id="websocketPage" class="device-page" data-page-id="websocket">
+  <section class="panel control-panel">
+    <div class="panel-heading split">
+      <div>
+        <h2>WebSocket 调试</h2>
+        <p data-field="deviceSummary">连接 WebSocket 服务，快捷发送 JSON/文本并解析回包。</p>
+      </div>
+      <span data-field="driverState" class="state-pill">手动 / 轮询</span>
+    </div>
+
+    <div class="subsection-heading">
+      <h3>快捷发送</h3>
+      <span>需先连接 WebSocket；也可在下方收发调试区手动发送</span>
+    </div>
+    <div id="wsQuickSendGrid" class="preset-row" aria-label="WebSocket 快捷发送"></div>
+  </section>
+
+  <section class="panel custom-panel">
+    <div class="panel-heading split">
+      <div>
+        <h2>调试配置</h2>
+        <p>轮询消息、JSON 解析路径与曲线字段。</p>
+      </div>
+      <div class="panel-actions">
+        <button id="resetWebsocketConfig" class="ghost-button" type="button">恢复默认</button>
+        <button id="saveWebsocketConfig" type="button">保存</button>
+      </div>
+    </div>
+
+    <div class="config-grid compact">
+      <label>
+        轮询间隔 (ms)
+        <input id="websocketPollIntervalMs" type="number" min="0" step="1" value="0" />
+      </label>
+      <label>
+        轮询格式
+        <select id="websocketHeartbeatFormat">
+          <option value="json" selected>JSON</option>
+          <option value="ascii">ASCII</option>
+          <option value="hex">HEX</option>
+        </select>
+      </label>
+      <label>
+        曲线字段名
+        <input id="websocketFieldName" type="text" value="数值" />
+      </label>
+      <label>
+        曲线单位
+        <input id="websocketUnit" type="text" placeholder="可选" />
+      </label>
+    </div>
+
+    <label class="template-input">
+      轮询消息
+      <input id="websocketHeartbeatMessage" type="text" value='{"type":"ping"}' />
+    </label>
+
+    <label class="template-input">
+      JSON 数值路径
+      <input id="websocketParserFieldPath" type="text" value="value" placeholder="例如 value 或 data.temp；留空自动找第一个数字" />
+    </label>
+  </section>
+</section>

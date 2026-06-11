@@ -6,6 +6,7 @@ import {
   getTransportDescriptor,
   listTransports,
 } from "./transports/registry.js";
+import { describeWebSocketUrlWarning, WEBSOCKET_CONNECT_DEFAULTS, WEBSOCKET_TRANSPORT_ID } from "./transports/websocket.js";
 import {
   AOMASTER_DEVICE_ID,
   AOMASTER_MAX_STEP_SEQUENCE,
@@ -26,6 +27,7 @@ import {
 import {
   describeModbusSummary,
   getModbusMode,
+  MODBUS_WEBSOCKET_TRANSPORT_DEFAULTS,
   MODBUS_TRANSPORT_DEFAULTS,
   resetModbusRxBuffer,
 } from "./devices/modbus-device.js";
@@ -45,6 +47,12 @@ import {
   resetHartRxBuffer,
 } from "./devices/hart-device.js";
 import { formatHartDeviceSummary } from "./hart/hart.js";
+import {
+  buildWebSocketMessage,
+  describeWebSocketSummary,
+  WEBSOCKET_QUICK_MESSAGES,
+  WEBSOCKET_TRANSPORT_DEFAULTS,
+} from "./devices/websocket-device.js";
 import { isReadFunctionCode } from "./modbus/modbus.js";
 import {
   buildManualPayload,
@@ -55,7 +63,9 @@ import {
   DEFAULT_CUSTOM_CONFIG,
   DEFAULT_DEVICE_ID,
   DEFAULT_MODBUS_CONFIG,
+  DEFAULT_WEBSOCKET_CONFIG,
   getDeviceProfile,
+  getDeviceDefaultTransportId,
   getModeConfig,
   listDeviceLibrary,
   MODBUS_DEVICE_ID,
@@ -63,9 +73,11 @@ import {
   normalizeAomasterConfig,
   normalizeCustomConfig,
   normalizeModbusConfig,
+  normalizeWebSocketConfig,
   parseDeviceTelemetry,
   parseHexPayload,
   resolveLineEnding,
+  WEBSOCKET_DEVICE_ID,
 } from "./protocols.js";
 import {
   DEFAULT_CHART_CONFIG,
@@ -77,17 +89,40 @@ const CUSTOM_CONFIG_STORAGE_KEY = "modusignal.customDevice.v1";
 const MODBUS_CONFIG_STORAGE_KEY = "modusignal.modbusDevice.v1";
 const HART_CONFIG_STORAGE_KEY = "modusignal.hartDevice.v1";
 const DEVICE_TRANSPORT_DEFAULTS = {
-  [AOMASTER_DEVICE_ID]: AOMASTER_TRANSPORT_DEFAULTS,
-  [CUSTOM_DEVICE_ID]: CUSTOM_TRANSPORT_DEFAULTS,
-  [MODBUS_DEVICE_ID]: MODBUS_TRANSPORT_DEFAULTS,
-  [HART_DEVICE_ID]: HART_TRANSPORT_DEFAULTS,
+  [AOMASTER_DEVICE_ID]: {
+    serial: AOMASTER_TRANSPORT_DEFAULTS,
+    websocket: WEBSOCKET_CONNECT_DEFAULTS,
+  },
+  [CUSTOM_DEVICE_ID]: {
+    serial: CUSTOM_TRANSPORT_DEFAULTS,
+    websocket: WEBSOCKET_CONNECT_DEFAULTS,
+  },
+  [MODBUS_DEVICE_ID]: {
+    serial: MODBUS_TRANSPORT_DEFAULTS,
+    websocket: MODBUS_WEBSOCKET_TRANSPORT_DEFAULTS,
+  },
+  [HART_DEVICE_ID]: {
+    serial: HART_TRANSPORT_DEFAULTS,
+    websocket: WEBSOCKET_CONNECT_DEFAULTS,
+  },
+  [WEBSOCKET_DEVICE_ID]: {
+    serial: WEBSOCKET_TRANSPORT_DEFAULTS,
+    websocket: WEBSOCKET_TRANSPORT_DEFAULTS,
+  },
 };
 
+const WEBSOCKET_CONFIG_STORAGE_KEY = "modusignal.websocketDevice.v1";
 const AOMASTER_CONFIG_STORAGE_KEY = "modusignal.aomasterDevice.v1";
 const CHART_CONFIG_STORAGE_KEY = "modusignal.chart.v1";
 const AOMASTER_VALUE_DISPLAY_STORAGE_KEY = "modusignal.aomasterValueDisplayMode.v1";
 
-const DEVICE_PAGE_IDS = [DEFAULT_DEVICE_ID, CUSTOM_DEVICE_ID, MODBUS_DEVICE_ID, HART_DEVICE_ID];
+const DEVICE_PAGE_IDS = [
+  DEFAULT_DEVICE_ID,
+  CUSTOM_DEVICE_ID,
+  MODBUS_DEVICE_ID,
+  HART_DEVICE_ID,
+  WEBSOCKET_DEVICE_ID,
+];
 
 /** @type {Record<string, HTMLElement | HTMLElement[] | null>} */
 const elements = {};
@@ -199,6 +234,15 @@ function cacheElements() {
     hartChartSeriesInputs: [...document.querySelectorAll("[data-hart-series]")],
     saveHartConfig: document.querySelector("#saveHartConfig"),
     resetHartConfig: document.querySelector("#resetHartConfig"),
+    websocketPollIntervalMs: document.querySelector("#websocketPollIntervalMs"),
+    websocketHeartbeatFormat: document.querySelector("#websocketHeartbeatFormat"),
+    websocketHeartbeatMessage: document.querySelector("#websocketHeartbeatMessage"),
+    websocketParserFieldPath: document.querySelector("#websocketParserFieldPath"),
+    websocketFieldName: document.querySelector("#websocketFieldName"),
+    websocketUnit: document.querySelector("#websocketUnit"),
+    wsQuickSendGrid: document.querySelector("#wsQuickSendGrid"),
+    saveWebsocketConfig: document.querySelector("#saveWebsocketConfig"),
+    resetWebsocketConfig: document.querySelector("#resetWebsocketConfig"),
     telemetryChart: document.querySelector("#telemetryChart"),
     chartValue: document.querySelector("#chartValue"),
     chartPanelSummary: document.querySelector("#chartPanelSummary"),
@@ -240,12 +284,14 @@ let EchartsMultiLiveChartClass = null;
 let customConfig = loadCustomConfig();
 let modbusConfig = loadModbusConfig();
 let hartConfig = loadHartConfig();
+let websocketConfig = loadWebsocketConfig();
 let aomasterConfig = loadAomasterConfig();
 let chartConfig = loadChartConfig();
 let session = null;
 let modbusPollTimer = null;
 let hartPollTimer = null;
 let aomasterPollTimer = null;
+let websocketPollTimer = null;
 let deviceLibrarySearchQuery = "";
 /** @type {Record<string, string | number>} */
 let transportOptions = {};
@@ -308,6 +354,7 @@ async function initialize() {
   populateCustomConfigForm(customConfig);
   populateModbusConfigForm(modbusConfig);
   populateHartConfigForm(hartConfig);
+  populateWebsocketConfigForm(websocketConfig);
   populateAomasterConfigForm(aomasterConfig);
   populateChartConfigForm(chartConfig);
   syncAomasterValueDisplayControls();
@@ -619,6 +666,15 @@ function bindEvents() {
       return;
     }
 
+    const quickSend = event.target.closest("[data-ws-quick-send]");
+    if (quickSend) {
+      const preset = WEBSOCKET_QUICK_MESSAGES.find((item) => item.id === quickSend.dataset.wsQuickSend);
+      if (preset) {
+        sendWebSocketQuickMessage(preset).catch((error) => appendLog("error", "发送", error.message));
+      }
+      return;
+    }
+
     const preset = event.target.closest("[data-preset]");
     if (!preset) {
       return;
@@ -728,6 +784,15 @@ function bindEvents() {
 
   on(elements.saveHartConfig, "click", saveHartConfig);
   on(elements.resetHartConfig, "click", resetHartConfig);
+
+  getWebsocketConfigControls().filter(Boolean).forEach((control) => {
+    control.addEventListener("input", updateWebSocketDraftConfig);
+    control.addEventListener("change", updateWebSocketDraftConfig);
+  });
+
+  on(elements.saveWebsocketConfig, "click", saveWebsocketConfig);
+  on(elements.resetWebsocketConfig, "click", resetWebsocketConfig);
+
   on(elements.hartSearchDevice, "click", () => {
     sendHartSearchCommand().catch((error) => appendLog("error", "HART", error.message));
   });
@@ -784,6 +849,7 @@ function bindSessionEvents(target) {
       state,
       aomasterConfig,
       hartConfig,
+      websocketConfig,
     );
     if (telemetry) {
       if (state.deviceId === HART_DEVICE_ID && telemetry.isDiscovery) {
@@ -810,7 +876,8 @@ function bindSessionEvents(target) {
 
   target.addEventListener("tx", (event) => {
     finalizeRxLogCoalesce();
-    appendLog("tx", "TX", bytesToHex(event.detail.bytes));
+    const { bytes, text } = event.detail;
+    appendLog("tx", "TX", text ?? bytesToHex(bytes));
   });
 
   target.addEventListener("error", (event) => {
@@ -844,7 +911,28 @@ function populateTransportSelect() {
 }
 
 function getDeviceTransportDefaults(deviceId = state.deviceId) {
-  return DEVICE_TRANSPORT_DEFAULTS[deviceId] ?? null;
+  const entry = DEVICE_TRANSPORT_DEFAULTS[deviceId];
+  if (!entry) {
+    return null;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(entry, DEFAULT_TRANSPORT_ID)) {
+    const preferredTransportId = getDeviceDefaultTransportId(deviceId, customConfig, modbusConfig);
+    return entry[state.transportId] ?? entry[preferredTransportId] ?? entry[DEFAULT_TRANSPORT_ID] ?? null;
+  }
+
+  return entry;
+}
+
+function applyDeviceDefaultTransport(deviceId = state.deviceId) {
+  const defaultTransportId = getDeviceDefaultTransportId(deviceId, customConfig, modbusConfig);
+
+  if (state.transportId !== defaultTransportId) {
+    void setTransport(defaultTransportId);
+    return;
+  }
+
+  applyDeviceTransportDefaults(deviceId);
 }
 
 function resolveTransportFieldDefault(field) {
@@ -892,9 +980,15 @@ function renderTransportFields() {
 
     label.append(control);
     elements.transportFields.append(label);
+
+    if (state.transportId === WEBSOCKET_TRANSPORT_ID && field.key === "url") {
+      control.addEventListener("input", updateSecureState);
+      control.addEventListener("change", updateSecureState);
+    }
   });
 
   applyDeviceTransportDefaults();
+  updateSecureState();
 }
 
 function readTransportOptions() {
@@ -907,6 +1001,16 @@ function readTransportOptions() {
 }
 
 function describeDeviceTransportDefaults(deviceId) {
+  if (state.transportId === WEBSOCKET_TRANSPORT_ID) {
+    if (deviceId === MODBUS_DEVICE_ID) {
+      return "Modbus 默认 WebSocket 地址";
+    }
+    if (deviceId === WEBSOCKET_DEVICE_ID) {
+      return "WebSocket 调试默认连接地址";
+    }
+    return "默认 WebSocket 地址";
+  }
+
   if (deviceId === HART_DEVICE_ID) {
     return "HART 默认串口参数（1200 8O1）";
   }
@@ -919,12 +1023,12 @@ function describeDeviceTransportDefaults(deviceId) {
   if (deviceId === CUSTOM_DEVICE_ID) {
     return "自定义设备默认串口参数（115200 8N1）";
   }
-  return "设备默认串口参数";
+  return "设备默认连接参数";
 }
 
 function applyDeviceTransportDefaults(deviceId = state.deviceId) {
   const defaults = getDeviceTransportDefaults(deviceId);
-  if (!defaults || state.transportId !== DEFAULT_TRANSPORT_ID) {
+  if (!defaults) {
     return false;
   }
 
@@ -967,24 +1071,22 @@ function selectDevice(deviceId) {
   if (deviceId === CUSTOM_DEVICE_ID) {
     state.mode = "custom";
     state.setpoint = normalizeCustomConfig(customConfig).defaultValue;
-    applyDeviceTransportDefaults(CUSTOM_DEVICE_ID);
   } else if (deviceId === MODBUS_DEVICE_ID) {
     const normalized = normalizeModbusConfig(modbusConfig);
     state.mode = getModbusMode(normalized.functionCode);
     const config = getModeConfig(state.mode, deviceId, customConfig, modbusConfig);
     state.setpoint = config.presets.mid;
-    applyDeviceTransportDefaults(MODBUS_DEVICE_ID);
   } else if (deviceId === HART_DEVICE_ID) {
     const normalized = normalizeHartConfig(hartConfig);
     state.mode = getHartMode(normalized.activeCommand);
     const config = getModeConfig(state.mode, deviceId, customConfig, modbusConfig);
     state.setpoint = config.presets.mid;
-    applyDeviceTransportDefaults(HART_DEVICE_ID);
-  } else {
+  } else if (deviceId !== WEBSOCKET_DEVICE_ID) {
     state.mode = elements.outputModeSelect?.value || "current";
     applyAomasterModeDefaults();
-    applyDeviceTransportDefaults(AOMASTER_DEVICE_ID);
   }
+
+  applyDeviceDefaultTransport(deviceId);
 
   clearAllCharts();
   syncAomasterChartRanges();
@@ -1000,7 +1102,8 @@ function navigateToPage(pageId) {
     pageId === DEFAULT_DEVICE_ID ||
     pageId === CUSTOM_DEVICE_ID ||
     pageId === MODBUS_DEVICE_ID ||
-    pageId === HART_DEVICE_ID
+    pageId === HART_DEVICE_ID ||
+    pageId === WEBSOCKET_DEVICE_ID
   ) {
     selectDevice(pageId);
     return;
@@ -1028,6 +1131,15 @@ function updateSecureState() {
     return;
   }
 
+  if (state.transportId === WEBSOCKET_TRANSPORT_ID) {
+    const wsWarning = describeWebSocketUrlWarning(readTransportOptions().url);
+    if (wsWarning) {
+      elements.secureState.textContent = wsWarning;
+      elements.secureState.classList.add("warning");
+      return;
+    }
+  }
+
   elements.secureState.textContent = `${descriptor.label} 可用`;
   elements.secureState.classList.remove("warning");
 }
@@ -1045,6 +1157,7 @@ function updateDeviceUi() {
   const isCustom = state.deviceId === CUSTOM_DEVICE_ID;
   const isModbus = state.deviceId === MODBUS_DEVICE_ID;
   const isHart = state.deviceId === HART_DEVICE_ID;
+  const isWebsocket = state.deviceId === WEBSOCKET_DEVICE_ID;
   const isAomaster = state.deviceId === DEFAULT_DEVICE_ID;
   const normalizedModbus = normalizeModbusConfig(modbusConfig);
   const modbusIsRead = isModbus && isReadFunctionCode(normalizedModbus.functionCode);
@@ -1056,10 +1169,10 @@ function updateDeviceUi() {
   const setpointRow = queryDeviceField("setpointRow");
   const presetRow = queryDeviceField("presetRow");
   if (setpointRow) {
-    setpointRow.hidden = modbusIsRead || isHart;
+    setpointRow.hidden = modbusIsRead || isHart || isWebsocket;
   }
   if (presetRow) {
-    presetRow.hidden = modbusIsRead || isHart;
+    presetRow.hidden = modbusIsRead || isHart || isWebsocket;
   }
 
   if (elements.singleChartBlock) {
@@ -1089,7 +1202,9 @@ function updateDeviceUi() {
       ? `ECharts 曲线预览设定波形，并跟踪轮询回读的实际输出；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`
       : isHart
         ? `HART PV/SV/TV/QV 卡片与多曲线同步显示；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`
-        : `ECharts 曲线自动解析设备回读数值；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`;
+        : isWebsocket
+          ? `WebSocket 回包自动解析 JSON 或文本数值；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`
+          : `ECharts 曲线自动解析设备回读数值；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`;
   }
 
   const summary = queryDeviceField("deviceSummary");
@@ -1100,6 +1215,8 @@ function updateDeviceUi() {
       summary.textContent = describeModbusSummary(modbusConfig);
     } else if (isHart) {
       summary.textContent = describeHartSummary(hartConfig);
+    } else if (isWebsocket) {
+      summary.textContent = describeWebSocketSummary(websocketConfig);
     } else if (isAomaster) {
       summary.textContent = describeAomasterSummary(aomasterConfig);
     } else {
@@ -1135,6 +1252,16 @@ function updateDeviceUi() {
 
   if (isHart) {
     updateHartDeviceInfo();
+  }
+
+  if (isWebsocket) {
+    renderWebSocketQuickSends();
+    if (elements.sendFormat) {
+      elements.sendFormat.value = "json";
+    }
+    if (elements.lineEnding) {
+      elements.lineEnding.value = "";
+    }
   }
 
   requestChartResize();
@@ -1281,6 +1408,8 @@ function renderHomeDeviceCards() {
       summary.textContent = "RTU 寄存器读写，支持轮询读取与曲线显示。";
     } else if (entry.deviceId === HART_DEVICE_ID) {
       summary.textContent = "通用命令读写，PV/SV/TV/QV 轮询与多曲线，完整 HART 上位机调试。";
+    } else if (entry.deviceId === WEBSOCKET_DEVICE_ID) {
+      summary.textContent = "WebSocket 连接调试，快捷 JSON/文本发送与回包解析。";
     } else {
       summary.textContent = "用模板发送和解析规则快速适配未知串口设备。";
     }
@@ -1442,6 +1571,7 @@ function updateSetpointUi() {
     modbusConfig,
     aomasterConfig,
     hartConfig,
+    websocketConfig,
   );
   if (protocolPreview) {
     protocolPreview.textContent = command.preview;
@@ -1484,6 +1614,18 @@ function updateSetpointUi() {
     if (driverState) {
       driverState.textContent = normalizeHartConfig(hartConfig).device.discovered ? "HART 已识别" : "HART 未搜索";
       driverState.classList.toggle("warning", !normalizeHartConfig(hartConfig).device.discovered);
+    }
+    return;
+  }
+
+  if (state.deviceId === WEBSOCKET_DEVICE_ID) {
+    if (sendDriverCommand) {
+      sendDriverCommand.textContent = "发送轮询消息";
+      sendDriverCommand.disabled = !command.supported || !session?.connected;
+    }
+    if (driverState) {
+      driverState.textContent = command.supported ? "WebSocket 调试" : "请配置轮询消息";
+      driverState.classList.toggle("warning", !command.supported);
     }
     return;
   }
@@ -1601,6 +1743,7 @@ async function sendDeviceCommand() {
     modbusConfig,
     aomasterConfig,
     hartConfig,
+    websocketConfig,
   );
     const frames = command.frames ?? (command.bytes ? [command.bytes] : []);
     if (!command.supported || frames.length === 0) {
@@ -1709,10 +1852,18 @@ function stopAomasterPolling() {
   }
 }
 
+function stopWebSocketPolling() {
+  if (websocketPollTimer) {
+    clearInterval(websocketPollTimer);
+    websocketPollTimer = null;
+  }
+}
+
 function stopAllPolling() {
   stopModbusPolling();
   stopHartPolling();
   stopAomasterPolling();
+  stopWebSocketPolling();
 }
 
 function getCurrentPollIntervalMs() {
@@ -1722,6 +1873,10 @@ function getCurrentPollIntervalMs() {
 
   if (state.deviceId === HART_DEVICE_ID) {
     return normalizeHartConfig(hartConfig).pollIntervalMs;
+  }
+
+  if (state.deviceId === WEBSOCKET_DEVICE_ID) {
+    return normalizeWebSocketConfig(websocketConfig).pollIntervalMs;
   }
 
   if (state.deviceId === DEFAULT_DEVICE_ID) {
@@ -1749,6 +1904,18 @@ function canCurrentDevicePoll() {
     return normalizeHartConfig(hartConfig).device.discovered;
   }
 
+  if (state.deviceId === WEBSOCKET_DEVICE_ID) {
+    return createDeviceSetOutputCommand(
+      WEBSOCKET_DEVICE_ID,
+      state,
+      customConfig,
+      modbusConfig,
+      aomasterConfig,
+      hartConfig,
+      websocketConfig,
+    ).supported;
+  }
+
   return state.deviceId === DEFAULT_DEVICE_ID;
 }
 
@@ -1756,6 +1923,7 @@ function updateActivePolling() {
   updateModbusPolling();
   updateHartPolling();
   updateAomasterPolling();
+  updateWebSocketPolling();
 }
 
 function updatePollingUi() {
@@ -1783,6 +1951,8 @@ function updatePollingUi() {
       elements.pollState.textContent = "读模式方可轮询";
     } else if (state.deviceId === HART_DEVICE_ID && !canPoll) {
       elements.pollState.textContent = "请先搜索设备";
+    } else if (state.deviceId === WEBSOCKET_DEVICE_ID && !canPoll) {
+      elements.pollState.textContent = "请配置轮询间隔与消息";
     } else if (interval <= 0) {
       elements.pollState.textContent = "请设置轮询间隔";
     } else if (state.pollingActive) {
@@ -1829,6 +1999,128 @@ function updateModbusPolling() {
   modbusPollTimer = window.setInterval(() => {
     sendDeviceCommand().catch((error) => appendLog("error", "Modbus", error.message));
   }, normalized.pollIntervalMs);
+}
+
+function updateWebSocketPolling() {
+  stopWebSocketPolling();
+
+  const normalized = normalizeWebSocketConfig(websocketConfig);
+  if (state.deviceId !== WEBSOCKET_DEVICE_ID || !session?.connected || !state.pollingActive) {
+    return;
+  }
+
+  if (normalized.pollIntervalMs <= 0 || !normalized.heartbeatMessage.trim()) {
+    return;
+  }
+
+  websocketPollTimer = window.setInterval(() => {
+    sendDeviceCommand().catch((error) => appendLog("error", "WebSocket", error.message));
+  }, normalized.pollIntervalMs);
+}
+
+function updateWebSocketDraftConfig() {
+  websocketConfig = readWebsocketConfigForm();
+  updateDeviceUi();
+  if (state.pollingActive && !canCurrentDevicePoll()) {
+    state.pollingActive = false;
+  }
+  updateActivePolling();
+}
+
+function saveWebsocketConfig() {
+  websocketConfig = readWebsocketConfigForm();
+  localStorage.setItem(WEBSOCKET_CONFIG_STORAGE_KEY, JSON.stringify(websocketConfig));
+  populateWebsocketConfigForm(websocketConfig);
+  updateDeviceUi();
+  updateActivePolling();
+  appendLog("info", "设备", "WebSocket 调试配置已保存");
+}
+
+function resetWebsocketConfig() {
+  websocketConfig = normalizeWebSocketConfig(DEFAULT_WEBSOCKET_CONFIG);
+  localStorage.setItem(WEBSOCKET_CONFIG_STORAGE_KEY, JSON.stringify(websocketConfig));
+  populateWebsocketConfigForm(websocketConfig);
+  updateDeviceUi();
+  updateActivePolling();
+  appendLog("info", "设备", "WebSocket 调试配置已恢复默认");
+}
+
+function loadWebsocketConfig() {
+  try {
+    const saved = localStorage.getItem(WEBSOCKET_CONFIG_STORAGE_KEY);
+    return normalizeWebSocketConfig(saved ? JSON.parse(saved) : DEFAULT_WEBSOCKET_CONFIG);
+  } catch {
+    return normalizeWebSocketConfig(DEFAULT_WEBSOCKET_CONFIG);
+  }
+}
+
+function populateWebsocketConfigForm(config = websocketConfig) {
+  const normalized = normalizeWebSocketConfig(config);
+  if (elements.websocketPollIntervalMs) {
+    elements.websocketPollIntervalMs.value = String(normalized.pollIntervalMs);
+  }
+  if (elements.websocketHeartbeatFormat) {
+    elements.websocketHeartbeatFormat.value = normalized.heartbeatFormat;
+  }
+  if (elements.websocketHeartbeatMessage) {
+    elements.websocketHeartbeatMessage.value = normalized.heartbeatMessage;
+  }
+  if (elements.websocketParserFieldPath) {
+    elements.websocketParserFieldPath.value = normalized.parserFieldPath;
+  }
+  if (elements.websocketFieldName) {
+    elements.websocketFieldName.value = normalized.fieldName;
+  }
+  if (elements.websocketUnit) {
+    elements.websocketUnit.value = normalized.unit;
+  }
+}
+
+function readWebsocketConfigForm() {
+  return normalizeWebSocketConfig({
+    pollIntervalMs: elements.websocketPollIntervalMs?.value,
+    heartbeatFormat: elements.websocketHeartbeatFormat?.value,
+    heartbeatMessage: elements.websocketHeartbeatMessage?.value,
+    parserFieldPath: elements.websocketParserFieldPath?.value,
+    fieldName: elements.websocketFieldName?.value,
+    unit: elements.websocketUnit?.value,
+  });
+}
+
+function getWebsocketConfigControls() {
+  return [
+    elements.websocketPollIntervalMs,
+    elements.websocketHeartbeatFormat,
+    elements.websocketHeartbeatMessage,
+    elements.websocketParserFieldPath,
+    elements.websocketFieldName,
+    elements.websocketUnit,
+  ];
+}
+
+function renderWebSocketQuickSends() {
+  if (!elements.wsQuickSendGrid) {
+    return;
+  }
+
+  elements.wsQuickSendGrid.innerHTML = "";
+  WEBSOCKET_QUICK_MESSAGES.forEach((preset) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.wsQuickSend = preset.id;
+    button.textContent = preset.label;
+    button.disabled = !session?.connected;
+    elements.wsQuickSendGrid.append(button);
+  });
+}
+
+async function sendWebSocketQuickMessage(preset) {
+  if (!session?.connected) {
+    throw new Error("请先连接 WebSocket");
+  }
+
+  const payload = buildWebSocketMessage(preset.format, preset.message, { parseHexPayload });
+  await session.write(payload);
 }
 
 function updateModbusDraftConfig() {

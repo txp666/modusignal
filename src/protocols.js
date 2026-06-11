@@ -32,8 +32,14 @@ import {
   normalizeHartConfig,
   parseHartTelemetry,
 } from "./devices/hart-device.js";
-
-const textEncoder = new TextEncoder();
+import {
+  createWebSocketSetOutputCommand,
+  DEFAULT_WEBSOCKET_CONFIG,
+  normalizeWebSocketConfig,
+  parseWebSocketTelemetry,
+  WEBSOCKET_DEVICE_ID,
+  WEBSOCKET_PROFILE,
+} from "./devices/websocket-device.js";
 
 export {
   CUSTOM_DEVICE_ID,
@@ -53,12 +59,19 @@ export {
   normalizeHartConfig,
 } from "./devices/hart-device.js";
 
+export {
+  DEFAULT_WEBSOCKET_CONFIG,
+  WEBSOCKET_DEVICE_ID,
+  normalizeWebSocketConfig,
+} from "./devices/websocket-device.js";
+
 export const DEFAULT_DEVICE_ID = AOMASTER_DEVICE_ID;
 
 export const DEVICE_PROFILES = {
   [AOMASTER_DEVICE_ID]: AOMASTER_PROFILE,
   [MODBUS_DEVICE_ID]: MODBUS_PROFILE,
   [HART_DEVICE_ID]: HART_PROFILE,
+  [WEBSOCKET_DEVICE_ID]: WEBSOCKET_PROFILE,
 };
 
 export function getDeviceProfile(
@@ -113,6 +126,14 @@ export function getModeConfig(
   return profile.modes[mode] ?? profile.modes.custom ?? profile.modes.current ?? profile.modes.readHolding;
 }
 
+export function getDeviceDefaultTransportId(
+  deviceId = DEFAULT_DEVICE_ID,
+  customConfig = DEFAULT_CUSTOM_CONFIG,
+  modbusConfig = DEFAULT_MODBUS_CONFIG,
+) {
+  return getDeviceProfile(deviceId, customConfig, modbusConfig).defaultTransportId ?? "serial";
+}
+
 export function createDeviceSetOutputCommand(
   deviceId,
   state,
@@ -120,6 +141,7 @@ export function createDeviceSetOutputCommand(
   modbusConfig = DEFAULT_MODBUS_CONFIG,
   aomasterConfig = DEFAULT_AOMASTER_CONFIG,
   hartConfig = DEFAULT_HART_CONFIG,
+  websocketConfig = DEFAULT_WEBSOCKET_CONFIG,
 ) {
   if (deviceId === CUSTOM_DEVICE_ID) {
     return createCustomSetOutputCommand(state, customConfig, {
@@ -135,6 +157,13 @@ export function createDeviceSetOutputCommand(
 
   if (deviceId === HART_DEVICE_ID) {
     return createHartSetOutputCommand(state, hartConfig, { bytesToHex, parseHexPayload });
+  }
+
+  if (deviceId === WEBSOCKET_DEVICE_ID) {
+    return createWebSocketSetOutputCommand(state, websocketConfig, {
+      bytesToHex,
+      parseHexPayload,
+    });
   }
 
   if (deviceId === AOMASTER_DEVICE_ID) {
@@ -157,6 +186,7 @@ export function parseDeviceTelemetry(
   deviceState = null,
   aomasterConfig = DEFAULT_AOMASTER_CONFIG,
   hartConfig = DEFAULT_HART_CONFIG,
+  websocketConfig = DEFAULT_WEBSOCKET_CONFIG,
 ) {
   if (deviceId === CUSTOM_DEVICE_ID) {
     return parseCustomTelemetry(text, customConfig, parseNumericTelemetry);
@@ -168,6 +198,10 @@ export function parseDeviceTelemetry(
 
   if (deviceId === HART_DEVICE_ID) {
     return parseHartTelemetry(bytes, hartConfig);
+  }
+
+  if (deviceId === WEBSOCKET_DEVICE_ID) {
+    return parseWebSocketTelemetry(text, websocketConfig, parseNumericTelemetry);
   }
 
   if (deviceId === AOMASTER_DEVICE_ID) {
@@ -194,7 +228,22 @@ export function buildManualPayload(format, command, lineEnding) {
     return parseHexPayload(command);
   }
 
-  return textEncoder.encode(`${command}${lineEnding}`);
+  if (format === "json") {
+    const trimmed = command.trim();
+    if (!trimmed) {
+      throw new Error("JSON 命令不能为空");
+    }
+
+    try {
+      JSON.parse(trimmed);
+    } catch (error) {
+      throw new Error(`JSON 格式无效：${error.message}`);
+    }
+
+    return trimmed;
+  }
+
+  return `${command}${lineEnding}`;
 }
 
 export function parseHexPayload(input) {

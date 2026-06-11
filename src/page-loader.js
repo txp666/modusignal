@@ -9,6 +9,7 @@ const PAGE_PATHS = {
     modbus: "pages/devices/modbus.html",
     hart: "pages/devices/hart.html",
     custom: "pages/devices/custom.html",
+    websocket: "pages/devices/websocket.html",
   },
 };
 
@@ -38,7 +39,7 @@ function mountFragment(host, fragment) {
 }
 
 export async function loadAppPages() {
-  const [home, request, workbench, aomaster, modbus, hart, custom] = await Promise.all([
+  const [home, request, workbench, aomaster, modbus, hart, custom, websocket] = await Promise.all([
     fetchPageFragment(PAGE_PATHS.home),
     fetchPageFragment(PAGE_PATHS.request),
     fetchPageFragment(PAGE_PATHS.workbench),
@@ -46,13 +47,14 @@ export async function loadAppPages() {
     fetchPageFragment(PAGE_PATHS.devices.modbus),
     fetchPageFragment(PAGE_PATHS.devices.hart),
     fetchPageFragment(PAGE_PATHS.devices.custom),
+    fetchPageFragment(PAGE_PATHS.devices.websocket),
   ]);
 
   mountFragment(document.querySelector("#homeMount"), home);
   mountFragment(document.querySelector("#requestMount"), request);
   const deviceHost = document.querySelector("#devicePagesMount");
   deviceHost.replaceChildren();
-  deviceHost.append(aomaster, modbus, hart, custom);
+  deviceHost.append(aomaster, modbus, hart, custom, websocket);
   mountFragment(document.querySelector("#workbenchMount"), workbench);
 }
 

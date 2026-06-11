@@ -86,6 +86,7 @@ export function createCustomProfile(config) {
     name: normalized.name,
     type: normalized.type,
     protocolStatus: "custom",
+    defaultTransportId: "serial",
     modes: {
       custom: {
         label: normalized.channelLabel,

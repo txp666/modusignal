@@ -83,6 +83,7 @@ export const AOMASTER_PROFILE = {
   type: "模拟量信号发生器",
   image: "./images/AOMaster.png",
   protocolStatus: "ready",
+  defaultTransportId: "serial",
   modes: {
     current: {
       label: "4-20mA 电流",

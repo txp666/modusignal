@@ -7,7 +7,7 @@
  * Session 约定：
  *   - connect(options): Promise<void>   建立连接，成功后 emit("connected")
  *   - disconnect(): Promise<void>        断开连接，结束后 emit("disconnected")
- *   - write(bytes: Uint8Array): Promise<void>  发送字节，成功后 emit("tx", { bytes, timestamp })
+ *   - write(data: Uint8Array | string): Promise<void>  发送数据，成功后 emit("tx", ...)
  *   - get connected(): boolean           当前是否已连接
  *   - static isSupported(): boolean      当前环境是否支持该传输
  *
@@ -15,7 +15,7 @@
  *   - connected   { options }
  *   - disconnected
  *   - rx          { bytes: Uint8Array, text: string, timestamp: Date }
- *   - tx          { bytes: Uint8Array, timestamp: Date }
+ *   - tx          { bytes: Uint8Array, text?: string, timestamp: Date }
  *   - error       { error: Error }
  *
  * Descriptor 约定（见 registry.js）：

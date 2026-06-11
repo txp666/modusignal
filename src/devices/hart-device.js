@@ -111,6 +111,7 @@ export const HART_PROFILE = {
   type: "HART 现场总线",
   image: "./images/hart.png",
   protocolStatus: "ready",
+  defaultTransportId: "serial",
   modes: {
     readId: {
       label: "设备标识",

@@ -92,6 +92,7 @@
         格式
         <select id="sendFormat">
           <option value="ascii" selected>ASCII</option>
+          <option value="json">JSON</option>
           <option value="hex">HEX</option>
         </select>
       </label>
@@ -105,7 +106,7 @@
       </label>
       <label class="send-command">
         命令
-        <input id="manualCommand" type="text" placeholder="例如：READ? 或 01 03 00 00" />
+        <input id="manualCommand" type="text" placeholder="例如：READ?、01 03 00 00 或 {&quot;cmd&quot;:&quot;ping&quot;}" />
       </label>
       <button id="sendManual" type="button" disabled>发送</button>
     </div>

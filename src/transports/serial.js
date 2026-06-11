@@ -1,6 +1,7 @@
 import { BaseTransport } from "./transport.js";
 
 const decoder = new TextDecoder();
+const textEncoder = new TextEncoder();
 
 export const SERIAL_TRANSPORT_ID = "serial";
 
@@ -76,13 +77,18 @@ export class SerialTransport extends BaseTransport {
     this.emit("disconnected");
   }
 
-  async write(bytes) {
+  async write(data) {
     if (!this.writer) {
       throw new Error("连接未建立");
     }
 
+    const bytes = typeof data === "string" ? textEncoder.encode(data) : data;
     await this.writer.write(bytes);
-    this.emit("tx", { bytes, timestamp: new Date() });
+    this.emit("tx", {
+      bytes,
+      text: typeof data === "string" ? data : undefined,
+      timestamp: new Date(),
+    });
   }
 
   async readLoop() {
