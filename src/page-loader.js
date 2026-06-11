@@ -7,6 +7,7 @@ const PAGE_PATHS = {
   devices: {
     aomaster: "pages/devices/aomaster.html",
     modbus: "pages/devices/modbus.html",
+    hart: "pages/devices/hart.html",
     custom: "pages/devices/custom.html",
   },
 };
@@ -37,12 +38,13 @@ function mountFragment(host, fragment) {
 }
 
 export async function loadAppPages() {
-  const [home, request, workbench, aomaster, modbus, custom] = await Promise.all([
+  const [home, request, workbench, aomaster, modbus, hart, custom] = await Promise.all([
     fetchPageFragment(PAGE_PATHS.home),
     fetchPageFragment(PAGE_PATHS.request),
     fetchPageFragment(PAGE_PATHS.workbench),
     fetchPageFragment(PAGE_PATHS.devices.aomaster),
     fetchPageFragment(PAGE_PATHS.devices.modbus),
+    fetchPageFragment(PAGE_PATHS.devices.hart),
     fetchPageFragment(PAGE_PATHS.devices.custom),
   ]);
 
@@ -50,7 +52,7 @@ export async function loadAppPages() {
   mountFragment(document.querySelector("#requestMount"), request);
   const deviceHost = document.querySelector("#devicePagesMount");
   deviceHost.replaceChildren();
-  deviceHost.append(aomaster, modbus, custom);
+  deviceHost.append(aomaster, modbus, hart, custom);
   mountFragment(document.querySelector("#workbenchMount"), workbench);
 }
 

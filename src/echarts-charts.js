@@ -308,6 +308,254 @@ export class EchartsLiveChart {
   }
 }
 
+export class EchartsMultiLiveChart {
+  constructor(host, options = {}) {
+    this.host = host;
+    initChartMixin(this);
+    this.maxPoints = options.maxPoints ?? 120;
+    this.visiblePoints = options.visiblePoints ?? this.maxPoints;
+    this.emptyText = options.emptyText ?? "连接设备并开启轮询后显示实时曲线";
+    this.title = options.title ?? "HART 变量曲线";
+    this.seriesDefs = options.series ?? [];
+    this.visible = Object.fromEntries(this.seriesDefs.map((item) => [item.key, item.visible !== false]));
+    this.values = Object.fromEntries(this.seriesDefs.map((item) => [item.key, []]));
+    this.followLatest = true;
+    this.zoomStartValue = null;
+    this.zoomEndValue = null;
+    this.render();
+  }
+
+  setSeriesVisible(key, visible) {
+    if (!(key in this.visible)) {
+      return;
+    }
+
+    this.visible[key] = Boolean(visible);
+    this.render();
+  }
+
+  setVisibleMap(visibleMap = {}) {
+    for (const def of this.seriesDefs) {
+      if (visibleMap[def.key] !== undefined) {
+        this.visible[def.key] = Boolean(visibleMap[def.key]);
+      }
+    }
+    this.render();
+  }
+
+  addSample(sample = {}) {
+    for (const def of this.seriesDefs) {
+      const value = sample[def.key];
+      this.values[def.key].push(Number.isFinite(value) ? value : null);
+      if (this.values[def.key].length > this.maxPoints) {
+        this.values[def.key].shift();
+      }
+    }
+    this.render();
+  }
+
+  setMaxPoints(maxPoints) {
+    const normalized = Math.max(1, Math.trunc(finiteOr(maxPoints, this.maxPoints)));
+    if (normalized === this.maxPoints) {
+      return;
+    }
+
+    this.maxPoints = normalized;
+    for (const def of this.seriesDefs) {
+      if (this.values[def.key].length > this.maxPoints) {
+        this.values[def.key] = this.values[def.key].slice(-this.maxPoints);
+      }
+    }
+    this.render();
+  }
+
+  setVisiblePoints(visiblePoints) {
+    const normalized = Math.max(1, Math.trunc(finiteOr(visiblePoints, this.visiblePoints)));
+    if (normalized === this.visiblePoints) {
+      return;
+    }
+
+    this.visiblePoints = normalized;
+    this.followLatest = true;
+    this.zoomStartValue = null;
+    this.zoomEndValue = null;
+    this.render();
+  }
+
+  clear() {
+    for (const def of this.seriesDefs) {
+      this.values[def.key] = [];
+    }
+    this.followLatest = true;
+    this.zoomStartValue = null;
+    this.zoomEndValue = null;
+    this.render();
+  }
+
+  setMeta({ title }) {
+    if (title !== undefined) {
+      this.title = title;
+    }
+    this.render();
+  }
+
+  render() {
+    const chart = this.ensureChart();
+    if (!chart) {
+      this.pendingRender = true;
+      return;
+    }
+
+    if (!this.zoomListenerBound) {
+      chart.on("dataZoom", () => this.captureZoomWindow());
+      this.zoomListenerBound = true;
+    }
+
+    const activeSeries = this.seriesDefs.filter((def) => this.visible[def.key]);
+    const pointCount = Math.max(0, ...this.seriesDefs.map((def) => this.values[def.key].length));
+    const categories = Array.from({ length: pointCount }, (_, index) => String(index + 1));
+    const numericValues = activeSeries.flatMap((def) =>
+      this.values[def.key].filter((value) => Number.isFinite(value)),
+    );
+    const computedMin = numericValues.length ? Math.min(...numericValues) : 0;
+    const computedMax = numericValues.length ? Math.max(...numericValues) : 1;
+    let yMin = computedMin;
+    let yMax = computedMax;
+
+    if (yMin === yMax) {
+      yMin -= 1;
+      yMax += 1;
+    }
+
+    const hasData = pointCount > 0 && numericValues.length > 0;
+    const visiblePoints = Math.max(1, Math.min(this.visiblePoints, pointCount || this.visiblePoints));
+    const hasZoom = hasData && pointCount > visiblePoints;
+    const endValue = this.followLatest || this.zoomEndValue === null ? pointCount - 1 : Math.min(pointCount - 1, this.zoomEndValue);
+    const startValue = this.followLatest || this.zoomStartValue === null
+      ? Math.max(0, endValue - visiblePoints + 1)
+      : Math.max(0, Math.min(this.zoomStartValue, endValue));
+
+    chart.setOption(
+      {
+        animation: false,
+        grid: { left: 48, right: 18, top: 48, bottom: hasZoom ? 54 : 28 },
+        title: this.title
+          ? {
+              text: this.title,
+              left: 0,
+              top: 0,
+              textStyle: { color: THEME.text, fontSize: 13, fontWeight: 600 },
+            }
+          : undefined,
+        legend: {
+          top: 18,
+          textStyle: { color: THEME.text, fontSize: 12 },
+          data: activeSeries.map((def) => def.name),
+        },
+        tooltip: {
+          trigger: "axis",
+          formatter: (params) =>
+            params
+              .filter((point) => point.data !== null && point.data !== undefined)
+              .map((point) => `${point.seriesName}：${formatValue(point.data)}`)
+              .join("<br/>"),
+        },
+        xAxis: {
+          type: "category",
+          boundaryGap: false,
+          data: categories,
+          axisLine: { lineStyle: { color: THEME.grid } },
+          axisLabel: { color: THEME.text, show: hasData },
+          splitLine: { show: false },
+        },
+        dataZoom: hasZoom
+          ? [
+              { type: "inside", xAxisIndex: 0, filterMode: "none", startValue, endValue },
+              {
+                type: "slider",
+                xAxisIndex: 0,
+                filterMode: "none",
+                startValue,
+                endValue,
+                height: 18,
+                bottom: 8,
+                borderColor: "#cbd5df",
+                fillerColor: "rgba(15, 118, 110, 0.12)",
+                textStyle: { color: THEME.text },
+              },
+            ]
+          : [],
+        yAxis: {
+          type: "value",
+          min: yMin,
+          max: yMax,
+          axisLine: { show: false },
+          axisLabel: {
+            color: THEME.text,
+            formatter: (value) => formatValue(value, 2),
+          },
+          splitLine: { lineStyle: { color: THEME.grid, type: "dashed" } },
+        },
+        graphic: hasData
+          ? []
+          : [
+              {
+                type: "text",
+                left: "center",
+                top: "middle",
+                style: {
+                  text: this.emptyText,
+                  fill: THEME.text,
+                  fontSize: 14,
+                },
+              },
+            ],
+        series: this.seriesDefs
+          .filter((def) => this.visible[def.key])
+          .map((def) => ({
+            name: def.name,
+            type: "line",
+            smooth: true,
+            showSymbol: false,
+            data: this.values[def.key],
+            lineStyle: { color: def.color, width: 2.5 },
+            itemStyle: { color: def.color },
+            areaStyle: def.areaColor ? { color: def.areaColor } : undefined,
+            connectNulls: false,
+          })),
+      },
+      true,
+    );
+  }
+
+  captureZoomWindow() {
+    if (!this.chart) {
+      return;
+    }
+
+    const pointCount = Math.max(0, ...this.seriesDefs.map((def) => this.values[def.key].length));
+    if (!pointCount) {
+      return;
+    }
+
+    const zoom = this.chart.getOption()?.dataZoom?.[0];
+    if (!zoom) {
+      return;
+    }
+
+    const endValue = Number.isFinite(Number(zoom.endValue))
+      ? Number(zoom.endValue)
+      : Math.round(((Number(zoom.end) || 100) / 100) * Math.max(pointCount - 1, 0));
+    const startValue = Number.isFinite(Number(zoom.startValue))
+      ? Number(zoom.startValue)
+      : Math.round(((Number(zoom.start) || 0) / 100) * Math.max(pointCount - 1, 0));
+
+    this.zoomStartValue = startValue;
+    this.zoomEndValue = endValue;
+    this.followLatest = endValue >= pointCount - 2;
+  }
+}
+
 export function resizeAllCharts(charts) {
   charts.filter(Boolean).forEach((chart) => chart.resize());
 }

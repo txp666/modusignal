@@ -5,6 +5,10 @@
         <h2>监测面板</h2>
         <p id="chartPanelSummary">自动尝试从接收数据中提取数值并绘制最近 120 个采样点。</p>
       </div>
+      <div class="panel-actions poll-actions">
+        <span id="pollState" class="state-pill">轮询已停止</span>
+        <button id="togglePolling" type="button" disabled>开始轮询</button>
+      </div>
       <button id="clearChart" class="icon-button" type="button" aria-label="清空曲线" title="清空曲线">⌫</button>
     </div>
 
@@ -34,6 +38,13 @@
         <div class="chart-meta">
           <span>轮询回读设备实际值；总 <span id="dualChartPointCount">3000</span> 点 · 显示 <span id="dualChartVisiblePointCount">240</span> 点 · ECharts</span>
         </div>
+      </div>
+      <div id="hartChartSeriesBlock" class="hart-chart-series" hidden>
+        <span class="hart-chart-series-label">显示曲线</span>
+        <label><input type="checkbox" data-hart-series="pv" checked />PV</label>
+        <label><input type="checkbox" data-hart-series="sv" checked />SV</label>
+        <label><input type="checkbox" data-hart-series="tv" checked />TV</label>
+        <label><input type="checkbox" data-hart-series="qv" checked />QV</label>
       </div>
     </div>
 

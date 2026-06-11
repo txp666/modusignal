@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# 静态资源允许抓取，便于搜索引擎理解站点
+Allow: /images/
+Allow: /src/styles.css
+
+Sitemap: https://modusignal.cn/sitemap.xml

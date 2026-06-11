@@ -1,97 +1,137 @@
 <!doctype html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta
-      name="description"
-      content="modusignal 在线设备/信号调试平台，统一传输抽象（串口·TCP·MQTT），可通过浏览器连接本地设备，内置 AOMaster 4-20mA / 0-10V 信号发生器 Modbus RTU 驱动。"
-    />
-    <title>modusignal 在线设备调试</title>
-    <link rel="icon" href="./logo.ico?v=__ASSET_VERSION__" type="image/x-icon" />
-    <link rel="stylesheet" href="./src/styles.css?v=__ASSET_VERSION__" />
-  </head>
-  <body>
-    <div class="app-shell">
-      <header class="topbar">
-        <div class="brand-block">
-          <img class="brand-logo" src="./images/modusignal-logo.svg?v=__ASSET_VERSION__" alt="modusignal" width="1500" height="460" />
-          <p>在线设备调试平台（串口·TCP·MQTT）</p>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description"
+    content="modusignal 在线设备调试平台：Web Serial 串口连接，支持 AOMaster Modbus RTU、HART 通用设备、Modbus RTU 与自定义协议，实时曲线、收发日志与监测轮询。" />
+  <meta name="keywords" content="modusignal,设备调试,串口调试,Web Serial,HART,Modbus RTU,4-20mA,信号发生器,在线调试,工业协议" />
+  <meta name="robots" content="index, follow" />
+  <meta name="author" content="飞起小鹏" />
+  <link rel="canonical" href="https://modusignal.cn/" />
+  <link rel="sitemap" type="application/xml" title="Sitemap" href="./sitemap.xml" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:site_name" content="modusignal" />
+  <meta property="og:title" content="modusignal 在线设备调试" />
+  <meta property="og:description" content="浏览器端在线设备/信号调试：串口·HART·Modbus·自定义协议，实时曲线与收发调试。" />
+  <meta property="og:url" content="https://modusignal.cn/" />
+  <meta property="og:image" content="https://modusignal.cn/images/modusignal-logo.svg" />
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="modusignal 在线设备调试" />
+  <meta name="twitter:description" content="浏览器端在线设备/信号调试：串口·HART·Modbus·自定义协议，实时曲线与收发调试。" />
+  <title>modusignal 在线设备调试</title>
+  <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "modusignal",
+        "url": "https://modusignal.cn/",
+        "description": "在线设备与信号调试平台，支持 Web Serial 串口、HART、Modbus RTU 与自定义协议驱动。",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Web",
+        "inLanguage": "zh-CN",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "CNY"
+        }
+      }
+    </script>
+  <link rel="icon" href="./logo.ico?v=__ASSET_VERSION__" type="image/x-icon" />
+  <link rel="stylesheet" href="./src/styles.css?v=__ASSET_VERSION__" />
+</head>
+
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-block">
+        <img class="brand-logo" src="./images/modusignal-logo.svg?v=__ASSET_VERSION__" alt="modusignal" width="1500"
+          height="460" />
+        <p>在线设备调试平台（串口·HART·TCP·MQTT）</p>
+      </div>
+      <div class="topbar-actions">
+        <span id="secureState" class="state-pill">检测环境</span>
+        <button id="connectButton" class="primary-button" type="button">
+          <span aria-hidden="true">↔</span>
+          连接
+        </button>
+        <button id="disconnectButton" class="icon-button" type="button" disabled aria-label="断开连接" title="断开连接">
+          ⏻
+        </button>
+      </div>
+    </header>
+
+    <aside class="sidebar" aria-label="设备导航">
+      <section class="panel device-panel">
+        <div class="panel-heading">
+          <h2>项目</h2>
         </div>
-        <div class="topbar-actions">
-          <span id="secureState" class="state-pill">检测环境</span>
-          <button id="connectButton" class="primary-button" type="button">
-            <span aria-hidden="true">↔</span>
-            连接
-          </button>
-          <button id="disconnectButton" class="icon-button" type="button" disabled aria-label="断开连接" title="断开连接">
-            ⏻
-          </button>
+        <button class="device-item active" type="button" data-page-target="home">
+          <span class="device-icon" aria-hidden="true">M</span>
+          <span>
+            <strong>主页</strong>
+            <small>项目概览 / GitHub / 请求设备</small>
+          </span>
+        </button>
+        <button class="device-item" type="button" data-page-target="request">
+          <span class="device-icon" aria-hidden="true">R</span>
+          <span>
+            <strong>请求新设备</strong>
+            <small>提交协议和 UI 需求</small>
+          </span>
+        </button>
+      </section>
+
+      <section class="panel device-panel">
+        <div class="panel-heading">
+          <h2>设备库</h2>
+          <span id="connectionState" class="status-dot">未连接</span>
         </div>
-      </header>
+        <label class="device-library-search">
+          搜索
+          <input id="deviceLibrarySearch" type="search" placeholder="名称 / 协议 / ID" autocomplete="off"
+            spellcheck="false" />
+        </label>
+        <div id="deviceLibrary" class="device-library"></div>
+      </section>
 
-      <aside class="sidebar" aria-label="设备导航">
-        <section class="panel device-panel">
-          <div class="panel-heading">
-            <h2>项目</h2>
-          </div>
-          <button class="device-item active" type="button" data-page-target="home">
-            <span class="device-icon" aria-hidden="true">M</span>
-            <span>
-              <strong>主页</strong>
-              <small>项目概览 / GitHub / 请求设备</small>
-            </span>
-          </button>
-          <button class="device-item" type="button" data-page-target="request">
-            <span class="device-icon" aria-hidden="true">R</span>
-            <span>
-              <strong>请求新设备</strong>
-              <small>提交协议和 UI 需求</small>
-            </span>
-          </button>
-        </section>
-
-        <section class="panel device-panel">
-          <div class="panel-heading">
-            <h2>设备库</h2>
-            <span id="connectionState" class="status-dot">未连接</span>
-          </div>
-          <div id="deviceLibrary" class="device-library"></div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-heading">
-            <h2>连接参数</h2>
-          </div>
-          <label>
-            传输方式
-            <select id="transportSelect"></select>
-          </label>
-          <div id="transportFields" class="transport-fields"></div>
-        </section>
-      </aside>
-
-      <main class="workspace">
-        <div id="homeMount" class="page-mount"></div>
-
-        <div id="deviceShell" class="device-shell">
-          <div id="devicePagesMount" class="device-pages-mount"></div>
-          <div id="workbenchMount" class="workbench-mount"></div>
+      <section class="panel">
+        <div class="panel-heading">
+          <h2>连接参数</h2>
         </div>
+        <label>
+          传输方式
+          <select id="transportSelect"></select>
+        </label>
+        <div id="transportFields" class="transport-fields"></div>
+      </section>
+    </aside>
 
-        <div id="requestMount" class="page-mount"></div>
-      </main>
+    <main class="workspace">
+      <div id="homeMount" class="page-mount"></div>
 
-      <footer class="site-footer" aria-label="站点信息">
-        <p>
-          <span id="footerCopyright"></span>
-          · 开源协议：
-          <a id="footerLicenseLink" href="./LICENSE.txt" target="_blank" rel="license noreferrer">Apache License 2.0</a>
-          · 版本 <span id="footerVersion">__ASSET_VERSION__</span>
-        </p>
-      </footer>
-    </div>
+      <div id="deviceShell" class="device-shell">
+        <div id="devicePagesMount" class="device-pages-mount"></div>
+        <div id="workbenchMount" class="workbench-mount"></div>
+      </div>
 
-    <script type="module" src="./src/app.js?v=__ASSET_VERSION__"></script>
-  </body>
+      <div id="requestMount" class="page-mount"></div>
+    </main>
+
+    <footer class="site-footer" aria-label="站点信息">
+      <p>
+        <span id="footerCopyright"></span>
+        · 开源协议：
+        <a id="footerLicenseLink" href="./LICENSE.txt" target="_blank" rel="license noreferrer">Apache License 2.0</a>
+        · 版本 <span id="footerVersion">__ASSET_VERSION__</span>
+      </p>
+    </footer>
+  </div>
+
+  <script type="module" src="./src/app.js?v=__ASSET_VERSION__"></script>
+</body>
+
 </html>

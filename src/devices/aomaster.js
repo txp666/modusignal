@@ -52,7 +52,7 @@ export const AOMASTER_FREQUENCY_SCALE = 10;
 
 export const DEFAULT_AOMASTER_CONFIG = {
   slaveId: 1,
-  pollIntervalMs: 20,
+  pollIntervalMs: 0,
 };
 
 export const DEFAULT_AOMASTER_WAVE_STATE = {
@@ -230,7 +230,11 @@ export function decodeAomasterValue(mode, rawValue) {
 
 export function describeAomasterSummary(config) {
   const normalized = normalizeAomasterConfig(config);
-  return `Modbus RTU 从站 ${normalized.slaveId}，轮询 ${normalized.pollIntervalMs} ms`;
+  if (normalized.pollIntervalMs <= 0) {
+    return `Modbus RTU 从站 ${normalized.slaveId}，默认不轮询`;
+  }
+
+  return `Modbus RTU 从站 ${normalized.slaveId}，轮询间隔 ${normalized.pollIntervalMs} ms`;
 }
 
 export function describeAomasterOutput(state) {

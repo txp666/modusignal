@@ -2,7 +2,7 @@
   <img src="./images/modusignal-logo.svg" alt="modusignal" width="480" />
 </p>
 
-<p align="center">在线设备调试平台（串口·TCP·MQTT）</p>
+<p align="center">在线设备调试平台（串口·HART·TCP·MQTT）</p>
 
 # modusignal 在线设备调试平台
 

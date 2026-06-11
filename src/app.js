@@ -23,6 +23,22 @@ import {
   getModbusMode,
   resetModbusRxBuffer,
 } from "./devices/modbus-device.js";
+import {
+  createHartPollCommand,
+  createHartSearchCommand,
+  DEFAULT_HART_CONFIG,
+  describeHartSummary,
+  getHartMode,
+  HART_DEVICE_ID,
+  HART_TRANSPORT_DEFAULTS,
+  HART_UNIVERSAL_COMMANDS,
+  HART_VARIABLE_CARDS,
+  mergeHartDiscovery,
+  normalizeHartConfig,
+  resetHartDeviceState,
+  resetHartRxBuffer,
+} from "./devices/hart-device.js";
+import { formatHartDeviceSummary } from "./hart/hart.js";
 import { isReadFunctionCode } from "./modbus/modbus.js";
 import {
   buildManualPayload,
@@ -42,6 +58,7 @@ import {
   normalizeCustomConfig,
   normalizeModbusConfig,
   parseDeviceTelemetry,
+  parseHexPayload,
   resolveLineEnding,
 } from "./protocols.js";
 import {
@@ -52,11 +69,12 @@ import {
 
 const CUSTOM_CONFIG_STORAGE_KEY = "modusignal.customDevice.v1";
 const MODBUS_CONFIG_STORAGE_KEY = "modusignal.modbusDevice.v1";
+const HART_CONFIG_STORAGE_KEY = "modusignal.hartDevice.v1";
 const AOMASTER_CONFIG_STORAGE_KEY = "modusignal.aomasterDevice.v1";
 const CHART_CONFIG_STORAGE_KEY = "modusignal.chart.v1";
 const AOMASTER_VALUE_DISPLAY_STORAGE_KEY = "modusignal.aomasterValueDisplayMode.v1";
 
-const DEVICE_PAGE_IDS = [DEFAULT_DEVICE_ID, CUSTOM_DEVICE_ID, MODBUS_DEVICE_ID];
+const DEVICE_PAGE_IDS = [DEFAULT_DEVICE_ID, CUSTOM_DEVICE_ID, MODBUS_DEVICE_ID, HART_DEVICE_ID];
 
 /** @type {Record<string, HTMLElement | HTMLElement[] | null>} */
 const elements = {};
@@ -70,6 +88,7 @@ function cacheElements() {
     disconnectButton: document.querySelector("#disconnectButton"),
     connectionState: document.querySelector("#connectionState"),
     deviceLibrary: document.querySelector("#deviceLibrary"),
+    deviceLibrarySearch: document.querySelector("#deviceLibrarySearch"),
     pages: [...document.querySelectorAll("[data-page-id]")],
     customDeviceNavName: document.querySelector("#customDeviceNavName"),
     githubLink: document.querySelector("#githubLink"),
@@ -144,6 +163,29 @@ function cacheElements() {
     modbusPollIntervalMs: document.querySelector("#modbusPollIntervalMs"),
     saveModbusConfig: document.querySelector("#saveModbusConfig"),
     resetModbusConfig: document.querySelector("#resetModbusConfig"),
+    hartPollAddress: document.querySelector("#hartPollAddress"),
+    hartMasterType: document.querySelector("#hartMasterType"),
+    hartCommand: document.querySelector("#hartCommand"),
+    hartCustomCommandData: document.querySelector("#hartCustomCommandData"),
+    hartPreambleLength: document.querySelector("#hartPreambleLength"),
+    hartScale: document.querySelector("#hartScale"),
+    hartOffset: document.querySelector("#hartOffset"),
+    hartFieldName: document.querySelector("#hartFieldName"),
+    hartUnit: document.querySelector("#hartUnit"),
+    hartPollIntervalMs: document.querySelector("#hartPollIntervalMs"),
+    hartPollMode: document.querySelector("#hartPollMode"),
+    hartCommandMode: document.querySelector("#hartCommandMode"),
+    hartCustomCommand: document.querySelector("#hartCustomCommand"),
+    hartPresetCommandField: document.querySelector("#hartPresetCommandField"),
+    hartCustomCommandField: document.querySelector("#hartCustomCommandField"),
+    hartFrameChecksum: document.querySelector("#hartFrameChecksum"),
+    hartDeviceInfo: document.querySelector("#hartDeviceInfo"),
+    hartSearchDevice: document.querySelector("#hartSearchDevice"),
+    hartCommandResponse: document.querySelector("#hartCommandResponse"),
+    hartChartSeriesBlock: document.querySelector("#hartChartSeriesBlock"),
+    hartChartSeriesInputs: [...document.querySelectorAll("[data-hart-series]")],
+    saveHartConfig: document.querySelector("#saveHartConfig"),
+    resetHartConfig: document.querySelector("#resetHartConfig"),
     telemetryChart: document.querySelector("#telemetryChart"),
     chartValue: document.querySelector("#chartValue"),
     chartPanelSummary: document.querySelector("#chartPanelSummary"),
@@ -168,22 +210,38 @@ function cacheElements() {
     lineEnding: document.querySelector("#lineEnding"),
     manualCommand: document.querySelector("#manualCommand"),
     sendManual: document.querySelector("#sendManual"),
+    pollState: document.querySelector("#pollState"),
+    togglePolling: document.querySelector("#togglePolling"),
   });
 }
 
 let chart = null;
+let hartChart = null;
 let setpointChart = null;
 let actualChart = null;
 let allCharts = [];
 let chartsReady = false;
 let chartConfigEventsBound = false;
+let EchartsLiveChartClass = null;
+let EchartsMultiLiveChartClass = null;
 let customConfig = loadCustomConfig();
 let modbusConfig = loadModbusConfig();
+let hartConfig = loadHartConfig();
 let aomasterConfig = loadAomasterConfig();
 let chartConfig = loadChartConfig();
 let session = null;
 let modbusPollTimer = null;
+let hartPollTimer = null;
 let aomasterPollTimer = null;
+let deviceLibrarySearchQuery = "";
+/** @type {Record<string, string | number>} */
+let transportOptions = {};
+const RX_LOG_IDLE_MS = 45;
+let rxLogFlushTimer = null;
+/** @type {Uint8Array | string | null} */
+let rxLogBuffer = null;
+/** @type {HTMLElement | null} */
+let rxLogPendingLine = null;
 
 const state = {
   pageId: "home",
@@ -200,6 +258,7 @@ const state = {
   stepSequence: [4, 8, 12, 16, 20],
   stepDwellMs: 500,
   stepLoops: 1,
+  pollingActive: false,
 };
 
 boot();
@@ -208,7 +267,7 @@ async function boot() {
   try {
     await loadAppPages();
     cacheElements();
-    initialize();
+    await initialize();
   } catch (error) {
     console.error("应用启动失败", error);
     document.body.insertAdjacentHTML(
@@ -218,7 +277,7 @@ async function boot() {
   }
 }
 
-function initialize() {
+async function initialize() {
   if (elements.githubLink) {
     elements.githubLink.href = MODUSIGNAL_APP.githubUrl;
   }
@@ -235,6 +294,7 @@ function initialize() {
   }
   populateCustomConfigForm(customConfig);
   populateModbusConfigForm(modbusConfig);
+  populateHartConfigForm(hartConfig);
   populateAomasterConfigForm(aomasterConfig);
   populateChartConfigForm(chartConfig);
   syncAomasterValueDisplayControls();
@@ -243,7 +303,7 @@ function initialize() {
   renderDeviceLibrary();
   renderHomeDeviceCards();
   bindEvents();
-  setTransport(state.transportId);
+  await setTransport(state.transportId);
   updatePageUi();
   safeUpdateDeviceUi();
   void initMonitoringCharts();
@@ -270,7 +330,9 @@ function safeUpdateDeviceUi() {
 
 async function initMonitoringCharts() {
   try {
-    const { EchartsLiveChart } = await import("./echarts-charts.js");
+    const { EchartsLiveChart, EchartsMultiLiveChart } = await import("./echarts-charts.js");
+    EchartsLiveChartClass = EchartsLiveChart;
+    EchartsMultiLiveChartClass = EchartsMultiLiveChart;
     const chartPointSettings = getChartPointSettings();
     chart = new EchartsLiveChart(elements.telemetryChart, {
       maxPoints: chartPointSettings.totalPointCount,
@@ -325,6 +387,171 @@ function applyChartPointCountConfig() {
     item.setVisiblePoints?.(chartPointSettings.visiblePointCount);
   });
   updateChartPointLabels();
+}
+
+function buildHartChartSeriesDefs(config = hartConfig) {
+  const normalized = normalizeHartConfig(config);
+  return HART_VARIABLE_CARDS.map((card) => ({
+    key: card.key,
+    name: card.label,
+    color: card.color,
+    areaColor: `${card.color}1f`,
+    visible: normalized.chartSeries[card.key],
+  }));
+}
+
+function ensureHartTelemetryChart() {
+  if (!chartsReady || !EchartsMultiLiveChartClass || !elements.telemetryChart) {
+    return;
+  }
+
+  if (hartChart) {
+    hartChart.setVisibleMap(normalizeHartConfig(hartConfig).chartSeries);
+    return;
+  }
+
+  chart?.dispose();
+  chart = null;
+
+  const chartPointSettings = getChartPointSettings();
+  hartChart = new EchartsMultiLiveChartClass(elements.telemetryChart, {
+    maxPoints: chartPointSettings.totalPointCount,
+    visiblePoints: chartPointSettings.visiblePointCount,
+    emptyText: "连接设备并开启轮询后显示实时曲线",
+    title: "HART 变量曲线",
+    series: buildHartChartSeriesDefs(),
+  });
+  allCharts = [hartChart, setpointChart, actualChart].filter(Boolean);
+  applyChartPointCountConfig();
+}
+
+function ensureSingleTelemetryChart() {
+  if (!chartsReady || !EchartsLiveChartClass || !elements.telemetryChart) {
+    return;
+  }
+
+  if (chart) {
+    return;
+  }
+
+  hartChart?.dispose();
+  hartChart = null;
+
+  const chartPointSettings = getChartPointSettings();
+  chart = new EchartsLiveChartClass(elements.telemetryChart, {
+    maxPoints: chartPointSettings.totalPointCount,
+    visiblePoints: chartPointSettings.visiblePointCount,
+    color: "#0f766e",
+    areaColor: "rgba(15, 118, 110, 0.12)",
+    emptyText: "连接设备并开启轮询后显示实时曲线",
+    title: "实时曲线",
+  });
+  allCharts = [chart, setpointChart, actualChart].filter(Boolean);
+  applyChartPointCountConfig();
+}
+
+function syncHartChartSeriesControls() {
+  if (!elements.hartChartSeriesBlock) {
+    return;
+  }
+
+  const normalized = normalizeHartConfig(hartConfig);
+  elements.hartChartSeriesInputs.forEach((input) => {
+    const key = input.dataset.hartSeries;
+    if (key) {
+      input.checked = Boolean(normalized.chartSeries[key]);
+    }
+  });
+}
+
+function updateHartVariableCards(variables = {}) {
+  const cards = document.querySelectorAll("#hartVariableCards [data-hart-card]");
+  cards.forEach((card) => {
+    const key = card.dataset.hartCard;
+    const readout = card.querySelector(".hart-value-readout");
+    const unit = card.querySelector(".hart-value-unit");
+    const entry = variables[key];
+
+    if (!readout || !unit) {
+      return;
+    }
+
+    if (!entry || !Number.isFinite(entry.value)) {
+      readout.textContent = "--";
+      unit.textContent = HART_VARIABLE_CARDS.find((item) => item.key === key)?.defaultUnit ?? "";
+      return;
+    }
+
+    readout.textContent = entry.value.toFixed(3);
+    unit.textContent = entry.unit || HART_VARIABLE_CARDS.find((item) => item.key === key)?.defaultUnit || "";
+  });
+}
+
+function updateHartCommandResponse(telemetry) {
+  if (!elements.hartCommandResponse) {
+    return;
+  }
+
+  if (!telemetry?.commandSummary) {
+    return;
+  }
+
+  const lines = telemetry.commandLines?.length ? telemetry.commandLines : [telemetry.commandSummary];
+  elements.hartCommandResponse.textContent = lines.join("\n");
+}
+
+function handleHartTelemetry(telemetry) {
+  updateHartCommandResponse(telemetry);
+
+  if (telemetry?.isMulti && telemetry.variables) {
+    updateHartVariableCards(telemetry.variables);
+    const sample = Object.fromEntries(
+      Object.entries(telemetry.variables).map(([key, entry]) => [key, entry.value]),
+    );
+    ensureHartTelemetryChart();
+    hartChart?.addSample(sample);
+
+    const summary = Object.entries(telemetry.variables)
+      .map(([key, entry]) => {
+        const label = HART_VARIABLE_CARDS.find((item) => item.key === key)?.label ?? key;
+        return `${label} ${entry.value.toFixed(3)}${entry.unit ? ` ${entry.unit}` : ""}`;
+      })
+      .join(" · ");
+    if (elements.chartValue) {
+      elements.chartValue.textContent = summary || "暂无数据";
+    }
+    return;
+  }
+
+  if (telemetry && Number.isFinite(telemetry.value)) {
+    ensureHartTelemetryChart();
+    const sample = { pv: telemetry.value };
+    hartChart?.addSample(sample);
+    updateHartVariableCards({ pv: { value: telemetry.value, unit: telemetry.unit } });
+    if (elements.chartValue) {
+      elements.chartValue.textContent = `${telemetry.fieldName} ${telemetry.value.toFixed(3)}${telemetry.unit ? ` ${telemetry.unit}` : ""}`;
+    }
+  } else if (telemetry?.isCommandResult && telemetry.commandSummary) {
+    if (elements.chartValue) {
+      elements.chartValue.textContent = telemetry.commandSummary;
+    }
+  }
+}
+
+function handleHartChartSeriesChange(event) {
+  const key = event.target.dataset.hartSeries;
+  if (!key) {
+    return;
+  }
+
+  hartConfig = normalizeHartConfig({
+    ...hartConfig,
+    chartSeries: {
+      ...normalizeHartConfig(hartConfig).chartSeries,
+      [key]: event.target.checked,
+    },
+  });
+  hartChart?.setSeriesVisible(key, event.target.checked);
 }
 
 function updateChartPointLabels() {
@@ -390,6 +617,7 @@ function bindEvents() {
   on(elements.sendManual, "click", sendManualCommand);
   on(elements.copyRequestTemplate, "click", copyRequestTemplate);
   on(elements.clearLog, "click", () => {
+    resetRxLogCoalesce();
     elements.serialLog.innerHTML = "";
     appendLog("info", "系统", "日志已清空");
   });
@@ -397,6 +625,7 @@ function bindEvents() {
     clearAllCharts();
     appendLog("info", "系统", "曲线已清空");
   });
+  on(elements.togglePolling, "click", togglePolling);
 
   on(elements.appShell, "click", (event) => {
     const target = event.target.closest("[data-page-target]");
@@ -477,6 +706,23 @@ function bindEvents() {
   on(elements.saveModbusConfig, "click", saveModbusConfig);
   on(elements.resetModbusConfig, "click", resetModbusConfig);
 
+  on(elements.deviceLibrarySearch, "input", handleDeviceLibrarySearchInput);
+
+  getHartConfigControls().filter(Boolean).forEach((control) => {
+    control.addEventListener("input", updateHartDraftConfig);
+    control.addEventListener("change", updateHartDraftConfig);
+  });
+
+  on(elements.saveHartConfig, "click", saveHartConfig);
+  on(elements.resetHartConfig, "click", resetHartConfig);
+  on(elements.hartSearchDevice, "click", () => {
+    sendHartSearchCommand().catch((error) => appendLog("error", "HART", error.message));
+  });
+
+  elements.hartChartSeriesInputs.forEach((input) => {
+    input.addEventListener("change", handleHartChartSeriesChange);
+  });
+
   getAomasterConfigControls().filter(Boolean).forEach((control) => {
     control.addEventListener("input", updateAomasterDraftConfig);
     control.addEventListener("change", updateAomasterDraftConfig);
@@ -491,25 +737,30 @@ function bindEvents() {
 function bindSessionEvents(target) {
   target.addEventListener("connected", () => {
     updateConnectionUi(true);
-    updateModbusPolling();
-    updateAomasterPolling();
+    updateActivePolling();
+    updatePollingUi();
     appendLog("info", "连接", "已连接");
   });
 
   target.addEventListener("disconnected", () => {
-    stopModbusPolling();
-    stopAomasterPolling();
+    state.pollingActive = false;
+    stopAllPolling();
     resetModbusRxBuffer();
+    resetHartRxBuffer();
     resetAomasterRxBuffer();
+    finalizeRxLogCoalesce();
     updateConnectionUi(false);
+    updatePollingUi();
     appendLog("info", "连接", "已断开");
   });
 
   target.addEventListener("rx", (event) => {
     const { bytes, text } = event.detail;
-    const useHexDisplay = state.deviceId === MODBUS_DEVICE_ID || state.deviceId === DEFAULT_DEVICE_ID;
-    const display = useHexDisplay ? bytesToHex(bytes) : text.trim() ? text : bytesToHex(bytes);
-    appendLog("rx", "RX", display);
+    const useHexDisplay =
+      state.deviceId === MODBUS_DEVICE_ID ||
+      state.deviceId === HART_DEVICE_ID ||
+      state.deviceId === DEFAULT_DEVICE_ID;
+    queueRxLogDisplay(bytes, text, useHexDisplay);
 
     const telemetry = parseDeviceTelemetry(
       state.deviceId,
@@ -519,12 +770,23 @@ function bindSessionEvents(target) {
       bytes,
       state,
       aomasterConfig,
+      hartConfig,
     );
     if (telemetry) {
+      if (state.deviceId === HART_DEVICE_ID && telemetry.isDiscovery) {
+        hartConfig = mergeHartDiscovery(hartConfig, telemetry);
+        updateHartDeviceInfo();
+        appendLog("info", "HART", formatHartDeviceSummary(hartConfig.device));
+        updateDeviceUi();
+        return;
+      }
+
       if (state.deviceId === DEFAULT_DEVICE_ID) {
         actualChart?.add(getAomasterDisplayNumber(telemetry.value));
         const formatted = formatAomasterDisplayValue(telemetry.value);
         elements.actualChartValue.textContent = `${telemetry.fieldName} ${formatted}`;
+      } else if (state.deviceId === HART_DEVICE_ID) {
+        handleHartTelemetry(telemetry);
       } else {
         chart?.add(telemetry.value);
         const formatted = `${telemetry.value.toFixed(3)}${telemetry.unit ? ` ${telemetry.unit}` : ""}`;
@@ -534,6 +796,7 @@ function bindSessionEvents(target) {
   });
 
   target.addEventListener("tx", (event) => {
+    finalizeRxLogCoalesce();
     appendLog("tx", "TX", bytesToHex(event.detail.bytes));
   });
 
@@ -567,6 +830,18 @@ function populateTransportSelect() {
   elements.transportSelect.value = state.transportId;
 }
 
+function resolveTransportFieldDefault(field) {
+  if (state.deviceId === HART_DEVICE_ID && HART_TRANSPORT_DEFAULTS[field.key] !== undefined) {
+    return HART_TRANSPORT_DEFAULTS[field.key];
+  }
+
+  if (transportOptions[field.key] !== undefined) {
+    return transportOptions[field.key];
+  }
+
+  return field.default;
+}
+
 function renderTransportFields() {
   const descriptor = getTransportDescriptor(state.transportId);
   elements.transportFields.innerHTML = "";
@@ -578,6 +853,7 @@ function renderTransportFields() {
     const control = field.type === "select" ? document.createElement("select") : document.createElement("input");
     control.dataset.fieldKey = field.key;
     control.dataset.fieldType = typeof field.default === "number" ? "number" : "string";
+    const resolvedDefault = resolveTransportFieldDefault(field);
 
     if (field.type === "select") {
       (field.options ?? []).forEach((option) => {
@@ -586,19 +862,21 @@ function renderTransportFields() {
         const el = document.createElement("option");
         el.value = String(value);
         el.textContent = text;
-        if (value === field.default) {
+        if (value === resolvedDefault) {
           el.selected = true;
         }
         control.append(el);
       });
     } else {
       control.type = field.type === "number" ? "number" : "text";
-      control.value = field.default ?? "";
+      control.value = resolvedDefault ?? "";
     }
 
     label.append(control);
     elements.transportFields.append(label);
   });
+
+  applyDeviceTransportDefaults();
 }
 
 function readTransportOptions() {
@@ -610,10 +888,43 @@ function readTransportOptions() {
   return options;
 }
 
+function applyDeviceTransportDefaults(deviceId = state.deviceId) {
+  if (deviceId !== HART_DEVICE_ID || state.transportId !== DEFAULT_TRANSPORT_ID) {
+    return false;
+  }
+
+  if (!elements.transportFields) {
+    return false;
+  }
+
+  let changed = false;
+  for (const [key, value] of Object.entries(HART_TRANSPORT_DEFAULTS)) {
+    const control = elements.transportFields.querySelector(`[data-field-key="${key}"]`);
+    if (!control) {
+      continue;
+    }
+
+    const nextValue = String(value);
+    if (control.value !== nextValue) {
+      changed = true;
+    }
+
+    transportOptions[key] = value;
+    control.value = nextValue;
+  }
+
+  if (changed && session?.connected) {
+    appendLog("info", "连接", "已切换 HART 默认串口参数（1200 8O1），断开后重新连接生效");
+  }
+
+  return changed;
+}
+
 function selectDevice(deviceId) {
-  stopModbusPolling();
-  stopAomasterPolling();
+  state.pollingActive = false;
+  stopAllPolling();
   resetModbusRxBuffer();
+  resetHartRxBuffer();
   resetAomasterRxBuffer();
   state.deviceId = deviceId;
   state.pageId = deviceId;
@@ -626,6 +937,12 @@ function selectDevice(deviceId) {
     state.mode = getModbusMode(normalized.functionCode);
     const config = getModeConfig(state.mode, deviceId, customConfig, modbusConfig);
     state.setpoint = config.presets.mid;
+  } else if (deviceId === HART_DEVICE_ID) {
+    const normalized = normalizeHartConfig(hartConfig);
+    state.mode = getHartMode(normalized.activeCommand);
+    const config = getModeConfig(state.mode, deviceId, customConfig, modbusConfig);
+    state.setpoint = config.presets.mid;
+    applyDeviceTransportDefaults(HART_DEVICE_ID);
   } else {
     state.mode = elements.outputModeSelect?.value || "current";
     applyAomasterModeDefaults(false);
@@ -635,13 +952,18 @@ function selectDevice(deviceId) {
   syncAomasterChartRanges();
   updatePageUi();
   updateDeviceUi();
-  updateModbusPolling();
-  updateAomasterPolling();
+  updateActivePolling();
+  updatePollingUi();
   appendLog("info", "设备", `已切换到 ${getDeviceProfile(state.deviceId, customConfig, modbusConfig).name}`);
 }
 
 function navigateToPage(pageId) {
-  if (pageId === DEFAULT_DEVICE_ID || pageId === CUSTOM_DEVICE_ID || pageId === MODBUS_DEVICE_ID) {
+  if (
+    pageId === DEFAULT_DEVICE_ID ||
+    pageId === CUSTOM_DEVICE_ID ||
+    pageId === MODBUS_DEVICE_ID ||
+    pageId === HART_DEVICE_ID
+  ) {
     selectDevice(pageId);
     return;
   }
@@ -684,6 +1006,7 @@ function updateDeviceUi() {
   const profile = getDeviceProfile(state.deviceId, customConfig, modbusConfig);
   const isCustom = state.deviceId === CUSTOM_DEVICE_ID;
   const isModbus = state.deviceId === MODBUS_DEVICE_ID;
+  const isHart = state.deviceId === HART_DEVICE_ID;
   const isAomaster = state.deviceId === DEFAULT_DEVICE_ID;
   const normalizedModbus = normalizeModbusConfig(modbusConfig);
   const modbusIsRead = isModbus && isReadFunctionCode(normalizedModbus.functionCode);
@@ -695,10 +1018,10 @@ function updateDeviceUi() {
   const setpointRow = queryDeviceField("setpointRow");
   const presetRow = queryDeviceField("presetRow");
   if (setpointRow) {
-    setpointRow.hidden = modbusIsRead;
+    setpointRow.hidden = modbusIsRead || isHart;
   }
   if (presetRow) {
-    presetRow.hidden = modbusIsRead;
+    presetRow.hidden = modbusIsRead || isHart;
   }
 
   if (elements.singleChartBlock) {
@@ -707,11 +1030,25 @@ function updateDeviceUi() {
   if (elements.dualChartBlock) {
     elements.dualChartBlock.hidden = !isAomaster;
   }
+  if (elements.hartChartSeriesBlock) {
+    elements.hartChartSeriesBlock.hidden = !isHart;
+  }
+  if (isHart) {
+    applyDeviceTransportDefaults(HART_DEVICE_ID);
+    syncHartCommandModeUi();
+    ensureHartTelemetryChart();
+    syncHartChartSeriesControls();
+    updateHartVariableCards();
+  } else {
+    ensureSingleTelemetryChart();
+  }
   if (elements.chartPanelSummary) {
     const chartPointSettings = getChartPointSettings();
     elements.chartPanelSummary.textContent = isAomaster
       ? `ECharts 曲线预览设定波形，并跟踪轮询回读的实际输出；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`
-      : `ECharts 曲线自动解析设备回读数值；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`;
+      : isHart
+        ? `HART PV/SV/TV/QV 卡片与多曲线同步显示；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`
+        : `ECharts 曲线自动解析设备回读数值；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`;
   }
 
   const summary = queryDeviceField("deviceSummary");
@@ -720,6 +1057,8 @@ function updateDeviceUi() {
       summary.textContent = `${profile.name}；设定范围、发送模板和回包解析可在本页配置。`;
     } else if (isModbus) {
       summary.textContent = describeModbusSummary(modbusConfig);
+    } else if (isHart) {
+      summary.textContent = describeHartSummary(hartConfig);
     } else if (isAomaster) {
       summary.textContent = describeAomasterSummary(aomasterConfig);
     } else {
@@ -751,13 +1090,18 @@ function updateDeviceUi() {
     refreshAomasterPreviewChart();
   }
 
-  if (!isAomaster && chart) {
+  if (!isAomaster && !isHart && chart) {
     const chartConfig = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
     chart.setMeta({ title: "实时曲线", unit: chartConfig.unit });
   }
 
+  if (isHart) {
+    updateHartDeviceInfo();
+  }
+
   requestChartResize();
   updateSetpointUi();
+  updatePollingUi();
 }
 
 function updatePageUi() {
@@ -802,10 +1146,48 @@ function createDeviceIcon(entry) {
   return icon;
 }
 
+function getDeviceLibraryEntries() {
+  return listDeviceLibrary(customConfig, modbusConfig);
+}
+
+function matchesDeviceLibrarySearch(entry, query) {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) {
+    return true;
+  }
+
+  const haystack = [entry.deviceId, entry.profile.id, entry.profile.name, entry.profile.type]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return haystack.includes(normalized);
+}
+
+function filterDeviceLibraryEntries(entries, query = deviceLibrarySearchQuery) {
+  return entries.filter((entry) => matchesDeviceLibrarySearch(entry, query));
+}
+
+function handleDeviceLibrarySearchInput(event) {
+  deviceLibrarySearchQuery = event.target.value;
+  renderDeviceLibrary();
+}
+
 function renderDeviceLibrary() {
   elements.deviceLibrary.innerHTML = "";
 
-  listDeviceLibrary(customConfig).forEach((entry) => {
+  const entries = filterDeviceLibraryEntries(getDeviceLibraryEntries());
+  if (entries.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "device-library-empty";
+    empty.textContent = deviceLibrarySearchQuery.trim()
+      ? "没有匹配的设备，请换个关键词试试。"
+      : "设备库为空。";
+    elements.deviceLibrary.append(empty);
+    return;
+  }
+
+  entries.forEach((entry) => {
     const button = document.createElement("button");
     button.className = "device-item";
     button.type = "button";
@@ -841,7 +1223,7 @@ function renderHomeDeviceCards() {
 
   grid.innerHTML = "";
 
-  listDeviceLibrary(customConfig).forEach((entry) => {
+  getDeviceLibraryEntries().forEach((entry) => {
     const button = document.createElement("button");
     button.className = "home-card";
     button.type = "button";
@@ -856,9 +1238,11 @@ function renderHomeDeviceCards() {
 
     const summary = document.createElement("span");
     if (entry.deviceId === DEFAULT_DEVICE_ID) {
-      summary.textContent = "阶跃/斜坡/方波等波形输出，双曲线预览与 20 ms 回读。";
+      summary.textContent = "阶跃/斜坡/方波等波形输出，双曲线预览，监测面板可手动轮询回读。";
     } else if (entry.deviceId === MODBUS_DEVICE_ID) {
       summary.textContent = "RTU 寄存器读写，支持轮询读取与曲线显示。";
+    } else if (entry.deviceId === HART_DEVICE_ID) {
+      summary.textContent = "通用命令读写，PV/SV/TV/QV 轮询与多曲线，完整 HART 上位机调试。";
     } else {
       summary.textContent = "用模板发送和解析规则快速适配未知串口设备。";
     }
@@ -1013,9 +1397,26 @@ function updateSetpointUi() {
     refreshAomasterPreviewChart();
   }
 
-  const command = createDeviceSetOutputCommand(state.deviceId, state, customConfig, modbusConfig, aomasterConfig);
+  const command = createDeviceSetOutputCommand(
+    state.deviceId,
+    state,
+    customConfig,
+    modbusConfig,
+    aomasterConfig,
+    hartConfig,
+  );
   if (protocolPreview) {
     protocolPreview.textContent = command.preview;
+  }
+  if (state.deviceId === HART_DEVICE_ID && elements.hartFrameChecksum) {
+    if (command.supported && Number.isFinite(command.checksum)) {
+      elements.hartFrameChecksum.textContent = `0x${command.checksum.toString(16).toUpperCase().padStart(2, "0")}（XOR 自动计算）`;
+    } else if (command.supported && command.bytes?.length) {
+      const checksum = command.bytes[command.bytes.length - 1];
+      elements.hartFrameChecksum.textContent = `0x${checksum.toString(16).toUpperCase().padStart(2, "0")}（XOR 自动计算）`;
+    } else {
+      elements.hartFrameChecksum.textContent = "--";
+    }
   }
   if (sendDriverCommand) {
     sendDriverCommand.disabled = !command.supported || !session?.connected;
@@ -1030,6 +1431,21 @@ function updateSetpointUi() {
     if (driverState) {
       driverState.textContent = "Modbus RTU";
       driverState.classList.remove("warning");
+    }
+    return;
+  }
+
+  if (state.deviceId === HART_DEVICE_ID) {
+    updateHartDeviceInfo();
+    if (sendDriverCommand) {
+      sendDriverCommand.textContent = "发送命令";
+    }
+    if (elements.hartSearchDevice) {
+      elements.hartSearchDevice.disabled = !session?.connected;
+    }
+    if (driverState) {
+      driverState.textContent = normalizeHartConfig(hartConfig).device.discovered ? "HART 已识别" : "HART 未搜索";
+      driverState.classList.toggle("warning", !normalizeHartConfig(hartConfig).device.discovered);
     }
     return;
   }
@@ -1062,6 +1478,7 @@ function updateConnectionUi(connected) {
   elements.connectionState.textContent = connected ? "已连接" : "未连接";
   elements.connectionState.classList.toggle("connected", connected);
   updateSetpointUi();
+  updatePollingUi();
 }
 
 function updateCustomDraftConfig() {
@@ -1139,7 +1556,14 @@ async function disconnect() {
 
 async function sendDeviceCommand() {
   try {
-    const command = createDeviceSetOutputCommand(state.deviceId, state, customConfig, modbusConfig, aomasterConfig);
+    const command = createDeviceSetOutputCommand(
+    state.deviceId,
+    state,
+    customConfig,
+    modbusConfig,
+    aomasterConfig,
+    hartConfig,
+  );
     const frames = command.frames ?? (command.bytes ? [command.bytes] : []);
     if (!command.supported || frames.length === 0) {
       appendLog("error", "发送", command.preview || "当前设备没有可发送的驱动命令");
@@ -1233,11 +1657,130 @@ function stopModbusPolling() {
   }
 }
 
+function stopHartPolling() {
+  if (hartPollTimer) {
+    clearInterval(hartPollTimer);
+    hartPollTimer = null;
+  }
+}
+
+function stopAomasterPolling() {
+  if (aomasterPollTimer) {
+    clearInterval(aomasterPollTimer);
+    aomasterPollTimer = null;
+  }
+}
+
+function stopAllPolling() {
+  stopModbusPolling();
+  stopHartPolling();
+  stopAomasterPolling();
+}
+
+function getCurrentPollIntervalMs() {
+  if (state.deviceId === MODBUS_DEVICE_ID) {
+    return normalizeModbusConfig(modbusConfig).pollIntervalMs;
+  }
+
+  if (state.deviceId === HART_DEVICE_ID) {
+    return normalizeHartConfig(hartConfig).pollIntervalMs;
+  }
+
+  if (state.deviceId === DEFAULT_DEVICE_ID) {
+    return normalizeAomasterConfig(aomasterConfig).pollIntervalMs;
+  }
+
+  return 0;
+}
+
+function canCurrentDevicePoll() {
+  if (!session?.connected || state.deviceId === CUSTOM_DEVICE_ID) {
+    return false;
+  }
+
+  const interval = getCurrentPollIntervalMs();
+  if (interval <= 0) {
+    return false;
+  }
+
+  if (state.deviceId === MODBUS_DEVICE_ID) {
+    return isReadFunctionCode(normalizeModbusConfig(modbusConfig).functionCode);
+  }
+
+  if (state.deviceId === HART_DEVICE_ID) {
+    return normalizeHartConfig(hartConfig).device.discovered;
+  }
+
+  return state.deviceId === DEFAULT_DEVICE_ID;
+}
+
+function updateActivePolling() {
+  updateModbusPolling();
+  updateHartPolling();
+  updateAomasterPolling();
+}
+
+function updatePollingUi() {
+  if (!elements.togglePolling) {
+    return;
+  }
+
+  if (state.pollingActive && !canCurrentDevicePoll()) {
+    state.pollingActive = false;
+    stopAllPolling();
+  }
+
+  const connected = Boolean(session?.connected);
+  const canPoll = canCurrentDevicePoll();
+  const interval = getCurrentPollIntervalMs();
+
+  if (elements.pollState) {
+    elements.pollState.classList.toggle("connected", state.pollingActive && connected);
+
+    if (!connected) {
+      elements.pollState.textContent = "未连接";
+    } else if (state.deviceId === CUSTOM_DEVICE_ID) {
+      elements.pollState.textContent = "当前设备不支持轮询";
+    } else if (state.deviceId === MODBUS_DEVICE_ID && !isReadFunctionCode(normalizeModbusConfig(modbusConfig).functionCode)) {
+      elements.pollState.textContent = "读模式方可轮询";
+    } else if (state.deviceId === HART_DEVICE_ID && !canPoll) {
+      elements.pollState.textContent = "请先搜索设备";
+    } else if (interval <= 0) {
+      elements.pollState.textContent = "请设置轮询间隔";
+    } else if (state.pollingActive) {
+      elements.pollState.textContent = `轮询中 · ${interval} ms`;
+    } else {
+      elements.pollState.textContent = "轮询已停止";
+    }
+  }
+
+  elements.togglePolling.disabled = !connected || !canPoll;
+  elements.togglePolling.textContent = state.pollingActive ? "停止轮询" : "开始轮询";
+}
+
+function togglePolling() {
+  if (!session?.connected || !canCurrentDevicePoll()) {
+    return;
+  }
+
+  state.pollingActive = !state.pollingActive;
+
+  if (state.pollingActive) {
+    updateActivePolling();
+    appendLog("info", "轮询", `已开始，间隔 ${getCurrentPollIntervalMs()} ms`);
+  } else {
+    stopAllPolling();
+    appendLog("info", "轮询", "已停止");
+  }
+
+  updatePollingUi();
+}
+
 function updateModbusPolling() {
   stopModbusPolling();
 
   const normalized = normalizeModbusConfig(modbusConfig);
-  if (state.deviceId !== MODBUS_DEVICE_ID || !session?.connected) {
+  if (state.deviceId !== MODBUS_DEVICE_ID || !session?.connected || !state.pollingActive) {
     return;
   }
 
@@ -1262,7 +1805,10 @@ function updateModbusDraftConfig() {
   }
 
   updateDeviceUi();
-  updateModbusPolling();
+  if (state.pollingActive && !canCurrentDevicePoll()) {
+    state.pollingActive = false;
+  }
+  updateActivePolling();
 }
 
 function saveModbusConfig() {
@@ -1270,7 +1816,7 @@ function saveModbusConfig() {
   localStorage.setItem(MODBUS_CONFIG_STORAGE_KEY, JSON.stringify(modbusConfig));
   populateModbusConfigForm(modbusConfig);
   updateDeviceUi();
-  updateModbusPolling();
+  updateActivePolling();
   appendLog("info", "设备", "Modbus 配置已保存");
 }
 
@@ -1286,7 +1832,7 @@ function resetModbusConfig() {
   }
 
   updateDeviceUi();
-  updateModbusPolling();
+  updateActivePolling();
   appendLog("info", "设备", "Modbus 配置已恢复默认");
 }
 
@@ -1346,18 +1892,239 @@ function getModbusConfigControls() {
   ];
 }
 
-function stopAomasterPolling() {
-  if (aomasterPollTimer) {
-    clearInterval(aomasterPollTimer);
-    aomasterPollTimer = null;
+function updateHartPolling() {
+  stopHartPolling();
+
+  const normalized = normalizeHartConfig(hartConfig);
+  if (state.deviceId !== HART_DEVICE_ID || !session?.connected || !state.pollingActive) {
+    return;
   }
+
+  if (normalized.pollIntervalMs <= 0) {
+    return;
+  }
+
+  hartPollTimer = window.setInterval(() => {
+    sendHartPollCommand().catch((error) => appendLog("error", "HART", error.message));
+  }, normalized.pollIntervalMs);
+}
+
+async function sendHartPollCommand() {
+  if (!session?.connected) {
+    return;
+  }
+
+  const command = createHartPollCommand(hartConfig, { bytesToHex, parseHexPayload });
+  if (!command.supported || !command.bytes) {
+    return;
+  }
+
+  await session.write(command.bytes);
+}
+
+function updateHartDraftConfig() {
+  hartConfig = readHartConfigForm();
+
+  if (state.deviceId === HART_DEVICE_ID) {
+    const normalized = normalizeHartConfig(hartConfig);
+    state.mode = getHartMode(normalized.activeCommand);
+    const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
+    state.setpoint = Math.min(config.max, Math.max(config.min, state.setpoint));
+    resetHartRxBuffer();
+  }
+
+  updateDeviceUi();
+  if (state.pollingActive && !canCurrentDevicePoll()) {
+    state.pollingActive = false;
+  }
+  updateActivePolling();
+}
+
+function saveHartConfig() {
+  hartConfig = readHartConfigForm();
+  localStorage.setItem(HART_CONFIG_STORAGE_KEY, JSON.stringify(hartConfig));
+  populateHartConfigForm(hartConfig);
+  updateDeviceUi();
+  updateActivePolling();
+  appendLog("info", "设备", "HART 配置已保存");
+}
+
+function resetHartConfig() {
+  hartConfig = resetHartDeviceState(DEFAULT_HART_CONFIG);
+  localStorage.setItem(HART_CONFIG_STORAGE_KEY, JSON.stringify(hartConfig));
+  populateHartConfigForm(hartConfig);
+  resetHartRxBuffer();
+
+  if (state.deviceId === HART_DEVICE_ID) {
+    state.mode = getHartMode(normalizeHartConfig(hartConfig).activeCommand);
+    state.setpoint = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig).presets.mid;
+  }
+
+  updateDeviceUi();
+  updateActivePolling();
+  appendLog("info", "设备", "HART 配置已恢复默认");
+}
+
+function loadHartConfig() {
+  try {
+    const saved = localStorage.getItem(HART_CONFIG_STORAGE_KEY);
+    return normalizeHartConfig(saved ? JSON.parse(saved) : DEFAULT_HART_CONFIG);
+  } catch {
+    return normalizeHartConfig(DEFAULT_HART_CONFIG);
+  }
+}
+
+function syncHartCommandModeUi() {
+  const normalized = normalizeHartConfig(hartConfig);
+  const isCustom = normalized.commandMode === "custom";
+
+  if (elements.hartCommandMode) {
+    elements.hartCommandMode.value = normalized.commandMode;
+  }
+  if (elements.hartPresetCommandField) {
+    elements.hartPresetCommandField.hidden = isCustom;
+  }
+  if (elements.hartCustomCommandField) {
+    elements.hartCustomCommandField.hidden = !isCustom;
+  }
+  if (elements.hartCustomCommand) {
+    elements.hartCustomCommand.value = String(normalized.customCommand);
+  }
+}
+
+function populateHartCommandSelect(selectedCommand = hartConfig.command) {
+  if (!elements.hartCommand) {
+    return;
+  }
+
+  const normalized = normalizeHartConfig({ ...hartConfig, command: selectedCommand });
+  elements.hartCommand.innerHTML = "";
+
+  let currentGroup = null;
+  HART_UNIVERSAL_COMMANDS.forEach((entry) => {
+    const groupName = entry.kind === "write" ? "写命令" : "读命令";
+    if (groupName !== currentGroup) {
+      currentGroup = groupName;
+      const optgroup = document.createElement("optgroup");
+      optgroup.label = groupName;
+      elements.hartCommand.append(optgroup);
+    }
+
+    const option = document.createElement("option");
+    option.value = String(entry.value);
+    option.textContent = entry.label;
+    if (entry.value === normalized.command) {
+      option.selected = true;
+    }
+    elements.hartCommand.lastElementChild.append(option);
+  });
+}
+
+function readHartChartSeriesFromControls() {
+  const chartSeries = { ...normalizeHartConfig(hartConfig).chartSeries };
+  elements.hartChartSeriesInputs.forEach((input) => {
+    const key = input.dataset.hartSeries;
+    if (key) {
+      chartSeries[key] = input.checked;
+    }
+  });
+  return chartSeries;
+}
+
+function readHartConfigForm() {
+  if (!elements.hartPollAddress) {
+    return normalizeHartConfig(hartConfig);
+  }
+
+  return normalizeHartConfig({
+    ...hartConfig,
+    pollAddress: elements.hartPollAddress.value,
+    masterType: elements.hartMasterType?.value ?? hartConfig.masterType,
+    pollMode: elements.hartPollMode?.value ?? hartConfig.pollMode,
+    commandMode: elements.hartCommandMode?.value ?? hartConfig.commandMode,
+    command: elements.hartCommand?.value ?? hartConfig.command,
+    customCommand: elements.hartCustomCommand?.value ?? hartConfig.customCommand,
+    customCommandData: elements.hartCustomCommandData?.value ?? "",
+    preambleLength: elements.hartPreambleLength.value,
+    scale: elements.hartScale.value,
+    offset: elements.hartOffset.value,
+    fieldName: elements.hartFieldName.value,
+    unit: elements.hartUnit.value,
+    pollIntervalMs: elements.hartPollIntervalMs.value,
+    chartSeries: readHartChartSeriesFromControls(),
+  });
+}
+
+function populateHartConfigForm(config) {
+  if (!elements.hartPollAddress) {
+    return;
+  }
+
+  const normalized = normalizeHartConfig(config);
+  populateHartCommandSelect(normalized.command);
+  syncHartCommandModeUi();
+  elements.hartPollAddress.value = String(normalized.pollAddress);
+  if (elements.hartMasterType) {
+    elements.hartMasterType.value = normalized.masterType;
+  }
+  if (elements.hartPollMode) {
+    elements.hartPollMode.value = normalized.pollMode;
+  }
+  elements.hartCommand.value = String(normalized.command);
+  if (elements.hartCustomCommandData) {
+    elements.hartCustomCommandData.value = normalized.customCommandData;
+  }
+  elements.hartPreambleLength.value = String(normalized.preambleLength);
+  elements.hartScale.value = String(normalized.scale);
+  elements.hartOffset.value = String(normalized.offset);
+  elements.hartFieldName.value = normalized.fieldName;
+  elements.hartUnit.value = normalized.unit;
+  elements.hartPollIntervalMs.value = String(normalized.pollIntervalMs);
+  updateHartDeviceInfo();
+}
+
+function updateHartDeviceInfo() {
+  if (!elements.hartDeviceInfo) {
+    return;
+  }
+
+  elements.hartDeviceInfo.textContent = `设备：${formatHartDeviceSummary(normalizeHartConfig(hartConfig).device)}`;
+}
+
+async function sendHartSearchCommand() {
+  if (!session?.connected) {
+    return;
+  }
+
+  resetHartRxBuffer();
+  const searchConfig = normalizeHartConfig({ ...hartConfig, command: 0 });
+  const command = createHartSearchCommand(searchConfig, { bytesToHex });
+  await session.write(command.bytes);
+}
+
+function getHartConfigControls() {
+  return [
+    elements.hartPollAddress,
+    elements.hartMasterType,
+    elements.hartPollMode,
+    elements.hartCommandMode,
+    elements.hartCommand,
+    elements.hartCustomCommand,
+    elements.hartCustomCommandData,
+    elements.hartPreambleLength,
+    elements.hartScale,
+    elements.hartOffset,
+    elements.hartFieldName,
+    elements.hartUnit,
+    elements.hartPollIntervalMs,
+  ];
 }
 
 function updateAomasterPolling() {
   stopAomasterPolling();
 
   const normalized = normalizeAomasterConfig(aomasterConfig);
-  if (state.deviceId !== DEFAULT_DEVICE_ID || !session?.connected) {
+  if (state.deviceId !== DEFAULT_DEVICE_ID || !session?.connected || !state.pollingActive) {
     return;
   }
 
@@ -1383,7 +2150,10 @@ function updateAomasterDraftConfig() {
   aomasterConfig = readAomasterConfigForm();
   resetAomasterRxBuffer();
   updateDeviceUi();
-  updateAomasterPolling();
+  if (state.pollingActive && !canCurrentDevicePoll()) {
+    state.pollingActive = false;
+  }
+  updateActivePolling();
 }
 
 function saveAomasterConfig() {
@@ -1391,7 +2161,7 @@ function saveAomasterConfig() {
   localStorage.setItem(AOMASTER_CONFIG_STORAGE_KEY, JSON.stringify(aomasterConfig));
   populateAomasterConfigForm(aomasterConfig);
   updateDeviceUi();
-  updateAomasterPolling();
+  updateActivePolling();
   appendLog("info", "设备", "AOMaster 配置已保存");
 }
 
@@ -1401,7 +2171,7 @@ function resetAomasterConfig() {
   populateAomasterConfigForm(aomasterConfig);
   resetAomasterRxBuffer();
   updateDeviceUi();
-  updateAomasterPolling();
+  updateActivePolling();
   appendLog("info", "设备", "AOMaster 配置已恢复默认");
 }
 
@@ -1934,8 +2704,10 @@ function clearAomasterCharts() {
 
 function clearAllCharts() {
   chart?.clear();
+  hartChart?.clear();
   clearAomasterCharts();
   elements.chartValue.textContent = "暂无数据";
+  updateHartVariableCards();
   requestChartResize();
 }
 
@@ -1956,7 +2728,65 @@ function renderFooterCopyright() {
   elements.footerCopyright.append(authorLink);
 }
 
-function appendLog(kind, direction, payload) {
+function concatLogBytes(left, right) {
+  const merged = new Uint8Array(left.length + right.length);
+  merged.set(left);
+  merged.set(right, left.length);
+  return merged;
+}
+
+function resetRxLogCoalesce() {
+  if (rxLogFlushTimer) {
+    window.clearTimeout(rxLogFlushTimer);
+    rxLogFlushTimer = null;
+  }
+  rxLogBuffer = null;
+  rxLogPendingLine = null;
+}
+
+function finalizeRxLogCoalesce() {
+  if (rxLogFlushTimer) {
+    window.clearTimeout(rxLogFlushTimer);
+    rxLogFlushTimer = null;
+  }
+  rxLogBuffer = null;
+  rxLogPendingLine = null;
+}
+
+function queueRxLogDisplay(bytes, text, useHexDisplay) {
+  if (useHexDisplay) {
+    rxLogBuffer =
+      rxLogBuffer instanceof Uint8Array ? concatLogBytes(rxLogBuffer, bytes) : bytes.slice();
+  } else if (text.trim()) {
+    rxLogBuffer = typeof rxLogBuffer === "string" ? rxLogBuffer + text : text;
+  } else {
+    rxLogBuffer =
+      rxLogBuffer instanceof Uint8Array ? concatLogBytes(rxLogBuffer, bytes) : bytes.slice();
+  }
+
+  const payload =
+    useHexDisplay && rxLogBuffer instanceof Uint8Array
+      ? bytesToHex(rxLogBuffer)
+      : typeof rxLogBuffer === "string"
+        ? rxLogBuffer
+        : bytesToHex(rxLogBuffer);
+
+  if (rxLogPendingLine) {
+    const content = rxLogPendingLine.querySelector(".payload");
+    if (content) {
+      content.textContent = payload;
+    }
+  } else {
+    rxLogPendingLine = appendLog("rx", "RX", payload, { returnLine: true });
+  }
+
+  if (rxLogFlushTimer) {
+    window.clearTimeout(rxLogFlushTimer);
+  }
+  rxLogFlushTimer = window.setTimeout(finalizeRxLogCoalesce, RX_LOG_IDLE_MS);
+}
+
+function appendLog(kind, direction, payload, options = {}) {
   const line = document.createElement("div");
   line.className = `log-line ${kind}`;
 
@@ -1974,7 +2804,7 @@ function appendLog(kind, direction, payload) {
 
   line.append(time, dir, content);
   if (!elements.serialLog) {
-    return;
+    return options.returnLine ? line : undefined;
   }
 
   elements.serialLog.append(line);
@@ -1983,4 +2813,6 @@ function appendLog(kind, direction, payload) {
   while (elements.serialLog.children.length > 400) {
     elements.serialLog.firstElementChild?.remove();
   }
+
+  return options.returnLine ? line : undefined;
 }

@@ -34,6 +34,8 @@ jobs:
         run: |
           mkdir _site
           cp index.html _site/
+          cp robots.txt _site/
+          cp sitemap.xml _site/
           cp logo.ico _site/
           cp LICENSE.txt _site/
           cp -R src _site/

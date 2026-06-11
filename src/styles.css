@@ -396,6 +396,17 @@ label {
   justify-content: flex-end;
 }
 
+.poll-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.chart-panel .panel-heading.split {
+  flex-wrap: wrap;
+}
+
 .panel-actions button,
 .action-link,
 .request-template button {
@@ -532,6 +543,172 @@ button:focus-visible {
 .device-panel {
   display: grid;
   gap: 0.65rem;
+}
+
+.device-library-search {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.device-library-search input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  padding: 0.45rem 0.55rem;
+  background: #fff;
+  color: var(--text);
+}
+
+.device-library {
+  display: grid;
+  gap: 0.65rem;
+  max-height: min(24rem, 45vh);
+  overflow-y: auto;
+  padding-right: 0.15rem;
+}
+
+.hart-device-info {
+  margin-bottom: 0.75rem;
+}
+
+.hart-variable-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 0.85rem;
+}
+
+.hart-value-card {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--surface-muted);
+}
+
+.hart-value-card[data-hart-card="pv"] {
+  border-color: rgba(15, 118, 110, 0.28);
+}
+
+.hart-value-card[data-hart-card="sv"] {
+  border-color: rgba(37, 99, 235, 0.28);
+}
+
+.hart-value-card[data-hart-card="tv"] {
+  border-color: rgba(180, 83, 9, 0.28);
+}
+
+.hart-value-card[data-hart-card="qv"] {
+  border-color: rgba(156, 39, 176, 0.28);
+}
+
+.hart-value-subtitle {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.hart-command-response {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--surface-muted);
+}
+
+.hart-command-response-label {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.hart-command-response code {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.hart-value-label {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.hart-value-readout {
+  font-size: 1.15rem;
+  line-height: 1.2;
+}
+
+.hart-value-unit {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.hart-frame-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: center;
+  margin: 0 0 0.85rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px dashed var(--line);
+  border-radius: 0.5rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.hart-frame-meta code {
+  font-size: 0.82rem;
+  color: var(--text);
+}
+
+.hart-chart-series {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  align-items: center;
+  margin-top: 0.35rem;
+}
+
+.hart-chart-series-label {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.hart-chart-series label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.hart-device-info code {
+  display: block;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  background: var(--surface-muted);
+  color: var(--text);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.device-library-empty {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px dashed var(--line);
+  border-radius: 0.45rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
 }
 
 .home-grid {

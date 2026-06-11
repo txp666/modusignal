@@ -24,6 +24,14 @@ import {
   normalizeModbusConfig,
   parseModbusTelemetry,
 } from "./devices/modbus-device.js";
+import {
+  createHartSetOutputCommand,
+  DEFAULT_HART_CONFIG,
+  HART_DEVICE_ID,
+  HART_PROFILE,
+  normalizeHartConfig,
+  parseHartTelemetry,
+} from "./devices/hart-device.js";
 
 const textEncoder = new TextEncoder();
 
@@ -39,11 +47,18 @@ export {
   normalizeModbusConfig,
 };
 
+export {
+  DEFAULT_HART_CONFIG,
+  HART_DEVICE_ID,
+  normalizeHartConfig,
+} from "./devices/hart-device.js";
+
 export const DEFAULT_DEVICE_ID = AOMASTER_DEVICE_ID;
 
 export const DEVICE_PROFILES = {
   [AOMASTER_DEVICE_ID]: AOMASTER_PROFILE,
   [MODBUS_DEVICE_ID]: MODBUS_PROFILE,
+  [HART_DEVICE_ID]: HART_PROFILE,
 };
 
 export function getDeviceProfile(
@@ -104,6 +119,7 @@ export function createDeviceSetOutputCommand(
   customConfig = DEFAULT_CUSTOM_CONFIG,
   modbusConfig = DEFAULT_MODBUS_CONFIG,
   aomasterConfig = DEFAULT_AOMASTER_CONFIG,
+  hartConfig = DEFAULT_HART_CONFIG,
 ) {
   if (deviceId === CUSTOM_DEVICE_ID) {
     return createCustomSetOutputCommand(state, customConfig, {
@@ -115,6 +131,10 @@ export function createDeviceSetOutputCommand(
 
   if (deviceId === MODBUS_DEVICE_ID) {
     return createModbusSetOutputCommand(state, modbusConfig, { bytesToHex });
+  }
+
+  if (deviceId === HART_DEVICE_ID) {
+    return createHartSetOutputCommand(state, hartConfig, { bytesToHex, parseHexPayload });
   }
 
   if (deviceId === AOMASTER_DEVICE_ID) {
@@ -136,6 +156,7 @@ export function parseDeviceTelemetry(
   bytes = null,
   deviceState = null,
   aomasterConfig = DEFAULT_AOMASTER_CONFIG,
+  hartConfig = DEFAULT_HART_CONFIG,
 ) {
   if (deviceId === CUSTOM_DEVICE_ID) {
     return parseCustomTelemetry(text, customConfig, parseNumericTelemetry);
@@ -143,6 +164,10 @@ export function parseDeviceTelemetry(
 
   if (deviceId === MODBUS_DEVICE_ID) {
     return parseModbusTelemetry(bytes, modbusConfig);
+  }
+
+  if (deviceId === HART_DEVICE_ID) {
+    return parseHartTelemetry(bytes, hartConfig);
   }
 
   if (deviceId === AOMASTER_DEVICE_ID) {

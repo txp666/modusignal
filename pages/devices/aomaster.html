@@ -10,7 +10,7 @@
         />
         <div>
           <h2>信号输出</h2>
-          <p data-field="deviceSummary">Modbus RTU 从站 1，轮询 20 ms。</p>
+          <p data-field="deviceSummary">Modbus RTU 从站 1，默认不轮询。</p>
         </div>
       </div>
       <span data-field="driverState" class="state-pill">Modbus RTU</span>
@@ -147,7 +147,7 @@
       </label>
       <label>
         回读轮询 (ms)
-        <input id="aomasterPollIntervalMs" type="number" min="0" step="1" value="20" />
+        <input id="aomasterPollIntervalMs" type="number" min="0" step="1" value="0" title="大于 0 时可在监测面板手动开始轮询，建议 20" />
       </label>
     </div>
   </section>

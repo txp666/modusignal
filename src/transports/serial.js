@@ -127,7 +127,7 @@ export const SERIAL_TRANSPORT = {
       label: "波特率",
       type: "select",
       default: 115200,
-      options: [9600, 19200, 38400, 57600, 115200],
+      options: [300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600],
     },
     { key: "dataBits", label: "数据位", type: "select", default: 8, options: [7, 8] },
     { key: "stopBits", label: "停止位", type: "select", default: 1, options: [1, 2] },

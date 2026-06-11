@@ -1,0 +1,152 @@
+<section id="hartPage" class="device-page" data-page-id="hart">
+  <section class="panel control-panel">
+    <div class="panel-heading split">
+      <div>
+        <h2>变量读取</h2>
+        <p data-field="deviceSummary">地址 0 · 轮询 PV (Cmd 1) · 2000 ms · 尚未搜索到设备</p>
+      </div>
+      <span data-field="driverState" class="state-pill">HART</span>
+    </div>
+
+    <div class="hart-device-info">
+      <code id="hartDeviceInfo">设备：尚未搜索</code>
+    </div>
+
+    <div id="hartVariableCards" class="hart-variable-cards" aria-label="HART 动态变量">
+      <article class="hart-value-card" data-hart-card="pv">
+        <span class="hart-value-label">PV</span>
+        <small class="hart-value-subtitle">Primary</small>
+        <strong class="hart-value-readout">--</strong>
+        <small class="hart-value-unit"></small>
+      </article>
+      <article class="hart-value-card" data-hart-card="sv">
+        <span class="hart-value-label">SV</span>
+        <small class="hart-value-subtitle">Secondary</small>
+        <strong class="hart-value-readout">--</strong>
+        <small class="hart-value-unit"></small>
+      </article>
+      <article class="hart-value-card" data-hart-card="tv">
+        <span class="hart-value-label">TV</span>
+        <small class="hart-value-subtitle">Tertiary</small>
+        <strong class="hart-value-readout">--</strong>
+        <small class="hart-value-unit"></small>
+      </article>
+      <article class="hart-value-card" data-hart-card="qv">
+        <span class="hart-value-label">QV</span>
+        <small class="hart-value-subtitle">Quaternary</small>
+        <strong class="hart-value-readout">--</strong>
+        <small class="hart-value-unit"></small>
+      </article>
+    </div>
+
+    <div class="hart-command-response">
+      <span class="hart-command-response-label">通用命令应答</span>
+      <code id="hartCommandResponse">尚未收到应答</code>
+    </div>
+
+    <div class="command-preview">
+      <div>
+        <span>驱动命令预览</span>
+        <code data-field="protocolPreview">FF FF FF FF FF 02 80 00 00 ...</code>
+      </div>
+      <div class="panel-actions">
+        <button id="hartSearchDevice" type="button" disabled>搜索设备</button>
+        <button data-field="sendDriverCommand" type="button" disabled>发送命令</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel custom-panel">
+    <div class="panel-heading split">
+      <div>
+        <h2>通讯参数</h2>
+        <p>支持预设通用命令或自定义命令号 + HEX 数据，帧 XOR 校验自动计算。</p>
+      </div>
+      <div class="panel-actions">
+        <button id="resetHartConfig" class="ghost-button" type="button">恢复默认</button>
+        <button id="saveHartConfig" type="button">保存</button>
+      </div>
+    </div>
+    <div class="config-grid compact">
+      <label>
+        轮询地址
+        <input id="hartPollAddress" type="number" min="0" max="15" step="1" value="0" />
+      </label>
+      <label>
+        主站类型
+        <select id="hartMasterType">
+          <option value="primary" selected>Primary (0x80)</option>
+          <option value="secondary">Secondary (0x00)</option>
+        </select>
+      </label>
+      <label>
+        前导码
+        <select id="hartPreambleLength">
+          <option value="5" selected>5</option>
+          <option value="8">8</option>
+          <option value="10">10</option>
+          <option value="15">15</option>
+          <option value="20">20</option>
+        </select>
+      </label>
+      <label>
+        轮询间隔 (ms)
+        <input id="hartPollIntervalMs" type="number" min="0" step="100" value="2000" title="大于 0 时可在监测面板手动开始轮询" />
+      </label>
+    </div>
+    <div class="config-grid compact">
+      <label>
+        命令方式
+        <select id="hartCommandMode">
+          <option value="preset" selected>预设通用命令</option>
+          <option value="custom">自定义命令</option>
+        </select>
+      </label>
+    </div>
+    <div class="config-grid compact">
+      <label id="hartPresetCommandField">
+        通用命令
+        <select id="hartCommand"></select>
+      </label>
+      <label id="hartCustomCommandField" hidden>
+        命令号
+        <input id="hartCustomCommand" type="number" min="0" max="255" step="1" value="1" title="0–255，自动组帧并计算 XOR 校验" />
+      </label>
+      <label>
+        命令数据 (HEX)
+        <input id="hartCustomCommandData" type="text" placeholder="可选；写命令或带参数读命令时填入，校验自动计算" />
+      </label>
+    </div>
+    <p class="hart-frame-meta">
+      <span>帧校验 (XOR)</span>
+      <code id="hartFrameChecksum">--</code>
+    </p>
+    <div class="config-grid compact">
+      <label>
+        轮询方式
+        <select id="hartPollMode">
+          <option value="pv" selected>轮询 PV (Cmd 1)</option>
+          <option value="dynamic">轮询 PV/SV/TV/QV (Cmd 3)</option>
+        </select>
+      </label>
+    </div>
+    <div class="config-grid">
+      <label>
+        PV 显示名
+        <input id="hartFieldName" type="text" value="PV" />
+      </label>
+      <label>
+        PV 单位覆盖
+        <input id="hartUnit" type="text" placeholder="留空则使用 HART 单位码" />
+      </label>
+      <label>
+        PV 比例
+        <input id="hartScale" type="number" step="0.000001" value="1" />
+      </label>
+      <label>
+        PV 偏移
+        <input id="hartOffset" type="number" step="0.000001" value="0" />
+      </label>
+    </div>
+  </section>
+</section>
