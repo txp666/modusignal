@@ -982,7 +982,7 @@ function selectDevice(deviceId) {
     applyDeviceTransportDefaults(HART_DEVICE_ID);
   } else {
     state.mode = elements.outputModeSelect?.value || "current";
-    applyAomasterModeDefaults(false);
+    applyAomasterModeDefaults();
     applyDeviceTransportDefaults(AOMASTER_DEVICE_ID);
   }
 
@@ -1120,10 +1120,7 @@ function updateDeviceUi() {
       elements.outputModeSelect.title = "";
     }
     if (elements.waveformSelect) {
-      elements.waveformSelect.value = state.mode === "frequency" ? "constant" : state.waveform;
-    }
-    if (state.mode === "frequency") {
-      state.waveform = "constant";
+      elements.waveformSelect.value = state.waveform;
     }
     populateAomasterWaveformForm();
     updateAomasterWaveformUi();
@@ -2403,15 +2400,12 @@ function getCustomConfigControls() {
   ];
 }
 
-function applyAomasterModeDefaults(resetWaveform = true) {
+function applyAomasterModeDefaults() {
   const config = getModeConfig(state.mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
   state.setpoint = config.presets.mid;
   state.waveLow = config.min;
   state.waveHigh = config.max;
   state.stepSequence = buildDefaultStepSequence(state.mode);
-  if (resetWaveform && state.mode === "frequency") {
-    state.waveform = "constant";
-  }
   populateAomasterWaveformForm();
   renderStepSequenceList();
 }
@@ -2556,10 +2550,9 @@ function applyAomasterStepPreset(preset) {
 }
 
 function updateAomasterWaveformUi() {
-  const isFrequency = state.mode === "frequency";
   const isConstant = state.waveform === "constant";
   const isStep = state.waveform === "step";
-  elements.waveformSelect.disabled = isFrequency;
+  elements.waveformSelect.disabled = false;
   elements.constantSetpointBlock.hidden = !isConstant;
   elements.waveformParamsBlock.hidden = isConstant;
   elements.waveAnalogParams.hidden = isStep;

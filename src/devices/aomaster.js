@@ -26,7 +26,6 @@ export const AOMASTER_MODES = {
   current020: 2,
   voltage05: 3,
   current024: 4,
-  frequency: 5,
 };
 
 export const AOMASTER_WAVEFORMS = {
@@ -48,7 +47,6 @@ export const AOMASTER_WAVEFORM_OPTIONS = [
 ];
 
 export const AOMASTER_SCALE = 1000;
-export const AOMASTER_FREQUENCY_SCALE = 10;
 export const AOMASTER_DEFAULT_BAUD_RATE = 115200;
 
 /** AOMaster 常用串口参数：115200 8N1 */
@@ -126,14 +124,6 @@ export const AOMASTER_PROFILE = {
       step: 0.001,
       presets: { min: 0, mid: 12, max: 24 },
     },
-    frequency: {
-      label: "频率输出",
-      unit: "Hz",
-      min: 0.1,
-      max: 1000,
-      step: 0.1,
-      presets: { min: 0.1, mid: 100, max: 1000 },
-    },
   },
 };
 
@@ -163,12 +153,11 @@ export function normalizeAomasterWaveState(state = {}, mode = "current") {
   const waveform = AOMASTER_WAVEFORM_OPTIONS.some((item) => item.id === merged.waveform)
     ? merged.waveform
     : "constant";
-  const safeWaveform = mode === "frequency" ? "constant" : waveform;
   const stepSequence = normalizeStepSequence(merged.stepSequence, mode);
 
   return {
     mode,
-    waveform: safeWaveform,
+    waveform,
     setpoint: clampWaveValue(mode, merged.setpoint, modeConfig.presets.mid),
     waveLow: clampWaveValue(mode, merged.waveLow, modeConfig.min),
     waveHigh: clampWaveValue(mode, merged.waveHigh, modeConfig.max),
@@ -223,18 +212,10 @@ export function getAomasterWaveformLabel(waveform) {
 }
 
 export function encodeAomasterValue(mode, value) {
-  if (mode === "frequency") {
-    return clampUint16(Math.round(value * AOMASTER_FREQUENCY_SCALE));
-  }
-
   return clampUint16(Math.round(value * AOMASTER_SCALE));
 }
 
 export function decodeAomasterValue(mode, rawValue) {
-  if (mode === "frequency") {
-    return rawValue / AOMASTER_FREQUENCY_SCALE;
-  }
-
   return rawValue / AOMASTER_SCALE;
 }
 
@@ -429,8 +410,7 @@ function generateStepSequencePreview(waveState, pointCount) {
 
 export function formatSetpoint(mode, value) {
   const config = getAomasterModeConfig(mode);
-  const decimals = mode === "frequency" ? 1 : decimalPlaces(config.step);
-  return Number(value).toFixed(decimals);
+  return Number(value).toFixed(decimalPlaces(config.step));
 }
 
 function evaluateWaveform(type, timeMs, low, high, periodMs, duty) {
