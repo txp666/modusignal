@@ -4961,12 +4961,11 @@ function renderFooterCopyright() {
   const year = new Date().getFullYear();
   elements.footerCopyright.textContent = `© ${year} `;
 
-  const authorLink = document.createElement("a");
-  authorLink.href = MODUSIGNAL_APP.copyrightUrl;
-  authorLink.textContent = MODUSIGNAL_APP.copyrightHolder;
-  authorLink.target = "_blank";
-  authorLink.rel = "noreferrer";
-  elements.footerCopyright.append(authorLink);
+  const siteLink = document.createElement("a");
+  siteLink.href = MODUSIGNAL_APP.siteUrl;
+  siteLink.textContent = new URL(MODUSIGNAL_APP.siteUrl).host;
+  siteLink.rel = "home";
+  elements.footerCopyright.append(siteLink);
 }
 
 function concatLogBytes(left, right) {
