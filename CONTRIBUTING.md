@@ -1,6 +1,6 @@
 # 贡献指南
 
-感谢你为 modusignal 增加设备、协议或界面能力。项目目标是把常见串口与 WebSocket 设备做成在线可用的浏览器工具，同时保留通用调试能力。
+感谢你为 modusignal 增加设备、协议或界面能力。项目目标是把常见串口、WebSocket 与 MQTT 设备做成在线可用的浏览器工具，同时保留通用调试能力。
 
 ## 开发原则
 
@@ -12,7 +12,7 @@
 ## 添加新设备
 
 1. 在 `src/devices/` 新建设备驱动文件，例如 `my-device.js`。
-2. 导出设备 ID、profile（含 `defaultTransportId`）、命令构造函数和遥测解析函数。
+2. 导出设备 ID、profile（含 `defaultTransportId`、可选 `image`）、命令构造函数和遥测解析函数。
 3. 如有常用连接参数，导出 `*_TRANSPORT_DEFAULTS` 并在 `src/app.js` 的 `DEVICE_TRANSPORT_DEFAULTS` 按传输 ID 注册；如需轮询，在 `DEFAULT_*_CONFIG` 中设置 `pollIntervalMs`。
 4. 在 `src/protocols.js` 注册设备 profile，并在 `createDeviceSetOutputCommand`、`parseDeviceTelemetry` 中接入。
 5. 在 `pages/devices/` 增加设备页面 HTML，并在 `src/page-loader.js` 注册路径。
@@ -30,7 +30,7 @@ node --check src\devices\my-device.js
 
 - 设备名称和型号
 - 设备类型和使用场景
-- 默认通讯方式（串口 / WebSocket 等）与连接参数
+- 默认通讯方式（串口 / WebSocket / MQTT 等）与连接参数
 - 协议文档或命令示例
 - 回包样例和字段含义
 - 需要的 UI 控件

@@ -239,6 +239,11 @@ label {
   color: var(--amber);
 }
 
+.state-pill.connected {
+  background: #e3f6ea;
+  color: var(--green);
+}
+
 .status-dot::before {
   content: "";
   width: 0.5rem;
@@ -257,6 +262,50 @@ label {
   align-content: start;
   padding: 1rem;
   border-right: 1px solid var(--line);
+}
+
+.sidebar-panel-heading {
+  width: 100%;
+  margin-bottom: 0.9rem;
+}
+
+.sidebar-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.sidebar-collapse-toggle {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.sidebar-panel.collapsed .sidebar-panel-heading {
+  margin-bottom: 0;
+}
+
+.sidebar-panel.collapsed .sidebar-panel-body {
+  display: none;
+}
+
+.sidebar-panel-body {
+  display: grid;
+  gap: inherit;
+}
+
+.sidebar-panel[data-sidebar-panel="project"] .sidebar-panel-body,
+.sidebar-panel[data-sidebar-panel="library"] .sidebar-panel-body {
+  gap: 0.65rem;
+}
+
+.sidebar-panel-body > label:first-child {
+  margin-top: 0;
 }
 
 .device-shell {
@@ -713,7 +762,7 @@ button:focus-visible {
 
 .home-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.75rem;
   align-items: stretch;
 }
@@ -1026,6 +1075,34 @@ input[type="range"] {
   color: var(--text);
 }
 
+.mqtt-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.mqtt-stat {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  background: #fbfcfd;
+}
+
+.mqtt-stat strong {
+  font-size: 1.05rem;
+  color: var(--accent-strong);
+  word-break: break-all;
+}
+
+.mqtt-stat span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
 .command-preview {
   justify-content: space-between;
   gap: 0.75rem;
@@ -1206,9 +1283,12 @@ code {
   }
 
   .device-shell.active,
-  .home-grid,
   .arch-columns {
     grid-template-columns: 1fr;
+  }
+
+  .home-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .arch-split {
@@ -1231,6 +1311,10 @@ code {
   .topbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .home-grid {
+    grid-template-columns: 1fr;
   }
 
   .topbar-actions {

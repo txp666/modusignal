@@ -33,6 +33,14 @@ import {
   parseHartTelemetry,
 } from "./devices/hart-device.js";
 import {
+  createMqttSetOutputCommand,
+  DEFAULT_MQTT_CONFIG,
+  MQTT_DEVICE_ID,
+  MQTT_PROFILE,
+  normalizeMqttConfig,
+  parseMqttTelemetry,
+} from "./devices/mqtt-device.js";
+import {
   createWebSocketSetOutputCommand,
   DEFAULT_WEBSOCKET_CONFIG,
   normalizeWebSocketConfig,
@@ -60,6 +68,12 @@ export {
 } from "./devices/hart-device.js";
 
 export {
+  DEFAULT_MQTT_CONFIG,
+  MQTT_DEVICE_ID,
+  normalizeMqttConfig,
+} from "./devices/mqtt-device.js";
+
+export {
   DEFAULT_WEBSOCKET_CONFIG,
   WEBSOCKET_DEVICE_ID,
   normalizeWebSocketConfig,
@@ -72,6 +86,7 @@ export const DEVICE_PROFILES = {
   [MODBUS_DEVICE_ID]: MODBUS_PROFILE,
   [HART_DEVICE_ID]: HART_PROFILE,
   [WEBSOCKET_DEVICE_ID]: WEBSOCKET_PROFILE,
+  [MQTT_DEVICE_ID]: MQTT_PROFILE,
 };
 
 export function getDeviceProfile(
@@ -123,7 +138,20 @@ export function getModeConfig(
   modbusConfig = DEFAULT_MODBUS_CONFIG,
 ) {
   const profile = getDeviceProfile(deviceId, customConfig, modbusConfig);
-  return profile.modes[mode] ?? profile.modes.custom ?? profile.modes.current ?? profile.modes.readHolding;
+  const modes = profile.modes;
+
+  if (!modes) {
+    return {
+      label: "数值",
+      unit: "",
+      min: 0,
+      max: 100,
+      step: 1,
+      presets: { low: 0, mid: 50, high: 100 },
+    };
+  }
+
+  return modes[mode] ?? modes.custom ?? modes.current ?? modes.readHolding;
 }
 
 export function getDeviceDefaultTransportId(
@@ -142,6 +170,7 @@ export function createDeviceSetOutputCommand(
   aomasterConfig = DEFAULT_AOMASTER_CONFIG,
   hartConfig = DEFAULT_HART_CONFIG,
   websocketConfig = DEFAULT_WEBSOCKET_CONFIG,
+  mqttConfig = DEFAULT_MQTT_CONFIG,
 ) {
   if (deviceId === CUSTOM_DEVICE_ID) {
     return createCustomSetOutputCommand(state, customConfig, {
@@ -161,6 +190,13 @@ export function createDeviceSetOutputCommand(
 
   if (deviceId === WEBSOCKET_DEVICE_ID) {
     return createWebSocketSetOutputCommand(state, websocketConfig, {
+      bytesToHex,
+      parseHexPayload,
+    });
+  }
+
+  if (deviceId === MQTT_DEVICE_ID) {
+    return createMqttSetOutputCommand(state, mqttConfig, {
       bytesToHex,
       parseHexPayload,
     });
@@ -187,6 +223,7 @@ export function parseDeviceTelemetry(
   aomasterConfig = DEFAULT_AOMASTER_CONFIG,
   hartConfig = DEFAULT_HART_CONFIG,
   websocketConfig = DEFAULT_WEBSOCKET_CONFIG,
+  mqttConfig = DEFAULT_MQTT_CONFIG,
 ) {
   if (deviceId === CUSTOM_DEVICE_ID) {
     return parseCustomTelemetry(text, customConfig, parseNumericTelemetry);
@@ -202,6 +239,10 @@ export function parseDeviceTelemetry(
 
   if (deviceId === WEBSOCKET_DEVICE_ID) {
     return parseWebSocketTelemetry(text, websocketConfig, parseNumericTelemetry);
+  }
+
+  if (deviceId === MQTT_DEVICE_ID) {
+    return parseMqttTelemetry(text, mqttConfig, parseNumericTelemetry);
   }
 
   if (deviceId === AOMASTER_DEVICE_ID) {

@@ -65,48 +65,62 @@
     </header>
 
     <aside class="sidebar" aria-label="设备导航">
-      <section class="panel device-panel">
-        <div class="panel-heading">
+      <section class="panel device-panel sidebar-panel" data-sidebar-panel="project">
+        <div class="panel-heading sidebar-panel-heading">
           <h2>项目</h2>
+          <button type="button" class="sidebar-collapse-toggle icon-button" aria-expanded="true"
+            aria-label="折叠项目" title="折叠">▾</button>
         </div>
-        <button class="device-item active" type="button" data-page-target="home">
-          <span class="device-icon" aria-hidden="true">M</span>
-          <span>
-            <strong>主页</strong>
-            <small>项目概览 / GitHub / 请求设备</small>
-          </span>
-        </button>
-        <button class="device-item" type="button" data-page-target="request">
-          <span class="device-icon" aria-hidden="true">R</span>
-          <span>
-            <strong>请求新设备</strong>
-            <small>提交协议和 UI 需求</small>
-          </span>
-        </button>
+        <div class="sidebar-panel-body">
+          <button class="device-item active" type="button" data-page-target="home">
+            <span class="device-icon" aria-hidden="true">M</span>
+            <span>
+              <strong>主页</strong>
+              <small>项目概览 / GitHub / 请求设备</small>
+            </span>
+          </button>
+          <button class="device-item" type="button" data-page-target="request">
+            <span class="device-icon" aria-hidden="true">R</span>
+            <span>
+              <strong>请求新设备</strong>
+              <small>提交协议和 UI 需求</small>
+            </span>
+          </button>
+        </div>
       </section>
 
-      <section class="panel device-panel">
-        <div class="panel-heading">
-          <h2>设备库</h2>
-          <span id="connectionState" class="status-dot">未连接</span>
+      <section class="panel device-panel sidebar-panel" data-sidebar-panel="library">
+        <div class="panel-heading sidebar-panel-heading">
+          <div class="sidebar-panel-title">
+            <h2>设备库</h2>
+            <span id="connectionState" class="status-dot">未连接</span>
+          </div>
+          <button type="button" class="sidebar-collapse-toggle icon-button" aria-expanded="true"
+            aria-label="折叠设备库" title="折叠">▾</button>
         </div>
-        <label class="device-library-search">
-          搜索
-          <input id="deviceLibrarySearch" type="search" placeholder="名称 / 协议 / ID" autocomplete="off"
-            spellcheck="false" />
-        </label>
-        <div id="deviceLibrary" class="device-library"></div>
+        <div class="sidebar-panel-body">
+          <label class="device-library-search">
+            搜索
+            <input id="deviceLibrarySearch" type="search" placeholder="名称 / 协议 / ID" autocomplete="off"
+              spellcheck="false" />
+          </label>
+          <div id="deviceLibrary" class="device-library"></div>
+        </div>
       </section>
 
-      <section class="panel">
-        <div class="panel-heading">
+      <section class="panel sidebar-panel" data-sidebar-panel="transport">
+        <div class="panel-heading sidebar-panel-heading">
           <h2>连接参数</h2>
+          <button type="button" class="sidebar-collapse-toggle icon-button" aria-expanded="true"
+            aria-label="折叠连接参数" title="折叠">▾</button>
         </div>
-        <label>
-          传输方式
-          <select id="transportSelect"></select>
-        </label>
-        <div id="transportFields" class="transport-fields"></div>
+        <div class="sidebar-panel-body">
+          <label>
+            传输方式
+            <select id="transportSelect"></select>
+          </label>
+          <div id="transportFields" class="transport-fields"></div>
+        </div>
       </section>
     </aside>
 

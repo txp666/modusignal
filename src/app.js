@@ -6,6 +6,7 @@ import {
   getTransportDescriptor,
   listTransports,
 } from "./transports/registry.js";
+import { describeMqttUrlWarning, MQTT_CONNECT_DEFAULTS, MQTT_TRANSPORT_ID } from "./transports/mqtt.js";
 import { describeWebSocketUrlWarning, WEBSOCKET_CONNECT_DEFAULTS, WEBSOCKET_TRANSPORT_ID } from "./transports/websocket.js";
 import {
   AOMASTER_DEVICE_ID,
@@ -48,6 +49,13 @@ import {
 } from "./devices/hart-device.js";
 import { formatHartDeviceSummary } from "./hart/hart.js";
 import {
+  buildMqttMessage,
+  describeMqttSummary,
+  getMqttPublishOptions,
+  MQTT_DEVICE_TRANSPORT_DEFAULTS,
+  MQTT_QUICK_MESSAGES,
+} from "./devices/mqtt-device.js";
+import {
   buildWebSocketMessage,
   describeWebSocketSummary,
   WEBSOCKET_QUICK_MESSAGES,
@@ -63,6 +71,7 @@ import {
   DEFAULT_CUSTOM_CONFIG,
   DEFAULT_DEVICE_ID,
   DEFAULT_MODBUS_CONFIG,
+  DEFAULT_MQTT_CONFIG,
   DEFAULT_WEBSOCKET_CONFIG,
   getDeviceProfile,
   getDeviceDefaultTransportId,
@@ -73,10 +82,12 @@ import {
   normalizeAomasterConfig,
   normalizeCustomConfig,
   normalizeModbusConfig,
+  normalizeMqttConfig,
   normalizeWebSocketConfig,
   parseDeviceTelemetry,
   parseHexPayload,
   resolveLineEnding,
+  MQTT_DEVICE_ID,
   WEBSOCKET_DEVICE_ID,
 } from "./protocols.js";
 import {
@@ -92,29 +103,41 @@ const DEVICE_TRANSPORT_DEFAULTS = {
   [AOMASTER_DEVICE_ID]: {
     serial: AOMASTER_TRANSPORT_DEFAULTS,
     websocket: WEBSOCKET_CONNECT_DEFAULTS,
+    mqtt: MQTT_CONNECT_DEFAULTS,
   },
   [CUSTOM_DEVICE_ID]: {
     serial: CUSTOM_TRANSPORT_DEFAULTS,
     websocket: WEBSOCKET_CONNECT_DEFAULTS,
+    mqtt: MQTT_CONNECT_DEFAULTS,
   },
   [MODBUS_DEVICE_ID]: {
     serial: MODBUS_TRANSPORT_DEFAULTS,
     websocket: MODBUS_WEBSOCKET_TRANSPORT_DEFAULTS,
+    mqtt: MQTT_CONNECT_DEFAULTS,
   },
   [HART_DEVICE_ID]: {
     serial: HART_TRANSPORT_DEFAULTS,
     websocket: WEBSOCKET_CONNECT_DEFAULTS,
+    mqtt: MQTT_CONNECT_DEFAULTS,
   },
   [WEBSOCKET_DEVICE_ID]: {
     serial: WEBSOCKET_TRANSPORT_DEFAULTS,
     websocket: WEBSOCKET_TRANSPORT_DEFAULTS,
+    mqtt: MQTT_CONNECT_DEFAULTS,
+  },
+  [MQTT_DEVICE_ID]: {
+    serial: MQTT_CONNECT_DEFAULTS,
+    websocket: WEBSOCKET_CONNECT_DEFAULTS,
+    mqtt: MQTT_DEVICE_TRANSPORT_DEFAULTS,
   },
 };
 
 const WEBSOCKET_CONFIG_STORAGE_KEY = "modusignal.websocketDevice.v1";
+const MQTT_CONFIG_STORAGE_KEY = "modusignal.mqttDevice.v1";
 const AOMASTER_CONFIG_STORAGE_KEY = "modusignal.aomasterDevice.v1";
 const CHART_CONFIG_STORAGE_KEY = "modusignal.chart.v1";
 const AOMASTER_VALUE_DISPLAY_STORAGE_KEY = "modusignal.aomasterValueDisplayMode.v1";
+const SIDEBAR_PANELS_STORAGE_KEY = "modusignal.sidebarPanels.v1";
 
 const DEVICE_PAGE_IDS = [
   DEFAULT_DEVICE_ID,
@@ -122,6 +145,7 @@ const DEVICE_PAGE_IDS = [
   MODBUS_DEVICE_ID,
   HART_DEVICE_ID,
   WEBSOCKET_DEVICE_ID,
+  MQTT_DEVICE_ID,
 ];
 
 /** @type {Record<string, HTMLElement | HTMLElement[] | null>} */
@@ -243,6 +267,21 @@ function cacheElements() {
     wsQuickSendGrid: document.querySelector("#wsQuickSendGrid"),
     saveWebsocketConfig: document.querySelector("#saveWebsocketConfig"),
     resetWebsocketConfig: document.querySelector("#resetWebsocketConfig"),
+    mqttPollIntervalMs: document.querySelector("#mqttPollIntervalMs"),
+    mqttHeartbeatFormat: document.querySelector("#mqttHeartbeatFormat"),
+    mqttHeartbeatMessage: document.querySelector("#mqttHeartbeatMessage"),
+    mqttParserFieldPath: document.querySelector("#mqttParserFieldPath"),
+    mqttFieldName: document.querySelector("#mqttFieldName"),
+    mqttUnit: document.querySelector("#mqttUnit"),
+    mqttPublishTopic: document.querySelector("#mqttPublishTopic"),
+    mqttPublishQos: document.querySelector("#mqttPublishQos"),
+    mqttPublishRetain: document.querySelector("#mqttPublishRetain"),
+    mqttQuickSendGrid: document.querySelector("#mqttQuickSendGrid"),
+    mqttRxCount: document.querySelector("#mqttRxCount"),
+    mqttTxCount: document.querySelector("#mqttTxCount"),
+    mqttSubscribeTopic: document.querySelector("#mqttSubscribeTopic"),
+    saveMqttConfig: document.querySelector("#saveMqttConfig"),
+    resetMqttConfig: document.querySelector("#resetMqttConfig"),
     telemetryChart: document.querySelector("#telemetryChart"),
     chartValue: document.querySelector("#chartValue"),
     chartPanelSummary: document.querySelector("#chartPanelSummary"),
@@ -285,6 +324,7 @@ let customConfig = loadCustomConfig();
 let modbusConfig = loadModbusConfig();
 let hartConfig = loadHartConfig();
 let websocketConfig = loadWebsocketConfig();
+let mqttConfig = loadMqttConfig();
 let aomasterConfig = loadAomasterConfig();
 let chartConfig = loadChartConfig();
 let session = null;
@@ -292,6 +332,8 @@ let modbusPollTimer = null;
 let hartPollTimer = null;
 let aomasterPollTimer = null;
 let websocketPollTimer = null;
+let mqttPollTimer = null;
+let mqttMessageStats = { rx: 0, tx: 0 };
 let deviceLibrarySearchQuery = "";
 /** @type {Record<string, string | number>} */
 let transportOptions = {};
@@ -355,6 +397,7 @@ async function initialize() {
   populateModbusConfigForm(modbusConfig);
   populateHartConfigForm(hartConfig);
   populateWebsocketConfigForm(websocketConfig);
+  populateMqttConfigForm(mqttConfig);
   populateAomasterConfigForm(aomasterConfig);
   populateChartConfigForm(chartConfig);
   syncAomasterValueDisplayControls();
@@ -647,6 +690,7 @@ function updateChartPointLabels() {
 }
 
 function bindEvents() {
+  bindSidebarPanelCollapse();
   on(elements.connectButton, "click", connect);
   on(elements.disconnectButton, "click", disconnect);
   on(elements.transportSelect, "change", (event) => setTransport(event.target.value));
@@ -671,6 +715,15 @@ function bindEvents() {
       const preset = WEBSOCKET_QUICK_MESSAGES.find((item) => item.id === quickSend.dataset.wsQuickSend);
       if (preset) {
         sendWebSocketQuickMessage(preset).catch((error) => appendLog("error", "发送", error.message));
+      }
+      return;
+    }
+
+    const mqttQuickSend = event.target.closest("[data-mqtt-quick-send]");
+    if (mqttQuickSend) {
+      const preset = MQTT_QUICK_MESSAGES.find((item) => item.id === mqttQuickSend.dataset.mqttQuickSend);
+      if (preset) {
+        sendMqttQuickMessage(preset).catch((error) => appendLog("error", "发送", error.message));
       }
       return;
     }
@@ -793,6 +846,14 @@ function bindEvents() {
   on(elements.saveWebsocketConfig, "click", saveWebsocketConfig);
   on(elements.resetWebsocketConfig, "click", resetWebsocketConfig);
 
+  getMqttConfigControls().filter(Boolean).forEach((control) => {
+    control.addEventListener("input", updateMqttDraftConfig);
+    control.addEventListener("change", updateMqttDraftConfig);
+  });
+
+  on(elements.saveMqttConfig, "click", saveMqttConfig);
+  on(elements.resetMqttConfig, "click", resetMqttConfig);
+
   on(elements.hartSearchDevice, "click", () => {
     sendHartSearchCommand().catch((error) => appendLog("error", "HART", error.message));
   });
@@ -812,12 +873,60 @@ function bindEvents() {
   bindChartConfigEvents();
 }
 
+function bindSidebarPanelCollapse() {
+  const saved = loadSidebarPanelState();
+
+  document.querySelectorAll(".sidebar-panel[data-sidebar-panel]").forEach((panel) => {
+    const panelId = panel.dataset.sidebarPanel;
+    const toggle = panel.querySelector(".sidebar-collapse-toggle");
+    if (!toggle || !panelId) {
+      return;
+    }
+
+    setSidebarPanelCollapsed(panel, toggle, saved[panelId] === true);
+
+    toggle.addEventListener("click", () => {
+      setSidebarPanelCollapsed(panel, toggle, !panel.classList.contains("collapsed"));
+      persistSidebarPanelState();
+    });
+  });
+}
+
+function setSidebarPanelCollapsed(panel, toggle, collapsed) {
+  panel.classList.toggle("collapsed", collapsed);
+  toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
+  toggle.title = collapsed ? "展开" : "折叠";
+  toggle.textContent = collapsed ? "▸" : "▾";
+
+  const label = panel.querySelector("h2")?.textContent?.trim() || "面板";
+  toggle.setAttribute("aria-label", collapsed ? `展开${label}` : `折叠${label}`);
+}
+
+function loadSidebarPanelState() {
+  try {
+    const saved = localStorage.getItem(SIDEBAR_PANELS_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch {
+    return {};
+  }
+}
+
+function persistSidebarPanelState() {
+  const state = {};
+  document.querySelectorAll(".sidebar-panel[data-sidebar-panel]").forEach((panel) => {
+    if (panel.dataset.sidebarPanel) {
+      state[panel.dataset.sidebarPanel] = panel.classList.contains("collapsed");
+    }
+  });
+  localStorage.setItem(SIDEBAR_PANELS_STORAGE_KEY, JSON.stringify(state));
+}
+
 function bindSessionEvents(target) {
   target.addEventListener("connected", () => {
+    resetMqttMessageStats();
     updateConnectionUi(true);
     updateActivePolling();
-    updatePollingUi();
-    appendLog("info", "连接", "已连接");
+    appendLog("info", "连接", describeConnectionSummary());
   });
 
   target.addEventListener("disconnected", () => {
@@ -828,17 +937,23 @@ function bindSessionEvents(target) {
     resetAomasterRxBuffer();
     finalizeRxLogCoalesce();
     updateConnectionUi(false);
-    updatePollingUi();
+    resetMqttMessageStats();
     appendLog("info", "连接", "已断开");
   });
 
   target.addEventListener("rx", (event) => {
-    const { bytes, text } = event.detail;
+    const { bytes, text, topic } = event.detail;
     const useHexDisplay =
       state.deviceId === MODBUS_DEVICE_ID ||
       state.deviceId === HART_DEVICE_ID ||
       state.deviceId === DEFAULT_DEVICE_ID;
-    queueRxLogDisplay(bytes, text, useHexDisplay);
+    const rxPayload = topic ? `[${topic}] ${text ?? bytesToHex(bytes)}` : text ?? bytesToHex(bytes);
+    queueRxLogDisplay(bytes, rxPayload, useHexDisplay && !topic);
+
+    if (state.deviceId === MQTT_DEVICE_ID) {
+      mqttMessageStats.rx += 1;
+      updateMqttMessageStatsUi();
+    }
 
     const telemetry = parseDeviceTelemetry(
       state.deviceId,
@@ -850,6 +965,7 @@ function bindSessionEvents(target) {
       aomasterConfig,
       hartConfig,
       websocketConfig,
+      mqttConfig,
     );
     if (telemetry) {
       if (state.deviceId === HART_DEVICE_ID && telemetry.isDiscovery) {
@@ -876,8 +992,24 @@ function bindSessionEvents(target) {
 
   target.addEventListener("tx", (event) => {
     finalizeRxLogCoalesce();
-    const { bytes, text } = event.detail;
-    appendLog("tx", "TX", text ?? bytesToHex(bytes));
+    const { bytes, text, topic, qos, retain } = event.detail;
+    let payload = text ?? bytesToHex(bytes);
+    if (topic) {
+      const flags = [];
+      if (qos) {
+        flags.push(`QoS${qos}`);
+      }
+      if (retain) {
+        flags.push("retain");
+      }
+      payload = `[${topic}${flags.length ? ` ${flags.join(" ")}` : ""}] ${payload}`;
+    }
+    appendLog("tx", "TX", payload);
+
+    if (state.deviceId === MQTT_DEVICE_ID) {
+      mqttMessageStats.tx += 1;
+      updateMqttMessageStatsUi();
+    }
   });
 
   target.addEventListener("error", (event) => {
@@ -985,6 +1117,11 @@ function renderTransportFields() {
       control.addEventListener("input", updateSecureState);
       control.addEventListener("change", updateSecureState);
     }
+
+    if (state.transportId === MQTT_TRANSPORT_ID && field.key === "brokerUrl") {
+      control.addEventListener("input", updateSecureState);
+      control.addEventListener("change", updateSecureState);
+    }
   });
 
   applyDeviceTransportDefaults();
@@ -1001,12 +1138,19 @@ function readTransportOptions() {
 }
 
 function describeDeviceTransportDefaults(deviceId) {
+  if (state.transportId === MQTT_TRANSPORT_ID) {
+    return "默认 MQTT Broker 与主题";
+  }
+
   if (state.transportId === WEBSOCKET_TRANSPORT_ID) {
     if (deviceId === MODBUS_DEVICE_ID) {
       return "Modbus 默认 WebSocket 地址";
     }
     if (deviceId === WEBSOCKET_DEVICE_ID) {
       return "WebSocket 调试默认连接地址";
+    }
+    if (deviceId === MQTT_DEVICE_ID) {
+      return "MQTT 调试默认 Broker 与主题";
     }
     return "默认 WebSocket 地址";
   }
@@ -1081,7 +1225,7 @@ function selectDevice(deviceId) {
     state.mode = getHartMode(normalized.activeCommand);
     const config = getModeConfig(state.mode, deviceId, customConfig, modbusConfig);
     state.setpoint = config.presets.mid;
-  } else if (deviceId !== WEBSOCKET_DEVICE_ID) {
+  } else if (deviceId !== WEBSOCKET_DEVICE_ID && deviceId !== MQTT_DEVICE_ID) {
     state.mode = elements.outputModeSelect?.value || "current";
     applyAomasterModeDefaults();
   }
@@ -1103,7 +1247,8 @@ function navigateToPage(pageId) {
     pageId === CUSTOM_DEVICE_ID ||
     pageId === MODBUS_DEVICE_ID ||
     pageId === HART_DEVICE_ID ||
-    pageId === WEBSOCKET_DEVICE_ID
+    pageId === WEBSOCKET_DEVICE_ID ||
+    pageId === MQTT_DEVICE_ID
   ) {
     selectDevice(pageId);
     return;
@@ -1115,6 +1260,11 @@ function navigateToPage(pageId) {
 }
 
 function updateSecureState() {
+  if (session?.connected) {
+    syncSecureState(true);
+    return;
+  }
+
   const descriptor = getTransportDescriptor(state.transportId);
 
   if (descriptor.requiresSecureContext && !window.isSecureContext) {
@@ -1140,6 +1290,15 @@ function updateSecureState() {
     }
   }
 
+  if (state.transportId === MQTT_TRANSPORT_ID) {
+    const mqttWarning = describeMqttUrlWarning(readTransportOptions().brokerUrl);
+    if (mqttWarning) {
+      elements.secureState.textContent = mqttWarning;
+      elements.secureState.classList.add("warning");
+      return;
+    }
+  }
+
   elements.secureState.textContent = `${descriptor.label} 可用`;
   elements.secureState.classList.remove("warning");
 }
@@ -1158,6 +1317,8 @@ function updateDeviceUi() {
   const isModbus = state.deviceId === MODBUS_DEVICE_ID;
   const isHart = state.deviceId === HART_DEVICE_ID;
   const isWebsocket = state.deviceId === WEBSOCKET_DEVICE_ID;
+  const isMqtt = state.deviceId === MQTT_DEVICE_ID;
+  const isMessageDebug = isWebsocket || isMqtt;
   const isAomaster = state.deviceId === DEFAULT_DEVICE_ID;
   const normalizedModbus = normalizeModbusConfig(modbusConfig);
   const modbusIsRead = isModbus && isReadFunctionCode(normalizedModbus.functionCode);
@@ -1169,10 +1330,10 @@ function updateDeviceUi() {
   const setpointRow = queryDeviceField("setpointRow");
   const presetRow = queryDeviceField("presetRow");
   if (setpointRow) {
-    setpointRow.hidden = modbusIsRead || isHart || isWebsocket;
+    setpointRow.hidden = modbusIsRead || isHart || isMessageDebug;
   }
   if (presetRow) {
-    presetRow.hidden = modbusIsRead || isHart || isWebsocket;
+    presetRow.hidden = modbusIsRead || isHart || isMessageDebug;
   }
 
   if (elements.singleChartBlock) {
@@ -1204,7 +1365,9 @@ function updateDeviceUi() {
         ? `HART PV/SV/TV/QV 卡片与多曲线同步显示；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`
         : isWebsocket
           ? `WebSocket 回包自动解析 JSON 或文本数值；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`
-          : `ECharts 曲线自动解析设备回读数值；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`;
+          : isMqtt
+            ? `MQTT 订阅消息自动解析 JSON 或文本数值；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`
+            : `ECharts 曲线自动解析设备回读数值；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`;
   }
 
   const summary = queryDeviceField("deviceSummary");
@@ -1217,6 +1380,8 @@ function updateDeviceUi() {
       summary.textContent = describeHartSummary(hartConfig);
     } else if (isWebsocket) {
       summary.textContent = describeWebSocketSummary(websocketConfig);
+    } else if (isMqtt) {
+      summary.textContent = describeMqttSummary(mqttConfig);
     } else if (isAomaster) {
       summary.textContent = describeAomasterSummary(aomasterConfig);
     } else {
@@ -1245,7 +1410,7 @@ function updateDeviceUi() {
     refreshAomasterPreviewChart();
   }
 
-  if (!isAomaster && !isHart && chart) {
+  if (!isAomaster && !isHart && !isMessageDebug && chart) {
     const chartConfig = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
     chart.setMeta({ title: "实时曲线", unit: chartConfig.unit });
   }
@@ -1256,6 +1421,17 @@ function updateDeviceUi() {
 
   if (isWebsocket) {
     renderWebSocketQuickSends();
+    if (elements.sendFormat) {
+      elements.sendFormat.value = "json";
+    }
+    if (elements.lineEnding) {
+      elements.lineEnding.value = "";
+    }
+  }
+
+  if (isMqtt) {
+    renderMqttQuickSends();
+    updateMqttMessageStatsUi();
     if (elements.sendFormat) {
       elements.sendFormat.value = "json";
     }
@@ -1410,6 +1586,8 @@ function renderHomeDeviceCards() {
       summary.textContent = "通用命令读写，PV/SV/TV/QV 轮询与多曲线，完整 HART 上位机调试。";
     } else if (entry.deviceId === WEBSOCKET_DEVICE_ID) {
       summary.textContent = "WebSocket 连接调试，快捷 JSON/文本发送与回包解析。";
+    } else if (entry.deviceId === MQTT_DEVICE_ID) {
+      summary.textContent = "MQTT over WebSocket 调试，主题发布/订阅、QoS 与 JSON 解析。";
     } else {
       summary.textContent = "用模板发送和解析规则快速适配未知串口设备。";
     }
@@ -1521,6 +1699,11 @@ function updateSetpoint(value) {
 }
 
 function updateSetpointUi() {
+  if (state.deviceId === WEBSOCKET_DEVICE_ID || state.deviceId === MQTT_DEVICE_ID) {
+    updateMessageDebugCommandUi();
+    return;
+  }
+
   const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
   const isPercent = isAomasterPercentMode();
   const formatted = isPercent
@@ -1572,6 +1755,7 @@ function updateSetpointUi() {
     aomasterConfig,
     hartConfig,
     websocketConfig,
+    mqttConfig,
   );
   if (protocolPreview) {
     protocolPreview.textContent = command.preview;
@@ -1618,18 +1802,6 @@ function updateSetpointUi() {
     return;
   }
 
-  if (state.deviceId === WEBSOCKET_DEVICE_ID) {
-    if (sendDriverCommand) {
-      sendDriverCommand.textContent = "发送轮询消息";
-      sendDriverCommand.disabled = !command.supported || !session?.connected;
-    }
-    if (driverState) {
-      driverState.textContent = command.supported ? "WebSocket 调试" : "请配置轮询消息";
-      driverState.classList.toggle("warning", !command.supported);
-    }
-    return;
-  }
-
   if (state.deviceId === DEFAULT_DEVICE_ID) {
     if (sendDriverCommand) {
       sendDriverCommand.textContent = "发送设定";
@@ -1650,6 +1822,71 @@ function updateSetpointUi() {
   }
 }
 
+function updateMessageDebugCommandUi() {
+  const protocolPreview = queryDeviceField("protocolPreview");
+  const sendDriverCommand = queryDeviceField("sendDriverCommand");
+  const driverState = queryDeviceField("driverState");
+  const command = createDeviceSetOutputCommand(
+    state.deviceId,
+    state,
+    customConfig,
+    modbusConfig,
+    aomasterConfig,
+    hartConfig,
+    websocketConfig,
+    mqttConfig,
+  );
+
+  if (protocolPreview) {
+    protocolPreview.textContent = command.preview;
+  }
+  if (sendDriverCommand) {
+    sendDriverCommand.textContent = "发送轮询消息";
+    sendDriverCommand.disabled = !command.supported || !session?.connected;
+  }
+  if (driverState) {
+    const label = state.deviceId === MQTT_DEVICE_ID ? "MQTT 调试" : "WebSocket 调试";
+    driverState.textContent = command.supported ? label : "请配置轮询消息";
+    driverState.classList.toggle("warning", !command.supported);
+  }
+}
+
+function describeConnectionSummary() {
+  const descriptor = getTransportDescriptor(state.transportId);
+  const options = readTransportOptions();
+
+  if (state.transportId === MQTT_TRANSPORT_ID) {
+    return `MQTT 已连接 · ${options.brokerUrl} · 订阅 ${options.subscribeTopic}`;
+  }
+
+  if (state.transportId === WEBSOCKET_TRANSPORT_ID) {
+    return `WebSocket 已连接 · ${options.url}`;
+  }
+
+  if (state.transportId === DEFAULT_TRANSPORT_ID) {
+    const parity = options.parity === "none" ? "N" : options.parity === "even" ? "E" : "O";
+    return `串口已连接 · ${options.baudRate} ${options.dataBits}${parity}${options.stopBits}`;
+  }
+
+  return `${descriptor.label} 已连接`;
+}
+
+function syncSecureState(connected) {
+  if (!elements.secureState) {
+    return;
+  }
+
+  if (connected) {
+    elements.secureState.textContent = describeConnectionSummary();
+    elements.secureState.classList.remove("warning");
+    elements.secureState.classList.add("connected");
+    return;
+  }
+
+  elements.secureState.classList.remove("connected");
+  updateSecureState();
+}
+
 function updateConnectionUi(connected) {
   elements.connectButton.disabled = connected || !transportReady();
   elements.disconnectButton.disabled = !connected;
@@ -1657,8 +1894,17 @@ function updateConnectionUi(connected) {
   elements.transportSelect.disabled = connected;
   elements.connectionState.textContent = connected ? "已连接" : "未连接";
   elements.connectionState.classList.toggle("connected", connected);
+  if (connected) {
+    elements.connectionState.title = describeConnectionSummary();
+  } else {
+    elements.connectionState.removeAttribute("title");
+  }
+  syncSecureState(connected);
   updateSetpointUi();
   updatePollingUi();
+  if (connected) {
+    updateDeviceUi();
+  }
 }
 
 function updateCustomDraftConfig() {
@@ -1725,6 +1971,9 @@ async function copyRequestTemplate() {
 async function connect() {
   try {
     await session.connect(readTransportOptions());
+    if (session?.connected) {
+      updateConnectionUi(true);
+    }
   } catch (error) {
     appendLog("error", "连接", error.message);
   }
@@ -1744,6 +1993,7 @@ async function sendDeviceCommand() {
     aomasterConfig,
     hartConfig,
     websocketConfig,
+    mqttConfig,
   );
     const frames = command.frames ?? (command.bytes ? [command.bytes] : []);
     if (!command.supported || frames.length === 0) {
@@ -1751,8 +2001,9 @@ async function sendDeviceCommand() {
       return;
     }
 
+    const writeOptions = state.deviceId === MQTT_DEVICE_ID ? readMqttWriteOptions() : undefined;
     for (const frame of frames) {
-      await session.write(frame);
+      await session.write(frame, writeOptions);
     }
   } catch (error) {
     appendLog("error", "发送", error.message);
@@ -1768,6 +2019,11 @@ async function sendManualCommand() {
     }
 
     const payload = buildManualPayload(elements.sendFormat.value, command, resolveLineEnding(elements.lineEnding.value));
+    if (state.deviceId === MQTT_DEVICE_ID) {
+      await session.write(payload, readMqttWriteOptions());
+      return;
+    }
+
     await session.write(payload);
   } catch (error) {
     appendLog("error", "发送", error.message);
@@ -1859,11 +2115,19 @@ function stopWebSocketPolling() {
   }
 }
 
+function stopMqttPolling() {
+  if (mqttPollTimer) {
+    clearInterval(mqttPollTimer);
+    mqttPollTimer = null;
+  }
+}
+
 function stopAllPolling() {
   stopModbusPolling();
   stopHartPolling();
   stopAomasterPolling();
   stopWebSocketPolling();
+  stopMqttPolling();
 }
 
 function getCurrentPollIntervalMs() {
@@ -1877,6 +2141,10 @@ function getCurrentPollIntervalMs() {
 
   if (state.deviceId === WEBSOCKET_DEVICE_ID) {
     return normalizeWebSocketConfig(websocketConfig).pollIntervalMs;
+  }
+
+  if (state.deviceId === MQTT_DEVICE_ID) {
+    return normalizeMqttConfig(mqttConfig).pollIntervalMs;
   }
 
   if (state.deviceId === DEFAULT_DEVICE_ID) {
@@ -1913,6 +2181,20 @@ function canCurrentDevicePoll() {
       aomasterConfig,
       hartConfig,
       websocketConfig,
+      mqttConfig,
+    ).supported;
+  }
+
+  if (state.deviceId === MQTT_DEVICE_ID) {
+    return createDeviceSetOutputCommand(
+      MQTT_DEVICE_ID,
+      state,
+      customConfig,
+      modbusConfig,
+      aomasterConfig,
+      hartConfig,
+      websocketConfig,
+      mqttConfig,
     ).supported;
   }
 
@@ -1924,6 +2206,7 @@ function updateActivePolling() {
   updateHartPolling();
   updateAomasterPolling();
   updateWebSocketPolling();
+  updateMqttPolling();
 }
 
 function updatePollingUi() {
@@ -1952,6 +2235,8 @@ function updatePollingUi() {
     } else if (state.deviceId === HART_DEVICE_ID && !canPoll) {
       elements.pollState.textContent = "请先搜索设备";
     } else if (state.deviceId === WEBSOCKET_DEVICE_ID && !canPoll) {
+      elements.pollState.textContent = "请配置轮询间隔与消息";
+    } else if (state.deviceId === MQTT_DEVICE_ID && !canPoll) {
       elements.pollState.textContent = "请配置轮询间隔与消息";
     } else if (interval <= 0) {
       elements.pollState.textContent = "请设置轮询间隔";
@@ -2121,6 +2406,165 @@ async function sendWebSocketQuickMessage(preset) {
 
   const payload = buildWebSocketMessage(preset.format, preset.message, { parseHexPayload });
   await session.write(payload);
+}
+
+function readMqttWriteOptions() {
+  return getMqttPublishOptions(mqttConfig, readTransportOptions().publishTopic);
+}
+
+function resetMqttMessageStats() {
+  mqttMessageStats = { rx: 0, tx: 0 };
+  updateMqttMessageStatsUi();
+}
+
+function updateMqttMessageStatsUi() {
+  if (elements.mqttRxCount) {
+    elements.mqttRxCount.textContent = String(mqttMessageStats.rx);
+  }
+  if (elements.mqttTxCount) {
+    elements.mqttTxCount.textContent = String(mqttMessageStats.tx);
+  }
+  if (elements.mqttSubscribeTopic) {
+    const topic = session?.connected ? readTransportOptions().subscribeTopic : "—";
+    elements.mqttSubscribeTopic.textContent = topic || "—";
+  }
+}
+
+function updateMqttPolling() {
+  stopMqttPolling();
+
+  const normalized = normalizeMqttConfig(mqttConfig);
+  if (state.deviceId !== MQTT_DEVICE_ID || !session?.connected || !state.pollingActive) {
+    return;
+  }
+
+  if (normalized.pollIntervalMs <= 0 || !normalized.heartbeatMessage.trim()) {
+    return;
+  }
+
+  mqttPollTimer = window.setInterval(() => {
+    sendDeviceCommand().catch((error) => appendLog("error", "MQTT", error.message));
+  }, normalized.pollIntervalMs);
+}
+
+function updateMqttDraftConfig() {
+  mqttConfig = readMqttConfigForm();
+  updateDeviceUi();
+  if (state.pollingActive && !canCurrentDevicePoll()) {
+    state.pollingActive = false;
+  }
+  updateActivePolling();
+}
+
+function saveMqttConfig() {
+  mqttConfig = readMqttConfigForm();
+  localStorage.setItem(MQTT_CONFIG_STORAGE_KEY, JSON.stringify(mqttConfig));
+  populateMqttConfigForm(mqttConfig);
+  updateDeviceUi();
+  updateActivePolling();
+  appendLog("info", "设备", "MQTT 调试配置已保存");
+}
+
+function resetMqttConfig() {
+  mqttConfig = normalizeMqttConfig(DEFAULT_MQTT_CONFIG);
+  localStorage.setItem(MQTT_CONFIG_STORAGE_KEY, JSON.stringify(mqttConfig));
+  populateMqttConfigForm(mqttConfig);
+  updateDeviceUi();
+  updateActivePolling();
+  appendLog("info", "设备", "MQTT 调试配置已恢复默认");
+}
+
+function loadMqttConfig() {
+  try {
+    const saved = localStorage.getItem(MQTT_CONFIG_STORAGE_KEY);
+    return normalizeMqttConfig(saved ? JSON.parse(saved) : DEFAULT_MQTT_CONFIG);
+  } catch {
+    return normalizeMqttConfig(DEFAULT_MQTT_CONFIG);
+  }
+}
+
+function populateMqttConfigForm(config = mqttConfig) {
+  const normalized = normalizeMqttConfig(config);
+  if (elements.mqttPollIntervalMs) {
+    elements.mqttPollIntervalMs.value = String(normalized.pollIntervalMs);
+  }
+  if (elements.mqttHeartbeatFormat) {
+    elements.mqttHeartbeatFormat.value = normalized.heartbeatFormat;
+  }
+  if (elements.mqttHeartbeatMessage) {
+    elements.mqttHeartbeatMessage.value = normalized.heartbeatMessage;
+  }
+  if (elements.mqttParserFieldPath) {
+    elements.mqttParserFieldPath.value = normalized.parserFieldPath;
+  }
+  if (elements.mqttFieldName) {
+    elements.mqttFieldName.value = normalized.fieldName;
+  }
+  if (elements.mqttUnit) {
+    elements.mqttUnit.value = normalized.unit;
+  }
+  if (elements.mqttPublishTopic) {
+    elements.mqttPublishTopic.value = normalized.publishTopic;
+  }
+  if (elements.mqttPublishQos) {
+    elements.mqttPublishQos.value = String(normalized.publishQos);
+  }
+  if (elements.mqttPublishRetain) {
+    elements.mqttPublishRetain.checked = normalized.publishRetain;
+  }
+}
+
+function readMqttConfigForm() {
+  return normalizeMqttConfig({
+    pollIntervalMs: elements.mqttPollIntervalMs?.value,
+    heartbeatFormat: elements.mqttHeartbeatFormat?.value,
+    heartbeatMessage: elements.mqttHeartbeatMessage?.value,
+    parserFieldPath: elements.mqttParserFieldPath?.value,
+    fieldName: elements.mqttFieldName?.value,
+    unit: elements.mqttUnit?.value,
+    publishTopic: elements.mqttPublishTopic?.value,
+    publishQos: elements.mqttPublishQos?.value,
+    publishRetain: elements.mqttPublishRetain?.checked,
+  });
+}
+
+function getMqttConfigControls() {
+  return [
+    elements.mqttPollIntervalMs,
+    elements.mqttHeartbeatFormat,
+    elements.mqttHeartbeatMessage,
+    elements.mqttParserFieldPath,
+    elements.mqttFieldName,
+    elements.mqttUnit,
+    elements.mqttPublishTopic,
+    elements.mqttPublishQos,
+    elements.mqttPublishRetain,
+  ];
+}
+
+function renderMqttQuickSends() {
+  if (!elements.mqttQuickSendGrid) {
+    return;
+  }
+
+  elements.mqttQuickSendGrid.innerHTML = "";
+  MQTT_QUICK_MESSAGES.forEach((preset) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.dataset.mqttQuickSend = preset.id;
+    button.textContent = preset.label;
+    button.disabled = !session?.connected;
+    elements.mqttQuickSendGrid.append(button);
+  });
+}
+
+async function sendMqttQuickMessage(preset) {
+  if (!session?.connected) {
+    throw new Error("请先连接 MQTT");
+  }
+
+  const payload = buildMqttMessage(preset.format, preset.message, { parseHexPayload });
+  await session.write(payload, readMqttWriteOptions());
 }
 
 function updateModbusDraftConfig() {

@@ -6,7 +6,7 @@
 
 modusignal 是一个静态在线设备/信号调试平台。它通过浏览器连接使用者的设备，统一抽象多种传输方式（串口、WebSocket、MQTT 等），提供：
 
-- 多传输连接、断开、收发日志（已实现串口、WebSocket；MQTT 为扩展点）
+- 多传输连接、断开、收发日志（已实现串口、WebSocket、MQTT over WebSocket）
 - 设备专属页面 UI
 - 设备命令构造
 - 回包解析和曲线查看
@@ -18,12 +18,14 @@ modusignal 是一个静态在线设备/信号调试平台。它通过浏览器�
 - `aomaster`：AOMaster 4-20mA / 0-10V 模拟量信号发生器，Modbus RTU 驱动，默认串口
 - `modbus`：通用 Modbus RTU 寄存器读写，默认串口
 - `hart`：HART 通用设备，支持搜索、通用命令与 PV/SV/TV/QV 轮询，默认串口
-- `websocket`：WebSocket 消息调试，快捷发送与 JSON 解析，默认 WebSocket
+- `websocket`：WebSocket 消息调试，快捷发送与 JSON 解析，默认 WebSocket，图标 `images/websocket.png`
+- `mqtt`：MQTT 消息调试，主题发布/订阅、QoS/retain 与 JSON 解析，默认 MQTT，图标 `images/mqtt.png`
 - `custom`：自定义设备，使用本地保存的模板和解析配置，默认串口
 
 各设备 profile 可声明：
 
-- `defaultTransportId`：默认通讯方式（`serial` / `websocket` 等），由 `getDeviceDefaultTransportId()` 读取；切换设备时 `applyDeviceDefaultTransport()` 自动切换传输
+- `defaultTransportId`：默认通讯方式（`serial` / `websocket` / `mqtt` 等），由 `getDeviceDefaultTransportId()` 读取；切换设备时 `applyDeviceDefaultTransport()` 自动切换传输
+- `image`：设备库与主页卡片图标路径（如 `./images/hart.png`）；有图标的设备在 `listDeviceLibrary()` 中优先排序
 - `*_TRANSPORT_DEFAULTS`：各传输下的默认连接参数，在 `src/app.js` 的 `DEVICE_TRANSPORT_DEFAULTS` 注册
 - `DEFAULT_*_CONFIG.pollIntervalMs`：轮询间隔
 
@@ -37,7 +39,7 @@ index.html
 
 pages/
   home.html / request.html
-  devices/aomaster.html · modbus.html · hart.html · websocket.html · custom.html
+  devices/aomaster.html · modbus.html · hart.html · websocket.html · mqtt.html · custom.html
   shared/workbench.html（监测面板 + 收发调试）
 
 src/page-loader.js
@@ -58,11 +60,17 @@ src/transports/serial.js
 src/transports/websocket.js
   WebSocketTransport；字符串/JSON 发文本帧，Uint8Array 发二进制帧
 
+src/transports/mqtt.js
+  MqttTransport（mqtt.js + WebSocket Broker）；write 支持 topic/qos/retain；rx/tx 带主题
+
+vendor/mqtt.esm.js
+  mqtt.js 浏览器 ESM bundle
+
 src/transports/registry.js
   传输注册表：listTransports / getTransportDescriptor / createTransportSession
 
 src/protocols.js
-  设备注册表、getDeviceDefaultTransportId、统一协议入口
+  设备注册表、getDeviceDefaultTransportId、getModeConfig、统一协议入口
 
 src/devices/aomaster.js
   AOMaster profile、Modbus RTU 命令构造、实际输出回读解析
@@ -76,8 +84,14 @@ src/devices/hart-device.js
 src/devices/websocket-device.js
   WebSocket 调试 profile、心跳命令、JSON/文本遥测解析
 
+src/devices/mqtt-device.js
+  MQTT 调试 profile、快捷发布、QoS/retain 配置、JSON/文本遥测解析
+
 src/devices/custom-device.js
   自定义设备配置、模板发送、正则/自动数值解析
+
+images/
+  设备图标：AOMaster.png · hart.png · websocket.png · mqtt.png · modusignal-logo.svg
 
 src/config.js
   项目链接和站点级配置
@@ -92,6 +106,7 @@ src/config.js
 - `modbus`：Modbus RTU 专属页面
 - `hart`：HART 通用设备专属页面
 - `websocket`：WebSocket 调试专属页面
+- `mqtt`：MQTT 调试专属页面
 - `custom`：自定义设备专属页面
 - `request`：新增设备请求页面
 
@@ -103,7 +118,7 @@ src/config.js
 
 | 能力 | 是否必须 | 提供方式 |
 | --- | --- | --- |
-| 设备元信息（id / name / type / protocolStatus / defaultTransportId） | 必须 | `*_PROFILE` |
+| 设备元信息（id / name / type / protocolStatus / defaultTransportId / image） | 必须（image 可选） | `*_PROFILE` |
 | 设定与输出命令（滑条、预设、发送字节） | 可选 | `profile.modes` + `create*SetOutputCommand` |
 | 回包解析（曲线、读数） | 可选 | `parse*Telemetry` |
 
@@ -117,7 +132,8 @@ export const MY_DEVICE_PROFILE = {
   name: "My Device",
   type: "设备类型",
   protocolStatus: "ready",
-  defaultTransportId: "serial", // 或 "websocket"
+  defaultTransportId: "serial", // 或 "websocket" / "mqtt"
+  image: "./images/my-device.png", // 可选
 };
 ```
 
@@ -128,11 +144,11 @@ export const MY_DEVICE_PROFILE = {
 
 ### 最小驱动：只读遥测、无设定
 
-如果设备只上报数据、不需要从页面下发设定，**可以完全省略 `modes` 和 `create*SetOutputCommand`**。参考 `src/devices/websocket-device.js`（无 modes，通过快捷发送与收发调试区手动发消息）。
+如果设备只上报数据、不需要从页面下发设定，**可以完全省略 `modes` 和 `create*SetOutputCommand`**。参考 `src/devices/websocket-device.js` 与 `src/devices/mqtt-device.js`（无 modes，通过快捷发送与收发调试区手动发消息）。`getModeConfig()` 对无 `modes` 的 profile 返回安全占位配置；连接后 UI 走 `updateMessageDebugCommandUi()`。
 
 ### 完整驱动：带设定与输出命令
 
-需要从页面下发设定时，再补上 `modes` 和命令构造函数。约定：`create*SetOutputCommand` 始终返回 `{ supported, preview, bytes }`；`bytes` 可为 `Uint8Array` 或 `string`（WebSocket 文本帧）。
+需要从页面下发设定时，再补上 `modes` 和命令构造函数。约定：`create*SetOutputCommand` 始终返回 `{ supported, preview, bytes }`；`bytes` 可为 `Uint8Array` 或 `string`（WebSocket/MQTT 文本帧）。
 
 ### 在 `src/protocols.js` 注册
 
@@ -156,6 +172,13 @@ export const MY_DEVICE_TRANSPORT_DEFAULTS = {
 export const MY_DEVICE_WEBSOCKET_TRANSPORT_DEFAULTS = {
   url: "ws://127.0.0.1:8080",
 };
+
+export const MY_DEVICE_MQTT_TRANSPORT_DEFAULTS = {
+  brokerUrl: "wss://broker.emqx.io:8084/mqtt",
+  clientId: "modusignal",
+  subscribeTopic: "modusignal/rx",
+  publishTopic: "modusignal/tx",
+};
 ```
 
 在 `src/app.js` 的 `DEVICE_TRANSPORT_DEFAULTS` 中按传输 ID 注册：
@@ -164,23 +187,25 @@ export const MY_DEVICE_WEBSOCKET_TRANSPORT_DEFAULTS = {
 [MY_DEVICE_ID]: {
   serial: MY_DEVICE_TRANSPORT_DEFAULTS,
   websocket: MY_DEVICE_WEBSOCKET_TRANSPORT_DEFAULTS,
+  mqtt: MY_DEVICE_MQTT_TRANSPORT_DEFAULTS,
 },
 ```
 
 当前默认值：
 
-| 设备 | 默认通讯 | 串口 / WebSocket 参数 | 轮询 (ms) |
+| 设备 | 默认通讯 | 连接参数 | 轮询 (ms) |
 | --- | --- | --- | --- |
 | AOMaster | serial | 115200 8N1 | 50 |
 | 自定义 | serial | 115200 8N1 | 500（暂不支持轮询） |
 | Modbus | serial | 9600 8N1 | 500 |
 | HART | serial | 1200 8O1 | 1000 |
 | WebSocket 调试 | websocket | ws://127.0.0.1:8080 | 0（可配置心跳轮询） |
+| MQTT 调试 | mqtt | wss://broker.emqx.io:8084/mqtt · modusignal/rx · modusignal/tx | 0（可配置心跳轮询） |
 
 ## 添加设备 UI
 
 1. 在 `pages/devices/<id>.html` 添加设备专属 UI，并在 `src/page-loader.js` 的 `PAGE_PATHS.devices` 中注册路径。
-2. 设备库与主页卡片通过 `listDeviceLibrary()` 自动收录 `DEVICE_PROFILES` 中的设备。
+2. 设备库与主页卡片通过 `listDeviceLibrary()` 自动收录 `DEVICE_PROFILES` 中的设备；设置 `profile.image` 可显示 `images/` 下图标。
 3. 在 `src/app.js` 增加 `DEVICE_PAGE_IDS`、页面状态绑定、轮询与配置表单。
 4. 保持连接、日志和曲线复用现有组件。
 
@@ -189,17 +214,17 @@ export const MY_DEVICE_WEBSOCKET_TRANSPORT_DEFAULTS = {
 传输层与设备层正交：加一种传输不需要改设备驱动或页面逻辑。
 
 1. 在 `src/transports/` 新建 session 类，继承 `BaseTransport`，实现 `connect/disconnect/write` 与 `get connected`，并在收发时 `emit("rx"/"tx"/...)`。
-2. `write(data)` 接受 `Uint8Array | string`；WebSocket 实现中字符串走文本帧。
+2. `write(data, options?)` 接受 `Uint8Array | string`；WebSocket 字符串走文本帧；MQTT 可通过 options 指定 `topic` / `qos` / `retain`。
 3. 导出 descriptor，用 `fields` 声明连接参数。
 4. 在 `src/transports/registry.js` 的 `TRANSPORTS` 中注册。
 
-WebSocket 已实现，见 `src/transports/websocket.js`。
+已实现传输见 `src/transports/serial.js`、`websocket.js`、`mqtt.js`。
 
 ### 浏览器能力与约束
 
-- 纯静态浏览器页面可用：Web Serial、WebSocket、MQTT over WebSocket（扩展点）。
+- 纯静态浏览器页面可用：Web Serial、WebSocket、MQTT over WebSocket。
 - Web Serial 需 HTTPS 或 localhost（`requiresSecureContext: true`）。
-- WebSocket 远程 `ws://` 在 HTTPS 页面可能被浏览器拦截；UI 会提示，但不硬拦截；本地 `127.0.0.1` 通常可用。
+- WebSocket / MQTT 远程 `ws://` 在 HTTPS 页面可能被浏览器拦截；UI 会提示，但不硬拦截；本地 `127.0.0.1` 通常可用。
 - 收发调试区 `buildManualPayload()` 支持 `ascii` / `json` / `hex`；JSON 校验后作为字符串发送。
 
 ## 注意事项
@@ -207,5 +232,5 @@ WebSocket 已实现，见 `src/transports/websocket.js`。
 - Web Serial 只能在 HTTPS 或 localhost 安全上下文使用。
 - 不要在协议未确认时写死会影响设备输出的命令。
 - 需要写设备输出时，要校验范围并在 UI 中展示命令预览。
-- 自定义设备与 WebSocket 调试配置保存在浏览器 `localStorage`，不是云端配置。
+- 自定义设备、WebSocket 与 MQTT 调试配置保存在浏览器 `localStorage`，不是云端配置。
 - `src/config.js` 中的 GitHub 链接目前是占位，配置真实仓库后应更新。

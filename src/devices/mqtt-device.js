@@ -1,50 +1,67 @@
-export const WEBSOCKET_DEVICE_ID = "websocket";
+export const MQTT_DEVICE_ID = "mqtt";
 
-export const WEBSOCKET_TRANSPORT_DEFAULTS = {
-  url: "ws://127.0.0.1:8080",
+export const MQTT_DEVICE_TRANSPORT_DEFAULTS = {
+  brokerUrl: "wss://broker.emqx.io:8084/mqtt",
+  clientId: "modusignal",
+  username: "",
+  password: "",
+  subscribeTopic: "modusignal/rx",
+  publishTopic: "modusignal/tx",
 };
 
-export const WEBSOCKET_QUICK_MESSAGES = [
-  { id: "ping", label: "Ping JSON", format: "json", message: '{"type":"ping"}' },
-  { id: "hello", label: "Hello", format: "ascii", message: "Hello WebSocket!" },
-  { id: "time", label: "时间戳", format: "json", message: '{"type":"time"}' },
+export const MQTT_QUICK_MESSAGES = [
+  {
+    id: "hello",
+    label: "Hello JSON",
+    format: "json",
+    message: '{"message":"Hello from modusignal","value":42}',
+  },
+  { id: "ping", label: "Ping", format: "json", message: '{"type":"ping"}' },
+  { id: "sensor", label: "传感器", format: "json", message: '{"sensor":"temp","value":25.6,"unit":"C"}' },
+  { id: "text", label: "测试文本", format: "ascii", message: "Hello MQTT!" },
 ];
 
-export const DEFAULT_WEBSOCKET_CONFIG = {
+export const DEFAULT_MQTT_CONFIG = {
   pollIntervalMs: 0,
   heartbeatFormat: "json",
   heartbeatMessage: '{"type":"ping"}',
   parserFieldPath: "value",
   fieldName: "数值",
   unit: "",
+  publishTopic: "",
+  publishQos: 0,
+  publishRetain: false,
 };
 
-export const WEBSOCKET_PROFILE = {
-  id: WEBSOCKET_DEVICE_ID,
-  name: "WebSocket 调试",
-  type: "WebSocket 消息调试",
+export const MQTT_PROFILE = {
+  id: MQTT_DEVICE_ID,
+  name: "MQTT 调试",
+  type: "MQTT 消息调试",
   protocolStatus: "ready",
-  defaultTransportId: "websocket",
-  image: "./images/websocket.png",
+  defaultTransportId: "mqtt",
+  image: "./images/mqtt.png",
 };
 
-export function normalizeWebSocketConfig(config = {}) {
+export function normalizeMqttConfig(config = {}) {
   const merged = {
-    ...DEFAULT_WEBSOCKET_CONFIG,
+    ...DEFAULT_MQTT_CONFIG,
     ...config,
   };
 
   return {
-    pollIntervalMs: Math.max(0, Math.trunc(toFiniteNumber(merged.pollIntervalMs, DEFAULT_WEBSOCKET_CONFIG.pollIntervalMs))),
+    pollIntervalMs: Math.max(0, Math.trunc(toFiniteNumber(merged.pollIntervalMs, DEFAULT_MQTT_CONFIG.pollIntervalMs))),
     heartbeatFormat: normalizeMessageFormat(merged.heartbeatFormat),
-    heartbeatMessage: String(merged.heartbeatMessage ?? DEFAULT_WEBSOCKET_CONFIG.heartbeatMessage),
+    heartbeatMessage: String(merged.heartbeatMessage ?? DEFAULT_MQTT_CONFIG.heartbeatMessage),
     parserFieldPath: String(merged.parserFieldPath ?? "").trim(),
-    fieldName: String(merged.fieldName || DEFAULT_WEBSOCKET_CONFIG.fieldName),
+    fieldName: String(merged.fieldName || DEFAULT_MQTT_CONFIG.fieldName),
     unit: String(merged.unit ?? ""),
+    publishTopic: String(merged.publishTopic ?? "").trim(),
+    publishQos: clampQos(merged.publishQos),
+    publishRetain: Boolean(merged.publishRetain),
   };
 }
 
-export function buildWebSocketMessage(format, message, helpers) {
+export function buildMqttMessage(format, message, helpers) {
   const normalizedFormat = normalizeMessageFormat(format);
   const content = String(message ?? "");
 
@@ -70,8 +87,8 @@ export function buildWebSocketMessage(format, message, helpers) {
   return content;
 }
 
-export function createWebSocketSetOutputCommand(_state, config, helpers) {
-  const normalized = normalizeWebSocketConfig(config);
+export function createMqttSetOutputCommand(_state, config, helpers) {
+  const normalized = normalizeMqttConfig(config);
 
   if (!normalized.heartbeatMessage.trim()) {
     return {
@@ -82,11 +99,8 @@ export function createWebSocketSetOutputCommand(_state, config, helpers) {
   }
 
   try {
-    const payload = buildWebSocketMessage(normalized.heartbeatFormat, normalized.heartbeatMessage, helpers);
-    const preview =
-      typeof payload === "string"
-        ? payload
-        : helpers.bytesToHex(payload);
+    const payload = buildMqttMessage(normalized.heartbeatFormat, normalized.heartbeatMessage, helpers);
+    const preview = typeof payload === "string" ? payload : helpers.bytesToHex(payload);
 
     return {
       supported: true,
@@ -102,8 +116,8 @@ export function createWebSocketSetOutputCommand(_state, config, helpers) {
   }
 }
 
-export function parseWebSocketTelemetry(text, config, parseNumericTelemetry) {
-  const normalized = normalizeWebSocketConfig(config);
+export function parseMqttTelemetry(text, config, parseNumericTelemetry) {
+  const normalized = normalizeMqttConfig(config);
   const trimmed = String(text || "").trim();
 
   if (!trimmed) {
@@ -137,10 +151,23 @@ export function parseWebSocketTelemetry(text, config, parseNumericTelemetry) {
   };
 }
 
-export function describeWebSocketSummary(config) {
-  const normalized = normalizeWebSocketConfig(config);
+export function describeMqttSummary(config) {
+  const normalized = normalizeMqttConfig(config);
   const interval = normalized.pollIntervalMs > 0 ? `${normalized.pollIntervalMs} ms 轮询` : "手动收发";
-  return `WebSocket 调试；${interval}；解析字段 ${normalized.parserFieldPath || "自动数字"}`;
+  const topic = normalized.publishTopic || "侧栏发布主题";
+  const qosLabel = normalized.publishRetain ? `QoS ${normalized.publishQos} · 保留` : `QoS ${normalized.publishQos}`;
+  return `MQTT 调试；${interval}；发布 ${topic}（${qosLabel}）；解析 ${normalized.parserFieldPath || "自动数字"}`;
+}
+
+export function getMqttPublishOptions(config, transportPublishTopic = "") {
+  const normalized = normalizeMqttConfig(config);
+  const topic = normalized.publishTopic || String(transportPublishTopic || "").trim();
+
+  return {
+    topic: topic || undefined,
+    qos: normalized.publishQos,
+    retain: normalized.publishRetain,
+  };
 }
 
 function extractJsonValue(source, path) {
@@ -199,6 +226,14 @@ function findFirstNumber(value) {
 
 function normalizeMessageFormat(value) {
   return value === "hex" || value === "ascii" ? value : "json";
+}
+
+function clampQos(value) {
+  const qos = Math.trunc(Number(value));
+  if (qos === 1 || qos === 2) {
+    return qos;
+  }
+  return 0;
 }
 
 function toFiniteNumber(value, fallback) {
