@@ -16,7 +16,11 @@ modusignal 是一个静态在线设备/信号调试平台。它通过浏览器�
 当前内置设备：
 
 - `aomaster`：AOMaster 4-20mA / 0-10V 模拟量信号发生器，Modbus RTU 驱动
+- `modbus`：通用 Modbus RTU 寄存器读写
+- `hart`：HART 通用设备，支持搜索、通用命令与 PV/SV/TV/QV 轮询
 - `custom`：自定义设备，使用本地保存的模板和解析配置
+
+各设备可声明独立的默认串口参数（`*_TRANSPORT_DEFAULTS`）与轮询间隔（`DEFAULT_*_CONFIG.pollIntervalMs`）。切换设备时 `src/app.js` 会通过 `DEVICE_TRANSPORT_DEFAULTS` 自动更新连接面板。
 
 设备层与传输层正交：设备只产出/解析字节，不关心数据怎么传；传输层负责建立连接与收发字节。
 
@@ -28,7 +32,7 @@ index.html
 
 pages/
   home.html / request.html
-  devices/aomaster.html · modbus.html · custom.html
+  devices/aomaster.html · modbus.html · hart.html · custom.html
   shared/workbench.html（监测面板 + 收发调试）
 
 src/page-loader.js
@@ -55,6 +59,12 @@ src/protocols.js
 src/devices/aomaster.js
   AOMaster profile、Modbus RTU 命令构造、实际输出回读解析
 
+src/devices/modbus-device.js
+  通用 Modbus RTU profile、读写命令与回包解析
+
+src/devices/hart-device.js
+  HART profile、搜索/轮询命令、PV/SV/TV/QV 解析
+
 src/devices/custom-device.js
   自定义设备配置、模板发送、正则/自动数值解析
 
@@ -69,6 +79,7 @@ src/config.js
 - `home`：项目主页，包含 GitHub 链接和设备入口
 - `aomaster`：AOMaster 专属页面（信号波形、阶跃序列、双曲线）
 - `modbus`：Modbus RTU 专属页面
+- `hart`：HART 通用设备专属页面
 - `custom`：自定义设备专属页面
 - `request`：新增设备请求页面
 
@@ -145,6 +156,36 @@ export function createMyDeviceSetOutputCommand(state) {
 - **仅当设备有设定输出时**，在 `createDeviceSetOutputCommand` 分发命令构造；否则交由默认分支返回不支持
 
 > 自定义设备（`custom`）是特例：profile、设定范围、模板和解析都由用户表单实时生成，不进 `DEVICE_PROFILES`，由 `getDeviceProfile` / 各分发函数单独处理。
+
+## 设备默认串口与轮询
+
+需要为设备指定常用串口参数或轮询间隔时，在 `src/devices/<id>.js` 中导出：
+
+```js
+export const MY_DEVICE_TRANSPORT_DEFAULTS = {
+  baudRate: 9600,
+  parity: "none",
+  dataBits: 8,
+  stopBits: 1,
+  flowControl: "none",
+};
+
+export const DEFAULT_MY_DEVICE_CONFIG = {
+  // ...
+  pollIntervalMs: 500,
+};
+```
+
+在 `src/app.js` 的 `DEVICE_TRANSPORT_DEFAULTS` 中注册 transport 默认值；切换设备时 `applyDeviceTransportDefaults()` 会更新连接面板。轮询间隔通过各设备的 `normalize*Config` 与页面表单读写，由 `getCurrentPollIntervalMs()` 统一读取。
+
+当前默认值：
+
+| 设备 | 串口 | 轮询 (ms) |
+| --- | --- | --- |
+| AOMaster | 115200 8N1 | 50 |
+| 自定义 | 115200 8N1 | 500（配置预留，暂不支持轮询） |
+| Modbus | 9600 8N1 | 500 |
+| HART | 1200 8O1 | 1000 |
 
 ## 添加设备 UI
 

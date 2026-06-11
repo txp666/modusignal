@@ -32,7 +32,7 @@ export const DEFAULT_MODBUS_CONFIG = {
   offset: 0,
   fieldName: "寄存器值",
   unit: "",
-  pollIntervalMs: 0,
+  pollIntervalMs: 500,
 };
 
 let rxBuffer = new Uint8Array(0);

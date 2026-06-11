@@ -62,7 +62,7 @@ export const AOMASTER_TRANSPORT_DEFAULTS = {
 
 export const DEFAULT_AOMASTER_CONFIG = {
   slaveId: 1,
-  pollIntervalMs: 0,
+  pollIntervalMs: 50,
 };
 
 export const DEFAULT_AOMASTER_WAVE_STATE = {

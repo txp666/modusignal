@@ -51,7 +51,7 @@ export const DEFAULT_HART_CONFIG = {
   unit: "",
   scale: 1,
   offset: 0,
-  pollIntervalMs: 2000,
+  pollIntervalMs: 1000,
   preambleLength: 5,
   chartSeries: {
     pv: true,

@@ -12,10 +12,10 @@
 ## 添加新设备
 
 1. 在 `src/devices/` 新建设备驱动文件，例如 `my-device.js`。
-2. 导出设备 ID、profile、命令构造函数和遥测解析函数。
+2. 导出设备 ID、profile、命令构造函数和遥测解析函数；如有常用串口参数，导出 `*_TRANSPORT_DEFAULTS` 并在 `src/app.js` 的 `DEVICE_TRANSPORT_DEFAULTS` 注册；如需轮询，在 `DEFAULT_*_CONFIG` 中设置 `pollIntervalMs`。
 3. 在 `src/protocols.js` 注册设备 profile，并在 `createDeviceSetOutputCommand`、`parseDeviceTelemetry` 中接入。
-4. 在 `index.html` 增加设备导航入口和需要的设备页面 UI。
-5. 在 `src/app.js` 增加页面状态绑定和设备专属 UI 显隐逻辑。
+4. 在 `pages/devices/` 增加设备页面 HTML，并在 `src/page-loader.js` 注册路径。
+5. 在 `src/app.js` 增加页面状态绑定、设备专属 UI 显隐逻辑与轮询/配置表单。
 6. 更新 `README.md` 和 `AI.md`。
 7. 至少运行：
 
