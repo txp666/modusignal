@@ -13,7 +13,7 @@
         <div id="telemetryChart" class="echart-host line-host" aria-label="实时曲线"></div>
         <div class="chart-meta">
           <span id="chartValue">暂无数据</span>
-          <span>最近 120 个采样点 · ECharts</span>
+          <span>总 <span id="singleChartPointCount">3000</span> 点 · 显示 <span id="singleChartVisiblePointCount">240</span> 点 · ECharts</span>
         </div>
       </div>
       <div id="dualChartBlock" class="chart-view dual-chart-stack" hidden>
@@ -32,9 +32,38 @@
           <div id="actualChart" class="echart-host line-host" aria-label="实时输出曲线"></div>
         </div>
         <div class="chart-meta">
-          <span>轮询回读设备实际值；最近 120 个采样点 · ECharts</span>
+          <span>轮询回读设备实际值；总 <span id="dualChartPointCount">3000</span> 点 · 显示 <span id="dualChartVisiblePointCount">240</span> 点 · ECharts</span>
         </div>
       </div>
+    </div>
+
+    <div class="chart-settings">
+      <label class="chart-settings-field">
+        曲线总点数
+        <input
+          id="chartPointCount"
+          type="number"
+          min="10"
+          max="200000"
+          step="1"
+          value="3000"
+          title="手动设置曲线总采样点数，点数越高历史越长"
+        />
+      </label>
+      <label class="chart-settings-field">
+        显示点数
+        <input
+          id="visibleChartPointCount"
+          type="number"
+          min="10"
+          max="5000"
+          step="1"
+          value="240"
+          title="当前窗口显示点数，曲线可左右滑动查看总点数历史"
+        />
+      </label>
+      <button id="resetChartConfig" class="ghost-button" type="button">恢复默认</button>
+      <button id="saveChartConfig" type="button">保存</button>
     </div>
   </section>
 

@@ -3,6 +3,7 @@ export class LiveChart {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
     this.maxPoints = options.maxPoints ?? 120;
+    this.visiblePoints = options.visiblePoints ?? this.maxPoints;
     this.points = [];
     this.color = options.color ?? "#0f766e";
     this.gridColor = options.gridColor ?? "#d7dde4";
@@ -40,6 +41,29 @@ export class LiveChart {
     this.draw();
   }
 
+  setMaxPoints(maxPoints) {
+    const normalized = Math.max(1, Math.trunc(Number(maxPoints) || this.maxPoints));
+    if (normalized === this.maxPoints) {
+      return;
+    }
+
+    this.maxPoints = normalized;
+    if (this.points.length > this.maxPoints) {
+      this.points = this.points.slice(-this.maxPoints);
+    }
+    this.draw();
+  }
+
+  setVisiblePoints(visiblePoints) {
+    const normalized = Math.max(1, Math.trunc(Number(visiblePoints) || this.visiblePoints));
+    if (normalized === this.visiblePoints) {
+      return;
+    }
+
+    this.visiblePoints = normalized;
+    this.draw();
+  }
+
   setRange(min, max) {
     if (Number.isFinite(min) && Number.isFinite(max) && min !== max) {
       this.fixedMin = min;
@@ -71,7 +95,8 @@ export class LiveChart {
       return;
     }
 
-    const values = this.points.map((point) => point.value);
+    const visiblePoints = this.points.slice(-Math.min(this.visiblePoints, this.points.length));
+    const values = visiblePoints.map((point) => point.value);
     let min = this.fixedMin ?? Math.min(...values);
     let max = this.fixedMax ?? Math.max(...values);
 
@@ -80,11 +105,11 @@ export class LiveChart {
       max += 1;
     }
 
-    const xStep = (width - padding * 2) / Math.max(this.maxPoints - 1, 1);
+    const xStep = (width - padding * 2) / Math.max(this.visiblePoints - 1, 1);
     const yScale = (height - padding * 2) / (max - min);
 
-    if (this.points.length === 1) {
-      const point = this.points[0];
+    if (visiblePoints.length === 1) {
+      const point = visiblePoints[0];
       const x = padding;
       const y = height - padding - (point.value - min) * yScale;
 
@@ -114,7 +139,7 @@ export class LiveChart {
     ctx.lineCap = "round";
     ctx.beginPath();
 
-    this.points.forEach((point, index) => {
+    visiblePoints.forEach((point, index) => {
       const x = padding + index * xStep;
       const y = height - padding - (point.value - min) * yScale;
 
@@ -127,8 +152,8 @@ export class LiveChart {
 
     ctx.stroke();
 
-    const latest = this.points[this.points.length - 1];
-    const latestX = padding + (this.points.length - 1) * xStep;
+    const latest = visiblePoints[visiblePoints.length - 1];
+    const latestX = padding + (visiblePoints.length - 1) * xStep;
     const latestY = height - padding - (latest.value - min) * yScale;
 
     ctx.fillStyle = this.color;

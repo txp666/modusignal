@@ -18,6 +18,7 @@ export const AOMASTER_REGISTERS = {
 };
 
 export const AOMASTER_MAX_STEP_SEQUENCE = 16;
+const AOMASTER_PREVIEW_CYCLES = 10;
 
 export const AOMASTER_MODES = {
   current: 0,
@@ -382,7 +383,7 @@ export function generateWaveformPreview(state, pointCount = 120) {
   const high = Math.max(waveState.waveLow, waveState.waveHigh);
   const periodMs = waveState.wavePeriodMs;
   const duty = waveState.waveDuty / 100;
-  const totalMs = waveState.waveform === "ramp" ? periodMs * 1.5 : periodMs * 2;
+  const totalMs = getAomasterPreviewDurationMs(waveState);
 
   return Array.from({ length: pointCount }, (_, index) => {
     const t = (index / Math.max(pointCount - 1, 1)) * totalMs;
@@ -390,11 +391,20 @@ export function generateWaveformPreview(state, pointCount = 120) {
   });
 }
 
+function getAomasterPreviewDurationMs(waveState) {
+  if (waveState.waveform === "step") {
+    const previewLoops = waveState.stepLoops === 0 ? AOMASTER_PREVIEW_CYCLES : waveState.stepLoops;
+    return waveState.stepSequence.length * waveState.stepDwellMs * previewLoops;
+  }
+
+  return waveState.wavePeriodMs * AOMASTER_PREVIEW_CYCLES;
+}
+
 function generateStepSequencePreview(waveState, pointCount) {
   const sequence = waveState.stepSequence;
   const dwellMs = waveState.stepDwellMs;
-  const previewLoops = waveState.stepLoops === 0 ? 2 : Math.min(waveState.stepLoops, 2);
-  const totalMs = sequence.length * dwellMs * previewLoops;
+  const previewLoops = waveState.stepLoops === 0 ? AOMASTER_PREVIEW_CYCLES : waveState.stepLoops;
+  const totalMs = getAomasterPreviewDurationMs(waveState);
 
   return Array.from({ length: pointCount }, (_, index) => {
     const timeMs = (index / Math.max(pointCount - 1, 1)) * totalMs;
@@ -412,10 +422,7 @@ export function formatSetpoint(mode, value) {
 function evaluateWaveform(type, timeMs, low, high, periodMs, duty) {
   switch (type) {
     case "ramp":
-      if (timeMs <= periodMs) {
-        return low + ((high - low) * timeMs) / periodMs;
-      }
-      return high;
+      return low + ((high - low) * (timeMs % periodMs)) / periodMs;
     case "square": {
       const phase = timeMs % periodMs;
       return phase < periodMs * duty ? high : low;

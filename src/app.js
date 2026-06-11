@@ -12,7 +12,6 @@ import {
   describeAomasterSummary,
   createAOMasterReadCommand,
   formatSetpoint,
-  formatStepSequence,
   generateWaveformPreview,
   getAomasterWaveformLabel,
   normalizeAomasterWaveState,
@@ -45,10 +44,17 @@ import {
   parseDeviceTelemetry,
   resolveLineEnding,
 } from "./protocols.js";
+import {
+  DEFAULT_CHART_CONFIG,
+  getChartPointSettings as resolveChartPointSettings,
+  normalizeChartConfig,
+} from "./chart-config.js";
 
 const CUSTOM_CONFIG_STORAGE_KEY = "modusignal.customDevice.v1";
 const MODBUS_CONFIG_STORAGE_KEY = "modusignal.modbusDevice.v1";
 const AOMASTER_CONFIG_STORAGE_KEY = "modusignal.aomasterDevice.v1";
+const CHART_CONFIG_STORAGE_KEY = "modusignal.chart.v1";
+const AOMASTER_VALUE_DISPLAY_STORAGE_KEY = "modusignal.aomasterValueDisplayMode.v1";
 
 const DEVICE_PAGE_IDS = [DEFAULT_DEVICE_ID, CUSTOM_DEVICE_ID, MODBUS_DEVICE_ID];
 
@@ -79,6 +85,7 @@ function cacheElements() {
     outputModeSelect: document.querySelector("#outputModeSelect"),
     waveformRow: document.querySelector("#waveformRow"),
     waveformSelect: document.querySelector("#waveformSelect"),
+    aomasterValueDisplayMode: [...document.querySelectorAll('input[name="aomasterValueDisplayMode"]')],
     constantSetpointBlock: document.querySelector("#constantSetpointBlock"),
     waveformParamsBlock: document.querySelector("#waveformParamsBlock"),
     waveAnalogParams: document.querySelector("#waveAnalogParams"),
@@ -147,6 +154,14 @@ function cacheElements() {
     setpointChartValue: document.querySelector("#setpointChartValue"),
     actualChartValue: document.querySelector("#actualChartValue"),
     clearChart: document.querySelector("#clearChart"),
+    chartPointCount: document.querySelector("#chartPointCount"),
+    visibleChartPointCount: document.querySelector("#visibleChartPointCount"),
+    saveChartConfig: document.querySelector("#saveChartConfig"),
+    resetChartConfig: document.querySelector("#resetChartConfig"),
+    singleChartPointCount: document.querySelector("#singleChartPointCount"),
+    singleChartVisiblePointCount: document.querySelector("#singleChartVisiblePointCount"),
+    dualChartPointCount: document.querySelector("#dualChartPointCount"),
+    dualChartVisiblePointCount: document.querySelector("#dualChartVisiblePointCount"),
     serialLog: document.querySelector("#serialLog"),
     clearLog: document.querySelector("#clearLog"),
     sendFormat: document.querySelector("#sendFormat"),
@@ -161,9 +176,11 @@ let setpointChart = null;
 let actualChart = null;
 let allCharts = [];
 let chartsReady = false;
+let chartConfigEventsBound = false;
 let customConfig = loadCustomConfig();
 let modbusConfig = loadModbusConfig();
 let aomasterConfig = loadAomasterConfig();
+let chartConfig = loadChartConfig();
 let session = null;
 let modbusPollTimer = null;
 let aomasterPollTimer = null;
@@ -175,6 +192,7 @@ const state = {
   mode: "current",
   setpoint: 12,
   waveform: "constant",
+  aomasterValueDisplayMode: loadAomasterValueDisplayMode(),
   waveLow: 4,
   waveHigh: 20,
   wavePeriodMs: 1000,
@@ -218,6 +236,9 @@ function initialize() {
   populateCustomConfigForm(customConfig);
   populateModbusConfigForm(modbusConfig);
   populateAomasterConfigForm(aomasterConfig);
+  populateChartConfigForm(chartConfig);
+  syncAomasterValueDisplayControls();
+  updateChartPointLabels();
   populateTransportSelect();
   renderDeviceLibrary();
   renderHomeDeviceCards();
@@ -250,19 +271,26 @@ function safeUpdateDeviceUi() {
 async function initMonitoringCharts() {
   try {
     const { EchartsLiveChart } = await import("./echarts-charts.js");
+    const chartPointSettings = getChartPointSettings();
     chart = new EchartsLiveChart(elements.telemetryChart, {
+      maxPoints: chartPointSettings.totalPointCount,
+      visiblePoints: chartPointSettings.visiblePointCount,
       color: "#0f766e",
       areaColor: "rgba(15, 118, 110, 0.12)",
       emptyText: "连接设备并开启轮询后显示实时曲线",
       title: "实时曲线",
     });
     setpointChart = new EchartsLiveChart(elements.setpointChartCanvas, {
+      maxPoints: chartPointSettings.totalPointCount,
+      visiblePoints: chartPointSettings.visiblePointCount,
       color: "#2563eb",
       areaColor: "rgba(37, 99, 235, 0.12)",
       emptyText: "调整设定值以预览曲线",
       title: "设定预览",
     });
     actualChart = new EchartsLiveChart(elements.actualChartCanvas, {
+      maxPoints: chartPointSettings.totalPointCount,
+      visiblePoints: chartPointSettings.visiblePointCount,
       color: "#0f766e",
       areaColor: "rgba(15, 118, 110, 0.12)",
       emptyText: "连接设备并开启轮询后显示实时输出",
@@ -279,6 +307,55 @@ async function initMonitoringCharts() {
     if (elements.chartPanelSummary) {
       elements.chartPanelSummary.textContent = `图表模块加载失败：${error.message}`;
     }
+  }
+}
+
+function getChartPointSettings() {
+  return resolveChartPointSettings(chartConfig);
+}
+
+function getChartPointCount() {
+  return getChartPointSettings().totalPointCount;
+}
+
+function applyChartPointCountConfig() {
+  const chartPointSettings = getChartPointSettings();
+  allCharts.filter(Boolean).forEach((item) => {
+    item.setMaxPoints?.(chartPointSettings.totalPointCount);
+    item.setVisiblePoints?.(chartPointSettings.visiblePointCount);
+  });
+  updateChartPointLabels();
+}
+
+function updateChartPointLabels() {
+  const chartPointSettings = getChartPointSettings();
+  const { totalPointCount, visiblePointCount } = chartPointSettings;
+  if (elements.singleChartPointCount) {
+    elements.singleChartPointCount.textContent = String(totalPointCount);
+  }
+  if (elements.singleChartVisiblePointCount) {
+    elements.singleChartVisiblePointCount.textContent = String(visiblePointCount);
+  }
+  if (elements.dualChartPointCount) {
+    elements.dualChartPointCount.textContent = String(totalPointCount);
+  }
+  if (elements.dualChartVisiblePointCount) {
+    elements.dualChartVisiblePointCount.textContent = String(visiblePointCount);
+  }
+  if (elements.chartPointCount) {
+    elements.chartPointCount.value = String(totalPointCount);
+    elements.chartPointCount.title = "手动设置曲线总采样点数，点数越高历史越长";
+  }
+  if (elements.visibleChartPointCount) {
+    elements.visibleChartPointCount.value = String(visiblePointCount);
+    elements.visibleChartPointCount.max = String(totalPointCount);
+    elements.visibleChartPointCount.title = "当前窗口显示点数，曲线可左右滑动查看总点数历史";
+  }
+  if (elements.chartPanelSummary) {
+    elements.chartPanelSummary.textContent =
+      state.deviceId === DEFAULT_DEVICE_ID
+        ? `ECharts 曲线预览设定波形，并跟踪轮询回读的实际输出；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`
+        : `ECharts 曲线自动解析设备回读数值；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`;
   }
 }
 
@@ -354,6 +431,14 @@ function bindEvents() {
     updateSetpointUi();
   });
 
+  elements.aomasterValueDisplayMode?.forEach((control) => {
+    control.addEventListener("change", () => {
+      if (control.checked) {
+        setAomasterValueDisplayMode(control.value);
+      }
+    });
+  });
+
   getAomasterWaveControls().filter(Boolean).forEach((control) => {
     control.addEventListener("input", updateAomasterWaveDraft);
     control.addEventListener("change", updateAomasterWaveDraft);
@@ -399,6 +484,8 @@ function bindEvents() {
 
   on(elements.saveAomasterConfig, "click", saveAomasterConfig);
   on(elements.resetAomasterConfig, "click", resetAomasterConfig);
+
+  bindChartConfigEvents();
 }
 
 function bindSessionEvents(target) {
@@ -435,8 +522,8 @@ function bindSessionEvents(target) {
     );
     if (telemetry) {
       if (state.deviceId === DEFAULT_DEVICE_ID) {
-        actualChart?.add(telemetry.value);
-        const formatted = `${formatSetpoint(state.mode, telemetry.value)} ${telemetry.unit}`;
+        actualChart?.add(getAomasterDisplayNumber(telemetry.value));
+        const formatted = formatAomasterDisplayValue(telemetry.value);
         elements.actualChartValue.textContent = `${telemetry.fieldName} ${formatted}`;
       } else {
         chart?.add(telemetry.value);
@@ -591,6 +678,9 @@ function transportReady() {
 }
 
 function updateDeviceUi() {
+  syncChartConfigElements();
+  bindChartConfigEvents();
+  updateChartPointLabels();
   const profile = getDeviceProfile(state.deviceId, customConfig, modbusConfig);
   const isCustom = state.deviceId === CUSTOM_DEVICE_ID;
   const isModbus = state.deviceId === MODBUS_DEVICE_ID;
@@ -618,9 +708,10 @@ function updateDeviceUi() {
     elements.dualChartBlock.hidden = !isAomaster;
   }
   if (elements.chartPanelSummary) {
+    const chartPointSettings = getChartPointSettings();
     elements.chartPanelSummary.textContent = isAomaster
-      ? "ECharts 曲线预览设定波形，并跟踪轮询回读的实际输出。"
-      : "ECharts 曲线自动解析设备回读数值。";
+      ? `ECharts 曲线预览设定波形，并跟踪轮询回读的实际输出；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`
+      : `ECharts 曲线自动解析设备回读数值；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`;
   }
 
   const summary = queryDeviceField("deviceSummary");
@@ -630,7 +721,7 @@ function updateDeviceUi() {
     } else if (isModbus) {
       summary.textContent = describeModbusSummary(modbusConfig);
     } else if (isAomaster) {
-      summary.textContent = `${describeAomasterSummary(aomasterConfig)}`;
+      summary.textContent = describeAomasterSummary(aomasterConfig);
     } else {
       summary.textContent = profile.name;
     }
@@ -641,9 +732,12 @@ function updateDeviceUi() {
   });
 
   if (isAomaster) {
+    syncAomasterValueDisplayControls();
     populateOutputModeSelect();
     if (elements.outputModeSelect) {
       elements.outputModeSelect.value = state.mode;
+      elements.outputModeSelect.disabled = false;
+      elements.outputModeSelect.title = "";
     }
     if (elements.waveformSelect) {
       elements.waveformSelect.value = state.mode === "frequency" ? "constant" : state.waveform;
@@ -811,16 +905,79 @@ function queryDeviceField(name) {
   return page.querySelector(`[data-field="${name}"]`) ?? page.querySelector(`#${name}`);
 }
 
+function isAomasterPercentMode() {
+  return state.deviceId === DEFAULT_DEVICE_ID && state.aomasterValueDisplayMode === "percent";
+}
+
+function getAomasterPercentValue(value, mode = state.mode) {
+  const config = getModeConfig(mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
+  const span = config.max - config.min;
+  if (!Number.isFinite(span) || span === 0) {
+    return 0;
+  }
+  return ((Number(value) - config.min) / span) * 100;
+}
+
+function getAomasterValueFromPercent(percent, mode = state.mode) {
+  const config = getModeConfig(mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
+  const span = config.max - config.min;
+  const bounded = Math.min(100, Math.max(0, Number(percent)));
+  return config.min + (span * bounded) / 100;
+}
+
+function getAomasterDisplayNumber(value, mode = state.mode) {
+  return isAomasterPercentMode() ? getAomasterPercentValue(value, mode) : Number(value);
+}
+
+function readAomasterDisplayNumber(value, mode = state.mode) {
+  return isAomasterPercentMode() ? getAomasterValueFromPercent(value, mode) : Number(value);
+}
+
+function getAomasterDisplayStep(mode = state.mode) {
+  const config = getModeConfig(mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
+  return isAomasterPercentMode() ? 0.1 : config.step;
+}
+
+function getAomasterDisplayDecimals(mode = state.mode) {
+  return isAomasterPercentMode() ? 1 : decimalPlaces(getModeConfig(mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig).step);
+}
+
+function formatAomasterDisplayNumber(value, mode = state.mode) {
+  return getAomasterDisplayNumber(value, mode).toFixed(getAomasterDisplayDecimals(mode));
+}
+
+function formatAomasterDisplayValue(value, mode = state.mode) {
+  const config = getModeConfig(mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
+  return isAomasterPercentMode()
+    ? `${formatAomasterDisplayNumber(value, mode)} %`
+    : `${formatSetpoint(mode, value)} ${config.unit}`;
+}
+
+function formatAomasterDisplaySequence(sequence, mode = state.mode) {
+  return sequence.map((value) => formatAomasterDisplayNumber(value, mode)).join(" → ");
+}
+
+function getAomasterDisplayUnit() {
+  return isAomasterPercentMode() ? "%" : getModeConfig(state.mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig).unit;
+}
+
 function updateSetpoint(value) {
   const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
-  const bounded = Math.min(config.max, Math.max(config.min, value));
+  const sourceValue = isAomasterPercentMode() ? getAomasterValueFromPercent(value) : value;
+  const bounded = Math.min(config.max, Math.max(config.min, sourceValue));
   state.setpoint = Number.isFinite(bounded) ? bounded : config.presets.mid;
   updateSetpointUi();
 }
 
 function updateSetpointUi() {
   const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
-  const formatted = state.setpoint.toFixed(decimalPlaces(config.step));
+  const isPercent = isAomasterPercentMode();
+  const formatted = isPercent
+    ? formatAomasterDisplayNumber(state.setpoint)
+    : state.setpoint.toFixed(decimalPlaces(config.step));
+  const controlMin = isPercent ? 0 : config.min;
+  const controlMax = isPercent ? 100 : config.max;
+  const controlStep = isPercent ? getAomasterDisplayStep() : config.step;
   const setpointLabel = queryDeviceField("setpointLabel") ?? elements.setpointLabel;
   const setpointReadout = queryDeviceField("setpointReadout") ?? elements.setpointReadout;
   const setpointUnit = queryDeviceField("setpointUnit") ?? elements.setpointUnit;
@@ -834,21 +991,21 @@ function updateSetpointUi() {
     setpointLabel.textContent = config.label;
   }
   if (setpointReadout) {
-    setpointReadout.textContent = `${formatted}${config.unit ? ` ${config.unit}` : ""}`;
+    setpointReadout.textContent = isPercent ? `${formatted} %` : `${formatted}${config.unit ? ` ${config.unit}` : ""}`;
   }
   if (setpointUnit) {
-    setpointUnit.textContent = config.unit || "值";
+    setpointUnit.textContent = isPercent ? "%" : config.unit || "值";
   }
   if (setpointSlider) {
-    setpointSlider.min = String(config.min);
-    setpointSlider.max = String(config.max);
-    setpointSlider.step = String(config.step);
-    setpointSlider.value = String(state.setpoint);
+    setpointSlider.min = String(controlMin);
+    setpointSlider.max = String(controlMax);
+    setpointSlider.step = String(controlStep);
+    setpointSlider.value = formatted;
   }
   if (setpointInput) {
-    setpointInput.min = String(config.min);
-    setpointInput.max = String(config.max);
-    setpointInput.step = String(config.step);
+    setpointInput.min = String(controlMin);
+    setpointInput.max = String(controlMax);
+    setpointInput.step = String(controlStep);
     setpointInput.value = formatted;
   }
 
@@ -1257,6 +1414,44 @@ function loadAomasterConfig() {
   }
 }
 
+function loadAomasterValueDisplayMode() {
+  try {
+    return localStorage.getItem(AOMASTER_VALUE_DISPLAY_STORAGE_KEY) === "percent" ? "percent" : "value";
+  } catch {
+    return "value";
+  }
+}
+
+function setAomasterValueDisplayMode(mode) {
+  const nextMode = mode === "percent" ? "percent" : "value";
+  if (state.aomasterValueDisplayMode === nextMode) {
+    return;
+  }
+
+  state.aomasterValueDisplayMode = nextMode;
+  try {
+    localStorage.setItem(AOMASTER_VALUE_DISPLAY_STORAGE_KEY, nextMode);
+  } catch {
+    // localStorage may be unavailable in restricted browser contexts.
+  }
+  syncAomasterValueDisplayControls();
+  populateAomasterWaveformForm();
+  renderStepSequenceList();
+  actualChart?.clear();
+  if (elements.actualChartValue) {
+    elements.actualChartValue.textContent = "暂无数据";
+  }
+  updateSetpointUi();
+  syncAomasterChartRanges();
+  requestChartResize();
+}
+
+function syncAomasterValueDisplayControls() {
+  elements.aomasterValueDisplayMode?.forEach((control) => {
+    control.checked = control.value === state.aomasterValueDisplayMode;
+  });
+}
+
 function readAomasterConfigForm() {
   return normalizeAomasterConfig({
     slaveId: elements.aomasterSlaveId.value,
@@ -1272,6 +1467,106 @@ function populateAomasterConfigForm(config) {
 
 function getAomasterConfigControls() {
   return [elements.aomasterSlaveId, elements.aomasterPollIntervalMs];
+}
+
+function updateChartDraftConfig() {
+  chartConfig = readChartConfigForm();
+  applyChartPointCountConfig();
+}
+
+function saveChartConfig() {
+  chartConfig = readChartConfigForm();
+  localStorage.setItem(CHART_CONFIG_STORAGE_KEY, JSON.stringify(chartConfig));
+  populateChartConfigForm(chartConfig);
+  applyChartPointCountConfig();
+  appendLog("info", "曲线", "曲线缩放配置已保存");
+}
+
+function resetChartConfig() {
+  chartConfig = normalizeChartConfig(DEFAULT_CHART_CONFIG);
+  localStorage.setItem(CHART_CONFIG_STORAGE_KEY, JSON.stringify(chartConfig));
+  populateChartConfigForm(chartConfig);
+  applyChartPointCountConfig();
+  appendLog("info", "曲线", "曲线缩放配置已恢复默认");
+}
+
+function loadChartConfig() {
+  try {
+    const saved = localStorage.getItem(CHART_CONFIG_STORAGE_KEY);
+    if (saved) {
+      return normalizeChartConfig(JSON.parse(saved));
+    }
+
+    const legacyAomaster = localStorage.getItem(AOMASTER_CONFIG_STORAGE_KEY);
+    if (legacyAomaster) {
+      const parsed = JSON.parse(legacyAomaster);
+      if (parsed.chartPointCount != null || parsed.visibleChartPointCount != null) {
+        return normalizeChartConfig({
+          chartPointCount: parsed.chartPointCount,
+          visibleChartPointCount: parsed.visibleChartPointCount,
+        });
+      }
+    }
+
+    return normalizeChartConfig(DEFAULT_CHART_CONFIG);
+  } catch {
+    return normalizeChartConfig(DEFAULT_CHART_CONFIG);
+  }
+}
+
+function readChartConfigForm() {
+  syncChartConfigElements();
+  if (!elements.chartPointCount || !elements.visibleChartPointCount) {
+    return normalizeChartConfig(chartConfig);
+  }
+
+  return normalizeChartConfig({
+    chartPointCount: elements.chartPointCount.value,
+    visibleChartPointCount: elements.visibleChartPointCount.value,
+  });
+}
+
+function populateChartConfigForm(config) {
+  syncChartConfigElements();
+  const normalized = normalizeChartConfig(config);
+  if (!elements.chartPointCount || !elements.visibleChartPointCount) {
+    return;
+  }
+
+  elements.chartPointCount.value = String(normalized.chartPointCount);
+  elements.visibleChartPointCount.value = String(normalized.visibleChartPointCount);
+  elements.visibleChartPointCount.max = String(normalized.chartPointCount);
+}
+
+function syncChartConfigElements() {
+  elements.chartPointCount = document.querySelector("#chartPointCount");
+  elements.visibleChartPointCount = document.querySelector("#visibleChartPointCount");
+  elements.saveChartConfig = document.querySelector("#saveChartConfig");
+  elements.resetChartConfig = document.querySelector("#resetChartConfig");
+}
+
+function bindChartConfigEvents() {
+  syncChartConfigElements();
+  if (chartConfigEventsBound) {
+    return;
+  }
+
+  const controls = getChartConfigControls();
+  if (controls.length === 0) {
+    return;
+  }
+
+  controls.forEach((control) => {
+    control.addEventListener("input", updateChartDraftConfig);
+    control.addEventListener("change", updateChartDraftConfig);
+  });
+  on(elements.saveChartConfig, "click", saveChartConfig);
+  on(elements.resetChartConfig, "click", resetChartConfig);
+  chartConfigEventsBound = true;
+}
+
+function getChartConfigControls() {
+  return [elements.chartPointCount, elements.visibleChartPointCount].filter(Boolean);
 }
 
 function getCustomConfigControls() {
@@ -1324,16 +1619,16 @@ function populateAomasterWaveformForm() {
   state.stepLoops = waveState.stepLoops;
 
   if (elements.waveLow) {
-    elements.waveLow.min = String(config.min);
-    elements.waveLow.max = String(config.max);
-    elements.waveLow.step = String(config.step);
-    elements.waveLow.value = String(waveState.waveLow);
+    elements.waveLow.min = isAomasterPercentMode() ? "0" : String(config.min);
+    elements.waveLow.max = isAomasterPercentMode() ? "100" : String(config.max);
+    elements.waveLow.step = String(getAomasterDisplayStep());
+    elements.waveLow.value = formatAomasterDisplayNumber(waveState.waveLow);
   }
   if (elements.waveHigh) {
-    elements.waveHigh.min = String(config.min);
-    elements.waveHigh.max = String(config.max);
-    elements.waveHigh.step = String(config.step);
-    elements.waveHigh.value = String(waveState.waveHigh);
+    elements.waveHigh.min = isAomasterPercentMode() ? "0" : String(config.min);
+    elements.waveHigh.max = isAomasterPercentMode() ? "100" : String(config.max);
+    elements.waveHigh.step = String(getAomasterDisplayStep());
+    elements.waveHigh.value = formatAomasterDisplayNumber(waveState.waveHigh);
   }
   if (elements.wavePeriodMs) {
     elements.wavePeriodMs.value = String(waveState.wavePeriodMs);
@@ -1373,10 +1668,10 @@ function renderStepSequenceList() {
     const input = document.createElement("input");
     input.type = "number";
     input.dataset.stepValue = String(index);
-    input.min = String(config.min);
-    input.max = String(config.max);
-    input.step = String(config.step);
-    input.value = String(value);
+    input.min = isAomasterPercentMode() ? "0" : String(config.min);
+    input.max = isAomasterPercentMode() ? "100" : String(config.max);
+    input.step = String(getAomasterDisplayStep());
+    input.value = formatAomasterDisplayNumber(value);
     input.addEventListener("input", updateAomasterWaveDraft);
     input.addEventListener("change", updateAomasterWaveDraft);
 
@@ -1394,7 +1689,9 @@ function renderStepSequenceList() {
 }
 
 function readStepSequenceFromForm() {
-  return [...elements.stepSequenceList.querySelectorAll("[data-step-value]")].map((input) => Number(input.value));
+  return [...elements.stepSequenceList.querySelectorAll("[data-step-value]")].map((input) =>
+    readAomasterDisplayNumber(input.value),
+  );
 }
 
 function addAomasterStepPoint() {
@@ -1461,8 +1758,8 @@ function updateAomasterWaveformUi() {
 
 function updateAomasterWaveDraft() {
   state.waveform = elements.waveformSelect.value;
-  state.waveLow = Number(elements.waveLow.value);
-  state.waveHigh = Number(elements.waveHigh.value);
+  state.waveLow = readAomasterDisplayNumber(elements.waveLow.value);
+  state.waveHigh = readAomasterDisplayNumber(elements.waveHigh.value);
   state.wavePeriodMs = Number(elements.wavePeriodMs.value);
   state.waveDuty = Number(elements.waveDuty.value);
   state.stepDwellMs = Number(elements.stepDwellMs.value);
@@ -1510,23 +1807,25 @@ function refreshAomasterPreviewChart() {
     return;
   }
 
-  const config = getModeConfig(state.mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
-  const previewValues = generateWaveformPreview(state);
+  applyChartPointCountConfig();
+  const previewValues = generateWaveformPreview(state, getChartPointCount()).map((value) =>
+    getAomasterDisplayNumber(value),
+  );
   setpointChart.setPoints(previewValues);
-  setpointChart.setMeta({ unit: config.unit });
+  setpointChart.setMeta({ unit: getAomasterDisplayUnit() });
   syncAomasterChartRanges();
 
   if (state.waveform === "constant") {
-    elements.setpointChartValue.textContent = `设定 ${formatSetpoint(state.mode, state.setpoint)} ${config.unit}`;
+    elements.setpointChartValue.textContent = `设定 ${formatAomasterDisplayValue(state.setpoint)}`;
   } else if (state.waveform === "step") {
     const loopLabel = state.stepLoops === 0 ? "无限循环" : `${state.stepLoops} 次`;
-    elements.setpointChartValue.textContent = `阶跃 ${formatStepSequence(state.mode, state.stepSequence)} ${config.unit} · ${state.stepDwellMs} ms/步 · ${loopLabel}`;
+    elements.setpointChartValue.textContent = `阶跃 ${formatAomasterDisplaySequence(state.stepSequence)} ${getAomasterDisplayUnit()} · ${state.stepDwellMs} ms/步 · ${loopLabel}`;
   } else {
-    elements.setpointChartValue.textContent = `${getAomasterWaveformLabel(state.waveform)} ${formatSetpoint(state.mode, state.waveLow)}~${formatSetpoint(state.mode, state.waveHigh)} ${config.unit}`;
+    elements.setpointChartValue.textContent = `${getAomasterWaveformLabel(state.waveform)} ${formatAomasterDisplayNumber(state.waveLow)}~${formatAomasterDisplayNumber(state.waveHigh)} ${getAomasterDisplayUnit()}`;
   }
 
   if (actualChart) {
-    actualChart.setMeta({ unit: config.unit });
+    actualChart.setMeta({ unit: getAomasterDisplayUnit() });
   }
 
   requestChartResize();
@@ -1600,6 +1899,12 @@ function populateOutputModeSelect() {
 
 function syncAomasterChartRanges() {
   if (!setpointChart || !actualChart) {
+    return;
+  }
+
+  if (isAomasterPercentMode()) {
+    setpointChart.setRange(0, 100);
+    actualChart.setRange(0, 100);
     return;
   }
 

@@ -169,6 +169,7 @@ label {
 .icon-button,
 .ghost-button,
 .panel-actions button,
+.chart-settings button,
 .preset-row button,
 .command-preview button,
 .send-grid button {
@@ -189,6 +190,7 @@ label {
 
 .primary-button:hover,
 .panel-actions button:hover,
+.chart-settings button:not(.ghost-button):hover,
 .action-link:hover,
 .request-template button:hover,
 .command-preview button:hover,
@@ -775,6 +777,7 @@ button:focus-visible {
 }
 
 .segmented-option {
+  position: relative;
   flex: 1;
   margin: 0;
 }
@@ -919,15 +922,35 @@ code {
 }
 
 .dual-chart-stack .echart-host.line-host {
-  min-height: 9rem;
+  min-height: 10.5rem;
   height: 100%;
 }
 
 .chart-meta {
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 0.75rem;
   margin-top: 0.7rem;
   font-size: 0.82rem;
+}
+
+.chart-settings {
+  display: grid;
+  grid-template-columns: minmax(6.5rem, 1fr) minmax(6.5rem, 1fr) auto auto;
+  gap: 0.65rem;
+  align-items: end;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid #dbe4ea;
+}
+
+.chart-settings-field {
+  margin: 0;
+}
+
+.chart-settings > button:not(.ghost-button) {
+  background: var(--accent);
+  color: #fff;
 }
 
 .serial-log {
@@ -1044,6 +1067,10 @@ code {
   }
 
   .send-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .chart-settings {
     grid-template-columns: 1fr 1fr;
   }
 

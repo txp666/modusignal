@@ -68,6 +68,7 @@ export class EchartsLiveChart {
     this.host = host;
     initChartMixin(this);
     this.maxPoints = options.maxPoints ?? 120;
+    this.visiblePoints = options.visiblePoints ?? this.maxPoints;
     this.color = options.color ?? "#0f766e";
     this.areaColor = options.areaColor ?? "rgba(15, 118, 110, 0.12)";
     this.emptyText = options.emptyText ?? "等待数据";
@@ -76,6 +77,9 @@ export class EchartsLiveChart {
     this.values = [];
     this.fixedMin = null;
     this.fixedMax = null;
+    this.followLatest = true;
+    this.zoomStartValue = null;
+    this.zoomEndValue = null;
     this.render();
   }
 
@@ -83,17 +87,53 @@ export class EchartsLiveChart {
     this.values.push(finiteOr(value, 0));
     if (this.values.length > this.maxPoints) {
       this.values.shift();
+      if (this.zoomStartValue !== null && this.zoomEndValue !== null) {
+        this.zoomStartValue = Math.max(0, this.zoomStartValue - 1);
+        this.zoomEndValue = Math.max(0, this.zoomEndValue - 1);
+      }
     }
     this.render();
   }
 
   setPoints(values) {
     this.values = (values ?? []).map((value) => finiteOr(value, 0));
+    this.followLatest = true;
+    this.zoomStartValue = null;
+    this.zoomEndValue = null;
+    this.render();
+  }
+
+  setMaxPoints(maxPoints) {
+    const normalized = Math.max(1, Math.trunc(finiteOr(maxPoints, this.maxPoints)));
+    if (normalized === this.maxPoints) {
+      return;
+    }
+
+    this.maxPoints = normalized;
+    if (this.values.length > this.maxPoints) {
+      this.values = this.values.slice(-this.maxPoints);
+    }
+    this.render();
+  }
+
+  setVisiblePoints(visiblePoints) {
+    const normalized = Math.max(1, Math.trunc(finiteOr(visiblePoints, this.visiblePoints)));
+    if (normalized === this.visiblePoints) {
+      return;
+    }
+
+    this.visiblePoints = normalized;
+    this.followLatest = true;
+    this.zoomStartValue = null;
+    this.zoomEndValue = null;
     this.render();
   }
 
   clear() {
     this.values = [];
+    this.followLatest = true;
+    this.zoomStartValue = null;
+    this.zoomEndValue = null;
     this.render();
   }
 
@@ -119,9 +159,15 @@ export class EchartsLiveChart {
   }
 
   render() {
-    if (!this.ensureChart()) {
+    const chart = this.ensureChart();
+    if (!chart) {
       this.pendingRender = true;
       return;
+    }
+
+    if (!this.zoomListenerBound) {
+      chart.on("dataZoom", () => this.captureZoomWindow());
+      this.zoomListenerBound = true;
     }
 
     const computedMin = this.values.length ? Math.min(...this.values) : 0;
@@ -136,11 +182,19 @@ export class EchartsLiveChart {
 
     const categories = this.values.map((_, index) => String(index + 1));
     const hasData = this.values.length > 0;
+    const visiblePoints = Math.max(1, Math.min(this.visiblePoints, this.values.length || this.visiblePoints));
+    const hasZoom = hasData && this.values.length > visiblePoints;
+    const endValue = this.followLatest || this.zoomEndValue === null
+      ? this.values.length - 1
+      : Math.min(this.values.length - 1, this.zoomEndValue);
+    const startValue = this.followLatest || this.zoomStartValue === null
+      ? Math.max(0, endValue - visiblePoints + 1)
+      : Math.max(0, Math.min(this.zoomStartValue, endValue));
 
-    this.chart.setOption(
+    chart.setOption(
       {
         animation: false,
-        grid: { left: 48, right: 18, top: 36, bottom: 28 },
+        grid: { left: 48, right: 18, top: 36, bottom: hasZoom ? 54 : 28 },
         title: this.title
           ? {
               text: this.title,
@@ -167,6 +221,30 @@ export class EchartsLiveChart {
           axisLabel: { color: THEME.text, show: hasData },
           splitLine: { show: false },
         },
+        dataZoom: hasZoom
+          ? [
+              {
+                type: "inside",
+                xAxisIndex: 0,
+                filterMode: "none",
+                startValue,
+                endValue,
+              },
+              {
+                type: "slider",
+                xAxisIndex: 0,
+                filterMode: "none",
+                startValue,
+                endValue,
+                height: 18,
+                bottom: 8,
+                borderColor: "#cbd5df",
+                fillerColor: "rgba(15, 118, 110, 0.12)",
+                handleStyle: { color: this.color },
+                textStyle: { color: THEME.text },
+              },
+            ]
+          : [],
         yAxis: {
           type: "value",
           min: yMin,
@@ -205,6 +283,28 @@ export class EchartsLiveChart {
       },
       true,
     );
+  }
+
+  captureZoomWindow() {
+    if (!this.chart || !this.values.length) {
+      return;
+    }
+
+    const zoom = this.chart.getOption()?.dataZoom?.[0];
+    if (!zoom) {
+      return;
+    }
+
+    const endValue = Number.isFinite(Number(zoom.endValue))
+      ? Number(zoom.endValue)
+      : Math.round(((Number(zoom.end) || 100) / 100) * Math.max(this.values.length - 1, 0));
+    const startValue = Number.isFinite(Number(zoom.startValue))
+      ? Number(zoom.startValue)
+      : Math.round(((Number(zoom.start) || 0) / 100) * Math.max(this.values.length - 1, 0));
+
+    this.zoomStartValue = startValue;
+    this.zoomEndValue = endValue;
+    this.followLatest = endValue >= this.values.length - 2;
   }
 }
 
