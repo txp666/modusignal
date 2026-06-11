@@ -1,12 +1,19 @@
 import {
+  DEFAULT_BINARY_MULTI_FIELDS,
+  decodeModbusReadDataCurves,
+  listModbusChartSeries,
+  normalizeBinaryCurveConfig,
+} from "./binary-curve-config.js";
+import {
+  normalizeJsonCurveConfig,
+} from "./json-curve-config.js";
+import {
   buildReadRegistersRequest,
   buildWriteMultipleRegistersRequest,
   buildWriteSingleRegisterRequest,
   extractRtuFrames,
   isReadFunctionCode,
   isWriteFunctionCode,
-  parseReadRegistersResponse,
-  registersForDataType,
 } from "../modbus/modbus.js";
 
 export const MODBUS_DEVICE_ID = "modbus";
@@ -31,13 +38,25 @@ export const DEFAULT_MODBUS_CONFIG = {
   functionCode: 3,
   address: 0,
   quantity: 1,
-  dataType: "uint16",
-  byteOrder: "AB",
-  scale: 1,
-  offset: 0,
+  pollIntervalMs: 500,
   fieldName: "寄存器值",
   unit: "",
-  pollIntervalMs: 500,
+  curveSlotCount: 1,
+  curve1Enabled: true,
+  curve2Enabled: false,
+  curve2FieldName: "曲线二",
+  curve2Unit: "",
+  curve3Enabled: false,
+  curve3FieldName: "曲线三",
+  curve3Unit: "",
+  curve4Enabled: false,
+  curve4FieldName: "曲线四",
+  curve4Unit: "",
+  ...DEFAULT_BINARY_MULTI_FIELDS,
+  modbusDataType: "uint16",
+  modbusByteOrder: "AB",
+  modbusScale: 1,
+  modbusOffset: 0,
 };
 
 let rxBuffer = new Uint8Array(0);
@@ -90,29 +109,53 @@ export function resetModbusRxBuffer() {
 }
 
 export function normalizeModbusConfig(config = {}) {
+  const migrated = migrateLegacyModbusConfig(config);
   const merged = {
     ...DEFAULT_MODBUS_CONFIG,
-    ...config,
+    ...migrated,
   };
 
   const functionCode = normalizeFunctionCode(merged.functionCode);
-  const dataType = normalizeDataType(merged.dataType);
-  const quantity = Math.max(1, Math.min(125, Math.trunc(toFiniteNumber(merged.quantity, DEFAULT_MODBUS_CONFIG.quantity))));
-  const readQuantity = isReadFunctionCode(functionCode) ? Math.max(quantity, registersForDataType(dataType)) : quantity;
+  const slaveId = clamp(Math.trunc(toFiniteNumber(merged.slaveId, DEFAULT_MODBUS_CONFIG.slaveId)), 1, 247);
+  const address = clamp(Math.trunc(toFiniteNumber(merged.address, DEFAULT_MODBUS_CONFIG.address)), 0, 65535);
+  const userQuantity = Math.max(1, Math.min(125, Math.trunc(toFiniteNumber(merged.quantity, DEFAULT_MODBUS_CONFIG.quantity))));
+
+  const jsonNormalized = normalizeJsonCurveConfig(merged, DEFAULT_MODBUS_CONFIG);
+  const binaryNormalized = normalizeBinaryCurveConfig(merged, DEFAULT_MODBUS_CONFIG);
+  binaryNormalized.modbusSlaveId = slaveId;
+  if (isReadFunctionCode(functionCode)) {
+    binaryNormalized.modbusFunctionCode = functionCode;
+  }
+
+  const curveConfig = {
+    ...jsonNormalized,
+    ...binaryNormalized,
+    slaveId,
+    functionCode,
+  };
+  const requiredQuantity = computeModbusReadQuantity(curveConfig);
+  const quantity = isReadFunctionCode(functionCode) ? Math.max(userQuantity, requiredQuantity) : userQuantity;
 
   return {
-    slaveId: clamp(Math.trunc(toFiniteNumber(merged.slaveId, DEFAULT_MODBUS_CONFIG.slaveId)), 1, 247),
+    slaveId,
     functionCode,
-    address: clamp(Math.trunc(toFiniteNumber(merged.address, DEFAULT_MODBUS_CONFIG.address)), 0, 65535),
-    quantity: readQuantity,
-    dataType,
-    byteOrder: normalizeByteOrder(merged.byteOrder, dataType),
-    scale: toFiniteNumber(merged.scale, DEFAULT_MODBUS_CONFIG.scale),
-    offset: toFiniteNumber(merged.offset, DEFAULT_MODBUS_CONFIG.offset),
-    fieldName: String(merged.fieldName || DEFAULT_MODBUS_CONFIG.fieldName),
-    unit: String(merged.unit ?? ""),
+    address,
+    quantity,
     pollIntervalMs: Math.max(0, Math.trunc(toFiniteNumber(merged.pollIntervalMs, DEFAULT_MODBUS_CONFIG.pollIntervalMs))),
+    ...jsonNormalized,
+    ...binaryNormalized,
+    dataType: binaryNormalized.modbusDataType,
+    byteOrder: binaryNormalized.modbusByteOrder,
+    scale: binaryNormalized.modbusScale,
+    offset: binaryNormalized.modbusOffset,
+    fieldName: jsonNormalized.fieldName,
+    unit: jsonNormalized.unit,
   };
+}
+
+export function listModbusDeviceChartSeries(config = {}) {
+  const normalized = normalizeModbusConfig(config);
+  return listModbusChartSeries(toModbusCurveConfig(normalized), DEFAULT_MODBUS_CONFIG);
 }
 
 export function createModbusProfile() {
@@ -183,11 +226,15 @@ export function parseModbusTelemetry(bytes, config) {
       continue;
     }
 
-    if (isReadFunctionCode(frame[1])) {
-      const telemetry = parseReadRegistersResponse(frame, normalized);
-      if (telemetry) {
-        return telemetry;
-      }
+    if (!isReadFunctionCode(frame[1]) || frame[1] !== normalized.functionCode) {
+      continue;
+    }
+
+    const byteCount = frame[2];
+    const data = frame.subarray(3, 3 + byteCount);
+    const telemetry = decodeModbusReadDataCurves(data, toModbusCurveConfig(normalized), DEFAULT_MODBUS_CONFIG);
+    if (telemetry) {
+      return telemetry;
     }
   }
 
@@ -203,6 +250,48 @@ export function describeModbusSummary(config) {
       : "操作";
 
   return `${action} 从站 ${normalized.slaveId}，功能码 ${normalized.functionCode}，地址 ${normalized.address}`;
+}
+
+function toModbusCurveConfig(normalized) {
+  return {
+    ...normalized,
+    modbusSlaveId: normalized.slaveId,
+    modbusFunctionCode: normalized.functionCode,
+  };
+}
+
+function computeModbusReadQuantity(config) {
+  const series = listModbusChartSeries(config, DEFAULT_MODBUS_CONFIG);
+  let maxBytes = 2;
+
+  for (const item of series) {
+    const bytes = item.dataType === "float32" ? 4 : 2;
+    maxBytes = Math.max(maxBytes, item.byteOffset + bytes);
+  }
+
+  return Math.max(1, Math.ceil(maxBytes / 2));
+}
+
+function migrateLegacyModbusConfig(config) {
+  if (!config || config.modbusDataType !== undefined) {
+    return config;
+  }
+
+  const migrated = { ...config };
+  if (config.dataType !== undefined) {
+    migrated.modbusDataType = config.dataType;
+  }
+  if (config.byteOrder !== undefined) {
+    migrated.modbusByteOrder = config.byteOrder;
+  }
+  if (config.scale !== undefined) {
+    migrated.modbusScale = config.scale;
+  }
+  if (config.offset !== undefined) {
+    migrated.modbusOffset = config.offset;
+  }
+
+  return migrated;
 }
 
 function buildWriteValues(setpoint, quantity, dataType) {
@@ -226,18 +315,6 @@ function buildWriteValues(setpoint, quantity, dataType) {
 function normalizeFunctionCode(value) {
   const code = Math.trunc(Number(value));
   return [3, 4, 6, 16].includes(code) ? code : DEFAULT_MODBUS_CONFIG.functionCode;
-}
-
-function normalizeDataType(value) {
-  return value === "int16" || value === "float32" ? value : "uint16";
-}
-
-function normalizeByteOrder(value, dataType) {
-  if (dataType === "float32") {
-    return ["ABCD", "DCBA", "BADC", "CDAB"].includes(value) ? value : "ABCD";
-  }
-
-  return value === "BA" ? "BA" : "AB";
 }
 
 function concatBytes(left, right) {

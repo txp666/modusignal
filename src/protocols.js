@@ -226,7 +226,7 @@ export function parseDeviceTelemetry(
   mqttConfig = DEFAULT_MQTT_CONFIG,
 ) {
   if (deviceId === CUSTOM_DEVICE_ID) {
-    return parseCustomTelemetry(text, customConfig, parseNumericTelemetry);
+    return parseCustomTelemetry(text, customConfig, parseNumericTelemetry, bytes, { parseHexPayload });
   }
 
   if (deviceId === MODBUS_DEVICE_ID) {
@@ -238,11 +238,11 @@ export function parseDeviceTelemetry(
   }
 
   if (deviceId === WEBSOCKET_DEVICE_ID) {
-    return parseWebSocketTelemetry(text, websocketConfig, parseNumericTelemetry);
+    return parseWebSocketTelemetry(text, bytes, websocketConfig, parseNumericTelemetry, { parseHexPayload });
   }
 
   if (deviceId === MQTT_DEVICE_ID) {
-    return parseMqttTelemetry(text, mqttConfig, parseNumericTelemetry);
+    return parseMqttTelemetry(text, bytes, mqttConfig, parseNumericTelemetry, { parseHexPayload });
   }
 
   if (deviceId === AOMASTER_DEVICE_ID) {

@@ -75,7 +75,7 @@
     <div class="panel-heading split">
       <div>
         <h2>调试配置</h2>
-        <p>轮询消息、JSON 解析路径与曲线字段。</p>
+        <p>轮询消息与发布选项；曲线解析在监测面板配置。</p>
       </div>
       <div class="panel-actions">
         <button id="resetMqttConfig" class="ghost-button" type="button">恢复默认</button>
@@ -96,14 +96,6 @@
           <option value="hex">HEX</option>
         </select>
       </label>
-      <label>
-        曲线字段名
-        <input id="mqttFieldName" type="text" value="数值" />
-      </label>
-      <label>
-        曲线单位
-        <input id="mqttUnit" type="text" placeholder="可选" />
-      </label>
     </div>
 
     <label class="template-input">
@@ -115,20 +107,6 @@
       <span>轮询预览</span>
       <code id="mqttHeartbeatPreview">{"type":"ping"}</code>
       <button id="loadMqttHeartbeat" class="ghost-button" type="button">填入发送框</button>
-    </div>
-
-    <label class="template-input">
-      JSON 数值路径
-      <input id="mqttParserFieldPath" type="text" value="value" placeholder="例如 value 或 data.temp；留空自动找第一个数字" />
-    </label>
-
-    <div class="parser-test">
-      <label>
-        解析样例
-        <input id="mqttParserSample" type="text" value='{"value":25.6,"unit":"C"}' />
-      </label>
-      <button id="testMqttParser" type="button">测试</button>
-      <output id="mqttParserPreview">等待测试</output>
     </div>
   </section>
 </section>

@@ -39,7 +39,7 @@
     <div class="panel-heading split">
       <div>
         <h2>通讯参数</h2>
-        <p>配置从站、功能码、地址、数据类型与轮询间隔。</p>
+        <p>配置从站、功能码、地址与轮询；曲线解码在监测面板配置。</p>
       </div>
       <div class="panel-actions">
         <button id="resetModbusConfig" class="ghost-button" type="button">恢复默认</button>
@@ -66,45 +66,7 @@
       </label>
       <label>
         寄存器数量
-        <input id="modbusQuantity" type="number" min="1" max="125" step="1" value="1" />
-      </label>
-    </div>
-    <div class="config-grid compact">
-      <label>
-        数据类型
-        <select id="modbusDataType">
-          <option value="uint16" selected>UInt16</option>
-          <option value="int16">Int16</option>
-          <option value="float32">Float32</option>
-        </select>
-      </label>
-      <label>
-        字节序
-        <select id="modbusByteOrder">
-          <option value="AB" selected>AB / ABCD</option>
-          <option value="BA">BA</option>
-          <option value="DCBA">DCBA</option>
-          <option value="BADC">BADC</option>
-          <option value="CDAB">CDAB</option>
-        </select>
-      </label>
-      <label>
-        比例
-        <input id="modbusScale" type="number" step="0.000001" value="1" />
-      </label>
-      <label>
-        偏移
-        <input id="modbusOffset" type="number" step="0.000001" value="0" />
-      </label>
-    </div>
-    <div class="config-grid">
-      <label>
-        字段名
-        <input id="modbusFieldName" type="text" value="寄存器值" />
-      </label>
-      <label>
-        单位
-        <input id="modbusUnit" type="text" placeholder="例如：℃、bar" />
+        <input id="modbusQuantity" type="number" min="1" max="125" step="1" value="1" title="读模式下若小于曲线所需范围，会自动扩大" />
       </label>
       <label>
         轮询间隔 (ms)

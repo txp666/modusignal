@@ -39,14 +39,450 @@
           <span>轮询回读设备实际值；总 <span id="dualChartPointCount">3000</span> 点 · 显示 <span id="dualChartVisiblePointCount">240</span> 点 · ECharts</span>
         </div>
       </div>
-      <div id="hartChartSeriesBlock" class="hart-chart-series" hidden>
-        <span class="hart-chart-series-label">显示曲线</span>
-        <label><input type="checkbox" data-hart-series="pv" checked />PV</label>
-        <label><input type="checkbox" data-hart-series="sv" checked />SV</label>
-        <label><input type="checkbox" data-hart-series="tv" checked />TV</label>
-        <label><input type="checkbox" data-hart-series="qv" checked />QV</label>
-      </div>
     </div>
+
+    <section id="chartCurveConfigBlock" class="chart-curve-panel" hidden>
+      <header class="chart-curve-panel-header">
+        <button id="chartCurveConfigToggle" class="chart-curve-panel-toggle" type="button" aria-expanded="true">
+          <span class="chart-curve-panel-title">曲线配置</span>
+          <span id="chartCurveConfigSummary" class="chart-curve-panel-summary">—</span>
+          <span class="chart-curve-panel-chevron" aria-hidden="true">▾</span>
+        </button>
+        <button id="chartCurveHelpButton" class="ghost-button chart-curve-help-button" type="button">协议说明</button>
+      </header>
+
+      <div id="chartCurveConfigBody" class="chart-curve-panel-body">
+        <div id="chartCurveAomasterSection" class="chart-curve-section" hidden>
+          <p class="chart-curve-section-note">双曲线模式：设定预览与轮询回读的实际输出；波形参数在设备页配置。</p>
+        </div>
+
+        <div id="chartCurveModbusSection" class="chart-curve-section" hidden>
+          <p class="chart-curve-section-note">读模式下从 RTU 回包<strong>数据区</strong>按字节偏移解码；从站、功能码、起始地址与寄存器数量在设备页配置。启用多条曲线时，会自动扩大读取寄存器数量以覆盖最远偏移。</p>
+          <div id="modbusCurveConfigBlock" class="chart-curve-config">
+            <div class="subsection-heading compact">
+              <h3 id="modbusCurveConfigTitle">Modbus 曲线</h3>
+              <span id="modbusCurveConfigHint">同一读响应内最多 4 条曲线，偏移 0 为数据区首字节</span>
+            </div>
+            <div class="curve-config-list">
+              <div class="curve-config-row modbus-curve-row">
+                <label class="curve-toggle">启用曲线一<input id="modbusCurve1Enabled" type="checkbox" checked /></label>
+                <label>曲线一名称<input id="modbusFieldName" type="text" value="寄存器值" /></label>
+                <label>单位<input id="modbusUnit" type="text" placeholder="可选" /></label>
+                <label>数据偏移<input id="modbusModbusByteOffset" type="number" min="0" step="1" value="0" title="相对读响应数据区首字节的偏移" /></label>
+                <label>数据类型<select id="modbusModbusDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                <label>字节序<select id="modbusModbusByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                <label>比例<input id="modbusModbusScale" type="number" step="0.000001" value="1" /></label>
+                <label>偏移<input id="modbusModbusOffset" type="number" step="0.000001" value="0" /></label>
+              </div>
+              <div class="curve-config-row modbus-curve-row" data-curve-slot="2" hidden>
+                <div class="curve-row-actions"><label class="curve-toggle">启用曲线二<input id="modbusCurve2Enabled" type="checkbox" /></label><button type="button" class="ghost-button curve-remove-button" data-remove-curve-slot="2" aria-label="删除曲线二">删除</button></div>
+                <label>曲线二名称<input id="modbusCurve2FieldName" type="text" value="曲线二" /></label>
+                <label>单位<input id="modbusCurve2Unit" type="text" placeholder="可选" /></label>
+                <label>数据偏移<input id="modbusCurve2ModbusByteOffset" type="number" min="0" step="1" value="2" title="相对读响应数据区首字节的偏移" /></label>
+                <label>数据类型<select id="modbusCurve2ModbusDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                <label>字节序<select id="modbusCurve2ModbusByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                <label>比例<input id="modbusCurve2ModbusScale" type="number" step="0.000001" value="1" /></label>
+                <label>偏移<input id="modbusCurve2ModbusOffset" type="number" step="0.000001" value="0" /></label>
+              </div>
+              <div class="curve-config-row modbus-curve-row" data-curve-slot="3" hidden>
+                <div class="curve-row-actions"><label class="curve-toggle">启用曲线三<input id="modbusCurve3Enabled" type="checkbox" /></label><button type="button" class="ghost-button curve-remove-button" data-remove-curve-slot="3" aria-label="删除曲线三">删除</button></div>
+                <label>曲线三名称<input id="modbusCurve3FieldName" type="text" value="曲线三" /></label>
+                <label>单位<input id="modbusCurve3Unit" type="text" placeholder="可选" /></label>
+                <label>数据偏移<input id="modbusCurve3ModbusByteOffset" type="number" min="0" step="1" value="4" title="相对读响应数据区首字节的偏移" /></label>
+                <label>数据类型<select id="modbusCurve3ModbusDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                <label>字节序<select id="modbusCurve3ModbusByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                <label>比例<input id="modbusCurve3ModbusScale" type="number" step="0.000001" value="1" /></label>
+                <label>偏移<input id="modbusCurve3ModbusOffset" type="number" step="0.000001" value="0" /></label>
+              </div>
+              <div class="curve-config-row modbus-curve-row" data-curve-slot="4" hidden>
+                <div class="curve-row-actions"><label class="curve-toggle">启用曲线四<input id="modbusCurve4Enabled" type="checkbox" /></label><button type="button" class="ghost-button curve-remove-button" data-remove-curve-slot="4" aria-label="删除曲线四">删除</button></div>
+                <label>曲线四名称<input id="modbusCurve4FieldName" type="text" value="曲线四" /></label>
+                <label>单位<input id="modbusCurve4Unit" type="text" placeholder="可选" /></label>
+                <label>数据偏移<input id="modbusCurve4ModbusByteOffset" type="number" min="0" step="1" value="6" title="相对读响应数据区首字节的偏移" /></label>
+                <label>数据类型<select id="modbusCurve4ModbusDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                <label>字节序<select id="modbusCurve4ModbusByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                <label>比例<input id="modbusCurve4ModbusScale" type="number" step="0.000001" value="1" /></label>
+                <label>偏移<input id="modbusCurve4ModbusOffset" type="number" step="0.000001" value="0" /></label>
+              </div>
+              <button id="modbusAddCurve" class="ghost-button add-curve-button" type="button">+ 添加曲线</button>
+            </div>
+          </div>
+          <div class="parser-test">
+            <label>解析样例<input id="modbusParserSample" type="text" value="01 03 04 00 64 00 C8 FA 33" placeholder="完整 RTU 帧 HEX" /></label>
+            <button id="testModbusParser" type="button">测试</button>
+            <output id="modbusParserPreview">等待测试</output>
+          </div>
+        </div>
+
+        <div id="chartCurveCustomSection" class="chart-curve-section" hidden>
+          <div class="config-grid compact">
+            <label>曲线解析<select id="customParserMode"><option value="json" selected>JSON / 文本</option><option value="hex">HEX 原始字节</option><option value="modbus">Modbus RTU</option></select></label>
+          </div>
+          <div id="customFramingFields" class="config-grid compact framing-fields">
+            <label>帧界模式<select id="customFrameMode"><option value="none" selected>无（整包）</option><option value="line">行界（CR/LF）</option><option value="stxEtx">帧头帧尾（HEX）</option></select></label>
+            <label id="customRxLineEndingField" hidden>行结束符<select id="customRxLineEnding"><option value="\r\n" selected>CRLF</option><option value="\n">LF</option><option value="\r">CR</option></select></label>
+            <label id="customFramePrefixField" hidden>帧头 HEX<input id="customFramePrefixHex" type="text" placeholder="例如 02（STX）" /></label>
+            <label id="customFrameSuffixField" hidden>帧尾 HEX<input id="customFrameSuffixHex" type="text" placeholder="例如 03（ETX）" /></label>
+            <label id="customFrameCrcField">CRC 校验<select id="customFrameCrcMode"><option value="none" selected>无</option><option value="modbus">Modbus CRC16</option></select></label>
+          </div>
+          <div id="customModbusSharedFields" class="config-grid compact" data-parser-mode="modbus" hidden>
+            <label>从站地址<input id="customModbusSlaveId" type="number" min="1" max="247" step="1" value="1" /></label>
+            <label>功能码<select id="customModbusFunctionCode"><option value="3" selected>03 读保持寄存器</option><option value="4">04 读输入寄存器</option></select></label>
+          </div>
+          <div id="customCurveConfigBlock" class="chart-curve-config">
+            <div class="subsection-heading compact">
+              <h3 id="customCurveConfigTitle">JSON 曲线</h3>
+              <span id="customCurveConfigHint">支持 data.temp、metrics.0.value 这类路径</span>
+            </div>
+            <div class="curve-config-list">
+              <div class="curve-config-row">
+                <label class="curve-toggle">启用曲线一<input id="customCurve1Enabled" type="checkbox" checked /></label>
+                <label>曲线一名称<input id="customFieldName" type="text" value="数值" /></label>
+                <div class="curve-mode-fields" data-parser-mode="json">
+                  <label>曲线一路径<input id="customParserFieldPath" type="text" value="value" placeholder="例如 value 或 data.temp" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="hex" hidden>
+                  <label>字节偏移<input id="customHexByteOffset" type="number" min="0" step="1" value="0" /></label>
+                  <label>数据类型<select id="customHexDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="customHexByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="customHexScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="customHexOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="modbus" hidden>
+                  <label>数据偏移<input id="customModbusByteOffset" type="number" min="0" step="1" value="0" /></label>
+                  <label>数据类型<select id="customModbusDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="customModbusByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="customModbusScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="customModbusOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+              </div>
+              <div class="curve-config-row" data-curve-slot="2" hidden>
+                <div class="curve-row-actions"><label class="curve-toggle">启用曲线二<input id="customCurve2Enabled" type="checkbox" /></label><button type="button" class="ghost-button curve-remove-button" data-remove-curve-slot="2" aria-label="删除曲线二">删除</button></div>
+                <label>曲线二名称<input id="customCurve2FieldName" type="text" value="曲线二" /></label>
+                <label>单位<input id="customCurve2Unit" type="text" placeholder="可选" /></label>
+                <div class="curve-mode-fields" data-parser-mode="json">
+                  <label>曲线二路径<input id="customCurve2FieldPath" type="text" value="" placeholder="例如 value 或 data.temp" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="hex" hidden>
+                  <label>字节偏移<input id="customCurve2HexByteOffset" type="number" min="0" step="1" value="2" /></label>
+                  <label>数据类型<select id="customCurve2HexDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="customCurve2HexByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="customCurve2HexScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="customCurve2HexOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="modbus" hidden>
+                  <label>数据偏移<input id="customCurve2ModbusByteOffset" type="number" min="0" step="1" value="2" /></label>
+                  <label>数据类型<select id="customCurve2ModbusDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="customCurve2ModbusByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="customCurve2ModbusScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="customCurve2ModbusOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+              </div>
+              <div class="curve-config-row" data-curve-slot="3" hidden>
+                <div class="curve-row-actions"><label class="curve-toggle">启用曲线三<input id="customCurve3Enabled" type="checkbox" /></label><button type="button" class="ghost-button curve-remove-button" data-remove-curve-slot="3" aria-label="删除曲线三">删除</button></div>
+                <label>曲线三名称<input id="customCurve3FieldName" type="text" value="曲线三" /></label>
+                <label>单位<input id="customCurve3Unit" type="text" placeholder="可选" /></label>
+                <div class="curve-mode-fields" data-parser-mode="json">
+                  <label>曲线三路径<input id="customCurve3FieldPath" type="text" value="" placeholder="例如 value 或 data.temp" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="hex" hidden>
+                  <label>字节偏移<input id="customCurve3HexByteOffset" type="number" min="0" step="1" value="4" /></label>
+                  <label>数据类型<select id="customCurve3HexDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="customCurve3HexByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="customCurve3HexScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="customCurve3HexOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="modbus" hidden>
+                  <label>数据偏移<input id="customCurve3ModbusByteOffset" type="number" min="0" step="1" value="4" /></label>
+                  <label>数据类型<select id="customCurve3ModbusDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="customCurve3ModbusByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="customCurve3ModbusScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="customCurve3ModbusOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+              </div>
+              <div class="curve-config-row" data-curve-slot="4" hidden>
+                <div class="curve-row-actions"><label class="curve-toggle">启用曲线四<input id="customCurve4Enabled" type="checkbox" /></label><button type="button" class="ghost-button curve-remove-button" data-remove-curve-slot="4" aria-label="删除曲线四">删除</button></div>
+                <label>曲线四名称<input id="customCurve4FieldName" type="text" value="曲线四" /></label>
+                <label>单位<input id="customCurve4Unit" type="text" placeholder="可选" /></label>
+                <div class="curve-mode-fields" data-parser-mode="json">
+                  <label>曲线四路径<input id="customCurve4FieldPath" type="text" value="" placeholder="例如 value 或 data.temp" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="hex" hidden>
+                  <label>字节偏移<input id="customCurve4HexByteOffset" type="number" min="0" step="1" value="6" /></label>
+                  <label>数据类型<select id="customCurve4HexDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="customCurve4HexByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="customCurve4HexScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="customCurve4HexOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="modbus" hidden>
+                  <label>数据偏移<input id="customCurve4ModbusByteOffset" type="number" min="0" step="1" value="6" /></label>
+                  <label>数据类型<select id="customCurve4ModbusDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="customCurve4ModbusByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="customCurve4ModbusScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="customCurve4ModbusOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+              </div>
+              <button id="customAddCurve" class="ghost-button add-curve-button" type="button">+ 添加曲线</button>
+            </div>
+          </div>
+          <div class="parser-test">
+            <label>解析样例<input id="customParserSample" type="text" value='{"value":12.34}' placeholder='JSON：{"value":12.34}；HEX/Modbus：02 00 64 03' /></label>
+            <button id="testCustomParser" type="button">测试</button>
+            <output id="customParserPreview">等待测试</output>
+          </div>
+        </div>
+
+        <div id="chartCurveHartSection" class="chart-curve-section" hidden>
+          <div id="hartChartSeriesBlock" class="hart-chart-series">
+            <span class="hart-chart-series-label">显示曲线</span>
+            <label><input type="checkbox" data-hart-series="pv" checked />PV</label>
+            <label><input type="checkbox" data-hart-series="sv" checked />SV</label>
+            <label><input type="checkbox" data-hart-series="tv" checked />TV</label>
+            <label><input type="checkbox" data-hart-series="qv" checked />QV</label>
+          </div>
+        </div>
+
+        <div id="chartCurveWebsocketSection" class="chart-curve-section" hidden>
+          <div class="config-grid compact">
+            <label>曲线解析<select id="websocketParserMode"><option value="json" selected>JSON / 文本</option><option value="hex">HEX 原始字节</option><option value="modbus">Modbus RTU</option></select></label>
+          </div>
+          <div id="websocketFramingFields" class="config-grid compact framing-fields">
+            <label>帧界模式<select id="websocketFrameMode"><option value="none" selected>无（整包）</option><option value="line">行界（CR/LF）</option><option value="stxEtx">帧头帧尾（HEX）</option></select></label>
+            <label id="websocketRxLineEndingField" hidden>行结束符<select id="websocketRxLineEnding"><option value="\r\n" selected>CRLF</option><option value="\n">LF</option><option value="\r">CR</option></select></label>
+            <label id="websocketFramePrefixField" hidden>帧头 HEX<input id="websocketFramePrefixHex" type="text" placeholder="例如 02（STX）" /></label>
+            <label id="websocketFrameSuffixField" hidden>帧尾 HEX<input id="websocketFrameSuffixHex" type="text" placeholder="例如 03（ETX）" /></label>
+            <label id="websocketFrameCrcField">CRC 校验<select id="websocketFrameCrcMode"><option value="none" selected>无</option><option value="modbus">Modbus CRC16</option></select></label>
+          </div>
+
+          <div id="websocketModbusSharedFields" class="config-grid compact" data-parser-mode="modbus" hidden>
+            <label>从站地址<input id="websocketModbusSlaveId" type="number" min="1" max="247" step="1" value="1" /></label>
+            <label>功能码<select id="websocketModbusFunctionCode"><option value="3" selected>03 读保持寄存器</option><option value="4">04 读输入寄存器</option></select></label>
+          </div>
+          <div id="websocketCurveConfigBlock" class="chart-curve-config">
+            <div class="subsection-heading compact">
+              <h3 id="websocketCurveConfigTitle">JSON 曲线</h3>
+              <span id="websocketCurveConfigHint">支持 data.temp、metrics.0.value 这类路径</span>
+            </div>
+            <div class="curve-config-list">
+              <div class="curve-config-row">
+                <label class="curve-toggle">启用曲线一<input id="websocketCurve1Enabled" type="checkbox" checked /></label>
+                <label>曲线一名称<input id="websocketFieldName" type="text" value="数值" /></label>
+                <label>单位<input id="websocketUnit" type="text" placeholder="可选" /></label>
+                <div class="curve-mode-fields" data-parser-mode="json">
+                  <label>曲线一路径<input id="websocketParserFieldPath" type="text" value="value" placeholder="例如 value 或 data.temp" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="hex" hidden>
+                  <label>字节偏移<input id="websocketHexByteOffset" type="number" min="0" step="1" value="0" /></label>
+                  <label>数据类型<select id="websocketHexDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="websocketHexByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="websocketHexScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="websocketHexOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="modbus" hidden>
+                  <label>数据偏移<input id="websocketModbusByteOffset" type="number" min="0" step="1" value="0" /></label>
+                  <label>数据类型<select id="websocketModbusDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="websocketModbusByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="websocketModbusScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="websocketModbusOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+              </div>
+              <div class="curve-config-row" data-curve-slot="2" hidden>
+                <div class="curve-row-actions"><label class="curve-toggle">启用曲线二<input id="websocketCurve2Enabled" type="checkbox" /></label><button type="button" class="ghost-button curve-remove-button" data-remove-curve-slot="2" aria-label="删除曲线二">删除</button></div>
+                <label>曲线二名称<input id="websocketCurve2FieldName" type="text" value="曲线二" /></label>
+                <label>单位<input id="websocketCurve2Unit" type="text" placeholder="可选" /></label>
+                <div class="curve-mode-fields" data-parser-mode="json">
+                  <label>曲线二路径<input id="websocketCurve2FieldPath" type="text" value="" placeholder="例如 value 或 data.temp" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="hex" hidden>
+                  <label>字节偏移<input id="websocketCurve2HexByteOffset" type="number" min="0" step="1" value="2" /></label>
+                  <label>数据类型<select id="websocketCurve2HexDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="websocketCurve2HexByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="websocketCurve2HexScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="websocketCurve2HexOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="modbus" hidden>
+                  <label>数据偏移<input id="websocketCurve2ModbusByteOffset" type="number" min="0" step="1" value="2" /></label>
+                  <label>数据类型<select id="websocketCurve2ModbusDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="websocketCurve2ModbusByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="websocketCurve2ModbusScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="websocketCurve2ModbusOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+              </div>
+              <div class="curve-config-row" data-curve-slot="3" hidden>
+                <div class="curve-row-actions"><label class="curve-toggle">启用曲线三<input id="websocketCurve3Enabled" type="checkbox" /></label><button type="button" class="ghost-button curve-remove-button" data-remove-curve-slot="3" aria-label="删除曲线三">删除</button></div>
+                <label>曲线三名称<input id="websocketCurve3FieldName" type="text" value="曲线三" /></label>
+                <label>单位<input id="websocketCurve3Unit" type="text" placeholder="可选" /></label>
+                <div class="curve-mode-fields" data-parser-mode="json">
+                  <label>曲线三路径<input id="websocketCurve3FieldPath" type="text" value="" placeholder="例如 value 或 data.temp" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="hex" hidden>
+                  <label>字节偏移<input id="websocketCurve3HexByteOffset" type="number" min="0" step="1" value="4" /></label>
+                  <label>数据类型<select id="websocketCurve3HexDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="websocketCurve3HexByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="websocketCurve3HexScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="websocketCurve3HexOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="modbus" hidden>
+                  <label>数据偏移<input id="websocketCurve3ModbusByteOffset" type="number" min="0" step="1" value="4" /></label>
+                  <label>数据类型<select id="websocketCurve3ModbusDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="websocketCurve3ModbusByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="websocketCurve3ModbusScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="websocketCurve3ModbusOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+              </div>
+              <div class="curve-config-row" data-curve-slot="4" hidden>
+                <div class="curve-row-actions"><label class="curve-toggle">启用曲线四<input id="websocketCurve4Enabled" type="checkbox" /></label><button type="button" class="ghost-button curve-remove-button" data-remove-curve-slot="4" aria-label="删除曲线四">删除</button></div>
+                <label>曲线四名称<input id="websocketCurve4FieldName" type="text" value="曲线四" /></label>
+                <label>单位<input id="websocketCurve4Unit" type="text" placeholder="可选" /></label>
+                <div class="curve-mode-fields" data-parser-mode="json">
+                  <label>曲线四路径<input id="websocketCurve4FieldPath" type="text" value="" placeholder="例如 value 或 data.temp" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="hex" hidden>
+                  <label>字节偏移<input id="websocketCurve4HexByteOffset" type="number" min="0" step="1" value="6" /></label>
+                  <label>数据类型<select id="websocketCurve4HexDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="websocketCurve4HexByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="websocketCurve4HexScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="websocketCurve4HexOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="modbus" hidden>
+                  <label>数据偏移<input id="websocketCurve4ModbusByteOffset" type="number" min="0" step="1" value="6" /></label>
+                  <label>数据类型<select id="websocketCurve4ModbusDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="websocketCurve4ModbusByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="websocketCurve4ModbusScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="websocketCurve4ModbusOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+              </div>
+              <button id="websocketAddCurve" class="ghost-button add-curve-button" type="button">+ 添加曲线</button>
+            </div>
+          </div>
+          <div class="parser-test">
+            <label>解析样例<input id="websocketParserSample" type="text" value='{"value":12.34}' placeholder='JSON：{"value":12.34}；HEX/Modbus：01 03 02 00 64 B9 AF' /></label>
+            <button id="testWebsocketParser" type="button">测试</button>
+            <output id="websocketParserPreview">等待测试</output>
+          </div>
+        </div>
+
+        <div id="chartCurveMqttSection" class="chart-curve-section" hidden>
+          <div class="config-grid compact">
+            <label>曲线解析<select id="mqttParserMode"><option value="json" selected>JSON / 文本</option><option value="hex">HEX 原始字节</option><option value="modbus">Modbus RTU</option></select></label>
+          </div>
+          <div id="mqttFramingFields" class="config-grid compact framing-fields">
+            <label>帧界模式<select id="mqttFrameMode"><option value="none" selected>无（整包）</option><option value="line">行界（CR/LF）</option><option value="stxEtx">帧头帧尾（HEX）</option></select></label>
+            <label id="mqttRxLineEndingField" hidden>行结束符<select id="mqttRxLineEnding"><option value="\r\n" selected>CRLF</option><option value="\n">LF</option><option value="\r">CR</option></select></label>
+            <label id="mqttFramePrefixField" hidden>帧头 HEX<input id="mqttFramePrefixHex" type="text" placeholder="例如 02（STX）" /></label>
+            <label id="mqttFrameSuffixField" hidden>帧尾 HEX<input id="mqttFrameSuffixHex" type="text" placeholder="例如 03（ETX）" /></label>
+            <label id="mqttFrameCrcField">CRC 校验<select id="mqttFrameCrcMode"><option value="none" selected>无</option><option value="modbus">Modbus CRC16</option></select></label>
+          </div>
+
+          <div id="mqttModbusSharedFields" class="config-grid compact" data-parser-mode="modbus" hidden>
+            <label>从站地址<input id="mqttModbusSlaveId" type="number" min="1" max="247" step="1" value="1" /></label>
+            <label>功能码<select id="mqttModbusFunctionCode"><option value="3" selected>03 读保持寄存器</option><option value="4">04 读输入寄存器</option></select></label>
+          </div>
+          <div id="mqttCurveConfigBlock" class="chart-curve-config">
+            <div class="subsection-heading compact">
+              <h3 id="mqttCurveConfigTitle">JSON 曲线</h3>
+              <span id="mqttCurveConfigHint">支持 data.temp、metrics.0.value 这类路径</span>
+            </div>
+            <div class="curve-config-list">
+              <div class="curve-config-row">
+                <label class="curve-toggle">启用曲线一<input id="mqttCurve1Enabled" type="checkbox" checked /></label>
+                <label>曲线一名称<input id="mqttFieldName" type="text" value="数值" /></label>
+                <label>单位<input id="mqttUnit" type="text" placeholder="可选" /></label>
+                <div class="curve-mode-fields" data-parser-mode="json">
+                  <label>曲线一路径<input id="mqttParserFieldPath" type="text" value="value" placeholder="例如 value 或 data.temp" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="hex" hidden>
+                  <label>字节偏移<input id="mqttHexByteOffset" type="number" min="0" step="1" value="0" /></label>
+                  <label>数据类型<select id="mqttHexDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="mqttHexByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="mqttHexScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="mqttHexOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="modbus" hidden>
+                  <label>数据偏移<input id="mqttModbusByteOffset" type="number" min="0" step="1" value="0" /></label>
+                  <label>数据类型<select id="mqttModbusDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="mqttModbusByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="mqttModbusScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="mqttModbusOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+              </div>
+              <div class="curve-config-row" data-curve-slot="2" hidden>
+                <div class="curve-row-actions"><label class="curve-toggle">启用曲线二<input id="mqttCurve2Enabled" type="checkbox" /></label><button type="button" class="ghost-button curve-remove-button" data-remove-curve-slot="2" aria-label="删除曲线二">删除</button></div>
+                <label>曲线二名称<input id="mqttCurve2FieldName" type="text" value="曲线二" /></label>
+                <label>单位<input id="mqttCurve2Unit" type="text" placeholder="可选" /></label>
+                <div class="curve-mode-fields" data-parser-mode="json">
+                  <label>曲线二路径<input id="mqttCurve2FieldPath" type="text" value="" placeholder="例如 value 或 data.temp" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="hex" hidden>
+                  <label>字节偏移<input id="mqttCurve2HexByteOffset" type="number" min="0" step="1" value="2" /></label>
+                  <label>数据类型<select id="mqttCurve2HexDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="mqttCurve2HexByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="mqttCurve2HexScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="mqttCurve2HexOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="modbus" hidden>
+                  <label>数据偏移<input id="mqttCurve2ModbusByteOffset" type="number" min="0" step="1" value="2" /></label>
+                  <label>数据类型<select id="mqttCurve2ModbusDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="mqttCurve2ModbusByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="mqttCurve2ModbusScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="mqttCurve2ModbusOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+              </div>
+              <div class="curve-config-row" data-curve-slot="3" hidden>
+                <div class="curve-row-actions"><label class="curve-toggle">启用曲线三<input id="mqttCurve3Enabled" type="checkbox" /></label><button type="button" class="ghost-button curve-remove-button" data-remove-curve-slot="3" aria-label="删除曲线三">删除</button></div>
+                <label>曲线三名称<input id="mqttCurve3FieldName" type="text" value="曲线三" /></label>
+                <label>单位<input id="mqttCurve3Unit" type="text" placeholder="可选" /></label>
+                <div class="curve-mode-fields" data-parser-mode="json">
+                  <label>曲线三路径<input id="mqttCurve3FieldPath" type="text" value="" placeholder="例如 value 或 data.temp" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="hex" hidden>
+                  <label>字节偏移<input id="mqttCurve3HexByteOffset" type="number" min="0" step="1" value="4" /></label>
+                  <label>数据类型<select id="mqttCurve3HexDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="mqttCurve3HexByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="mqttCurve3HexScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="mqttCurve3HexOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="modbus" hidden>
+                  <label>数据偏移<input id="mqttCurve3ModbusByteOffset" type="number" min="0" step="1" value="4" /></label>
+                  <label>数据类型<select id="mqttCurve3ModbusDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="mqttCurve3ModbusByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="mqttCurve3ModbusScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="mqttCurve3ModbusOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+              </div>
+              <div class="curve-config-row" data-curve-slot="4" hidden>
+                <div class="curve-row-actions"><label class="curve-toggle">启用曲线四<input id="mqttCurve4Enabled" type="checkbox" /></label><button type="button" class="ghost-button curve-remove-button" data-remove-curve-slot="4" aria-label="删除曲线四">删除</button></div>
+                <label>曲线四名称<input id="mqttCurve4FieldName" type="text" value="曲线四" /></label>
+                <label>单位<input id="mqttCurve4Unit" type="text" placeholder="可选" /></label>
+                <div class="curve-mode-fields" data-parser-mode="json">
+                  <label>曲线四路径<input id="mqttCurve4FieldPath" type="text" value="" placeholder="例如 value 或 data.temp" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="hex" hidden>
+                  <label>字节偏移<input id="mqttCurve4HexByteOffset" type="number" min="0" step="1" value="6" /></label>
+                  <label>数据类型<select id="mqttCurve4HexDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="mqttCurve4HexByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="mqttCurve4HexScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="mqttCurve4HexOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+                <div class="curve-mode-fields" data-parser-mode="modbus" hidden>
+                  <label>数据偏移<input id="mqttCurve4ModbusByteOffset" type="number" min="0" step="1" value="6" /></label>
+                  <label>数据类型<select id="mqttCurve4ModbusDataType"><option value="uint16" selected>UInt16</option><option value="int16">Int16</option><option value="float32">Float32</option></select></label>
+                  <label>字节序<select id="mqttCurve4ModbusByteOrder"><option value="AB" selected>AB / ABCD</option><option value="BA">BA</option><option value="DCBA">DCBA</option><option value="BADC">BADC</option><option value="CDAB">CDAB</option></select></label>
+                  <label>比例<input id="mqttCurve4ModbusScale" type="number" step="0.000001" value="1" /></label>
+                  <label>偏移<input id="mqttCurve4ModbusOffset" type="number" step="0.000001" value="0" /></label>
+                </div>
+              </div>
+              <button id="mqttAddCurve" class="ghost-button add-curve-button" type="button">+ 添加曲线</button>
+            </div>
+          </div>
+          <div class="parser-test">
+            <label>解析样例<input id="mqttParserSample" type="text" value='{"value":25.6,"unit":"C"}' placeholder='JSON：{"value":12.34}；HEX/Modbus：01 03 02 00 64 B9 AF' /></label>
+            <button id="testMqttParser" type="button">测试</button>
+            <output id="mqttParserPreview">等待测试</output>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <div class="chart-settings">
       <label class="chart-settings-field">
@@ -73,10 +509,25 @@
           title="当前窗口显示点数，曲线可左右滑动查看总点数历史"
         />
       </label>
-      <button id="resetChartConfig" class="ghost-button" type="button">恢复默认</button>
-      <button id="saveChartConfig" type="button">保存</button>
+      <div class="chart-settings-actions">
+        <button id="exportChartCsv" class="ghost-button" type="button">导出 CSV</button>
+        <button id="loadChartCsv" class="ghost-button" type="button">加载 CSV</button>
+        <button id="resetChartConfig" class="ghost-button" type="button">恢复默认</button>
+        <button id="saveChartConfig" type="button">保存</button>
+      </div>
+      <input id="loadChartCsvInput" type="file" accept=".csv,text/csv" hidden />
     </div>
   </section>
+
+  <dialog id="chartCurveHelpDialog" class="chart-curve-help-dialog">
+    <div class="chart-curve-help-shell">
+      <header class="chart-curve-help-header">
+        <h3 id="chartCurveHelpTitle">协议说明</h3>
+        <button id="chartCurveHelpClose" class="icon-button" type="button" aria-label="关闭">×</button>
+      </header>
+      <div id="chartCurveHelpContent" class="chart-curve-help-content"></div>
+    </div>
+  </dialog>
 
   <section class="panel console-panel device-workbench">
     <div class="panel-heading split">
@@ -84,7 +535,7 @@
         <h2>收发调试</h2>
         <p>支持 ASCII 与 HEX，适合协议确认前做调试。</p>
       </div>
-      <button id="clearLog" class="icon-button" type="button" aria-label="清空日志" title="清空日志">⌧</button>
+      <button id="clearLog" class="icon-button" type="button" aria-label="清空日志" title="清空日志">⌫</button>
     </div>
     <div id="serialLog" class="serial-log" aria-live="polite"></div>
     <div class="send-grid">
@@ -106,7 +557,11 @@
       </label>
       <label class="send-command">
         命令
-        <input id="manualCommand" type="text" placeholder="例如：READ?、01 03 00 00 或 {&quot;cmd&quot;:&quot;ping&quot;}" />
+        <textarea
+          id="manualCommand"
+          rows="4"
+          placeholder="例如：READ?、01 03 00 00 或 {&quot;cmd&quot;:&quot;ping&quot;}"
+        ></textarea>
       </label>
       <button id="sendManual" type="button" disabled>发送</button>
     </div>

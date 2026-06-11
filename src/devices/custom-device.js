@@ -1,9 +1,35 @@
+import {
+  DEFAULT_BINARY_MULTI_FIELDS,
+  listHexChartSeries,
+  listModbusChartSeries,
+  normalizeBinaryCurveConfig,
+} from "./binary-curve-config.js";
+import {
+  DEFAULT_JSON_CURVE_CONFIG,
+  listJsonChartSeries,
+  normalizeJsonCurveConfig,
+} from "./json-curve-config.js";
+import {
+  createFramingRxState,
+  DEFAULT_FRAMING_FIELDS,
+  describeFramingSummary,
+  extractLatestFramedPayload,
+  normalizeFramingConfig,
+  resetFramingRxState,
+} from "../framing/framing-rx.js";
+import {
+  createModbusRxBuffer,
+  describeDebugParserSummary,
+  normalizeParserMode,
+  parseDebugTelemetry,
+  resetModbusRxBuffer,
+} from "./message-parser.js";
+
 const textEncoder = new TextEncoder();
 
 export const CUSTOM_DEVICE_ID = "custom";
 export const CUSTOM_DEFAULT_BAUD_RATE = 115200;
 
-/** 自定义设备常用串口参数：115200 8N1 */
 export const CUSTOM_TRANSPORT_DEFAULTS = {
   baudRate: CUSTOM_DEFAULT_BAUD_RATE,
   parity: "none",
@@ -13,8 +39,8 @@ export const CUSTOM_TRANSPORT_DEFAULTS = {
 };
 
 export const DEFAULT_CUSTOM_CONFIG = {
-  name: "自定义设备",
-  type: "通用串口设备",
+  name: "自定义串口设备",
+  type: "自定义串口设备",
   channelLabel: "设定值",
   unit: "",
   min: 0,
@@ -25,25 +51,20 @@ export const DEFAULT_CUSTOM_CONFIG = {
   commandFormat: "ascii",
   commandTemplate: "SET {value}",
   commandLineEnding: "\\r\\n",
-  parser: {
-    type: "autoNumber",
-    fieldName: "测量值",
-    unit: "",
-    regex: "([-+]?\\d+(?:\\.\\d+)?)",
-    group: 1,
-    scale: 1,
-    offset: 0,
-  },
+  parserMode: "json",
+  ...DEFAULT_JSON_CURVE_CONFIG,
+  ...DEFAULT_BINARY_MULTI_FIELDS,
+  ...DEFAULT_FRAMING_FIELDS,
 };
 
+let customFramingState = createFramingRxState(DEFAULT_CUSTOM_CONFIG);
+const customModbusBuffer = createModbusRxBuffer();
+
 export function normalizeCustomConfig(config = {}) {
+  const migrated = migrateLegacyCustomConfig(config);
   const merged = {
     ...DEFAULT_CUSTOM_CONFIG,
-    ...config,
-    parser: {
-      ...DEFAULT_CUSTOM_CONFIG.parser,
-      ...(config.parser ?? {}),
-    },
+    ...migrated,
   };
 
   const min = toFiniteNumber(merged.min, DEFAULT_CUSTOM_CONFIG.min);
@@ -52,6 +73,7 @@ export function normalizeCustomConfig(config = {}) {
   const safeMax = Math.max(min, max);
   const step = Math.max(toFiniteNumber(merged.step, DEFAULT_CUSTOM_CONFIG.step), 0.000001);
   const defaultValue = clamp(toFiniteNumber(merged.defaultValue, DEFAULT_CUSTOM_CONFIG.defaultValue), safeMin, safeMax);
+  const parserMode = normalizeParserMode(merged.parserMode);
 
   return {
     name: String(merged.name || DEFAULT_CUSTOM_CONFIG.name),
@@ -66,16 +88,28 @@ export function normalizeCustomConfig(config = {}) {
     commandFormat: merged.commandFormat === "hex" ? "hex" : "ascii",
     commandTemplate: String(merged.commandTemplate || DEFAULT_CUSTOM_CONFIG.commandTemplate),
     commandLineEnding: normalizeLineEndingValue(merged.commandLineEnding),
-    parser: {
-      type: merged.parser.type === "regex" ? "regex" : "autoNumber",
-      fieldName: String(merged.parser.fieldName || DEFAULT_CUSTOM_CONFIG.parser.fieldName),
-      unit: String(merged.parser.unit ?? ""),
-      regex: String(merged.parser.regex || DEFAULT_CUSTOM_CONFIG.parser.regex),
-      group: Math.max(0, Math.trunc(toFiniteNumber(merged.parser.group, DEFAULT_CUSTOM_CONFIG.parser.group))),
-      scale: toFiniteNumber(merged.parser.scale, DEFAULT_CUSTOM_CONFIG.parser.scale),
-      offset: toFiniteNumber(merged.parser.offset, DEFAULT_CUSTOM_CONFIG.parser.offset),
-    },
+    parserMode,
+    ...normalizeJsonCurveConfig(merged, DEFAULT_CUSTOM_CONFIG),
+    ...normalizeBinaryCurveConfig(merged, DEFAULT_CUSTOM_CONFIG),
+    ...normalizeFramingConfig(merged, parserMode),
   };
+}
+
+export function resetCustomRxBuffer(config = DEFAULT_CUSTOM_CONFIG) {
+  const normalized = normalizeCustomConfig(config);
+  customFramingState = resetFramingRxState(customFramingState, normalized);
+  resetModbusRxBuffer(customModbusBuffer);
+}
+
+export function listCustomChartSeries(config = {}) {
+  const normalized = normalizeCustomConfig(config);
+  if (normalized.parserMode === "hex") {
+    return listHexChartSeries(normalized, DEFAULT_CUSTOM_CONFIG);
+  }
+  if (normalized.parserMode === "modbus") {
+    return listModbusChartSeries(normalized, DEFAULT_CUSTOM_CONFIG);
+  }
+  return listJsonChartSeries(normalized, DEFAULT_CUSTOM_CONFIG);
 }
 
 export function createCustomProfile(config) {
@@ -137,37 +171,34 @@ export function createCustomSetOutputCommand(state, config, helpers) {
   }
 }
 
-export function parseCustomTelemetry(text, config, parseNumericTelemetry) {
+export function parseCustomTelemetry(text, config, parseNumericTelemetry, bytes = null, helpers = {}) {
   const normalized = normalizeCustomConfig(config);
-  const parser = normalized.parser;
-  let rawValue = null;
-
-  if (parser.type === "regex") {
-    let match = null;
-    try {
-      match = text.match(new RegExp(parser.regex));
-    } catch {
-      return null;
-    }
-
-    if (!match) {
-      return null;
-    }
-    rawValue = Number(match[parser.group] ?? match[0]);
-  } else {
-    rawValue = parseNumericTelemetry(text);
-  }
-
-  if (!Number.isFinite(rawValue)) {
+  const framed = extractLatestFramedPayload(
+    text,
+    bytes,
+    normalized,
+    customFramingState,
+    helpers.parseHexPayload,
+  );
+  if (!framed) {
     return null;
   }
 
-  return {
-    fieldName: parser.fieldName,
-    unit: parser.unit,
-    value: rawValue * parser.scale + parser.offset,
-    rawValue,
-  };
+  const payloadText = framed.text ?? (framed.bytes ? null : "");
+  const payloadBytes = framed.bytes;
+
+  return parseDebugTelemetry(payloadText, payloadBytes, normalized, parseNumericTelemetry, {
+    jsonDefaults: DEFAULT_CUSTOM_CONFIG,
+    modbusBuffer: customModbusBuffer,
+    parseHexPayload: helpers.parseHexPayload,
+  });
+}
+
+export function describeCustomParserSummary(config = DEFAULT_CUSTOM_CONFIG) {
+  const normalized = normalizeCustomConfig(config);
+  const framing = describeFramingSummary(normalized, normalized.parserMode);
+  const parser = describeDebugParserSummary(normalized, DEFAULT_CUSTOM_CONFIG, "JSON");
+  return `${framing} · ${parser}`;
 }
 
 export function renderCommandTemplate(template, values) {
@@ -188,15 +219,45 @@ export function renderCommandTemplate(template, values) {
   });
 }
 
+function migrateLegacyCustomConfig(config) {
+  if (!config?.parser || config.parserMode) {
+    return config;
+  }
+
+  const parser = config.parser;
+  let parserMode = "json";
+  if (parser.type === "hex") {
+    parserMode = "hex";
+  }
+
+  return {
+    ...config,
+    parserMode,
+    fieldName: parser.fieldName,
+    unit: parser.unit,
+    frameMode: parser.frameMode,
+    rxLineEnding: parser.rxLineEnding,
+    framePrefixHex: parser.framePrefixHex,
+    frameSuffixHex: parser.frameSuffixHex,
+    hexByteOffset: parser.hexByteOffset,
+    hexDataType: parser.hexDataType,
+    hexByteOrder: parser.hexByteOrder,
+    hexScale: parser.hexScale,
+    hexOffset: parser.hexOffset,
+    parser: undefined,
+  };
+}
+
 function normalizeLineEndingValue(value) {
   if (value === "\\n" || value === "\n") {
     return "\\n";
   }
-
   if (value === "\\r\\n" || value === "\r\n") {
     return "\\r\\n";
   }
-
+  if (value === "\\r" || value === "\r") {
+    return "\\r";
+  }
   return "";
 }
 

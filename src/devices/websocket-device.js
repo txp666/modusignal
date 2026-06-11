@@ -1,3 +1,27 @@
+import {
+  DEFAULT_BINARY_MULTI_FIELDS,
+  listHexChartSeries,
+  listModbusChartSeries,
+  normalizeBinaryCurveConfig,
+} from "./binary-curve-config.js";
+import {
+  buildDebugMessage,
+  createDebugFramingState,
+  createModbusRxBuffer,
+  describeDebugParserSummary,
+  normalizeMessageFormat,
+  normalizeParserMode,
+  parseDebugTelemetry,
+  resetDebugFramingState,
+  resetModbusRxBuffer,
+} from "./message-parser.js";
+import { normalizeFramingConfig } from "../framing/framing-rx.js";
+import {
+  DEFAULT_JSON_CURVE_CONFIG,
+  listJsonChartSeries,
+  normalizeJsonCurveConfig,
+} from "./json-curve-config.js";
+
 export const WEBSOCKET_DEVICE_ID = "websocket";
 
 export const WEBSOCKET_TRANSPORT_DEFAULTS = {
@@ -14,9 +38,9 @@ export const DEFAULT_WEBSOCKET_CONFIG = {
   pollIntervalMs: 0,
   heartbeatFormat: "json",
   heartbeatMessage: '{"type":"ping"}',
-  parserFieldPath: "value",
-  fieldName: "数值",
-  unit: "",
+  parserMode: "json",
+  ...DEFAULT_JSON_CURVE_CONFIG,
+  ...DEFAULT_BINARY_MULTI_FIELDS,
 };
 
 export const WEBSOCKET_PROFILE = {
@@ -28,6 +52,9 @@ export const WEBSOCKET_PROFILE = {
   image: "./images/websocket.png",
 };
 
+const websocketModbusBuffer = createModbusRxBuffer();
+let websocketFramingState = createDebugFramingState(DEFAULT_WEBSOCKET_CONFIG);
+
 export function normalizeWebSocketConfig(config = {}) {
   const merged = {
     ...DEFAULT_WEBSOCKET_CONFIG,
@@ -38,36 +65,26 @@ export function normalizeWebSocketConfig(config = {}) {
     pollIntervalMs: Math.max(0, Math.trunc(toFiniteNumber(merged.pollIntervalMs, DEFAULT_WEBSOCKET_CONFIG.pollIntervalMs))),
     heartbeatFormat: normalizeMessageFormat(merged.heartbeatFormat),
     heartbeatMessage: String(merged.heartbeatMessage ?? DEFAULT_WEBSOCKET_CONFIG.heartbeatMessage),
-    parserFieldPath: String(merged.parserFieldPath ?? "").trim(),
-    fieldName: String(merged.fieldName || DEFAULT_WEBSOCKET_CONFIG.fieldName),
-    unit: String(merged.unit ?? ""),
+    parserMode: normalizeParserMode(merged.parserMode === "mqtt" ? "json" : merged.parserMode),
+    ...normalizeJsonCurveConfig(merged, DEFAULT_WEBSOCKET_CONFIG),
+    ...normalizeBinaryCurveConfig(merged, DEFAULT_WEBSOCKET_CONFIG),
+    ...normalizeFramingConfig(merged, normalizeParserMode(merged.parserMode === "mqtt" ? "json" : merged.parserMode)),
   };
 }
 
+export function listWebSocketChartSeries(config = {}) {
+  const normalized = normalizeWebSocketConfig(config);
+  if (normalized.parserMode === "hex") {
+    return listHexChartSeries(normalized, DEFAULT_WEBSOCKET_CONFIG);
+  }
+  if (normalized.parserMode === "modbus") {
+    return listModbusChartSeries(normalized, DEFAULT_WEBSOCKET_CONFIG);
+  }
+  return listJsonChartSeries(normalized, DEFAULT_WEBSOCKET_CONFIG);
+}
+
 export function buildWebSocketMessage(format, message, helpers) {
-  const normalizedFormat = normalizeMessageFormat(format);
-  const content = String(message ?? "");
-
-  if (normalizedFormat === "hex") {
-    return helpers.parseHexPayload(content);
-  }
-
-  if (normalizedFormat === "json") {
-    const trimmed = content.trim();
-    if (!trimmed) {
-      throw new Error("JSON 消息不能为空");
-    }
-
-    try {
-      JSON.parse(trimmed);
-    } catch (error) {
-      throw new Error(`JSON 格式无效：${error.message}`);
-    }
-
-    return trimmed;
-  }
-
-  return content;
+  return buildDebugMessage(format, message, helpers);
 }
 
 export function createWebSocketSetOutputCommand(_state, config, helpers) {
@@ -83,10 +100,7 @@ export function createWebSocketSetOutputCommand(_state, config, helpers) {
 
   try {
     const payload = buildWebSocketMessage(normalized.heartbeatFormat, normalized.heartbeatMessage, helpers);
-    const preview =
-      typeof payload === "string"
-        ? payload
-        : helpers.bytesToHex(payload);
+    const preview = typeof payload === "string" ? payload : helpers.bytesToHex(payload);
 
     return {
       supported: true,
@@ -102,103 +116,28 @@ export function createWebSocketSetOutputCommand(_state, config, helpers) {
   }
 }
 
-export function parseWebSocketTelemetry(text, config, parseNumericTelemetry) {
-  const normalized = normalizeWebSocketConfig(config);
-  const trimmed = String(text || "").trim();
+export function parseWebSocketTelemetry(text, bytes, config, parseNumericTelemetry, helpers = {}) {
+  return parseDebugTelemetry(text, bytes, normalizeWebSocketConfig(config), parseNumericTelemetry, {
+    jsonDefaults: DEFAULT_WEBSOCKET_CONFIG,
+    modbusBuffer: websocketModbusBuffer,
+    framingState: websocketFramingState,
+    parseHexPayload: helpers.parseHexPayload,
+  });
+}
 
-  if (!trimmed) {
-    return null;
-  }
-
-  let rawValue = null;
-
-  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
-    try {
-      const parsed = JSON.parse(trimmed);
-      rawValue = extractJsonValue(parsed, normalized.parserFieldPath);
-    } catch {
-      rawValue = null;
-    }
-  }
-
-  if (!Number.isFinite(rawValue)) {
-    rawValue = parseNumericTelemetry(trimmed);
-  }
-
-  if (!Number.isFinite(rawValue)) {
-    return null;
-  }
-
-  return {
-    fieldName: normalized.fieldName,
-    unit: normalized.unit,
-    value: rawValue,
-    rawValue,
-  };
+export function resetWebSocketRxBuffer() {
+  resetModbusRxBuffer(websocketModbusBuffer);
+  websocketFramingState = resetDebugFramingState(websocketFramingState, DEFAULT_WEBSOCKET_CONFIG);
 }
 
 export function describeWebSocketSummary(config) {
   const normalized = normalizeWebSocketConfig(config);
   const interval = normalized.pollIntervalMs > 0 ? `${normalized.pollIntervalMs} ms 轮询` : "手动收发";
-  return `WebSocket 调试；${interval}；解析字段 ${normalized.parserFieldPath || "自动数字"}`;
+  return `WebSocket 调试；${interval}；解析 ${describeDebugParserSummary(normalized, DEFAULT_WEBSOCKET_CONFIG, "WS")}`;
 }
 
-function extractJsonValue(source, path) {
-  if (!path) {
-    return findFirstNumber(source);
-  }
-
-  let current = source;
-  for (const segment of path.split(".")) {
-    if (current == null || segment === "") {
-      return null;
-    }
-
-    if (Array.isArray(current) && /^\d+$/.test(segment)) {
-      current = current[Number(segment)];
-      continue;
-    }
-
-    if (typeof current === "object") {
-      current = current[segment];
-      continue;
-    }
-
-    return null;
-  }
-
-  return toFiniteNumber(current, null);
-}
-
-function findFirstNumber(value) {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const found = findFirstNumber(item);
-      if (Number.isFinite(found)) {
-        return found;
-      }
-    }
-    return null;
-  }
-
-  if (value && typeof value === "object") {
-    for (const key of Object.keys(value)) {
-      const found = findFirstNumber(value[key]);
-      if (Number.isFinite(found)) {
-        return found;
-      }
-    }
-  }
-
-  return null;
-}
-
-function normalizeMessageFormat(value) {
-  return value === "hex" || value === "ascii" ? value : "json";
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
 }
 
 function toFiniteNumber(value, fallback) {

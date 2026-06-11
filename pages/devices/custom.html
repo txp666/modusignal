@@ -3,7 +3,7 @@
     <div class="panel-heading split">
       <div>
         <h2>设定输出</h2>
-        <p data-field="deviceSummary">自定义设备模板可发送。</p>
+        <p data-field="deviceSummary">自定义串口设备模板可发送。</p>
       </div>
       <span data-field="driverState" class="state-pill">模板可发送</span>
     </div>
@@ -39,7 +39,7 @@
     <div class="panel-heading split">
       <div>
         <h2>设备配置</h2>
-        <p>设定范围、发送模板和回包解析规则。</p>
+        <p>设定范围与发送模板；曲线解析、帧界与 CRC 在监测面板配置。</p>
       </div>
       <div class="panel-actions">
         <button id="resetCustomConfig" class="ghost-button" type="button">恢复默认</button>
@@ -49,11 +49,11 @@
     <div class="config-grid">
       <label>
         设备名称
-        <input id="customDeviceName" type="text" value="自定义设备" />
+        <input id="customDeviceName" type="text" value="自定义串口设备" />
       </label>
       <label>
         设备类型
-        <input id="customDeviceType" type="text" value="通用串口设备" />
+        <input id="customDeviceType" type="text" value="自定义串口设备" />
       </label>
       <label>
         通道名称
@@ -106,51 +106,6 @@
         模板
         <input id="customCommandTemplate" type="text" value="SET {value}" />
       </label>
-    </div>
-    <div class="subsection-heading">
-      <h3>回包解析</h3>
-      <span>解析结果会进入曲线查看</span>
-    </div>
-    <div class="config-grid compact">
-      <label>
-        解析方式
-        <select id="customParserType">
-          <option value="autoNumber" selected>自动提取最后一个数字</option>
-          <option value="regex">正则捕获</option>
-        </select>
-      </label>
-      <label>
-        字段名
-        <input id="customParserFieldName" type="text" value="测量值" />
-      </label>
-      <label>
-        解析单位
-        <input id="customParserUnit" type="text" />
-      </label>
-      <label>
-        捕获组
-        <input id="customParserGroup" type="number" min="0" step="1" value="1" />
-      </label>
-      <label class="regex-input">
-        正则
-        <input id="customParserRegex" type="text" value="([-+]?\d+(?:\.\d+)?)" />
-      </label>
-      <label>
-        比例
-        <input id="customParserScale" type="number" step="0.000001" value="1" />
-      </label>
-      <label>
-        偏移
-        <input id="customParserOffset" type="number" step="0.000001" value="0" />
-      </label>
-    </div>
-    <div class="parser-test">
-      <label>
-        解析测试
-        <input id="customParserSample" type="text" value="VALUE: 12.34" />
-      </label>
-      <button id="testCustomParser" type="button">测试</button>
-      <output id="customParserPreview">等待测试</output>
     </div>
   </section>
 </section>

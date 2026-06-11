@@ -6,9 +6,24 @@ const THEME = {
   surface: "#fbfcfd",
 };
 
+const ECHARTS_SET_OPTION_FLAGS = {
+  notMerge: true,
+  lazyUpdate: true,
+  silent: true,
+};
+
 function finiteOr(value, fallback) {
   const number = Number(value);
   return Number.isFinite(number) ? number : fallback;
+}
+
+function finiteOrNull(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }
 
 function formatValue(value, decimals = 3) {
@@ -19,9 +34,99 @@ function hostHasSize(host) {
   return Boolean(host && (host.offsetWidth > 0 || host.offsetHeight > 0));
 }
 
+function requestFrame(callback) {
+  if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+    return window.requestAnimationFrame(callback);
+  }
+
+  callback();
+  return null;
+}
+
+function cancelFrame(frameId) {
+  if (
+    frameId !== null &&
+    typeof window !== "undefined" &&
+    typeof window.cancelAnimationFrame === "function"
+  ) {
+    window.cancelAnimationFrame(frameId);
+  }
+}
+
+function getFiniteRange(values) {
+  let min = Infinity;
+  let max = -Infinity;
+  let hasValue = false;
+
+  for (const value of values) {
+    if (!Number.isFinite(value)) {
+      continue;
+    }
+
+    hasValue = true;
+    if (value < min) {
+      min = value;
+    }
+    if (value > max) {
+      max = value;
+    }
+  }
+
+  return hasValue ? { hasValue, min, max } : { hasValue, min: 0, max: 1 };
+}
+
+function getVisibleSeriesRange(seriesDefs, valuesMap, visibleMap) {
+  let pointCount = 0;
+  let min = Infinity;
+  let max = -Infinity;
+  let hasValue = false;
+
+  for (const def of seriesDefs) {
+    const values = valuesMap[def.key] ?? [];
+    pointCount = Math.max(pointCount, values.length);
+
+    if (!visibleMap[def.key]) {
+      continue;
+    }
+
+    for (const value of values) {
+      if (!Number.isFinite(value)) {
+        continue;
+      }
+
+      hasValue = true;
+      if (value < min) {
+        min = value;
+      }
+      if (value > max) {
+        max = value;
+      }
+    }
+  }
+
+  return {
+    pointCount,
+    hasValue,
+    min: hasValue ? min : 0,
+    max: hasValue ? max : 1,
+  };
+}
+
+function getIndexCategories(instance, count) {
+  if (instance.categoryCacheCount !== count) {
+    instance.categoryCacheCount = count;
+    instance.categoryCache = Array.from({ length: count }, (_, index) => String(index + 1));
+  }
+
+  return instance.categoryCache;
+}
+
 function initChartMixin(instance) {
   instance.chart = null;
   instance.pendingRender = false;
+  instance.renderFrameId = null;
+  instance.categoryCache = [];
+  instance.categoryCacheCount = -1;
 
   instance.ensureChart = function ensureChart() {
     if (!this.host) {
@@ -44,6 +149,17 @@ function initChartMixin(instance) {
     this.render();
   };
 
+  instance.scheduleRender = function scheduleRender() {
+    if (this.renderFrameId !== null) {
+      return;
+    }
+
+    this.renderFrameId = requestFrame(() => {
+      this.renderFrameId = null;
+      this.render();
+    });
+  };
+
   instance.resize = function resize() {
     if (!this.ensureChart()) {
       this.pendingRender = true;
@@ -55,11 +171,14 @@ function initChartMixin(instance) {
   };
 
   instance.dispose = function dispose() {
+    cancelFrame(this.renderFrameId);
+    this.renderFrameId = null;
     if (this.chart) {
       this.chart.dispose();
       this.chart = null;
     }
     this.pendingRender = false;
+    this.zoomListenerBound = false;
   };
 }
 
@@ -80,7 +199,7 @@ export class EchartsLiveChart {
     this.followLatest = true;
     this.zoomStartValue = null;
     this.zoomEndValue = null;
-    this.render();
+    this.scheduleRender();
   }
 
   add(value) {
@@ -92,7 +211,7 @@ export class EchartsLiveChart {
         this.zoomEndValue = Math.max(0, this.zoomEndValue - 1);
       }
     }
-    this.render();
+    this.scheduleRender();
   }
 
   setPoints(values) {
@@ -100,7 +219,11 @@ export class EchartsLiveChart {
     this.followLatest = true;
     this.zoomStartValue = null;
     this.zoomEndValue = null;
-    this.render();
+    this.scheduleRender();
+  }
+
+  getPoints() {
+    return [...this.values];
   }
 
   setMaxPoints(maxPoints) {
@@ -113,7 +236,7 @@ export class EchartsLiveChart {
     if (this.values.length > this.maxPoints) {
       this.values = this.values.slice(-this.maxPoints);
     }
-    this.render();
+    this.scheduleRender();
   }
 
   setVisiblePoints(visiblePoints) {
@@ -126,7 +249,7 @@ export class EchartsLiveChart {
     this.followLatest = true;
     this.zoomStartValue = null;
     this.zoomEndValue = null;
-    this.render();
+    this.scheduleRender();
   }
 
   clear() {
@@ -134,7 +257,7 @@ export class EchartsLiveChart {
     this.followLatest = true;
     this.zoomStartValue = null;
     this.zoomEndValue = null;
-    this.render();
+    this.scheduleRender();
   }
 
   setRange(min, max) {
@@ -145,7 +268,7 @@ export class EchartsLiveChart {
       this.fixedMin = null;
       this.fixedMax = null;
     }
-    this.render();
+    this.scheduleRender();
   }
 
   setMeta({ title, unit }) {
@@ -155,7 +278,7 @@ export class EchartsLiveChart {
     if (unit !== undefined) {
       this.unit = unit;
     }
-    this.render();
+    this.scheduleRender();
   }
 
   render() {
@@ -170,8 +293,7 @@ export class EchartsLiveChart {
       this.zoomListenerBound = true;
     }
 
-    const computedMin = this.values.length ? Math.min(...this.values) : 0;
-    const computedMax = this.values.length ? Math.max(...this.values) : 1;
+    const { hasValue, min: computedMin, max: computedMax } = getFiniteRange(this.values);
     let yMin = this.fixedMin ?? computedMin;
     let yMax = this.fixedMax ?? computedMax;
 
@@ -180,8 +302,8 @@ export class EchartsLiveChart {
       yMax += 1;
     }
 
-    const categories = this.values.map((_, index) => String(index + 1));
-    const hasData = this.values.length > 0;
+    const categories = getIndexCategories(this, this.values.length);
+    const hasData = this.values.length > 0 && hasValue;
     const visiblePoints = Math.max(1, Math.min(this.visiblePoints, this.values.length || this.visiblePoints));
     const hasZoom = hasData && this.values.length > visiblePoints;
     const endValue = this.followLatest || this.zoomEndValue === null
@@ -278,10 +400,13 @@ export class EchartsLiveChart {
             data: this.values,
             lineStyle: { color: this.color, width: 2.5 },
             areaStyle: { color: this.areaColor },
+            sampling: this.values.length > 1000 ? "lttb" : undefined,
+            progressive: 2000,
+            progressiveThreshold: 3000,
           },
         ],
       },
-      true,
+      ECHARTS_SET_OPTION_FLAGS,
     );
   }
 
@@ -322,7 +447,7 @@ export class EchartsMultiLiveChart {
     this.followLatest = true;
     this.zoomStartValue = null;
     this.zoomEndValue = null;
-    this.render();
+    this.scheduleRender();
   }
 
   setSeriesVisible(key, visible) {
@@ -331,7 +456,7 @@ export class EchartsMultiLiveChart {
     }
 
     this.visible[key] = Boolean(visible);
-    this.render();
+    this.scheduleRender();
   }
 
   setVisibleMap(visibleMap = {}) {
@@ -340,7 +465,7 @@ export class EchartsMultiLiveChart {
         this.visible[def.key] = Boolean(visibleMap[def.key]);
       }
     }
-    this.render();
+    this.scheduleRender();
   }
 
   addSample(sample = {}) {
@@ -351,7 +476,31 @@ export class EchartsMultiLiveChart {
         this.values[def.key].shift();
       }
     }
-    this.render();
+    this.scheduleRender();
+  }
+
+  getSeriesDefs() {
+    return this.seriesDefs.map((def) => ({
+      ...def,
+      visible: this.visible[def.key] !== false,
+    }));
+  }
+
+  getSeriesValues() {
+    return Object.fromEntries(
+      this.seriesDefs.map((def) => [def.key, [...(this.values[def.key] ?? [])]]),
+    );
+  }
+
+  setSeriesData(seriesData = {}) {
+    for (const def of this.seriesDefs) {
+      const values = Array.isArray(seriesData[def.key]) ? seriesData[def.key] : [];
+      this.values[def.key] = values.map((value) => finiteOrNull(value));
+    }
+    this.followLatest = true;
+    this.zoomStartValue = null;
+    this.zoomEndValue = null;
+    this.scheduleRender();
   }
 
   setMaxPoints(maxPoints) {
@@ -366,7 +515,7 @@ export class EchartsMultiLiveChart {
         this.values[def.key] = this.values[def.key].slice(-this.maxPoints);
       }
     }
-    this.render();
+    this.scheduleRender();
   }
 
   setVisiblePoints(visiblePoints) {
@@ -379,7 +528,7 @@ export class EchartsMultiLiveChart {
     this.followLatest = true;
     this.zoomStartValue = null;
     this.zoomEndValue = null;
-    this.render();
+    this.scheduleRender();
   }
 
   clear() {
@@ -389,14 +538,14 @@ export class EchartsMultiLiveChart {
     this.followLatest = true;
     this.zoomStartValue = null;
     this.zoomEndValue = null;
-    this.render();
+    this.scheduleRender();
   }
 
   setMeta({ title }) {
     if (title !== undefined) {
       this.title = title;
     }
-    this.render();
+    this.scheduleRender();
   }
 
   render() {
@@ -412,13 +561,13 @@ export class EchartsMultiLiveChart {
     }
 
     const activeSeries = this.seriesDefs.filter((def) => this.visible[def.key]);
-    const pointCount = Math.max(0, ...this.seriesDefs.map((def) => this.values[def.key].length));
-    const categories = Array.from({ length: pointCount }, (_, index) => String(index + 1));
-    const numericValues = activeSeries.flatMap((def) =>
-      this.values[def.key].filter((value) => Number.isFinite(value)),
-    );
-    const computedMin = numericValues.length ? Math.min(...numericValues) : 0;
-    const computedMax = numericValues.length ? Math.max(...numericValues) : 1;
+    const {
+      pointCount,
+      hasValue,
+      min: computedMin,
+      max: computedMax,
+    } = getVisibleSeriesRange(this.seriesDefs, this.values, this.visible);
+    const categories = getIndexCategories(this, pointCount);
     let yMin = computedMin;
     let yMax = computedMax;
 
@@ -427,7 +576,7 @@ export class EchartsMultiLiveChart {
       yMax += 1;
     }
 
-    const hasData = pointCount > 0 && numericValues.length > 0;
+    const hasData = pointCount > 0 && hasValue;
     const visiblePoints = Math.max(1, Math.min(this.visiblePoints, pointCount || this.visiblePoints));
     const hasZoom = hasData && pointCount > visiblePoints;
     const endValue = this.followLatest || this.zoomEndValue === null ? pointCount - 1 : Math.min(pointCount - 1, this.zoomEndValue);
@@ -522,9 +671,12 @@ export class EchartsMultiLiveChart {
             itemStyle: { color: def.color },
             areaStyle: def.areaColor ? { color: def.areaColor } : undefined,
             connectNulls: false,
+            sampling: pointCount > 1000 ? "lttb" : undefined,
+            progressive: 2000,
+            progressiveThreshold: 3000,
           })),
       },
-      true,
+      ECHARTS_SET_OPTION_FLAGS,
     );
   }
 

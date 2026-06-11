@@ -40,7 +40,7 @@ index.html
 pages/
   home.html / request.html
   devices/aomaster.html · modbus.html · hart.html · websocket.html · mqtt.html · custom.html
-  shared/workbench.html（监测面板 + 收发调试）
+  shared/workbench.html（监测面板 + 收发调试 + 曲线配置折叠区）
 
 src/page-loader.js
   启动时 fetch 并注入上述 HTML 片段
@@ -81,14 +81,38 @@ src/devices/modbus-device.js
 src/devices/hart-device.js
   HART profile、搜索/轮询命令、PV/SV/TV/QV 解析
 
+src/devices/json-curve-config.js
+  JSON 多曲线槽位（4 槽）、路径解析、normalize / list / remove 共享逻辑
+
+src/devices/binary-curve-config.js
+  HEX / Modbus 多曲线槽位、按偏移解码、removeMultiCurveSlot
+
+src/debug-curve-form.js
+  监测面板 MQTT/WebSocket 二进制曲线表单读写与模式切换
+
+src/devices/message-parser.js
+  MQTT / WebSocket 共享解析入口：JSON·HEX·Modbus 多曲线
+
+src/framing/frame-parser.js
+  行界缓冲、HEX 帧头帧尾切帧、字节流 append
+
+src/utils/bytes.js
+  字节拼接、HEX/文本载荷归一、ASCII 预览
+
+src/chart-curve-panel.js
+  监测面板「曲线配置」折叠区：按设备显示 section、协议说明弹窗
+
+src/chart-curve-help.js
+  各设备曲线 / 协议帮助 HTML
+
 src/devices/websocket-device.js
-  WebSocket 调试 profile、心跳命令、JSON/文本遥测解析
+  WebSocket 调试 profile、心跳命令、JSON/HEX/Modbus 遥测解析
 
 src/devices/mqtt-device.js
-  MQTT 调试 profile、快捷发布、QoS/retain 配置、JSON/文本遥测解析
+  MQTT 调试 profile、快捷发布、QoS/retain 配置、JSON/HEX/Modbus 遥测解析
 
 src/devices/custom-device.js
-  自定义设备配置、模板发送、正则/自动数值解析
+  自定义设备配置、模板发送、行界/帧头帧尾/正则/HEX 解析
 
 images/
   设备图标：AOMaster.png · hart.png · websocket.png · mqtt.png · modusignal-logo.svg
@@ -226,6 +250,21 @@ export const MY_DEVICE_MQTT_TRANSPORT_DEFAULTS = {
 - Web Serial 需 HTTPS 或 localhost（`requiresSecureContext: true`）。
 - WebSocket / MQTT 远程 `ws://` 在 HTTPS 页面可能被浏览器拦截；UI 会提示，但不硬拦截；本地 `127.0.0.1` 通常可用。
 - 收发调试区 `buildManualPayload()` 支持 `ascii` / `json` / `hex`；JSON 校验后作为字符串发送。
+
+## 曲线配置与协议解析
+
+监测面板 `pages/shared/workbench.html` 中的 `#chartCurveConfigBlock` 集中管理各设备曲线相关 UI（HART 变量勾选、MQTT/WebSocket JSON 多曲线与解析模式、协议说明弹窗）。设备页只保留连接/轮询/收发调试配置。
+
+解析分层：
+
+| 层级 | 模块 | 职责 |
+| --- | --- | --- |
+| 帧界 | `src/framing/frame-parser.js` | CRLF/LF 行缓冲；HEX 帧头/帧尾切帧 |
+| 载荷 | `src/utils/bytes.js` | 文本/HEX/二进制归一为 `Uint8Array` |
+| 协议 | `src/devices/message-parser.js` | MQTT/WS 共享 JSON·HEX·Modbus 解析 |
+| 设备 | 各 `*-device.js` | 设备专属 normalize、命令、summary |
+
+Modbus RTU 与自定义帧头帧尾在连接期间维护 rx buffer；连接/断开时 `reset*RxBuffer()` 清空。
 
 ## 注意事项
 

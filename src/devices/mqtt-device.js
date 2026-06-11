@@ -1,3 +1,27 @@
+import {
+  DEFAULT_BINARY_MULTI_FIELDS,
+  listHexChartSeries,
+  listModbusChartSeries,
+  normalizeBinaryCurveConfig,
+} from "./binary-curve-config.js";
+import {
+  buildDebugMessage,
+  createDebugFramingState,
+  createModbusRxBuffer,
+  describeDebugParserSummary,
+  normalizeMessageFormat,
+  normalizeParserMode,
+  parseDebugTelemetry,
+  resetDebugFramingState,
+  resetModbusRxBuffer,
+} from "./message-parser.js";
+import { normalizeFramingConfig } from "../framing/framing-rx.js";
+import {
+  DEFAULT_JSON_CURVE_CONFIG,
+  listJsonChartSeries,
+  normalizeJsonCurveConfig,
+} from "./json-curve-config.js";
+
 export const MQTT_DEVICE_ID = "mqtt";
 
 export const MQTT_DEVICE_TRANSPORT_DEFAULTS = {
@@ -25,9 +49,9 @@ export const DEFAULT_MQTT_CONFIG = {
   pollIntervalMs: 0,
   heartbeatFormat: "json",
   heartbeatMessage: '{"type":"ping"}',
-  parserFieldPath: "value",
-  fieldName: "数值",
-  unit: "",
+  parserMode: "json",
+  ...DEFAULT_JSON_CURVE_CONFIG,
+  ...DEFAULT_BINARY_MULTI_FIELDS,
   publishTopic: "",
   publishQos: 0,
   publishRetain: false,
@@ -42,49 +66,44 @@ export const MQTT_PROFILE = {
   image: "./images/mqtt.png",
 };
 
+const mqttModbusBuffer = createModbusRxBuffer();
+let mqttFramingState = createDebugFramingState(DEFAULT_MQTT_CONFIG);
+
 export function normalizeMqttConfig(config = {}) {
   const merged = {
     ...DEFAULT_MQTT_CONFIG,
     ...config,
   };
 
+  const parserMode = normalizeParserMode(merged.parserMode === "mqtt" ? "json" : merged.parserMode);
+
   return {
     pollIntervalMs: Math.max(0, Math.trunc(toFiniteNumber(merged.pollIntervalMs, DEFAULT_MQTT_CONFIG.pollIntervalMs))),
     heartbeatFormat: normalizeMessageFormat(merged.heartbeatFormat),
     heartbeatMessage: String(merged.heartbeatMessage ?? DEFAULT_MQTT_CONFIG.heartbeatMessage),
-    parserFieldPath: String(merged.parserFieldPath ?? "").trim(),
-    fieldName: String(merged.fieldName || DEFAULT_MQTT_CONFIG.fieldName),
-    unit: String(merged.unit ?? ""),
+    parserMode,
     publishTopic: String(merged.publishTopic ?? "").trim(),
     publishQos: clampQos(merged.publishQos),
     publishRetain: Boolean(merged.publishRetain),
+    ...normalizeJsonCurveConfig(merged, DEFAULT_MQTT_CONFIG),
+    ...normalizeBinaryCurveConfig(merged, DEFAULT_MQTT_CONFIG),
+    ...normalizeFramingConfig(merged, parserMode),
   };
 }
 
+export function listMqttChartSeries(config = {}) {
+  const normalized = normalizeMqttConfig(config);
+  if (normalized.parserMode === "hex") {
+    return listHexChartSeries(normalized, DEFAULT_MQTT_CONFIG);
+  }
+  if (normalized.parserMode === "modbus") {
+    return listModbusChartSeries(normalized, DEFAULT_MQTT_CONFIG);
+  }
+  return listJsonChartSeries(normalized, DEFAULT_MQTT_CONFIG);
+}
+
 export function buildMqttMessage(format, message, helpers) {
-  const normalizedFormat = normalizeMessageFormat(format);
-  const content = String(message ?? "");
-
-  if (normalizedFormat === "hex") {
-    return helpers.parseHexPayload(content);
-  }
-
-  if (normalizedFormat === "json") {
-    const trimmed = content.trim();
-    if (!trimmed) {
-      throw new Error("JSON 消息不能为空");
-    }
-
-    try {
-      JSON.parse(trimmed);
-    } catch (error) {
-      throw new Error(`JSON 格式无效：${error.message}`);
-    }
-
-    return trimmed;
-  }
-
-  return content;
+  return buildDebugMessage(format, message, helpers);
 }
 
 export function createMqttSetOutputCommand(_state, config, helpers) {
@@ -116,39 +135,18 @@ export function createMqttSetOutputCommand(_state, config, helpers) {
   }
 }
 
-export function parseMqttTelemetry(text, config, parseNumericTelemetry) {
-  const normalized = normalizeMqttConfig(config);
-  const trimmed = String(text || "").trim();
+export function parseMqttTelemetry(text, bytes, config, parseNumericTelemetry, helpers = {}) {
+  return parseDebugTelemetry(text, bytes, normalizeMqttConfig(config), parseNumericTelemetry, {
+    jsonDefaults: DEFAULT_MQTT_CONFIG,
+    modbusBuffer: mqttModbusBuffer,
+    framingState: mqttFramingState,
+    parseHexPayload: helpers.parseHexPayload,
+  });
+}
 
-  if (!trimmed) {
-    return null;
-  }
-
-  let rawValue = null;
-
-  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
-    try {
-      const parsed = JSON.parse(trimmed);
-      rawValue = extractJsonValue(parsed, normalized.parserFieldPath);
-    } catch {
-      rawValue = null;
-    }
-  }
-
-  if (!Number.isFinite(rawValue)) {
-    rawValue = parseNumericTelemetry(trimmed);
-  }
-
-  if (!Number.isFinite(rawValue)) {
-    return null;
-  }
-
-  return {
-    fieldName: normalized.fieldName,
-    unit: normalized.unit,
-    value: rawValue,
-    rawValue,
-  };
+export function resetMqttRxBuffer() {
+  resetModbusRxBuffer(mqttModbusBuffer);
+  mqttFramingState = resetDebugFramingState(mqttFramingState, DEFAULT_MQTT_CONFIG);
 }
 
 export function describeMqttSummary(config) {
@@ -156,7 +154,7 @@ export function describeMqttSummary(config) {
   const interval = normalized.pollIntervalMs > 0 ? `${normalized.pollIntervalMs} ms 轮询` : "手动收发";
   const topic = normalized.publishTopic || "侧栏发布主题";
   const qosLabel = normalized.publishRetain ? `QoS ${normalized.publishQos} · 保留` : `QoS ${normalized.publishQos}`;
-  return `MQTT 调试；${interval}；发布 ${topic}（${qosLabel}）；解析 ${normalized.parserFieldPath || "自动数字"}`;
+  return `MQTT 调试；${interval}；发布 ${topic}（${qosLabel}）；解析 ${describeDebugParserSummary(normalized, DEFAULT_MQTT_CONFIG, "MQTT")}`;
 }
 
 export function getMqttPublishOptions(config, transportPublishTopic = "") {
@@ -170,62 +168,8 @@ export function getMqttPublishOptions(config, transportPublishTopic = "") {
   };
 }
 
-function extractJsonValue(source, path) {
-  if (!path) {
-    return findFirstNumber(source);
-  }
-
-  let current = source;
-  for (const segment of path.split(".")) {
-    if (current == null || segment === "") {
-      return null;
-    }
-
-    if (Array.isArray(current) && /^\d+$/.test(segment)) {
-      current = current[Number(segment)];
-      continue;
-    }
-
-    if (typeof current === "object") {
-      current = current[segment];
-      continue;
-    }
-
-    return null;
-  }
-
-  return toFiniteNumber(current, null);
-}
-
-function findFirstNumber(value) {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const found = findFirstNumber(item);
-      if (Number.isFinite(found)) {
-        return found;
-      }
-    }
-    return null;
-  }
-
-  if (value && typeof value === "object") {
-    for (const key of Object.keys(value)) {
-      const found = findFirstNumber(value[key]);
-      if (Number.isFinite(found)) {
-        return found;
-      }
-    }
-  }
-
-  return null;
-}
-
-function normalizeMessageFormat(value) {
-  return value === "hex" || value === "ascii" ? value : "json";
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
 }
 
 function clampQos(value) {

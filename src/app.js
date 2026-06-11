@@ -24,10 +24,13 @@ import {
 } from "./devices/aomaster.js";
 import {
   CUSTOM_TRANSPORT_DEFAULTS,
+  listCustomChartSeries,
+  resetCustomRxBuffer,
 } from "./devices/custom-device.js";
 import {
   describeModbusSummary,
   getModbusMode,
+  listModbusDeviceChartSeries,
   MODBUS_WEBSOCKET_TRANSPORT_DEFAULTS,
   MODBUS_TRANSPORT_DEFAULTS,
   resetModbusRxBuffer,
@@ -52,15 +55,38 @@ import {
   buildMqttMessage,
   describeMqttSummary,
   getMqttPublishOptions,
+  listMqttChartSeries,
   MQTT_DEVICE_TRANSPORT_DEFAULTS,
   MQTT_QUICK_MESSAGES,
+  resetMqttRxBuffer,
 } from "./devices/mqtt-device.js";
 import {
   buildWebSocketMessage,
   describeWebSocketSummary,
+  listWebSocketChartSeries,
+  resetWebSocketRxBuffer,
   WEBSOCKET_QUICK_MESSAGES,
   WEBSOCKET_TRANSPORT_DEFAULTS,
 } from "./devices/websocket-device.js";
+import {
+  initChartCurvePanel,
+  requestChartCurvePanelResize,
+  updateChartCurvePanel,
+} from "./chart-curve-panel.js";
+import { removeMultiCurveSlot } from "./devices/binary-curve-config.js";
+import { describeJsonCurveSummary, JSON_CURVE_SLOTS } from "./devices/json-curve-config.js";
+import {
+  listBinaryCurveControlElements,
+  populateBinaryCurveFormValues,
+  listDebugCurveControlElements,
+  populateDebugCurveConfigForm,
+  populateFramingFormValues,
+  readBinaryCurveFormValues,
+  readDebugCurveConfigForm,
+  readFramingFormValues,
+  registerDebugCurveFormElements,
+  syncDebugCurveModeFields,
+} from "./debug-curve-form.js";
 import { isReadFunctionCode } from "./modbus/modbus.js";
 import {
   buildManualPayload,
@@ -210,15 +236,6 @@ function cacheElements() {
     customCommandFormat: document.querySelector("#customCommandFormat"),
     customCommandLineEnding: document.querySelector("#customCommandLineEnding"),
     customCommandTemplate: document.querySelector("#customCommandTemplate"),
-    customParserType: document.querySelector("#customParserType"),
-    customParserFieldName: document.querySelector("#customParserFieldName"),
-    customParserUnit: document.querySelector("#customParserUnit"),
-    customParserGroup: document.querySelector("#customParserGroup"),
-    customParserRegex: document.querySelector("#customParserRegex"),
-    customParserScale: document.querySelector("#customParserScale"),
-    customParserOffset: document.querySelector("#customParserOffset"),
-    customParserSample: document.querySelector("#customParserSample"),
-    customParserPreview: document.querySelector("#customParserPreview"),
     saveCustomConfig: document.querySelector("#saveCustomConfig"),
     resetCustomConfig: document.querySelector("#resetCustomConfig"),
     testCustomParser: document.querySelector("#testCustomParser"),
@@ -226,15 +243,10 @@ function cacheElements() {
     modbusFunctionCode: document.querySelector("#modbusFunctionCode"),
     modbusAddress: document.querySelector("#modbusAddress"),
     modbusQuantity: document.querySelector("#modbusQuantity"),
-    modbusDataType: document.querySelector("#modbusDataType"),
-    modbusByteOrder: document.querySelector("#modbusByteOrder"),
-    modbusScale: document.querySelector("#modbusScale"),
-    modbusOffset: document.querySelector("#modbusOffset"),
-    modbusFieldName: document.querySelector("#modbusFieldName"),
-    modbusUnit: document.querySelector("#modbusUnit"),
     modbusPollIntervalMs: document.querySelector("#modbusPollIntervalMs"),
     saveModbusConfig: document.querySelector("#saveModbusConfig"),
     resetModbusConfig: document.querySelector("#resetModbusConfig"),
+    testModbusParser: document.querySelector("#testModbusParser"),
     hartPollAddress: document.querySelector("#hartPollAddress"),
     hartMasterType: document.querySelector("#hartMasterType"),
     hartCommand: document.querySelector("#hartCommand"),
@@ -261,7 +273,22 @@ function cacheElements() {
     websocketPollIntervalMs: document.querySelector("#websocketPollIntervalMs"),
     websocketHeartbeatFormat: document.querySelector("#websocketHeartbeatFormat"),
     websocketHeartbeatMessage: document.querySelector("#websocketHeartbeatMessage"),
+    websocketParserMode: document.querySelector("#websocketParserMode"),
+    websocketCurve1Enabled: document.querySelector("#websocketCurve1Enabled"),
     websocketParserFieldPath: document.querySelector("#websocketParserFieldPath"),
+    websocketCurve2Enabled: document.querySelector("#websocketCurve2Enabled"),
+    websocketCurve2FieldName: document.querySelector("#websocketCurve2FieldName"),
+    websocketCurve2FieldPath: document.querySelector("#websocketCurve2FieldPath"),
+    websocketCurve2Unit: document.querySelector("#websocketCurve2Unit"),
+    websocketCurve3Enabled: document.querySelector("#websocketCurve3Enabled"),
+    websocketCurve3FieldName: document.querySelector("#websocketCurve3FieldName"),
+    websocketCurve3FieldPath: document.querySelector("#websocketCurve3FieldPath"),
+    websocketCurve3Unit: document.querySelector("#websocketCurve3Unit"),
+    websocketCurve4Enabled: document.querySelector("#websocketCurve4Enabled"),
+    websocketCurve4FieldName: document.querySelector("#websocketCurve4FieldName"),
+    websocketCurve4FieldPath: document.querySelector("#websocketCurve4FieldPath"),
+    websocketCurve4Unit: document.querySelector("#websocketCurve4Unit"),
+    websocketAddCurve: document.querySelector("#websocketAddCurve"),
     websocketFieldName: document.querySelector("#websocketFieldName"),
     websocketUnit: document.querySelector("#websocketUnit"),
     wsQuickSendGrid: document.querySelector("#wsQuickSendGrid"),
@@ -278,7 +305,22 @@ function cacheElements() {
     mqttPollIntervalMs: document.querySelector("#mqttPollIntervalMs"),
     mqttHeartbeatFormat: document.querySelector("#mqttHeartbeatFormat"),
     mqttHeartbeatMessage: document.querySelector("#mqttHeartbeatMessage"),
+    mqttParserMode: document.querySelector("#mqttParserMode"),
+    mqttCurve1Enabled: document.querySelector("#mqttCurve1Enabled"),
     mqttParserFieldPath: document.querySelector("#mqttParserFieldPath"),
+    mqttCurve2Enabled: document.querySelector("#mqttCurve2Enabled"),
+    mqttCurve2FieldName: document.querySelector("#mqttCurve2FieldName"),
+    mqttCurve2FieldPath: document.querySelector("#mqttCurve2FieldPath"),
+    mqttCurve2Unit: document.querySelector("#mqttCurve2Unit"),
+    mqttCurve3Enabled: document.querySelector("#mqttCurve3Enabled"),
+    mqttCurve3FieldName: document.querySelector("#mqttCurve3FieldName"),
+    mqttCurve3FieldPath: document.querySelector("#mqttCurve3FieldPath"),
+    mqttCurve3Unit: document.querySelector("#mqttCurve3Unit"),
+    mqttCurve4Enabled: document.querySelector("#mqttCurve4Enabled"),
+    mqttCurve4FieldName: document.querySelector("#mqttCurve4FieldName"),
+    mqttCurve4FieldPath: document.querySelector("#mqttCurve4FieldPath"),
+    mqttCurve4Unit: document.querySelector("#mqttCurve4Unit"),
+    mqttAddCurve: document.querySelector("#mqttAddCurve"),
     mqttFieldName: document.querySelector("#mqttFieldName"),
     mqttUnit: document.querySelector("#mqttUnit"),
     mqttPublishTopic: document.querySelector("#mqttPublishTopic"),
@@ -300,6 +342,21 @@ function cacheElements() {
     resetMqttConfig: document.querySelector("#resetMqttConfig"),
     telemetryChart: document.querySelector("#telemetryChart"),
     chartValue: document.querySelector("#chartValue"),
+    chartCurveConfigBlock: document.querySelector("#chartCurveConfigBlock"),
+    chartCurveConfigToggle: document.querySelector("#chartCurveConfigToggle"),
+    chartCurveConfigBody: document.querySelector("#chartCurveConfigBody"),
+    chartCurveConfigSummary: document.querySelector("#chartCurveConfigSummary"),
+    chartCurveHelpButton: document.querySelector("#chartCurveHelpButton"),
+    chartCurveHelpDialog: document.querySelector("#chartCurveHelpDialog"),
+    chartCurveHelpTitle: document.querySelector("#chartCurveHelpTitle"),
+    chartCurveHelpContent: document.querySelector("#chartCurveHelpContent"),
+    chartCurveHelpClose: document.querySelector("#chartCurveHelpClose"),
+    chartCurveAomasterSection: document.querySelector("#chartCurveAomasterSection"),
+    chartCurveModbusSection: document.querySelector("#chartCurveModbusSection"),
+    chartCurveHartSection: document.querySelector("#chartCurveHartSection"),
+    chartCurveCustomSection: document.querySelector("#chartCurveCustomSection"),
+    chartCurveWebsocketSection: document.querySelector("#chartCurveWebsocketSection"),
+    chartCurveMqttSection: document.querySelector("#chartCurveMqttSection"),
     chartPanelSummary: document.querySelector("#chartPanelSummary"),
     singleChartBlock: document.querySelector("#singleChartBlock"),
     dualChartBlock: document.querySelector("#dualChartBlock"),
@@ -312,6 +369,9 @@ function cacheElements() {
     visibleChartPointCount: document.querySelector("#visibleChartPointCount"),
     saveChartConfig: document.querySelector("#saveChartConfig"),
     resetChartConfig: document.querySelector("#resetChartConfig"),
+    exportChartCsv: document.querySelector("#exportChartCsv"),
+    loadChartCsv: document.querySelector("#loadChartCsv"),
+    loadChartCsvInput: document.querySelector("#loadChartCsvInput"),
     singleChartPointCount: document.querySelector("#singleChartPointCount"),
     singleChartVisiblePointCount: document.querySelector("#singleChartVisiblePointCount"),
     dualChartPointCount: document.querySelector("#dualChartPointCount"),
@@ -325,10 +385,15 @@ function cacheElements() {
     pollState: document.querySelector("#pollState"),
     togglePolling: document.querySelector("#togglePolling"),
   });
+  registerDebugCurveFormElements("mqtt", elements);
+  registerDebugCurveFormElements("websocket", elements);
+  registerDebugCurveFormElements("custom", elements);
+  registerDebugCurveFormElements("modbus", elements);
 }
 
 let chart = null;
 let hartChart = null;
+let jsonMultiChart = null;
 let setpointChart = null;
 let actualChart = null;
 let allCharts = [];
@@ -336,6 +401,7 @@ let chartsReady = false;
 let chartConfigEventsBound = false;
 let EchartsLiveChartClass = null;
 let EchartsMultiLiveChartClass = null;
+let jsonMultiChartSignature = "";
 let customConfig = loadCustomConfig();
 let modbusConfig = loadModbusConfig();
 let hartConfig = loadHartConfig();
@@ -355,6 +421,7 @@ let deviceLibrarySearchQuery = "";
 /** @type {Record<string, string | number>} */
 let transportOptions = {};
 const RX_LOG_IDLE_MS = 45;
+const CHART_CSV_FORMAT = "modusignal-chart-csv/v1";
 let rxLogFlushTimer = null;
 /** @type {Uint8Array | string | null} */
 let rxLogBuffer = null;
@@ -514,10 +581,116 @@ function buildHartChartSeriesDefs(config = hartConfig) {
   return HART_VARIABLE_CARDS.map((card) => ({
     key: card.key,
     name: card.label,
+    unit: card.defaultUnit,
     color: card.color,
     areaColor: `${card.color}1f`,
     visible: normalized.chartSeries[card.key],
   }));
+}
+
+function buildJsonMultiChartSeriesDefs(config, listSeriesFn) {
+  return listSeriesFn(config).map((series) => ({
+    key: series.key,
+    name: series.fieldName,
+    unit: series.unit,
+    color: series.color,
+    areaColor: `${series.color}1f`,
+    visible: true,
+  }));
+}
+
+function buildMqttChartSeriesDefs(config = mqttConfig) {
+  return buildJsonMultiChartSeriesDefs(config, listMqttChartSeries);
+}
+
+function buildWebsocketChartSeriesDefs(config = websocketConfig) {
+  return buildJsonMultiChartSeriesDefs(config, listWebSocketChartSeries);
+}
+
+function buildCustomChartSeriesDefs(config = customConfig) {
+  return buildJsonMultiChartSeriesDefs(config, listCustomChartSeries);
+}
+
+function buildModbusChartSeriesDefs(config = modbusConfig) {
+  return buildJsonMultiChartSeriesDefs(config, listModbusDeviceChartSeries);
+}
+
+function shouldUseMqttMultiChart(config = mqttConfig) {
+  return buildMqttChartSeriesDefs(config).length > 1;
+}
+
+function shouldUseWebsocketMultiChart(config = websocketConfig) {
+  return buildWebsocketChartSeriesDefs(config).length > 1;
+}
+
+function shouldUseCustomMultiChart(config = customConfig) {
+  return buildCustomChartSeriesDefs(config).length > 1;
+}
+
+function shouldUseModbusMultiChart(config = modbusConfig) {
+  return buildModbusChartSeriesDefs(config).length > 1;
+}
+
+function shouldUseJsonMultiChart() {
+  if (state.deviceId === MQTT_DEVICE_ID) {
+    return shouldUseMqttMultiChart();
+  }
+
+  if (state.deviceId === WEBSOCKET_DEVICE_ID) {
+    return shouldUseWebsocketMultiChart();
+  }
+
+  if (state.deviceId === CUSTOM_DEVICE_ID) {
+    return shouldUseCustomMultiChart();
+  }
+
+  if (state.deviceId === MODBUS_DEVICE_ID) {
+    return shouldUseModbusMultiChart();
+  }
+
+  return false;
+}
+
+function buildJsonMultiChartSignature(seriesDefs) {
+  return JSON.stringify(
+    seriesDefs.map((series) => ({
+      key: series.key,
+      name: series.name,
+      color: series.color,
+    })),
+  );
+}
+
+function getJsonMultiChartMeta() {
+  if (state.deviceId === WEBSOCKET_DEVICE_ID) {
+    return {
+      title: "WebSocket 多曲线",
+      emptyText: "连接设备并接收 WebSocket 消息后显示多曲线",
+      seriesDefs: buildWebsocketChartSeriesDefs(),
+    };
+  }
+
+  if (state.deviceId === CUSTOM_DEVICE_ID) {
+    return {
+      title: "串口多曲线",
+      emptyText: "连接设备并接收串口数据后显示多曲线",
+      seriesDefs: buildCustomChartSeriesDefs(),
+    };
+  }
+
+  if (state.deviceId === MODBUS_DEVICE_ID) {
+    return {
+      title: "Modbus 多曲线",
+      emptyText: "连接设备并开始轮询后显示多曲线",
+      seriesDefs: buildModbusChartSeriesDefs(),
+    };
+  }
+
+  return {
+    title: "MQTT 多曲线",
+    emptyText: "连接设备并接收 MQTT 消息后显示多曲线",
+    seriesDefs: buildMqttChartSeriesDefs(),
+  };
 }
 
 function ensureHartTelemetryChart() {
@@ -532,6 +705,9 @@ function ensureHartTelemetryChart() {
 
   chart?.dispose();
   chart = null;
+  jsonMultiChart?.dispose();
+  jsonMultiChart = null;
+  jsonMultiChartSignature = "";
 
   const chartPointSettings = getChartPointSettings();
   hartChart = new EchartsMultiLiveChartClass(elements.telemetryChart, {
@@ -542,6 +718,37 @@ function ensureHartTelemetryChart() {
     series: buildHartChartSeriesDefs(),
   });
   allCharts = [hartChart, setpointChart, actualChart].filter(Boolean);
+  applyChartPointCountConfig();
+}
+
+function ensureJsonMultiTelemetryChart() {
+  if (!chartsReady || !EchartsMultiLiveChartClass || !elements.telemetryChart) {
+    return;
+  }
+
+  const { title, emptyText, seriesDefs } = getJsonMultiChartMeta();
+  const nextSignature = buildJsonMultiChartSignature(seriesDefs);
+  if (jsonMultiChart && jsonMultiChartSignature === nextSignature) {
+    return;
+  }
+
+  chart?.dispose();
+  chart = null;
+  hartChart?.dispose();
+  hartChart = null;
+  jsonMultiChart?.dispose();
+  jsonMultiChart = null;
+
+  const chartPointSettings = getChartPointSettings();
+  jsonMultiChart = new EchartsMultiLiveChartClass(elements.telemetryChart, {
+    maxPoints: chartPointSettings.totalPointCount,
+    visiblePoints: chartPointSettings.visiblePointCount,
+    emptyText,
+    title,
+    series: seriesDefs,
+  });
+  jsonMultiChartSignature = nextSignature;
+  allCharts = [jsonMultiChart, setpointChart, actualChart].filter(Boolean);
   applyChartPointCountConfig();
 }
 
@@ -556,6 +763,9 @@ function ensureSingleTelemetryChart() {
 
   hartChart?.dispose();
   hartChart = null;
+  jsonMultiChart?.dispose();
+  jsonMultiChart = null;
+  jsonMultiChartSignature = "";
 
   const chartPointSettings = getChartPointSettings();
   chart = new EchartsLiveChartClass(elements.telemetryChart, {
@@ -658,6 +868,30 @@ function handleHartTelemetry(telemetry) {
   }
 }
 
+function handleJsonMultiTelemetry(telemetry) {
+  if (telemetry?.isMulti && telemetry.variables) {
+    ensureJsonMultiTelemetryChart();
+    const sample = Object.fromEntries(
+      Object.entries(telemetry.variables).map(([key, entry]) => [key, entry.value]),
+    );
+    jsonMultiChart?.addSample(sample);
+
+    if (elements.chartValue) {
+      elements.chartValue.textContent = Object.values(telemetry.variables)
+        .map((entry) => `${entry.fieldName} ${entry.value.toFixed(3)}${entry.unit ? ` ${entry.unit}` : ""}`)
+        .join(" · ");
+    }
+    return;
+  }
+
+  if (telemetry && Number.isFinite(telemetry.value)) {
+    chart?.add(telemetry.value);
+    if (elements.chartValue) {
+      elements.chartValue.textContent = `${telemetry.fieldName} ${telemetry.value.toFixed(3)}${telemetry.unit ? ` ${telemetry.unit}` : ""}`;
+    }
+  }
+}
+
 function handleHartChartSeriesChange(event) {
   const key = event.target.dataset.hartSeries;
   if (!key) {
@@ -672,6 +906,124 @@ function handleHartChartSeriesChange(event) {
     },
   });
   hartChart?.setSeriesVisible(key, event.target.checked);
+  syncChartCurvePanelUi();
+}
+
+function describeChartPanelSummary(totalPointCount, visiblePointCount) {
+  if (state.deviceId === DEFAULT_DEVICE_ID) {
+    return `ECharts 曲线预览设定波形，并跟踪轮询回读的实际输出；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`;
+  }
+
+  if (state.deviceId === HART_DEVICE_ID) {
+    return `HART PV/SV/TV/QV 卡片与多曲线同步显示；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`;
+  }
+
+  if (state.deviceId === MODBUS_DEVICE_ID) {
+    return shouldUseModbusMultiChart()
+      ? `Modbus 多曲线；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`
+      : `Modbus 读回包自动解析寄存器数值；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`;
+  }
+
+  if (state.deviceId === WEBSOCKET_DEVICE_ID) {
+    return shouldUseWebsocketMultiChart()
+      ? `WebSocket 多曲线（JSON / HEX / Modbus）；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`
+      : `WebSocket 回包自动解析 JSON、HEX 或 Modbus 数值；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`;
+  }
+
+  if (state.deviceId === MQTT_DEVICE_ID) {
+    return shouldUseMqttMultiChart()
+      ? `MQTT 多曲线（JSON / HEX / Modbus）；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`
+      : `MQTT 订阅消息自动解析数值；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`;
+  }
+
+  if (state.deviceId === CUSTOM_DEVICE_ID) {
+    return shouldUseCustomMultiChart()
+      ? `自定义串口多曲线（JSON / HEX / Modbus）；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`
+      : `自定义串口回包自动解析数值；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`;
+  }
+
+  return `ECharts 曲线自动解析设备回读数值；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`;
+}
+
+function describeChartCurveConfigSummary() {
+  if (state.deviceId === DEFAULT_DEVICE_ID) {
+    return "双曲线 · 设定预览 + 实时输出";
+  }
+
+  if (state.deviceId === MODBUS_DEVICE_ID) {
+    const series = listModbusDeviceChartSeries(modbusConfig);
+    if (series.length > 1) {
+      return `${series.length} 条 Modbus 曲线`;
+    }
+    const normalized = normalizeModbusConfig(modbusConfig);
+    return `单曲线 · ${normalized.fieldName || "寄存器值"}`;
+  }
+
+  if (state.deviceId === HART_DEVICE_ID) {
+    const normalized = normalizeHartConfig(hartConfig);
+    const labels = HART_VARIABLE_CARDS.filter((card) => normalized.chartSeries[card.key]).map((card) => card.label);
+    return labels.length ? labels.join(" / ") : "未选择变量";
+  }
+
+  if (state.deviceId === CUSTOM_DEVICE_ID) {
+    const normalized = normalizeCustomConfig(customConfig);
+    const series = listCustomChartSeries(customConfig);
+    if (series.length > 1) {
+      const modeLabel = normalized.parserMode === "hex" ? "HEX" : normalized.parserMode === "modbus" ? "Modbus" : "JSON";
+      return `${series.length} 条 ${modeLabel} 曲线`;
+    }
+    if (normalized.parserMode === "hex") {
+      return "单曲线 · HEX 原始字节";
+    }
+    if (normalized.parserMode === "modbus") {
+      return "单曲线 · Modbus RTU 载荷";
+    }
+    return describeJsonCurveSummary(normalized, DEFAULT_CUSTOM_CONFIG);
+  }
+
+  if (state.deviceId === WEBSOCKET_DEVICE_ID) {
+    const normalized = normalizeWebSocketConfig(websocketConfig);
+    const series = listWebSocketChartSeries(websocketConfig);
+    if (series.length > 1) {
+      const modeLabel = normalized.parserMode === "hex" ? "HEX" : normalized.parserMode === "modbus" ? "Modbus" : "JSON";
+      return `${series.length} 条 ${modeLabel} 曲线`;
+    }
+    if (normalized.parserMode === "hex") {
+      return "单曲线 · HEX 原始字节";
+    }
+    if (normalized.parserMode === "modbus") {
+      return "单曲线 · Modbus RTU 载荷";
+    }
+    return describeJsonCurveSummary(normalized, DEFAULT_WEBSOCKET_CONFIG);
+  }
+
+  if (state.deviceId === MQTT_DEVICE_ID) {
+    const normalized = normalizeMqttConfig(mqttConfig);
+    const series = listMqttChartSeries(mqttConfig);
+    if (series.length > 1) {
+      const modeLabel = normalized.parserMode === "hex" ? "HEX" : normalized.parserMode === "modbus" ? "Modbus" : "JSON";
+      return `${series.length} 条 ${modeLabel} 曲线`;
+    }
+    if (normalized.parserMode === "hex") {
+      return "单曲线 · HEX 原始字节";
+    }
+    if (normalized.parserMode === "modbus") {
+      return "单曲线 · Modbus RTU 载荷";
+    }
+    return describeJsonCurveSummary(normalized, DEFAULT_MQTT_CONFIG);
+  }
+
+  return "单曲线";
+}
+
+function syncChartCurvePanelUi() {
+  updateChartCurvePanel({
+    elements,
+    deviceId: state.deviceId,
+    isDevicePage: isDevicePageActive(),
+    summary: describeChartCurveConfigSummary(),
+  });
+  requestChartCurvePanelResize();
 }
 
 function updateChartPointLabels() {
@@ -699,15 +1051,500 @@ function updateChartPointLabels() {
     elements.visibleChartPointCount.title = "当前窗口显示点数，曲线可左右滑动查看总点数历史";
   }
   if (elements.chartPanelSummary) {
-    elements.chartPanelSummary.textContent =
-      state.deviceId === DEFAULT_DEVICE_ID
-        ? `ECharts 曲线预览设定波形，并跟踪轮询回读的实际输出；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`
-        : `ECharts 曲线自动解析设备回读数值；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`;
+    elements.chartPanelSummary.textContent = describeChartPanelSummary(totalPointCount, visiblePointCount);
+  }
+}
+
+function getLastFiniteValue(values = []) {
+  for (let index = values.length - 1; index >= 0; index -= 1) {
+    const value = Number(values[index]);
+    if (Number.isFinite(value)) {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function getFiniteSeriesExtent(seriesGroups = []) {
+  let min = Infinity;
+  let max = -Infinity;
+  let hasValue = false;
+
+  seriesGroups.forEach((series) => {
+    (series ?? []).forEach((value) => {
+      const number = Number(value);
+      if (!Number.isFinite(number)) {
+        return;
+      }
+
+      hasValue = true;
+      if (number < min) {
+        min = number;
+      }
+      if (number > max) {
+        max = number;
+      }
+    });
+  });
+
+  return hasValue ? { min, max } : null;
+}
+
+function getSingleChartCsvSeriesMeta() {
+  if (state.deviceId === WEBSOCKET_DEVICE_ID) {
+    const normalized = normalizeWebSocketConfig(websocketConfig);
+    return {
+      key: "value",
+      name: normalized.fieldName || "value",
+      unit: normalized.unit || "",
+    };
+  }
+
+  if (state.deviceId === MQTT_DEVICE_ID) {
+    const normalized = normalizeMqttConfig(mqttConfig);
+    return {
+      key: "value",
+      name: normalized.fieldName || "value",
+      unit: normalized.unit || "",
+    };
+  }
+
+  const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
+  return {
+    key: "value",
+    name: config.fieldName || chart?.title || "value",
+    unit: config.unit || chart?.unit || "",
+  };
+}
+
+function resolveCurrentChartCsvTarget() {
+  if (state.deviceId === DEFAULT_DEVICE_ID) {
+    return {
+      kind: "dual",
+      title: "AOMaster 双曲线",
+      charts: {
+        setpoint: setpointChart,
+        actual: actualChart,
+      },
+      series: [
+        { key: "setpoint", name: "设定预览", unit: getAomasterDisplayUnit() },
+        { key: "actual", name: "实时输出", unit: getAomasterDisplayUnit() },
+      ],
+    };
+  }
+
+  if (state.deviceId === HART_DEVICE_ID) {
+    ensureHartTelemetryChart();
+    return {
+      kind: "multi",
+      title: "HART 变量曲线",
+      chart: hartChart,
+      series: hartChart?.getSeriesDefs?.() ?? buildHartChartSeriesDefs(),
+    };
+  }
+
+  if (shouldUseJsonMultiChart()) {
+    ensureJsonMultiTelemetryChart();
+    const meta = getJsonMultiChartMeta();
+    return {
+      kind: "multi",
+      title: meta.title,
+      chart: jsonMultiChart,
+      series: jsonMultiChart?.getSeriesDefs?.() ?? meta.seriesDefs,
+    };
+  }
+
+  ensureSingleTelemetryChart();
+  return {
+    kind: "single",
+    title: chart?.title || "实时曲线",
+    chart,
+    series: [getSingleChartCsvSeriesMeta()],
+  };
+}
+
+function buildChartCsvContextFromTarget(target) {
+  if (target.kind === "single") {
+    const [series] = target.series;
+    return {
+      kind: target.kind,
+      title: target.title,
+      series: [
+        {
+          ...series,
+          values: target.chart?.getPoints?.() ?? [],
+        },
+      ],
+    };
+  }
+
+  if (target.kind === "dual") {
+    return {
+      kind: target.kind,
+      title: target.title,
+      series: [
+        {
+          ...target.series[0],
+          values: target.charts.setpoint?.getPoints?.() ?? [],
+        },
+        {
+          ...target.series[1],
+          values: target.charts.actual?.getPoints?.() ?? [],
+        },
+      ],
+    };
+  }
+
+  const valuesMap = target.chart?.getSeriesValues?.() ?? {};
+  return {
+    kind: target.kind,
+    title: target.title,
+    series: target.series.map((series) => ({
+      ...series,
+      values: valuesMap[series.key] ?? [],
+    })),
+  };
+}
+
+function escapeCsvCell(value) {
+  const text = value == null ? "" : String(value);
+  if (/[",\n\r]/.test(text)) {
+    return `"${text.replace(/"/g, '""')}"`;
+  }
+  return text;
+}
+
+function buildChartCsvText(context) {
+  const pointCount = Math.max(0, ...context.series.map((series) => series.values.length));
+  const metadata = {
+    format: CHART_CSV_FORMAT,
+    deviceId: state.deviceId,
+    chartKind: context.kind,
+    title: context.title,
+    exportedAt: new Date().toISOString(),
+    series: context.series.map(({ key, name, unit }) => ({ key, name, unit })),
+  };
+  const lines = [
+    `# ${CHART_CSV_FORMAT}`,
+    `# ${JSON.stringify(metadata)}`,
+    ["index", ...context.series.map((series) => series.key)].map(escapeCsvCell).join(","),
+  ];
+
+  for (let rowIndex = 0; rowIndex < pointCount; rowIndex += 1) {
+    lines.push(
+      [
+        rowIndex + 1,
+        ...context.series.map((series) => {
+          const value = series.values[rowIndex];
+          return Number.isFinite(value) ? value : "";
+        }),
+      ]
+        .map(escapeCsvCell)
+        .join(","),
+    );
+  }
+
+  return { text: lines.join("\n"), pointCount };
+}
+
+function buildChartCsvFilename() {
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const deviceId = String(state.deviceId || "chart").replace(/[^a-z0-9_-]/gi, "-");
+  return `modusignal-${deviceId}-${stamp}.csv`;
+}
+
+function triggerChartCsvDownload(filename, text) {
+  const blob = new Blob([text], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function exportChartCsv() {
+  const target = resolveCurrentChartCsvTarget();
+  const context = buildChartCsvContextFromTarget(target);
+  const { text, pointCount } = buildChartCsvText(context);
+  triggerChartCsvDownload(buildChartCsvFilename(), text);
+  appendLog("info", "曲线", `CSV 已导出：${context.series.length} 条曲线，共 ${pointCount} 点`);
+}
+
+function parseCsvLine(line) {
+  const values = [];
+  let current = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < line.length; index += 1) {
+    const character = line[index];
+    if (character === '"') {
+      if (inQuotes && line[index + 1] === '"') {
+        current += '"';
+        index += 1;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (character === "," && !inQuotes) {
+      values.push(current);
+      current = "";
+      continue;
+    }
+
+    current += character;
+  }
+
+  values.push(current);
+  return values;
+}
+
+function parseChartCsvText(text) {
+  const normalized = String(text || "").replace(/^\uFEFF/, "");
+  const rows = [];
+  let metadata = null;
+
+  normalized.split(/\r?\n/).forEach((rawLine) => {
+    const line = rawLine.trimEnd();
+    if (!line.trim()) {
+      return;
+    }
+
+    if (line.startsWith("#")) {
+      const comment = line.slice(1).trim();
+      if (comment.startsWith("{")) {
+        try {
+          metadata = JSON.parse(comment);
+        } catch {
+          // Ignore non-JSON metadata comments.
+        }
+      }
+      return;
+    }
+
+    rows.push(parseCsvLine(line));
+  });
+
+  if (!rows.length || rows[0].length < 2) {
+    throw new Error("CSV 至少需要一列索引和一列数据");
+  }
+
+  const seriesKeys = rows[0]
+    .slice(1)
+    .map((key, index) => String(key || `series${index + 1}`).trim());
+  const seriesData = Object.fromEntries(seriesKeys.map((key) => [key, []]));
+
+  rows.slice(1).forEach((row) => {
+    if (row.every((cell) => !String(cell || "").trim())) {
+      return;
+    }
+
+    seriesKeys.forEach((key, index) => {
+      const cell = String(row[index + 1] ?? "").trim();
+      const value = cell === "" ? null : Number(cell);
+      seriesData[key].push(Number.isFinite(value) ? value : null);
+    });
+  });
+
+  return {
+    metadata,
+    seriesKeys,
+    seriesData,
+    pointCount: Math.max(0, ...Object.values(seriesData).map((values) => values.length)),
+  };
+}
+
+function ensureChartCapacityForImport(pointCount) {
+  const chartPointSettings = getChartPointSettings();
+  if (pointCount <= chartPointSettings.totalPointCount) {
+    return;
+  }
+
+  chartConfig = normalizeChartConfig({
+    ...chartConfig,
+    chartPointCount: pointCount,
+    visibleChartPointCount: Math.min(chartPointSettings.visiblePointCount, pointCount),
+  });
+  populateChartConfigForm(chartConfig);
+  applyChartPointCountConfig();
+}
+
+function resolveImportedSeriesKey(parsed, targetSeries, fallbackIndex) {
+  if (parsed.seriesData[targetSeries.key]) {
+    return targetSeries.key;
+  }
+
+  const metadataSeries = parsed.metadata?.series?.find(
+    (series) => series?.key === targetSeries.key || series?.name === targetSeries.name,
+  );
+  if (metadataSeries?.key && parsed.seriesData[metadataSeries.key]) {
+    return metadataSeries.key;
+  }
+
+  const byName = parsed.seriesKeys.find((key) => key === targetSeries.name);
+  if (byName && parsed.seriesData[byName]) {
+    return byName;
+  }
+
+  return parsed.seriesKeys[fallbackIndex] ?? null;
+}
+
+function formatImportedSingleReadout(series, values, pointCount) {
+  const lastValue = getLastFiniteValue(values);
+  if (!Number.isFinite(lastValue)) {
+    return `已加载 ${pointCount} 点`;
+  }
+
+  return `${series.name} ${lastValue.toFixed(3)}${series.unit ? ` ${series.unit}` : ""} · 共 ${pointCount} 点`;
+}
+
+function formatImportedDualReadout(values, unit, pointCount) {
+  const lastValue = getLastFiniteValue(values);
+  if (!Number.isFinite(lastValue)) {
+    return `已加载 ${pointCount} 点`;
+  }
+
+  return `最新 ${lastValue.toFixed(3)}${unit ? ` ${unit}` : ""} · 共 ${pointCount} 点`;
+}
+
+function formatImportedMultiReadout(seriesDefs, seriesData, pointCount) {
+  const summary = seriesDefs
+    .map((series) => {
+      const lastValue = getLastFiniteValue(seriesData[series.key] ?? []);
+      if (!Number.isFinite(lastValue)) {
+        return null;
+      }
+
+      return `${series.name} ${lastValue.toFixed(3)}${series.unit ? ` ${series.unit}` : ""}`;
+    })
+    .filter(Boolean)
+    .join(" · ");
+
+  return summary || `已加载 ${pointCount} 点`;
+}
+
+function importChartCsv(parsed, sourceName = "CSV") {
+  const target = resolveCurrentChartCsvTarget();
+  ensureChartCapacityForImport(parsed.pointCount);
+
+  if (target.kind === "single") {
+    const [series] = target.series;
+    const sourceKey = resolveImportedSeriesKey(parsed, series, 0);
+    const rawValues = sourceKey ? parsed.seriesData[sourceKey] ?? [] : [];
+    const values = rawValues.filter((value) => Number.isFinite(value));
+    target.chart?.setPoints(values);
+    if (elements.chartValue) {
+      elements.chartValue.textContent = formatImportedSingleReadout(series, values, parsed.pointCount);
+    }
+  } else if (target.kind === "dual") {
+    const setpointSeries = target.series[0];
+    const actualSeries = target.series[1];
+    const setpointKey = resolveImportedSeriesKey(parsed, setpointSeries, 0);
+    const actualKey = resolveImportedSeriesKey(parsed, actualSeries, 1);
+    const setpointValues = (setpointKey ? parsed.seriesData[setpointKey] ?? [] : []).filter((value) =>
+      Number.isFinite(value),
+    );
+    const actualValues = (actualKey ? parsed.seriesData[actualKey] ?? [] : []).filter((value) =>
+      Number.isFinite(value),
+    );
+
+    target.charts.setpoint?.setPoints(setpointValues);
+    target.charts.actual?.setPoints(actualValues);
+    target.charts.setpoint?.setMeta({ unit: setpointSeries.unit });
+    target.charts.actual?.setMeta({ unit: actualSeries.unit });
+
+    const extent = getFiniteSeriesExtent([setpointValues, actualValues]);
+    if (extent) {
+      target.charts.setpoint?.setRange(extent.min, extent.max);
+      target.charts.actual?.setRange(extent.min, extent.max);
+    }
+
+    if (elements.setpointChartValue) {
+      elements.setpointChartValue.textContent = formatImportedDualReadout(
+        setpointValues,
+        setpointSeries.unit,
+        parsed.pointCount,
+      );
+    }
+    if (elements.actualChartValue) {
+      elements.actualChartValue.textContent = formatImportedDualReadout(
+        actualValues,
+        actualSeries.unit,
+        parsed.pointCount,
+      );
+    }
+  } else {
+    const importedSeriesData = Object.fromEntries(
+      target.series.map((series, index) => {
+        const sourceKey = resolveImportedSeriesKey(parsed, series, index);
+        return [series.key, sourceKey ? parsed.seriesData[sourceKey] ?? [] : []];
+      }),
+    );
+
+    target.chart?.setSeriesData(importedSeriesData);
+    if (elements.chartValue) {
+      elements.chartValue.textContent = formatImportedMultiReadout(
+        target.series,
+        importedSeriesData,
+        parsed.pointCount,
+      );
+    }
+
+    if (state.deviceId === HART_DEVICE_ID) {
+      updateHartVariableCards(
+        Object.fromEntries(
+          target.series
+            .map((series) => {
+              const lastValue = getLastFiniteValue(importedSeriesData[series.key] ?? []);
+              if (!Number.isFinite(lastValue)) {
+                return null;
+              }
+
+              return [series.key, { value: lastValue, unit: series.unit || "" }];
+            })
+            .filter(Boolean),
+        ),
+      );
+    }
+  }
+
+  requestChartResize();
+  appendLog("info", "曲线", `${sourceName} 已加载：${target.series.length} 条曲线，共 ${parsed.pointCount} 点`);
+}
+
+function openChartCsvPicker() {
+  elements.loadChartCsvInput?.click();
+}
+
+async function loadChartCsv(event) {
+  const [file] = Array.from(event.target?.files ?? []);
+  if (!file) {
+    return;
+  }
+
+  try {
+    const text = await file.text();
+    const parsed = parseChartCsvText(text);
+    importChartCsv(parsed, file.name);
+  } catch (error) {
+    appendLog("error", "曲线", error.message);
+  } finally {
+    event.target.value = "";
   }
 }
 
 function bindEvents() {
   bindSidebarPanelCollapse();
+  initChartCurvePanel({
+    elements,
+    getDeviceId: () => state.deviceId,
+    onVisibilityChange: () => requestChartResize(),
+  });
   on(elements.connectButton, "click", connect);
   on(elements.disconnectButton, "click", disconnect);
   on(elements.transportSelect, "change", (event) => setTransport(event.target.value));
@@ -862,6 +1699,9 @@ function bindEvents() {
 
   on(elements.saveModbusConfig, "click", saveModbusConfig);
   on(elements.resetModbusConfig, "click", resetModbusConfig);
+  on(elements.testModbusParser, "click", testModbusParser);
+  on(elements.modbusAddCurve, "click", () => handleAddDebugCurve("modbus"));
+  bindDebugCurveConfigActions("modbus");
 
   on(elements.deviceLibrarySearch, "input", handleDeviceLibrarySearchInput);
 
@@ -882,6 +1722,7 @@ function bindEvents() {
   on(elements.resetWebsocketConfig, "click", resetWebsocketConfig);
   on(elements.loadWebsocketHeartbeat, "click", () => loadMessageIntoManualSender(readWebsocketHeartbeatPreset()));
   on(elements.testWebsocketParser, "click", testWebsocketParser);
+  on(elements.websocketAddCurve, "click", () => handleAddDebugCurve("websocket"));
 
   getMqttConfigControls().filter(Boolean).forEach((control) => {
     control.addEventListener("input", updateMqttDraftConfig);
@@ -892,6 +1733,11 @@ function bindEvents() {
   on(elements.resetMqttConfig, "click", resetMqttConfig);
   on(elements.loadMqttHeartbeat, "click", () => loadMessageIntoManualSender(readMqttHeartbeatPreset()));
   on(elements.testMqttParser, "click", testMqttParser);
+  on(elements.mqttAddCurve, "click", () => handleAddDebugCurve("mqtt"));
+  bindDebugCurveConfigActions("mqtt");
+  bindDebugCurveConfigActions("websocket");
+  bindDebugCurveConfigActions("custom");
+  on(elements.customAddCurve, "click", () => handleAddDebugCurve("custom"));
 
   on(elements.hartSearchDevice, "click", () => {
     sendHartSearchCommand().catch((error) => appendLog("error", "HART", error.message));
@@ -964,6 +1810,9 @@ function bindSessionEvents(target) {
   target.addEventListener("connected", () => {
     resetWebSocketMessageStats();
     resetMqttMessageStats();
+    resetMqttRxBuffer();
+    resetWebSocketRxBuffer();
+    resetCustomRxBuffer(customConfig);
     updateConnectionUi(true);
     updateActivePolling();
     appendLog("info", "连接", describeConnectionSummary());
@@ -975,6 +1824,9 @@ function bindSessionEvents(target) {
     resetModbusRxBuffer();
     resetHartRxBuffer();
     resetAomasterRxBuffer();
+    resetMqttRxBuffer();
+    resetWebSocketRxBuffer();
+    resetCustomRxBuffer(customConfig);
     finalizeRxLogCoalesce();
     updateConnectionUi(false);
     resetWebSocketMessageStats();
@@ -1028,6 +1880,13 @@ function bindSessionEvents(target) {
         elements.actualChartValue.textContent = `${telemetry.fieldName} ${formatted}`;
       } else if (state.deviceId === HART_DEVICE_ID) {
         handleHartTelemetry(telemetry);
+      } else if (
+        state.deviceId === MQTT_DEVICE_ID ||
+        state.deviceId === WEBSOCKET_DEVICE_ID ||
+        state.deviceId === CUSTOM_DEVICE_ID ||
+        state.deviceId === MODBUS_DEVICE_ID
+      ) {
+        handleJsonMultiTelemetry(telemetry);
       } else {
         chart?.add(telemetry.value);
         const formatted = `${telemetry.value.toFixed(3)}${telemetry.unit ? ` ${telemetry.unit}` : ""}`;
@@ -1220,7 +2079,7 @@ function describeDeviceTransportDefaults(deviceId) {
     return "Modbus 默认串口参数（9600 8N1）";
   }
   if (deviceId === CUSTOM_DEVICE_ID) {
-    return "自定义设备默认串口参数（115200 8N1）";
+    return "自定义串口设备默认串口参数（115200 8N1）";
   }
   return "设备默认连接参数";
 }
@@ -1407,34 +2266,34 @@ function updateDeviceUi() {
   if (elements.dualChartBlock) {
     elements.dualChartBlock.hidden = !isAomaster;
   }
-  if (elements.hartChartSeriesBlock) {
-    elements.hartChartSeriesBlock.hidden = !isHart;
-  }
+  syncChartCurvePanelUi();
   if (isHart) {
     syncHartCommandModeUi();
     ensureHartTelemetryChart();
     syncHartChartSeriesControls();
     updateHartVariableCards();
+  } else if (
+    (isMqtt && shouldUseMqttMultiChart()) ||
+    (isWebsocket && shouldUseWebsocketMultiChart()) ||
+    (isCustom && shouldUseCustomMultiChart()) ||
+    (isModbus && shouldUseModbusMultiChart())
+  ) {
+    ensureJsonMultiTelemetryChart();
   } else {
     ensureSingleTelemetryChart();
   }
   if (elements.chartPanelSummary) {
     const chartPointSettings = getChartPointSettings();
-    elements.chartPanelSummary.textContent = isAomaster
-      ? `ECharts 曲线预览设定波形，并跟踪轮询回读的实际输出；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`
-      : isHart
-        ? `HART PV/SV/TV/QV 卡片与多曲线同步显示；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`
-        : isWebsocket
-          ? `WebSocket 回包自动解析 JSON 或文本数值；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`
-          : isMqtt
-            ? `MQTT 订阅消息自动解析 JSON 或文本数值；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`
-            : `ECharts 曲线自动解析设备回读数值；保留 ${chartPointSettings.totalPointCount} 个采样点，当前显示 ${chartPointSettings.visiblePointCount} 个。`;
+    elements.chartPanelSummary.textContent = describeChartPanelSummary(
+      chartPointSettings.totalPointCount,
+      chartPointSettings.visiblePointCount,
+    );
   }
 
   const summary = queryDeviceField("deviceSummary");
   if (summary) {
     if (isCustom) {
-      summary.textContent = `${profile.name}；设定范围、发送模板和回包解析可在本页配置。`;
+      summary.textContent = `${profile.name}；设定范围与发送模板在本页配置，曲线解析在监测面板。`;
     } else if (isModbus) {
       summary.textContent = describeModbusSummary(modbusConfig);
     } else if (isHart) {
@@ -1610,7 +2469,7 @@ function renderDeviceLibrary() {
 
     const subtitle = document.createElement("small");
     subtitle.textContent =
-      entry.deviceId === CUSTOM_DEVICE_ID ? "模板发送 / 自定义解析" : entry.profile.type;
+      entry.deviceId === CUSTOM_DEVICE_ID ? "模板发送 / JSON·HEX·Modbus 解析" : entry.profile.type;
 
     text.append(title, subtitle);
     button.append(icon, text);
@@ -1971,6 +2830,8 @@ function updateConnectionUi(connected) {
 
 function updateCustomDraftConfig() {
   customConfig = readCustomConfigForm();
+  syncDebugCurveModeFields("custom", customConfig.parserMode, elements, customConfig);
+  syncDebugCurveConfigRows("custom", customConfig);
 
   if (state.deviceId === CUSTOM_DEVICE_ID) {
     state.mode = "custom";
@@ -1978,6 +2839,7 @@ function updateCustomDraftConfig() {
     state.setpoint = Math.min(config.max, Math.max(config.min, state.setpoint));
   }
 
+  syncChartCurvePanelUi();
   updateDeviceUi();
 }
 
@@ -1988,7 +2850,7 @@ function saveCustomConfig() {
   renderDeviceLibrary();
   renderHomeDeviceCards();
   updateDeviceUi();
-  appendLog("info", "设备", "自定义设备配置已保存");
+  appendLog("info", "设备", "自定义串口设备配置已保存");
 }
 
 function resetCustomConfig() {
@@ -2003,19 +2865,34 @@ function resetCustomConfig() {
   }
 
   updateDeviceUi();
-  appendLog("info", "设备", "自定义设备配置已恢复默认");
+  appendLog("info", "设备", "自定义串口设备配置已恢复默认");
 }
 
 function testCustomParser() {
   customConfig = readCustomConfigForm();
-  const telemetry = parseDeviceTelemetry(CUSTOM_DEVICE_ID, elements.customParserSample.value, customConfig);
-
-  if (!telemetry) {
-    elements.customParserPreview.textContent = "未解析到数值";
-    return;
+  resetCustomRxBuffer(customConfig);
+  const sample = elements.customParserSample?.value ?? "";
+  let bytes = null;
+  try {
+    bytes = parseHexPayload(sample);
+  } catch {
+    bytes = null;
   }
 
-  elements.customParserPreview.textContent = `${telemetry.fieldName}: ${telemetry.value.toFixed(6)}${telemetry.unit ? ` ${telemetry.unit}` : ""}`;
+  const telemetry = parseDeviceTelemetry(
+    CUSTOM_DEVICE_ID,
+    bytes ? null : sample,
+    customConfig,
+    modbusConfig,
+    bytes,
+    state,
+    aomasterConfig,
+    hartConfig,
+    websocketConfig,
+    mqttConfig,
+  );
+
+  renderParserPreview(elements.customParserPreview, telemetry);
 }
 
 async function copyRequestTemplate() {
@@ -2114,15 +2991,8 @@ function readCustomConfigForm() {
     commandFormat: elements.customCommandFormat.value,
     commandTemplate: elements.customCommandTemplate.value,
     commandLineEnding: elements.customCommandLineEnding.value,
-    parser: {
-      type: elements.customParserType.value,
-      fieldName: elements.customParserFieldName.value,
-      unit: elements.customParserUnit.value,
-      regex: elements.customParserRegex.value,
-      group: elements.customParserGroup.value,
-      scale: elements.customParserScale.value,
-      offset: elements.customParserOffset.value,
-    },
+    unit: elements.customUnit.value,
+    ...readDebugCurveConfigForm("custom", elements),
   });
 }
 
@@ -2139,14 +3009,11 @@ function populateCustomConfigForm(config) {
   elements.customCommandFormat.value = normalized.commandFormat;
   elements.customCommandTemplate.value = normalized.commandTemplate;
   elements.customCommandLineEnding.value = normalized.commandLineEnding;
-  elements.customParserType.value = normalized.parser.type;
-  elements.customParserFieldName.value = normalized.parser.fieldName;
-  elements.customParserUnit.value = normalized.parser.unit;
-  elements.customParserRegex.value = normalized.parser.regex;
-  elements.customParserGroup.value = String(normalized.parser.group);
-  elements.customParserScale.value = String(normalized.parser.scale);
-  elements.customParserOffset.value = String(normalized.parser.offset);
-  elements.customParserPreview.textContent = "等待测试";
+  populateDebugCurveConfigForm("custom", normalized, elements);
+  syncDebugCurveConfigRows("custom", normalized);
+  if (elements.customParserPreview) {
+    elements.customParserPreview.textContent = "等待测试";
+  }
 }
 
 function stopModbusPolling() {
@@ -2367,6 +3234,7 @@ function updateWebSocketPolling() {
 
 function updateWebSocketDraftConfig() {
   websocketConfig = readWebsocketConfigForm();
+  updateWebSocketParserConfigUi(websocketConfig);
   updateDeviceUi();
   if (state.pollingActive && !canCurrentDevicePoll()) {
     state.pollingActive = false;
@@ -2401,6 +3269,135 @@ function loadWebsocketConfig() {
   }
 }
 
+function syncDebugCurveConfigRows(prefix, config) {
+  const normalized =
+    prefix === "mqtt"
+      ? normalizeMqttConfig(config)
+      : prefix === "websocket"
+        ? normalizeWebSocketConfig(config)
+        : prefix === "modbus"
+          ? normalizeModbusConfig(config)
+          : normalizeCustomConfig(config);
+  const field = elements[`${prefix}CurveConfigBlock`];
+  const addButton = elements[`${prefix}AddCurve`];
+
+  field?.querySelectorAll(".curve-config-row[data-curve-slot]").forEach((row) => {
+    const slot = Number(row.dataset.curveSlot);
+    row.hidden = slot > normalized.curveSlotCount;
+  });
+
+  if (addButton) {
+    addButton.hidden = normalized.curveSlotCount >= JSON_CURVE_SLOTS.length;
+  }
+}
+
+function getDebugCurvePrefixHandlers(prefix) {
+  if (prefix === "mqtt") {
+    return {
+      readForm: readMqttConfigForm,
+      populateForm: populateMqttConfigForm,
+      updateDraft: updateMqttDraftConfig,
+      defaults: DEFAULT_MQTT_CONFIG,
+      normalize: normalizeMqttConfig,
+      assign: (config) => {
+        mqttConfig = config;
+      },
+    };
+  }
+
+  if (prefix === "websocket") {
+    return {
+      readForm: readWebsocketConfigForm,
+      populateForm: populateWebsocketConfigForm,
+      updateDraft: updateWebSocketDraftConfig,
+      defaults: DEFAULT_WEBSOCKET_CONFIG,
+      normalize: normalizeWebSocketConfig,
+      assign: (config) => {
+        websocketConfig = config;
+      },
+    };
+  }
+
+  if (prefix === "modbus") {
+    return {
+      readForm: readModbusConfigForm,
+      populateForm: populateModbusConfigForm,
+      updateDraft: updateModbusDraftConfig,
+      defaults: DEFAULT_MODBUS_CONFIG,
+      normalize: normalizeModbusConfig,
+      assign: (config) => {
+        modbusConfig = config;
+      },
+    };
+  }
+
+  return {
+    readForm: readCustomConfigForm,
+    populateForm: populateCustomConfigForm,
+    updateDraft: updateCustomDraftConfig,
+    defaults: DEFAULT_CUSTOM_CONFIG,
+    normalize: normalizeCustomConfig,
+    assign: (config) => {
+      customConfig = config;
+    },
+  };
+}
+
+function handleRemoveDebugCurve(prefix, slotNumber) {
+  const handlers = getDebugCurvePrefixHandlers(prefix);
+  const config = handlers.readForm();
+  const nextConfig = removeMultiCurveSlot(config, slotNumber, handlers.defaults);
+  handlers.assign(handlers.normalize(nextConfig));
+  handlers.populateForm(handlers.normalize(nextConfig));
+  handlers.updateDraft();
+}
+
+function handleAddDebugCurve(prefix) {
+  const handlers = getDebugCurvePrefixHandlers(prefix);
+  const config = handlers.readForm();
+
+  if (config.curveSlotCount >= JSON_CURVE_SLOTS.length) {
+    return;
+  }
+
+  const nextSlot = JSON_CURVE_SLOTS[config.curveSlotCount];
+  if (!nextSlot) {
+    return;
+  }
+
+  const nextConfig = {
+    ...config,
+    curveSlotCount: config.curveSlotCount + 1,
+    [nextSlot.enabledKey]: true,
+  };
+
+  handlers.assign(handlers.normalize(nextConfig));
+  handlers.populateForm(handlers.normalize(nextConfig));
+  handlers.updateDraft();
+}
+
+function bindDebugCurveConfigActions(prefix) {
+  const field = elements[`${prefix}CurveConfigBlock`];
+  if (!field || field.dataset.curveActionsBound === "true") {
+    return;
+  }
+
+  field.dataset.curveActionsBound = "true";
+  field.addEventListener("click", (event) => {
+    const removeButton = event.target.closest("[data-remove-curve-slot]");
+    if (!removeButton) {
+      return;
+    }
+
+    const slotNumber = Number(removeButton.dataset.removeCurveSlot);
+    if (!Number.isFinite(slotNumber)) {
+      return;
+    }
+
+    handleRemoveDebugCurve(prefix, slotNumber);
+  });
+}
+
 function populateWebsocketConfigForm(config = websocketConfig) {
   const normalized = normalizeWebSocketConfig(config);
   if (elements.websocketPollIntervalMs) {
@@ -2412,8 +3409,50 @@ function populateWebsocketConfigForm(config = websocketConfig) {
   if (elements.websocketHeartbeatMessage) {
     elements.websocketHeartbeatMessage.value = normalized.heartbeatMessage;
   }
+  if (elements.websocketParserMode) {
+    elements.websocketParserMode.value = normalized.parserMode;
+  }
+  if (elements.websocketCurve1Enabled) {
+    elements.websocketCurve1Enabled.checked = normalized.curve1Enabled;
+  }
   if (elements.websocketParserFieldPath) {
     elements.websocketParserFieldPath.value = normalized.parserFieldPath;
+  }
+  if (elements.websocketCurve2Enabled) {
+    elements.websocketCurve2Enabled.checked = normalized.curve2Enabled;
+  }
+  if (elements.websocketCurve2FieldName) {
+    elements.websocketCurve2FieldName.value = normalized.curve2FieldName;
+  }
+  if (elements.websocketCurve2FieldPath) {
+    elements.websocketCurve2FieldPath.value = normalized.curve2FieldPath;
+  }
+  if (elements.websocketCurve2Unit) {
+    elements.websocketCurve2Unit.value = normalized.curve2Unit;
+  }
+  if (elements.websocketCurve3Enabled) {
+    elements.websocketCurve3Enabled.checked = normalized.curve3Enabled;
+  }
+  if (elements.websocketCurve3FieldName) {
+    elements.websocketCurve3FieldName.value = normalized.curve3FieldName;
+  }
+  if (elements.websocketCurve3FieldPath) {
+    elements.websocketCurve3FieldPath.value = normalized.curve3FieldPath;
+  }
+  if (elements.websocketCurve3Unit) {
+    elements.websocketCurve3Unit.value = normalized.curve3Unit;
+  }
+  if (elements.websocketCurve4Enabled) {
+    elements.websocketCurve4Enabled.checked = normalized.curve4Enabled;
+  }
+  if (elements.websocketCurve4FieldName) {
+    elements.websocketCurve4FieldName.value = normalized.curve4FieldName;
+  }
+  if (elements.websocketCurve4FieldPath) {
+    elements.websocketCurve4FieldPath.value = normalized.curve4FieldPath;
+  }
+  if (elements.websocketCurve4Unit) {
+    elements.websocketCurve4Unit.value = normalized.curve4Unit;
   }
   if (elements.websocketFieldName) {
     elements.websocketFieldName.value = normalized.fieldName;
@@ -2421,6 +3460,10 @@ function populateWebsocketConfigForm(config = websocketConfig) {
   if (elements.websocketUnit) {
     elements.websocketUnit.value = normalized.unit;
   }
+  populateBinaryCurveFormValues("websocket", normalized, elements);
+  populateFramingFormValues("websocket", normalized, elements);
+  updateWebSocketParserConfigUi(normalized);
+  syncDebugCurveConfigRows("websocket", normalized);
   updateWebSocketDebuggerUi();
 }
 
@@ -2429,10 +3472,32 @@ function readWebsocketConfigForm() {
     pollIntervalMs: elements.websocketPollIntervalMs?.value,
     heartbeatFormat: elements.websocketHeartbeatFormat?.value,
     heartbeatMessage: elements.websocketHeartbeatMessage?.value,
+    parserMode: elements.websocketParserMode?.value,
+    curve1Enabled: elements.websocketCurve1Enabled?.checked,
     parserFieldPath: elements.websocketParserFieldPath?.value,
+    curve2Enabled: elements.websocketCurve2Enabled?.checked,
+    curve2FieldName: elements.websocketCurve2FieldName?.value,
+    curve2FieldPath: elements.websocketCurve2FieldPath?.value,
+    curve2Unit: elements.websocketCurve2Unit?.value,
+    curve3Enabled: elements.websocketCurve3Enabled?.checked,
+    curve3FieldName: elements.websocketCurve3FieldName?.value,
+    curve3FieldPath: elements.websocketCurve3FieldPath?.value,
+    curve3Unit: elements.websocketCurve3Unit?.value,
+    curve4Enabled: elements.websocketCurve4Enabled?.checked,
+    curve4FieldName: elements.websocketCurve4FieldName?.value,
+    curve4FieldPath: elements.websocketCurve4FieldPath?.value,
+    curve4Unit: elements.websocketCurve4Unit?.value,
     fieldName: elements.websocketFieldName?.value,
     unit: elements.websocketUnit?.value,
+    ...readBinaryCurveFormValues("websocket", elements),
+    ...readFramingFormValues("websocket", elements),
   });
+}
+
+function updateWebSocketParserConfigUi(config = websocketConfig) {
+  const normalized = normalizeWebSocketConfig(config);
+  syncDebugCurveModeFields("websocket", normalized.parserMode, elements, normalized);
+  syncChartCurvePanelUi();
 }
 
 function getWebsocketConfigControls() {
@@ -2440,9 +3505,29 @@ function getWebsocketConfigControls() {
     elements.websocketPollIntervalMs,
     elements.websocketHeartbeatFormat,
     elements.websocketHeartbeatMessage,
+    elements.websocketParserMode,
+    elements.websocketCurve1Enabled,
     elements.websocketParserFieldPath,
+    elements.websocketCurve2Enabled,
+    elements.websocketCurve2FieldName,
+    elements.websocketCurve2FieldPath,
+    elements.websocketCurve2Unit,
+    elements.websocketCurve3Enabled,
+    elements.websocketCurve3FieldName,
+    elements.websocketCurve3FieldPath,
+    elements.websocketCurve3Unit,
+    elements.websocketCurve4Enabled,
+    elements.websocketCurve4FieldName,
+    elements.websocketCurve4FieldPath,
+    elements.websocketCurve4Unit,
     elements.websocketFieldName,
     elements.websocketUnit,
+    ...listBinaryCurveControlElements("websocket", elements),
+    elements.websocketFrameMode,
+    elements.websocketRxLineEnding,
+    elements.websocketFramePrefixHex,
+    elements.websocketFrameSuffixHex,
+    elements.websocketFrameCrcMode,
   ];
 }
 
@@ -2571,6 +3656,7 @@ function updateMqttPolling() {
 
 function updateMqttDraftConfig() {
   mqttConfig = readMqttConfigForm();
+  updateMqttParserConfigUi(mqttConfig);
   updateDeviceUi();
   if (state.pollingActive && !canCurrentDevicePoll()) {
     state.pollingActive = false;
@@ -2616,8 +3702,50 @@ function populateMqttConfigForm(config = mqttConfig) {
   if (elements.mqttHeartbeatMessage) {
     elements.mqttHeartbeatMessage.value = normalized.heartbeatMessage;
   }
+  if (elements.mqttParserMode) {
+    elements.mqttParserMode.value = normalized.parserMode;
+  }
+  if (elements.mqttCurve1Enabled) {
+    elements.mqttCurve1Enabled.checked = normalized.curve1Enabled;
+  }
   if (elements.mqttParserFieldPath) {
     elements.mqttParserFieldPath.value = normalized.parserFieldPath;
+  }
+  if (elements.mqttCurve2Enabled) {
+    elements.mqttCurve2Enabled.checked = normalized.curve2Enabled;
+  }
+  if (elements.mqttCurve2FieldName) {
+    elements.mqttCurve2FieldName.value = normalized.curve2FieldName;
+  }
+  if (elements.mqttCurve2FieldPath) {
+    elements.mqttCurve2FieldPath.value = normalized.curve2FieldPath;
+  }
+  if (elements.mqttCurve2Unit) {
+    elements.mqttCurve2Unit.value = normalized.curve2Unit;
+  }
+  if (elements.mqttCurve3Enabled) {
+    elements.mqttCurve3Enabled.checked = normalized.curve3Enabled;
+  }
+  if (elements.mqttCurve3FieldName) {
+    elements.mqttCurve3FieldName.value = normalized.curve3FieldName;
+  }
+  if (elements.mqttCurve3FieldPath) {
+    elements.mqttCurve3FieldPath.value = normalized.curve3FieldPath;
+  }
+  if (elements.mqttCurve3Unit) {
+    elements.mqttCurve3Unit.value = normalized.curve3Unit;
+  }
+  if (elements.mqttCurve4Enabled) {
+    elements.mqttCurve4Enabled.checked = normalized.curve4Enabled;
+  }
+  if (elements.mqttCurve4FieldName) {
+    elements.mqttCurve4FieldName.value = normalized.curve4FieldName;
+  }
+  if (elements.mqttCurve4FieldPath) {
+    elements.mqttCurve4FieldPath.value = normalized.curve4FieldPath;
+  }
+  if (elements.mqttCurve4Unit) {
+    elements.mqttCurve4Unit.value = normalized.curve4Unit;
   }
   if (elements.mqttFieldName) {
     elements.mqttFieldName.value = normalized.fieldName;
@@ -2625,6 +3753,8 @@ function populateMqttConfigForm(config = mqttConfig) {
   if (elements.mqttUnit) {
     elements.mqttUnit.value = normalized.unit;
   }
+  populateBinaryCurveFormValues("mqtt", normalized, elements);
+  populateFramingFormValues("mqtt", normalized, elements);
   if (elements.mqttPublishTopic) {
     elements.mqttPublishTopic.value = normalized.publishTopic;
   }
@@ -2634,6 +3764,8 @@ function populateMqttConfigForm(config = mqttConfig) {
   if (elements.mqttPublishRetain) {
     elements.mqttPublishRetain.checked = normalized.publishRetain;
   }
+  updateMqttParserConfigUi(normalized);
+  syncDebugCurveConfigRows("mqtt", normalized);
   updateMqttDebuggerUi();
 }
 
@@ -2642,13 +3774,35 @@ function readMqttConfigForm() {
     pollIntervalMs: elements.mqttPollIntervalMs?.value,
     heartbeatFormat: elements.mqttHeartbeatFormat?.value,
     heartbeatMessage: elements.mqttHeartbeatMessage?.value,
+    parserMode: elements.mqttParserMode?.value,
+    curve1Enabled: elements.mqttCurve1Enabled?.checked,
     parserFieldPath: elements.mqttParserFieldPath?.value,
+    curve2Enabled: elements.mqttCurve2Enabled?.checked,
+    curve2FieldName: elements.mqttCurve2FieldName?.value,
+    curve2FieldPath: elements.mqttCurve2FieldPath?.value,
+    curve2Unit: elements.mqttCurve2Unit?.value,
+    curve3Enabled: elements.mqttCurve3Enabled?.checked,
+    curve3FieldName: elements.mqttCurve3FieldName?.value,
+    curve3FieldPath: elements.mqttCurve3FieldPath?.value,
+    curve3Unit: elements.mqttCurve3Unit?.value,
+    curve4Enabled: elements.mqttCurve4Enabled?.checked,
+    curve4FieldName: elements.mqttCurve4FieldName?.value,
+    curve4FieldPath: elements.mqttCurve4FieldPath?.value,
+    curve4Unit: elements.mqttCurve4Unit?.value,
     fieldName: elements.mqttFieldName?.value,
     unit: elements.mqttUnit?.value,
+    ...readBinaryCurveFormValues("mqtt", elements),
+    ...readFramingFormValues("mqtt", elements),
     publishTopic: elements.mqttPublishTopic?.value,
     publishQos: elements.mqttPublishQos?.value,
     publishRetain: elements.mqttPublishRetain?.checked,
   });
+}
+
+function updateMqttParserConfigUi(config = mqttConfig) {
+  const normalized = normalizeMqttConfig(config);
+  syncDebugCurveModeFields("mqtt", normalized.parserMode, elements, normalized);
+  syncChartCurvePanelUi();
 }
 
 function getMqttConfigControls() {
@@ -2656,9 +3810,29 @@ function getMqttConfigControls() {
     elements.mqttPollIntervalMs,
     elements.mqttHeartbeatFormat,
     elements.mqttHeartbeatMessage,
+    elements.mqttParserMode,
+    elements.mqttCurve1Enabled,
     elements.mqttParserFieldPath,
+    elements.mqttCurve2Enabled,
+    elements.mqttCurve2FieldName,
+    elements.mqttCurve2FieldPath,
+    elements.mqttCurve2Unit,
+    elements.mqttCurve3Enabled,
+    elements.mqttCurve3FieldName,
+    elements.mqttCurve3FieldPath,
+    elements.mqttCurve3Unit,
+    elements.mqttCurve4Enabled,
+    elements.mqttCurve4FieldName,
+    elements.mqttCurve4FieldPath,
+    elements.mqttCurve4Unit,
     elements.mqttFieldName,
     elements.mqttUnit,
+    ...listBinaryCurveControlElements("mqtt", elements),
+    elements.mqttFrameMode,
+    elements.mqttRxLineEnding,
+    elements.mqttFramePrefixHex,
+    elements.mqttFrameSuffixHex,
+    elements.mqttFrameCrcMode,
     elements.mqttPublishTopic,
     elements.mqttPublishQos,
     elements.mqttPublishRetain,
@@ -2805,6 +3979,14 @@ function renderParserPreview(target, telemetry) {
     return;
   }
 
+  if (telemetry.isMulti && telemetry.variables) {
+    target.textContent = Object.values(telemetry.variables)
+      .map((entry) => `${entry.fieldName}: ${entry.value.toFixed(6)}${entry.unit ? ` ${entry.unit}` : ""}`)
+      .join(" · ");
+    target.classList.remove("warning");
+    return;
+  }
+
   target.textContent = `${telemetry.fieldName}: ${telemetry.value.toFixed(6)}${telemetry.unit ? ` ${telemetry.unit}` : ""}`;
   target.classList.remove("warning");
 }
@@ -2819,6 +4001,8 @@ function readCurrentTransportField(key) {
 
 function updateModbusDraftConfig() {
   modbusConfig = readModbusConfigForm();
+  syncDebugCurveConfigRows("modbus", modbusConfig);
+  syncChartCurvePanelUi();
 
   if (state.deviceId === MODBUS_DEVICE_ID) {
     const normalized = normalizeModbusConfig(modbusConfig);
@@ -2875,13 +4059,8 @@ function readModbusConfigForm() {
     functionCode: elements.modbusFunctionCode.value,
     address: elements.modbusAddress.value,
     quantity: elements.modbusQuantity.value,
-    dataType: elements.modbusDataType.value,
-    byteOrder: elements.modbusByteOrder.value,
-    scale: elements.modbusScale.value,
-    offset: elements.modbusOffset.value,
-    fieldName: elements.modbusFieldName.value,
-    unit: elements.modbusUnit.value,
     pollIntervalMs: elements.modbusPollIntervalMs.value,
+    ...readDebugCurveConfigForm("modbus", elements),
   });
 }
 
@@ -2891,13 +4070,12 @@ function populateModbusConfigForm(config) {
   elements.modbusFunctionCode.value = String(normalized.functionCode);
   elements.modbusAddress.value = String(normalized.address);
   elements.modbusQuantity.value = String(normalized.quantity);
-  elements.modbusDataType.value = normalized.dataType;
-  elements.modbusByteOrder.value = normalized.byteOrder;
-  elements.modbusScale.value = String(normalized.scale);
-  elements.modbusOffset.value = String(normalized.offset);
-  elements.modbusFieldName.value = normalized.fieldName;
-  elements.modbusUnit.value = normalized.unit;
   elements.modbusPollIntervalMs.value = String(normalized.pollIntervalMs);
+  populateDebugCurveConfigForm("modbus", normalized, elements);
+  syncDebugCurveConfigRows("modbus", normalized);
+  if (elements.modbusParserPreview) {
+    elements.modbusParserPreview.textContent = "等待测试";
+  }
 }
 
 function getModbusConfigControls() {
@@ -2906,14 +4084,40 @@ function getModbusConfigControls() {
     elements.modbusFunctionCode,
     elements.modbusAddress,
     elements.modbusQuantity,
-    elements.modbusDataType,
-    elements.modbusByteOrder,
-    elements.modbusScale,
-    elements.modbusOffset,
-    elements.modbusFieldName,
-    elements.modbusUnit,
     elements.modbusPollIntervalMs,
+    ...listDebugCurveControlElements("modbus", elements),
   ];
+}
+
+function testModbusParser() {
+  modbusConfig = readModbusConfigForm();
+  resetModbusRxBuffer();
+  let bytes = null;
+  try {
+    bytes = parseHexPayload(elements.modbusParserSample?.value ?? "");
+  } catch {
+    bytes = null;
+  }
+
+  if (!bytes) {
+    renderParserPreview(elements.modbusParserPreview, null);
+    return;
+  }
+
+  const telemetry = parseDeviceTelemetry(
+    MODBUS_DEVICE_ID,
+    null,
+    customConfig,
+    modbusConfig,
+    bytes,
+    state,
+    aomasterConfig,
+    hartConfig,
+    websocketConfig,
+    mqttConfig,
+  );
+
+  renderParserPreview(elements.modbusParserPreview, telemetry);
 }
 
 function updateHartPolling() {
@@ -3337,6 +4541,9 @@ function syncChartConfigElements() {
   elements.visibleChartPointCount = document.querySelector("#visibleChartPointCount");
   elements.saveChartConfig = document.querySelector("#saveChartConfig");
   elements.resetChartConfig = document.querySelector("#resetChartConfig");
+  elements.exportChartCsv = document.querySelector("#exportChartCsv");
+  elements.loadChartCsv = document.querySelector("#loadChartCsv");
+  elements.loadChartCsvInput = document.querySelector("#loadChartCsvInput");
 }
 
 function bindChartConfigEvents() {
@@ -3356,6 +4563,9 @@ function bindChartConfigEvents() {
   });
   on(elements.saveChartConfig, "click", saveChartConfig);
   on(elements.resetChartConfig, "click", resetChartConfig);
+  on(elements.exportChartCsv, "click", exportChartCsv);
+  on(elements.loadChartCsv, "click", openChartCsvPicker);
+  on(elements.loadChartCsvInput, "change", loadChartCsv);
   chartConfigEventsBound = true;
 }
 
@@ -3376,13 +4586,7 @@ function getCustomConfigControls() {
     elements.customCommandFormat,
     elements.customCommandLineEnding,
     elements.customCommandTemplate,
-    elements.customParserType,
-    elements.customParserFieldName,
-    elements.customParserUnit,
-    elements.customParserGroup,
-    elements.customParserRegex,
-    elements.customParserScale,
-    elements.customParserOffset,
+    ...listDebugCurveControlElements("custom", elements),
   ];
 }
 
@@ -3725,6 +4929,7 @@ function clearAomasterCharts() {
 function clearAllCharts() {
   chart?.clear();
   hartChart?.clear();
+  jsonMultiChart?.clear();
   clearAomasterCharts();
   elements.chartValue.textContent = "暂无数据";
   updateHartVariableCards();
