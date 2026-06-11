@@ -16,13 +16,14 @@ modusignal 是一个浏览器端在线设备/信号调试平台，统一抽象�
 - 多页面设备 UI：主页、AOMaster / Modbus / HART / WebSocket 调试 / MQTT 调试 / 自定义设备各自独立 HTML（`pages/`），共享曲线与日志工作台
 - 设备库框架：内置设备 profile 可声明 `image`（如 `images/websocket.png`、`images/mqtt.png`），在侧栏设备库与主页卡片显示图标
 - AOMaster 多信号类型与波形：恒定、阶跃、斜坡、方波、三角波、正弦波；双曲线（波形预览 + 实时输出）
-- Modbus RTU：读/写保持寄存器与输入寄存器，可配置地址、数据类型与轮询
+- Modbus RTU：读/写保持寄存器与输入寄存器，可配置地址、数据类型与轮询；监测面板支持同一读响应内最多 4 条曲线（按数据区字节偏移解码）
 - HART 通用设备：设备搜索、通用命令、PV/SV/TV/QV 多曲线
-- WebSocket 调试：快捷 JSON/文本发送、心跳轮询、JSON 路径解析与曲线
-- MQTT 调试：Broker 连接、主题发布/订阅、QoS 与保留消息、快捷发布、消息统计与 JSON 解析
-- 自定义设备：可配置设备名、类型、设定范围、单位、发送模板和解析规则
+- WebSocket 调试：快捷 JSON/文本发送、心跳轮询、JSON / HEX / Modbus 多曲线解析
+- MQTT 调试：Broker 连接、主题发布/订阅、QoS 与保留消息、快捷发布、消息统计与 JSON / HEX / Modbus 多曲线解析
+- 自定义设备：可配置设备名、类型、设定范围、单位、发送模板和解析规则；支持 JSON 路径、HEX 偏移与 Modbus 载荷解析
+- 监测面板曲线配置：各设备曲线解码集中在工作台折叠区；支持多曲线、帧界（行界 / 帧头帧尾 / CRC）、解析样例测试与协议说明弹窗
 - 监测轮询：读模式设备与 WebSocket / MQTT 调试可在工作台手动开始/停止轮询，间隔按设备配置
-- 手动命令发送：ASCII / JSON / HEX，支持行尾选择（JSON/ASCII 走文本帧）
+- 手动命令发送：ASCII / JSON / HEX，支持行尾选择；收发调试区命令框支持多行输入与滚动
 - 收发日志：TX / RX / 系统 / 错误（MQTT 日志带主题前缀）
 - 实时曲线：按当前设备解析接收数据并绘制（默认保留 3000 点、显示 240 点，可配置）
 - 协议驱动：AOMaster Modbus RTU；通用 Modbus RTU；HART 帧编解码；WebSocket / MQTT JSON/文本解析；自定义模板可用于其他设备
@@ -68,7 +69,7 @@ modusignal 是一个浏览器端在线设备/信号调试平台，统一抽象�
 1. 侧栏进入 **WebSocket 调试**（会自动选中 WebSocket 传输）
 2. 填写 WebSocket 地址并连接
 3. 使用快捷按钮或收发调试区发送 JSON/文本/HEX
-4. 在设备页配置 **JSON 数值路径**（如 `value`）可将回包绘制到曲线；配置轮询间隔与心跳消息后可开启轮询
+4. 在设备页配置轮询间隔与心跳消息；在监测面板 **曲线配置** 中设置 JSON 路径、HEX/Modbus 偏移或多条曲线
 
 ## MQTT 调试设备
 
@@ -78,7 +79,7 @@ modusignal 是一个浏览器端在线设备/信号调试平台，统一抽象�
 2. 填写 Broker 地址、Client ID、订阅/发布主题（或使用默认公共 Broker）
 3. 点击连接；侧栏顶栏会显示连接摘要
 4. 在设备页使用快捷发布，或在收发调试区手动发送 JSON/ASCII/HEX
-5. 可配置发布 QoS（0/1/2）、保留消息、JSON 解析路径与轮询心跳
+5. 可配置发布 QoS（0/1/2）、保留消息、轮询心跳；曲线解码在监测面板 **曲线配置** 中设置
 
 默认公共测试 Broker：
 
@@ -94,7 +95,7 @@ wss://broker.emqx.io:8084/mqtt
 
 - 输出设定：通道名称、单位、最小值、最大值、步进、默认值
 - 发送模板：ASCII 或 HEX，支持 `{value}`、`{value:2}`、`{unit}`、`{mode}`
-- 回包解析：自动提取最后一个数字，或使用正则捕获指定分组
+- 回包解析：自动提取最后一个数字，或使用正则捕获指定分组；亦可在监测面板配置 JSON 路径、HEX 偏移或 Modbus 载荷多曲线
 - 数值换算：`解析值 * 比例 + 偏移`
 
 示例：
@@ -104,6 +105,18 @@ ASCII 模板：SET {value:3}
 HEX 模板：01 06 00 01 {value:0}
 正则：PV=([-+]?\d+(?:\.\d+)?)
 ```
+
+## 监测面板 · 曲线配置
+
+设备页负责连接、轮询与专属控件；**曲线解码**统一在右侧监测面板的「曲线配置」折叠区（`pages/shared/workbench.html`）：
+
+- **Modbus / 自定义 / WebSocket / MQTT**：最多 4 条曲线；解析模式可选 JSON 路径、HEX 原始字节或 Modbus RTU 载荷
+- **帧界**：无（整包）、行界（CR/LF）、帧头帧尾（HEX）；Modbus 模式可启用 CRC16 校验
+- **HART**：勾选 PV / SV / TV / QV 显示曲线
+- **AOMaster**：双曲线说明（设定预览 + 轮询回读）
+- 每条曲线可设名称、单位、偏移、比例；面板内可 **测试解析样例**，并通过 **协议说明** 查看字段含义
+
+读模式下 Modbus 若曲线所需字节范围超出寄存器数量，驱动会自动扩大读取范围。
 
 ## 浏览器要求
 
@@ -131,7 +144,7 @@ http://localhost:4173
 
 ## 设备与协议接入点
 
-设备驱动放在 `src/devices/`，统一由 `src/protocols.js` 注册和分发。
+设备驱动放在 `src/devices/`，在 `src/device-registry.js` 注册并由 `src/protocols.js` 统一分发。
 
 ### AOMaster Modbus RTU 寄存器
 
@@ -153,7 +166,7 @@ http://localhost:4173
 - `src/devices/<id>.js` 的 profile（含 `defaultTransportId`、可选 `image`）与 `create*SetOutputCommand`
 - 设备回包解析函数
 - `src/app.js` 中 `DEVICE_TRANSPORT_DEFAULTS` 注册
-- 曲线字段选择
+- 监测面板曲线配置 section（若需多曲线 / 帧界 / 协议说明）
 
 建议每种设备维护独立 profile，保持页面层只依赖统一的驱动接口。
 

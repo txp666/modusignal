@@ -49,7 +49,7 @@ src/app.js
   应用状态、页面路由、DOM 绑定、传输事件、日志、曲线联动、传输参数动态渲染
 
 src/echarts-charts.js
-  ECharts 曲线封装
+  ECharts 曲线封装（单曲线 / 多曲线）
 
 src/transports/transport.js
   BaseTransport 接口（connect/disconnect/write + connected/disconnected/rx/tx/error 事件）
@@ -70,7 +70,10 @@ src/transports/registry.js
   传输注册表：listTransports / getTransportDescriptor / createTransportSession
 
 src/protocols.js
-  设备注册表、getDeviceDefaultTransportId、getModeConfig、统一协议入口
+  设备注册表 lookup、getDeviceProfile、统一协议入口（buildManualPayload 等）
+
+src/device-registry.js
+  DEVICE_REGISTRY：设备 id、pagePath、profile、createCommand、parseTelemetry；新增设备主要改此文件
 
 src/devices/aomaster.js
   AOMaster profile、Modbus RTU 命令构造、实际输出回读解析
@@ -88,7 +91,10 @@ src/devices/binary-curve-config.js
   HEX / Modbus 多曲线槽位、按偏移解码、removeMultiCurveSlot
 
 src/debug-curve-form.js
-  监测面板 MQTT/WebSocket 二进制曲线表单读写与模式切换
+  监测面板 MQTT/WebSocket/Modbus 二进制曲线表单读写与模式切换
+
+src/debug-curve-section.js
+  监测面板曲线配置区 HTML 模板（Modbus / Custom / WebSocket / MQTT），启动时 mount
 
 src/devices/message-parser.js
   MQTT / WebSocket 共享解析入口：JSON·HEX·Modbus 多曲线
@@ -174,11 +180,16 @@ export const MY_DEVICE_PROFILE = {
 
 需要从页面下发设定时，再补上 `modes` 和命令构造函数。约定：`create*SetOutputCommand` 始终返回 `{ supported, preview, bytes }`；`bytes` 可为 `Uint8Array` 或 `string`（WebSocket/MQTT 文本帧）。
 
-### 在 `src/protocols.js` 注册
+### 在 `src/device-registry.js` 注册
 
-- 把 profile 加入 `DEVICE_PROFILES`（`custom` 除外）
-- 在 `parseDeviceTelemetry` 分发到本设备的 `parse*Telemetry`
-- 在 `createDeviceSetOutputCommand` 分发命令构造（无设定则跳过）
+在 `DEVICE_REGISTRY` 数组追加一条 entry（`id`、`pagePath`、`getProfile`、`createCommand`、`parseTelemetry`；有静态 profile 时一并填写 `profile` 供设备库列表使用）。`protocols.js` 会通过 lookup 自动分发，无需再改 switch。
+
+内置设备若 profile 不依赖运行时配置，可直接引用 `*_PROFILE`；自定义设备用 `getProfile: (ctx) => createCustomProfile(ctx.customConfig)`。
+
+### 在 `src/protocols.js` 导出
+
+- 若需新增默认 config 常量，在 `protocols.js` 继续 re-export
+- `createDeviceSetOutputCommand` / `parseDeviceTelemetry` 已由 registry 分发，一般无需修改
 
 ## 设备默认连接参数与轮询
 
@@ -228,9 +239,9 @@ export const MY_DEVICE_MQTT_TRANSPORT_DEFAULTS = {
 
 ## 添加设备 UI
 
-1. 在 `pages/devices/<id>.html` 添加设备专属 UI，并在 `src/page-loader.js` 的 `PAGE_PATHS.devices` 中注册路径。
-2. 设备库与主页卡片通过 `listDeviceLibrary()` 自动收录 `DEVICE_PROFILES` 中的设备；设置 `profile.image` 可显示 `images/` 下图标。
-3. 在 `src/app.js` 增加 `DEVICE_PAGE_IDS`、页面状态绑定、轮询与配置表单。
+1. 在 `pages/devices/<id>.html` 添加设备专属 UI；`page-loader.js` 会按 `device-registry.js` 的 `pagePath` 自动加载。
+2. 设备库与主页卡片通过 `listDeviceLibrary()` 自动收录 `DEVICE_REGISTRY` 中的设备；设置 `profile.image` 可显示 `images/` 下图标。
+3. 在 `src/app.js` 增加页面状态绑定、轮询与配置表单（`DEVICE_PAGE_IDS` 已由 registry 导出）。
 4. 保持连接、日志和曲线复用现有组件。
 
 ## 添加传输
@@ -272,4 +283,17 @@ Modbus RTU 与自定义帧头帧尾在连接期间维护 rx buffer；连接/断�
 - 不要在协议未确认时写死会影响设备输出的命令。
 - 需要写设备输出时，要校验范围并在 UI 中展示命令预览。
 - 自定义设备、WebSocket 与 MQTT 调试配置保存在浏览器 `localStorage`，不是云端配置。
-- `src/config.js` 中的 GitHub 链接目前是占位，配置真实仓库后应更新。
+- 站点链接（GitHub、新增设备请求等）在 `src/config.js` 维护。
+
+## 已知技术债与演进方向
+
+当前可正常工作，但扩展新设备时仍需 touch 多处，后续可优先改进：
+
+| 项 | 现状 | 建议 |
+| --- | --- | --- |
+| `src/app.js` | 约 5000 行，集中路由/表单/轮询/DOM | 拆分为 config-stores、polling、device-ui 等模块 |
+| `protocols.js` 手工 switch 分发 | 已改为 `device-registry.js` lookup | 新设备只追加 registry entry |
+| `page-loader.js` | 已按 `DEVICE_REGISTRY` 动态加载设备 HTML | 新设备只需在 registry 填 `pagePath` |
+| `workbench.html` | 曲线区由 `debug-curve-section.js` 运行时生成 | 新 prefix 加入 `MESSAGE_DEBUG_CURVE_SECTIONS` |
+| 自动化测试 | 无 unit test | 优先覆盖 `modbus.js`、曲线 config、message-parser |
+| 遗留代码 | 已移除未使用的 Canvas `chart.js` | 曲线统一走 `echarts-charts.js` |

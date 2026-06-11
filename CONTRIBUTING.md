@@ -14,14 +14,15 @@
 1. 在 `src/devices/` 新建设备驱动文件，例如 `my-device.js`。
 2. 导出设备 ID、profile（含 `defaultTransportId`、可选 `image`）、命令构造函数和遥测解析函数。
 3. 如有常用连接参数，导出 `*_TRANSPORT_DEFAULTS` 并在 `src/app.js` 的 `DEVICE_TRANSPORT_DEFAULTS` 按传输 ID 注册；如需轮询，在 `DEFAULT_*_CONFIG` 中设置 `pollIntervalMs`。
-4. 在 `src/protocols.js` 注册设备 profile，并在 `createDeviceSetOutputCommand`、`parseDeviceTelemetry` 中接入。
-5. 在 `pages/devices/` 增加设备页面 HTML，并在 `src/page-loader.js` 注册路径。
-6. 在 `src/app.js` 增加 `DEVICE_PAGE_IDS`、页面状态绑定、设备专属 UI 显隐逻辑与轮询/配置表单。
-7. 更新 `README.md` 和 `AI.md`。
+4. 在 `src/device-registry.js` 的 `DEVICE_REGISTRY` 追加 entry（含 `pagePath`、`getProfile`、`createCommand`、`parseTelemetry`）。
+5. 在 `pages/devices/` 增加设备页面 HTML（路径与 registry 中 `pagePath` 一致）。
+6. 在 `src/app.js` 增加页面状态绑定、设备专属 UI 显隐逻辑与轮询/配置表单。
+7. 更新 `README.md` 和 `AI.md`（含监测面板曲线配置说明）。
 8. 至少运行：
 
 ```powershell
 node --check src\app.js
+node --check src\device-registry.js
 node --check src\protocols.js
 node --check src\devices\my-device.js
 ```

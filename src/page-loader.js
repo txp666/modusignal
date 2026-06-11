@@ -1,17 +1,11 @@
 import { assetUrl } from "./asset-url.js";
+import { DEVICE_REGISTRY } from "./device-registry.js";
 
 const PAGE_PATHS = {
   home: "pages/home.html",
   request: "pages/request.html",
   workbench: "pages/shared/workbench.html",
-  devices: {
-    aomaster: "pages/devices/aomaster.html",
-    modbus: "pages/devices/modbus.html",
-    hart: "pages/devices/hart.html",
-    custom: "pages/devices/custom.html",
-    mqtt: "pages/devices/mqtt.html",
-    websocket: "pages/devices/websocket.html",
-  },
+  devices: Object.fromEntries(DEVICE_REGISTRY.map((entry) => [entry.id, entry.pagePath])),
 };
 
 async function fetchPageFragment(path) {
@@ -40,23 +34,19 @@ function mountFragment(host, fragment) {
 }
 
 export async function loadAppPages() {
-  const [home, request, workbench, aomaster, modbus, hart, custom, mqtt, websocket] = await Promise.all([
+  const deviceLoads = DEVICE_REGISTRY.map((entry) => fetchPageFragment(entry.pagePath));
+  const [home, request, workbench, ...deviceFragments] = await Promise.all([
     fetchPageFragment(PAGE_PATHS.home),
     fetchPageFragment(PAGE_PATHS.request),
     fetchPageFragment(PAGE_PATHS.workbench),
-    fetchPageFragment(PAGE_PATHS.devices.aomaster),
-    fetchPageFragment(PAGE_PATHS.devices.modbus),
-    fetchPageFragment(PAGE_PATHS.devices.hart),
-    fetchPageFragment(PAGE_PATHS.devices.custom),
-    fetchPageFragment(PAGE_PATHS.devices.mqtt),
-    fetchPageFragment(PAGE_PATHS.devices.websocket),
+    ...deviceLoads,
   ]);
 
   mountFragment(document.querySelector("#homeMount"), home);
   mountFragment(document.querySelector("#requestMount"), request);
   const deviceHost = document.querySelector("#devicePagesMount");
   deviceHost.replaceChildren();
-  deviceHost.append(aomaster, modbus, hart, custom, mqtt, websocket);
+  deviceHost.append(...deviceFragments);
   mountFragment(document.querySelector("#workbenchMount"), workbench);
 }
 

@@ -1,4 +1,5 @@
 import { assetUrl } from "./asset-url.js";
+import { mountChartCurveSections } from "./debug-curve-section.js";
 import { loadAppPages } from "./page-loader.js";
 import {
   createTransportSession,
@@ -99,6 +100,7 @@ import {
   DEFAULT_MODBUS_CONFIG,
   DEFAULT_MQTT_CONFIG,
   DEFAULT_WEBSOCKET_CONFIG,
+  DEVICE_PAGE_IDS,
   getDeviceProfile,
   getDeviceDefaultTransportId,
   getModeConfig,
@@ -164,15 +166,6 @@ const AOMASTER_CONFIG_STORAGE_KEY = "modusignal.aomasterDevice.v1";
 const CHART_CONFIG_STORAGE_KEY = "modusignal.chart.v1";
 const AOMASTER_VALUE_DISPLAY_STORAGE_KEY = "modusignal.aomasterValueDisplayMode.v1";
 const SIDEBAR_PANELS_STORAGE_KEY = "modusignal.sidebarPanels.v1";
-
-const DEVICE_PAGE_IDS = [
-  DEFAULT_DEVICE_ID,
-  CUSTOM_DEVICE_ID,
-  MODBUS_DEVICE_ID,
-  HART_DEVICE_ID,
-  WEBSOCKET_DEVICE_ID,
-  MQTT_DEVICE_ID,
-];
 
 /** @type {Record<string, HTMLElement | HTMLElement[] | null>} */
 const elements = {};
@@ -451,6 +444,7 @@ boot();
 async function boot() {
   try {
     await loadAppPages();
+    mountChartCurveSections();
     cacheElements();
     await initialize();
   } catch (error) {
@@ -1690,7 +1684,7 @@ function bindEvents() {
 
   on(elements.saveCustomConfig, "click", saveCustomConfig);
   on(elements.resetCustomConfig, "click", resetCustomConfig);
-  on(elements.testCustomParser, "click", testCustomParser);
+  on(elements.testCustomParser, "click", () => testDeviceParser(CUSTOM_DEVICE_ID));
 
   getModbusConfigControls().filter(Boolean).forEach((control) => {
     control.addEventListener("input", updateModbusDraftConfig);
@@ -1699,7 +1693,7 @@ function bindEvents() {
 
   on(elements.saveModbusConfig, "click", saveModbusConfig);
   on(elements.resetModbusConfig, "click", resetModbusConfig);
-  on(elements.testModbusParser, "click", testModbusParser);
+  on(elements.testModbusParser, "click", () => testDeviceParser(MODBUS_DEVICE_ID));
   on(elements.modbusAddCurve, "click", () => handleAddDebugCurve("modbus"));
   bindDebugCurveConfigActions("modbus");
 
@@ -1721,7 +1715,7 @@ function bindEvents() {
   on(elements.saveWebsocketConfig, "click", saveWebsocketConfig);
   on(elements.resetWebsocketConfig, "click", resetWebsocketConfig);
   on(elements.loadWebsocketHeartbeat, "click", () => loadMessageIntoManualSender(readWebsocketHeartbeatPreset()));
-  on(elements.testWebsocketParser, "click", testWebsocketParser);
+  on(elements.testWebsocketParser, "click", () => testDeviceParser(WEBSOCKET_DEVICE_ID));
   on(elements.websocketAddCurve, "click", () => handleAddDebugCurve("websocket"));
 
   getMqttConfigControls().filter(Boolean).forEach((control) => {
@@ -1732,7 +1726,7 @@ function bindEvents() {
   on(elements.saveMqttConfig, "click", saveMqttConfig);
   on(elements.resetMqttConfig, "click", resetMqttConfig);
   on(elements.loadMqttHeartbeat, "click", () => loadMessageIntoManualSender(readMqttHeartbeatPreset()));
-  on(elements.testMqttParser, "click", testMqttParser);
+  on(elements.testMqttParser, "click", () => testDeviceParser(MQTT_DEVICE_ID));
   on(elements.mqttAddCurve, "click", () => handleAddDebugCurve("mqtt"));
   bindDebugCurveConfigActions("mqtt");
   bindDebugCurveConfigActions("websocket");
@@ -2868,33 +2862,6 @@ function resetCustomConfig() {
   appendLog("info", "设备", "自定义串口设备配置已恢复默认");
 }
 
-function testCustomParser() {
-  customConfig = readCustomConfigForm();
-  resetCustomRxBuffer(customConfig);
-  const sample = elements.customParserSample?.value ?? "";
-  let bytes = null;
-  try {
-    bytes = parseHexPayload(sample);
-  } catch {
-    bytes = null;
-  }
-
-  const telemetry = parseDeviceTelemetry(
-    CUSTOM_DEVICE_ID,
-    bytes ? null : sample,
-    customConfig,
-    modbusConfig,
-    bytes,
-    state,
-    aomasterConfig,
-    hartConfig,
-    websocketConfig,
-    mqttConfig,
-  );
-
-  renderParserPreview(elements.customParserPreview, telemetry);
-}
-
 async function copyRequestTemplate() {
   try {
     await navigator.clipboard.writeText(elements.deviceRequestTemplate.value);
@@ -3589,24 +3556,6 @@ function updateWebSocketDebuggerUi() {
   );
 }
 
-function testWebsocketParser() {
-  websocketConfig = readWebsocketConfigForm();
-  const telemetry = parseDeviceTelemetry(
-    WEBSOCKET_DEVICE_ID,
-    elements.websocketParserSample?.value ?? "",
-    customConfig,
-    modbusConfig,
-    null,
-    state,
-    aomasterConfig,
-    hartConfig,
-    websocketConfig,
-    mqttConfig,
-  );
-
-  renderParserPreview(elements.websocketParserPreview, telemetry);
-}
-
 function readMqttWriteOptions() {
   return getMqttPublishOptions(mqttConfig, readTransportOptions().publishTopic);
 }
@@ -3882,24 +3831,6 @@ function updateMqttDebuggerUi() {
   updatePayloadPreview(elements.mqttHeartbeatPreview, normalized.heartbeatFormat, normalized.heartbeatMessage, buildMqttMessage);
 }
 
-function testMqttParser() {
-  mqttConfig = readMqttConfigForm();
-  const telemetry = parseDeviceTelemetry(
-    MQTT_DEVICE_ID,
-    elements.mqttParserSample?.value ?? "",
-    customConfig,
-    modbusConfig,
-    null,
-    state,
-    aomasterConfig,
-    hartConfig,
-    websocketConfig,
-    mqttConfig,
-  );
-
-  renderParserPreview(elements.mqttParserPreview, telemetry);
-}
-
 function renderDebugTemplateCards(container, presets, options) {
   container.innerHTML = "";
   presets.forEach((preset) => {
@@ -3966,6 +3897,94 @@ function updatePayloadPreview(target, format, message, builder) {
     target.textContent = error.message;
     target.classList.add("error");
   }
+}
+
+const PARSER_TEST_SPECS = {
+  [CUSTOM_DEVICE_ID]: {
+    readForm: () => {
+      customConfig = readCustomConfigForm();
+      return customConfig;
+    },
+    sampleKey: "customParserSample",
+    previewKey: "customParserPreview",
+    prepareSample(sample, config) {
+      resetCustomRxBuffer(config);
+      try {
+        return { text: null, bytes: parseHexPayload(sample) };
+      } catch {
+        return { text: sample, bytes: null };
+      }
+    },
+  },
+  [MODBUS_DEVICE_ID]: {
+    readForm: () => {
+      modbusConfig = readModbusConfigForm();
+      return modbusConfig;
+    },
+    sampleKey: "modbusParserSample",
+    previewKey: "modbusParserPreview",
+    prepareSample(sample) {
+      resetModbusRxBuffer();
+      try {
+        return { text: null, bytes: parseHexPayload(sample) };
+      } catch {
+        return null;
+      }
+    },
+  },
+  [WEBSOCKET_DEVICE_ID]: {
+    readForm: () => {
+      websocketConfig = readWebsocketConfigForm();
+      return websocketConfig;
+    },
+    sampleKey: "websocketParserSample",
+    previewKey: "websocketParserPreview",
+    prepareSample(sample) {
+      return { text: sample, bytes: null };
+    },
+  },
+  [MQTT_DEVICE_ID]: {
+    readForm: () => {
+      mqttConfig = readMqttConfigForm();
+      return mqttConfig;
+    },
+    sampleKey: "mqttParserSample",
+    previewKey: "mqttParserPreview",
+    prepareSample(sample) {
+      return { text: sample, bytes: null };
+    },
+  },
+};
+
+function testDeviceParser(deviceId) {
+  const spec = PARSER_TEST_SPECS[deviceId];
+  if (!spec) {
+    return;
+  }
+
+  const config = spec.readForm();
+  const sample = elements[spec.sampleKey]?.value ?? "";
+  const prepared = spec.prepareSample(sample, config);
+
+  if (!prepared) {
+    renderParserPreview(elements[spec.previewKey], null);
+    return;
+  }
+
+  const telemetry = parseDeviceTelemetry(
+    deviceId,
+    prepared.text,
+    customConfig,
+    modbusConfig,
+    prepared.bytes,
+    state,
+    aomasterConfig,
+    hartConfig,
+    websocketConfig,
+    mqttConfig,
+  );
+
+  renderParserPreview(elements[spec.previewKey], telemetry);
 }
 
 function renderParserPreview(target, telemetry) {
@@ -4087,37 +4106,6 @@ function getModbusConfigControls() {
     elements.modbusPollIntervalMs,
     ...listDebugCurveControlElements("modbus", elements),
   ];
-}
-
-function testModbusParser() {
-  modbusConfig = readModbusConfigForm();
-  resetModbusRxBuffer();
-  let bytes = null;
-  try {
-    bytes = parseHexPayload(elements.modbusParserSample?.value ?? "");
-  } catch {
-    bytes = null;
-  }
-
-  if (!bytes) {
-    renderParserPreview(elements.modbusParserPreview, null);
-    return;
-  }
-
-  const telemetry = parseDeviceTelemetry(
-    MODBUS_DEVICE_ID,
-    null,
-    customConfig,
-    modbusConfig,
-    bytes,
-    state,
-    aomasterConfig,
-    hartConfig,
-    websocketConfig,
-    mqttConfig,
-  );
-
-  renderParserPreview(elements.modbusParserPreview, telemetry);
 }
 
 function updateHartPolling() {
