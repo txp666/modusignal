@@ -10,6 +10,16 @@ import {
 } from "../modbus/modbus.js";
 
 export const MODBUS_DEVICE_ID = "modbus";
+export const MODBUS_DEFAULT_BAUD_RATE = 9600;
+
+/** Modbus RTU 常用串口参数：9600 8N1 */
+export const MODBUS_TRANSPORT_DEFAULTS = {
+  baudRate: MODBUS_DEFAULT_BAUD_RATE,
+  parity: "none",
+  dataBits: 8,
+  stopBits: 1,
+  flowControl: "none",
+};
 
 export const DEFAULT_MODBUS_CONFIG = {
   slaveId: 1,

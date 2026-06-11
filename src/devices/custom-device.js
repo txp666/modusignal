@@ -1,6 +1,16 @@
 const textEncoder = new TextEncoder();
 
 export const CUSTOM_DEVICE_ID = "custom";
+export const CUSTOM_DEFAULT_BAUD_RATE = 115200;
+
+/** 自定义设备常用串口参数：115200 8N1 */
+export const CUSTOM_TRANSPORT_DEFAULTS = {
+  baudRate: CUSTOM_DEFAULT_BAUD_RATE,
+  parity: "none",
+  dataBits: 8,
+  stopBits: 1,
+  flowControl: "none",
+};
 
 export const DEFAULT_CUSTOM_CONFIG = {
   name: "自定义设备",

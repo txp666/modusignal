@@ -7,7 +7,9 @@ import {
   listTransports,
 } from "./transports/registry.js";
 import {
+  AOMASTER_DEVICE_ID,
   AOMASTER_MAX_STEP_SEQUENCE,
+  AOMASTER_TRANSPORT_DEFAULTS,
   buildDefaultStepSequence,
   describeAomasterSummary,
   createAOMasterReadCommand,
@@ -19,8 +21,12 @@ import {
   resetAomasterRxBuffer,
 } from "./devices/aomaster.js";
 import {
+  CUSTOM_TRANSPORT_DEFAULTS,
+} from "./devices/custom-device.js";
+import {
   describeModbusSummary,
   getModbusMode,
+  MODBUS_TRANSPORT_DEFAULTS,
   resetModbusRxBuffer,
 } from "./devices/modbus-device.js";
 import {
@@ -70,6 +76,13 @@ import {
 const CUSTOM_CONFIG_STORAGE_KEY = "modusignal.customDevice.v1";
 const MODBUS_CONFIG_STORAGE_KEY = "modusignal.modbusDevice.v1";
 const HART_CONFIG_STORAGE_KEY = "modusignal.hartDevice.v1";
+const DEVICE_TRANSPORT_DEFAULTS = {
+  [AOMASTER_DEVICE_ID]: AOMASTER_TRANSPORT_DEFAULTS,
+  [CUSTOM_DEVICE_ID]: CUSTOM_TRANSPORT_DEFAULTS,
+  [MODBUS_DEVICE_ID]: MODBUS_TRANSPORT_DEFAULTS,
+  [HART_DEVICE_ID]: HART_TRANSPORT_DEFAULTS,
+};
+
 const AOMASTER_CONFIG_STORAGE_KEY = "modusignal.aomasterDevice.v1";
 const CHART_CONFIG_STORAGE_KEY = "modusignal.chart.v1";
 const AOMASTER_VALUE_DISPLAY_STORAGE_KEY = "modusignal.aomasterValueDisplayMode.v1";
@@ -830,9 +843,14 @@ function populateTransportSelect() {
   elements.transportSelect.value = state.transportId;
 }
 
+function getDeviceTransportDefaults(deviceId = state.deviceId) {
+  return DEVICE_TRANSPORT_DEFAULTS[deviceId] ?? null;
+}
+
 function resolveTransportFieldDefault(field) {
-  if (state.deviceId === HART_DEVICE_ID && HART_TRANSPORT_DEFAULTS[field.key] !== undefined) {
-    return HART_TRANSPORT_DEFAULTS[field.key];
+  const deviceDefaults = getDeviceTransportDefaults();
+  if (deviceDefaults?.[field.key] !== undefined) {
+    return deviceDefaults[field.key];
   }
 
   if (transportOptions[field.key] !== undefined) {
@@ -888,8 +906,25 @@ function readTransportOptions() {
   return options;
 }
 
+function describeDeviceTransportDefaults(deviceId) {
+  if (deviceId === HART_DEVICE_ID) {
+    return "HART 默认串口参数（1200 8O1）";
+  }
+  if (deviceId === AOMASTER_DEVICE_ID) {
+    return "AOMaster 默认串口参数（115200 8N1）";
+  }
+  if (deviceId === MODBUS_DEVICE_ID) {
+    return "Modbus 默认串口参数（9600 8N1）";
+  }
+  if (deviceId === CUSTOM_DEVICE_ID) {
+    return "自定义设备默认串口参数（115200 8N1）";
+  }
+  return "设备默认串口参数";
+}
+
 function applyDeviceTransportDefaults(deviceId = state.deviceId) {
-  if (deviceId !== HART_DEVICE_ID || state.transportId !== DEFAULT_TRANSPORT_ID) {
+  const defaults = getDeviceTransportDefaults(deviceId);
+  if (!defaults || state.transportId !== DEFAULT_TRANSPORT_ID) {
     return false;
   }
 
@@ -898,7 +933,7 @@ function applyDeviceTransportDefaults(deviceId = state.deviceId) {
   }
 
   let changed = false;
-  for (const [key, value] of Object.entries(HART_TRANSPORT_DEFAULTS)) {
+  for (const [key, value] of Object.entries(defaults)) {
     const control = elements.transportFields.querySelector(`[data-field-key="${key}"]`);
     if (!control) {
       continue;
@@ -914,7 +949,7 @@ function applyDeviceTransportDefaults(deviceId = state.deviceId) {
   }
 
   if (changed && session?.connected) {
-    appendLog("info", "连接", "已切换 HART 默认串口参数（1200 8O1），断开后重新连接生效");
+    appendLog("info", "连接", `已切换 ${describeDeviceTransportDefaults(deviceId)}，断开后重新连接生效`);
   }
 
   return changed;
@@ -932,11 +967,13 @@ function selectDevice(deviceId) {
   if (deviceId === CUSTOM_DEVICE_ID) {
     state.mode = "custom";
     state.setpoint = normalizeCustomConfig(customConfig).defaultValue;
+    applyDeviceTransportDefaults(CUSTOM_DEVICE_ID);
   } else if (deviceId === MODBUS_DEVICE_ID) {
     const normalized = normalizeModbusConfig(modbusConfig);
     state.mode = getModbusMode(normalized.functionCode);
     const config = getModeConfig(state.mode, deviceId, customConfig, modbusConfig);
     state.setpoint = config.presets.mid;
+    applyDeviceTransportDefaults(MODBUS_DEVICE_ID);
   } else if (deviceId === HART_DEVICE_ID) {
     const normalized = normalizeHartConfig(hartConfig);
     state.mode = getHartMode(normalized.activeCommand);
@@ -946,6 +983,7 @@ function selectDevice(deviceId) {
   } else {
     state.mode = elements.outputModeSelect?.value || "current";
     applyAomasterModeDefaults(false);
+    applyDeviceTransportDefaults(AOMASTER_DEVICE_ID);
   }
 
   clearAllCharts();
@@ -1040,6 +1078,9 @@ function updateDeviceUi() {
     syncHartChartSeriesControls();
     updateHartVariableCards();
   } else {
+    if (getDeviceTransportDefaults(state.deviceId)) {
+      applyDeviceTransportDefaults();
+    }
     ensureSingleTelemetryChart();
   }
   if (elements.chartPanelSummary) {

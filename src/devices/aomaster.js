@@ -49,6 +49,16 @@ export const AOMASTER_WAVEFORM_OPTIONS = [
 
 export const AOMASTER_SCALE = 1000;
 export const AOMASTER_FREQUENCY_SCALE = 10;
+export const AOMASTER_DEFAULT_BAUD_RATE = 115200;
+
+/** AOMaster 常用串口参数：115200 8N1 */
+export const AOMASTER_TRANSPORT_DEFAULTS = {
+  baudRate: AOMASTER_DEFAULT_BAUD_RATE,
+  parity: "none",
+  dataBits: 8,
+  stopBits: 1,
+  flowControl: "none",
+};
 
 export const DEFAULT_AOMASTER_CONFIG = {
   slaveId: 1,
