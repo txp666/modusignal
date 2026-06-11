@@ -8,11 +8,26 @@
       <span data-field="driverState" class="state-pill">手动 / 轮询</span>
     </div>
 
+    <div class="debug-stat-grid" aria-label="WebSocket 调试状态">
+      <div class="debug-stat">
+        <strong id="websocketRxCount">0</strong>
+        <span>已接收</span>
+      </div>
+      <div class="debug-stat">
+        <strong id="websocketTxCount">0</strong>
+        <span>已发送</span>
+      </div>
+      <div class="debug-stat wide">
+        <strong id="websocketEndpoint">—</strong>
+        <span>连接地址</span>
+      </div>
+    </div>
+
     <div class="subsection-heading">
       <h3>快捷发送</h3>
-      <span>需先连接 WebSocket；也可在下方收发调试区手动发送</span>
+      <span>可直接发送，也可填入下方收发调试区后再编辑</span>
     </div>
-    <div id="wsQuickSendGrid" class="preset-row" aria-label="WebSocket 快捷发送"></div>
+    <div id="wsQuickSendGrid" class="debug-template-grid" aria-label="WebSocket 快捷发送"></div>
   </section>
 
   <section class="panel custom-panel">
@@ -55,9 +70,24 @@
       <input id="websocketHeartbeatMessage" type="text" value='{"type":"ping"}' />
     </label>
 
+    <div class="debug-preview">
+      <span>轮询预览</span>
+      <code id="websocketHeartbeatPreview">{"type":"ping"}</code>
+      <button id="loadWebsocketHeartbeat" class="ghost-button" type="button">填入发送框</button>
+    </div>
+
     <label class="template-input">
       JSON 数值路径
       <input id="websocketParserFieldPath" type="text" value="value" placeholder="例如 value 或 data.temp；留空自动找第一个数字" />
     </label>
+
+    <div class="parser-test">
+      <label>
+        解析样例
+        <input id="websocketParserSample" type="text" value='{"value":12.34}' />
+      </label>
+      <button id="testWebsocketParser" type="button">测试</button>
+      <output id="websocketParserPreview">等待测试</output>
+    </div>
   </section>
 </section>

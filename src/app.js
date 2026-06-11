@@ -265,6 +265,14 @@ function cacheElements() {
     websocketFieldName: document.querySelector("#websocketFieldName"),
     websocketUnit: document.querySelector("#websocketUnit"),
     wsQuickSendGrid: document.querySelector("#wsQuickSendGrid"),
+    websocketRxCount: document.querySelector("#websocketRxCount"),
+    websocketTxCount: document.querySelector("#websocketTxCount"),
+    websocketEndpoint: document.querySelector("#websocketEndpoint"),
+    websocketHeartbeatPreview: document.querySelector("#websocketHeartbeatPreview"),
+    loadWebsocketHeartbeat: document.querySelector("#loadWebsocketHeartbeat"),
+    websocketParserSample: document.querySelector("#websocketParserSample"),
+    websocketParserPreview: document.querySelector("#websocketParserPreview"),
+    testWebsocketParser: document.querySelector("#testWebsocketParser"),
     saveWebsocketConfig: document.querySelector("#saveWebsocketConfig"),
     resetWebsocketConfig: document.querySelector("#resetWebsocketConfig"),
     mqttPollIntervalMs: document.querySelector("#mqttPollIntervalMs"),
@@ -280,6 +288,14 @@ function cacheElements() {
     mqttRxCount: document.querySelector("#mqttRxCount"),
     mqttTxCount: document.querySelector("#mqttTxCount"),
     mqttSubscribeTopic: document.querySelector("#mqttSubscribeTopic"),
+    mqttEffectivePublishTopic: document.querySelector("#mqttEffectivePublishTopic"),
+    mqttPublishMode: document.querySelector("#mqttPublishMode"),
+    mqttPublishPreview: document.querySelector("#mqttPublishPreview"),
+    mqttHeartbeatPreview: document.querySelector("#mqttHeartbeatPreview"),
+    loadMqttHeartbeat: document.querySelector("#loadMqttHeartbeat"),
+    mqttParserSample: document.querySelector("#mqttParserSample"),
+    mqttParserPreview: document.querySelector("#mqttParserPreview"),
+    testMqttParser: document.querySelector("#testMqttParser"),
     saveMqttConfig: document.querySelector("#saveMqttConfig"),
     resetMqttConfig: document.querySelector("#resetMqttConfig"),
     telemetryChart: document.querySelector("#telemetryChart"),
@@ -333,6 +349,7 @@ let hartPollTimer = null;
 let aomasterPollTimer = null;
 let websocketPollTimer = null;
 let mqttPollTimer = null;
+let websocketMessageStats = { rx: 0, tx: 0 };
 let mqttMessageStats = { rx: 0, tx: 0 };
 let deviceLibrarySearchQuery = "";
 /** @type {Record<string, string | number>} */
@@ -719,11 +736,29 @@ function bindEvents() {
       return;
     }
 
+    const quickLoad = event.target.closest("[data-ws-load-preset]");
+    if (quickLoad) {
+      const preset = WEBSOCKET_QUICK_MESSAGES.find((item) => item.id === quickLoad.dataset.wsLoadPreset);
+      if (preset) {
+        loadMessageIntoManualSender(preset);
+      }
+      return;
+    }
+
     const mqttQuickSend = event.target.closest("[data-mqtt-quick-send]");
     if (mqttQuickSend) {
       const preset = MQTT_QUICK_MESSAGES.find((item) => item.id === mqttQuickSend.dataset.mqttQuickSend);
       if (preset) {
         sendMqttQuickMessage(preset).catch((error) => appendLog("error", "发送", error.message));
+      }
+      return;
+    }
+
+    const mqttQuickLoad = event.target.closest("[data-mqtt-load-preset]");
+    if (mqttQuickLoad) {
+      const preset = MQTT_QUICK_MESSAGES.find((item) => item.id === mqttQuickLoad.dataset.mqttLoadPreset);
+      if (preset) {
+        loadMessageIntoManualSender(preset);
       }
       return;
     }
@@ -845,6 +880,8 @@ function bindEvents() {
 
   on(elements.saveWebsocketConfig, "click", saveWebsocketConfig);
   on(elements.resetWebsocketConfig, "click", resetWebsocketConfig);
+  on(elements.loadWebsocketHeartbeat, "click", () => loadMessageIntoManualSender(readWebsocketHeartbeatPreset()));
+  on(elements.testWebsocketParser, "click", testWebsocketParser);
 
   getMqttConfigControls().filter(Boolean).forEach((control) => {
     control.addEventListener("input", updateMqttDraftConfig);
@@ -853,6 +890,8 @@ function bindEvents() {
 
   on(elements.saveMqttConfig, "click", saveMqttConfig);
   on(elements.resetMqttConfig, "click", resetMqttConfig);
+  on(elements.loadMqttHeartbeat, "click", () => loadMessageIntoManualSender(readMqttHeartbeatPreset()));
+  on(elements.testMqttParser, "click", testMqttParser);
 
   on(elements.hartSearchDevice, "click", () => {
     sendHartSearchCommand().catch((error) => appendLog("error", "HART", error.message));
@@ -923,6 +962,7 @@ function persistSidebarPanelState() {
 
 function bindSessionEvents(target) {
   target.addEventListener("connected", () => {
+    resetWebSocketMessageStats();
     resetMqttMessageStats();
     updateConnectionUi(true);
     updateActivePolling();
@@ -937,6 +977,7 @@ function bindSessionEvents(target) {
     resetAomasterRxBuffer();
     finalizeRxLogCoalesce();
     updateConnectionUi(false);
+    resetWebSocketMessageStats();
     resetMqttMessageStats();
     appendLog("info", "连接", "已断开");
   });
@@ -949,6 +990,11 @@ function bindSessionEvents(target) {
       state.deviceId === DEFAULT_DEVICE_ID;
     const rxPayload = topic ? `[${topic}] ${text ?? bytesToHex(bytes)}` : text ?? bytesToHex(bytes);
     queueRxLogDisplay(bytes, rxPayload, useHexDisplay && !topic);
+
+    if (state.deviceId === WEBSOCKET_DEVICE_ID) {
+      websocketMessageStats.rx += 1;
+      updateWebSocketMessageStatsUi();
+    }
 
     if (state.deviceId === MQTT_DEVICE_ID) {
       mqttMessageStats.rx += 1;
@@ -1005,6 +1051,11 @@ function bindSessionEvents(target) {
       payload = `[${topic}${flags.length ? ` ${flags.join(" ")}` : ""}] ${payload}`;
     }
     appendLog("tx", "TX", payload);
+
+    if (state.deviceId === WEBSOCKET_DEVICE_ID) {
+      websocketMessageStats.tx += 1;
+      updateWebSocketMessageStatsUi();
+    }
 
     if (state.deviceId === MQTT_DEVICE_ID) {
       mqttMessageStats.tx += 1;
@@ -1114,13 +1165,16 @@ function renderTransportFields() {
     elements.transportFields.append(label);
 
     if (state.transportId === WEBSOCKET_TRANSPORT_ID && field.key === "url") {
-      control.addEventListener("input", updateSecureState);
-      control.addEventListener("change", updateSecureState);
+      control.addEventListener("input", updateWebSocketTransportDraft);
+      control.addEventListener("change", updateWebSocketTransportDraft);
     }
 
     if (state.transportId === MQTT_TRANSPORT_ID && field.key === "brokerUrl") {
-      control.addEventListener("input", updateSecureState);
-      control.addEventListener("change", updateSecureState);
+      control.addEventListener("input", updateMqttTransportDraft);
+      control.addEventListener("change", updateMqttTransportDraft);
+    } else if (state.transportId === MQTT_TRANSPORT_ID) {
+      control.addEventListener("input", updateMqttDebuggerUi);
+      control.addEventListener("change", updateMqttDebuggerUi);
     }
   });
 
@@ -1134,6 +1188,7 @@ function readTransportOptions() {
     const { fieldKey, fieldType } = control.dataset;
     options[fieldKey] = fieldType === "number" ? Number(control.value) : control.value;
   });
+  transportOptions = { ...transportOptions, ...options };
   return options;
 }
 
@@ -1303,6 +1358,16 @@ function updateSecureState() {
   elements.secureState.classList.remove("warning");
 }
 
+function updateWebSocketTransportDraft() {
+  updateSecureState();
+  updateWebSocketMessageStatsUi();
+}
+
+function updateMqttTransportDraft() {
+  updateSecureState();
+  updateMqttDebuggerUi();
+}
+
 function transportReady() {
   const descriptor = getTransportDescriptor(state.transportId);
   return descriptor.isSupported() && (!descriptor.requiresSecureContext || window.isSecureContext);
@@ -1346,15 +1411,11 @@ function updateDeviceUi() {
     elements.hartChartSeriesBlock.hidden = !isHart;
   }
   if (isHart) {
-    applyDeviceTransportDefaults(HART_DEVICE_ID);
     syncHartCommandModeUi();
     ensureHartTelemetryChart();
     syncHartChartSeriesControls();
     updateHartVariableCards();
   } else {
-    if (getDeviceTransportDefaults(state.deviceId)) {
-      applyDeviceTransportDefaults();
-    }
     ensureSingleTelemetryChart();
   }
   if (elements.chartPanelSummary) {
@@ -1421,6 +1482,7 @@ function updateDeviceUi() {
 
   if (isWebsocket) {
     renderWebSocketQuickSends();
+    updateWebSocketDebuggerUi();
     if (elements.sendFormat) {
       elements.sendFormat.value = "json";
     }
@@ -1431,7 +1493,7 @@ function updateDeviceUi() {
 
   if (isMqtt) {
     renderMqttQuickSends();
-    updateMqttMessageStatsUi();
+    updateMqttDebuggerUi();
     if (elements.sendFormat) {
       elements.sendFormat.value = "json";
     }
@@ -2359,6 +2421,7 @@ function populateWebsocketConfigForm(config = websocketConfig) {
   if (elements.websocketUnit) {
     elements.websocketUnit.value = normalized.unit;
   }
+  updateWebSocketDebuggerUi();
 }
 
 function readWebsocketConfigForm() {
@@ -2388,14 +2451,10 @@ function renderWebSocketQuickSends() {
     return;
   }
 
-  elements.wsQuickSendGrid.innerHTML = "";
-  WEBSOCKET_QUICK_MESSAGES.forEach((preset) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.dataset.wsQuickSend = preset.id;
-    button.textContent = preset.label;
-    button.disabled = !session?.connected;
-    elements.wsQuickSendGrid.append(button);
+  renderDebugTemplateCards(elements.wsQuickSendGrid, WEBSOCKET_QUICK_MESSAGES, {
+    sendAttribute: "data-ws-quick-send",
+    loadAttribute: "data-ws-load-preset",
+    connected: Boolean(session?.connected),
   });
 }
 
@@ -2406,6 +2465,61 @@ async function sendWebSocketQuickMessage(preset) {
 
   const payload = buildWebSocketMessage(preset.format, preset.message, { parseHexPayload });
   await session.write(payload);
+}
+
+function readWebsocketHeartbeatPreset() {
+  const normalized = normalizeWebSocketConfig(websocketConfig);
+  return {
+    id: "websocket-heartbeat",
+    label: "轮询消息",
+    format: normalized.heartbeatFormat,
+    message: normalized.heartbeatMessage,
+  };
+}
+
+function resetWebSocketMessageStats() {
+  websocketMessageStats = { rx: 0, tx: 0 };
+  updateWebSocketMessageStatsUi();
+}
+
+function updateWebSocketMessageStatsUi() {
+  if (elements.websocketRxCount) {
+    elements.websocketRxCount.textContent = String(websocketMessageStats.rx);
+  }
+  if (elements.websocketTxCount) {
+    elements.websocketTxCount.textContent = String(websocketMessageStats.tx);
+  }
+  if (elements.websocketEndpoint) {
+    elements.websocketEndpoint.textContent = readCurrentTransportField("url") || "—";
+  }
+}
+
+function updateWebSocketDebuggerUi() {
+  updateWebSocketMessageStatsUi();
+  updatePayloadPreview(
+    elements.websocketHeartbeatPreview,
+    normalizeWebSocketConfig(websocketConfig).heartbeatFormat,
+    normalizeWebSocketConfig(websocketConfig).heartbeatMessage,
+    buildWebSocketMessage,
+  );
+}
+
+function testWebsocketParser() {
+  websocketConfig = readWebsocketConfigForm();
+  const telemetry = parseDeviceTelemetry(
+    WEBSOCKET_DEVICE_ID,
+    elements.websocketParserSample?.value ?? "",
+    customConfig,
+    modbusConfig,
+    null,
+    state,
+    aomasterConfig,
+    hartConfig,
+    websocketConfig,
+    mqttConfig,
+  );
+
+  renderParserPreview(elements.websocketParserPreview, telemetry);
 }
 
 function readMqttWriteOptions() {
@@ -2427,6 +2541,14 @@ function updateMqttMessageStatsUi() {
   if (elements.mqttSubscribeTopic) {
     const topic = session?.connected ? readTransportOptions().subscribeTopic : "—";
     elements.mqttSubscribeTopic.textContent = topic || "—";
+  }
+  if (elements.mqttEffectivePublishTopic) {
+    const options = readMqttWriteOptions();
+    elements.mqttEffectivePublishTopic.textContent = options.topic || "—";
+  }
+  if (elements.mqttPublishMode) {
+    const options = readMqttWriteOptions();
+    elements.mqttPublishMode.textContent = `QoS ${options.qos}${options.retain ? " · retain" : ""}`;
   }
 }
 
@@ -2512,6 +2634,7 @@ function populateMqttConfigForm(config = mqttConfig) {
   if (elements.mqttPublishRetain) {
     elements.mqttPublishRetain.checked = normalized.publishRetain;
   }
+  updateMqttDebuggerUi();
 }
 
 function readMqttConfigForm() {
@@ -2547,14 +2670,10 @@ function renderMqttQuickSends() {
     return;
   }
 
-  elements.mqttQuickSendGrid.innerHTML = "";
-  MQTT_QUICK_MESSAGES.forEach((preset) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.dataset.mqttQuickSend = preset.id;
-    button.textContent = preset.label;
-    button.disabled = !session?.connected;
-    elements.mqttQuickSendGrid.append(button);
+  renderDebugTemplateCards(elements.mqttQuickSendGrid, MQTT_QUICK_MESSAGES, {
+    sendAttribute: "data-mqtt-quick-send",
+    loadAttribute: "data-mqtt-load-preset",
+    connected: Boolean(session?.connected),
   });
 }
 
@@ -2565,6 +2684,137 @@ async function sendMqttQuickMessage(preset) {
 
   const payload = buildMqttMessage(preset.format, preset.message, { parseHexPayload });
   await session.write(payload, readMqttWriteOptions());
+}
+
+function readMqttHeartbeatPreset() {
+  const normalized = normalizeMqttConfig(mqttConfig);
+  return {
+    id: "mqtt-heartbeat",
+    label: "轮询消息",
+    format: normalized.heartbeatFormat,
+    message: normalized.heartbeatMessage,
+  };
+}
+
+function updateMqttDebuggerUi() {
+  updateMqttMessageStatsUi();
+
+  const options = readMqttWriteOptions();
+  if (elements.mqttPublishPreview) {
+    elements.mqttPublishPreview.textContent = `${options.topic || "未配置发布主题"} · QoS ${options.qos}${options.retain ? " · retain" : ""}`;
+  }
+
+  const normalized = normalizeMqttConfig(mqttConfig);
+  updatePayloadPreview(elements.mqttHeartbeatPreview, normalized.heartbeatFormat, normalized.heartbeatMessage, buildMqttMessage);
+}
+
+function testMqttParser() {
+  mqttConfig = readMqttConfigForm();
+  const telemetry = parseDeviceTelemetry(
+    MQTT_DEVICE_ID,
+    elements.mqttParserSample?.value ?? "",
+    customConfig,
+    modbusConfig,
+    null,
+    state,
+    aomasterConfig,
+    hartConfig,
+    websocketConfig,
+    mqttConfig,
+  );
+
+  renderParserPreview(elements.mqttParserPreview, telemetry);
+}
+
+function renderDebugTemplateCards(container, presets, options) {
+  container.innerHTML = "";
+  presets.forEach((preset) => {
+    const card = document.createElement("article");
+    card.className = "debug-template-card";
+
+    const header = document.createElement("div");
+    header.className = "debug-template-heading";
+
+    const title = document.createElement("strong");
+    title.textContent = preset.label;
+
+    const format = document.createElement("span");
+    format.textContent = preset.format.toUpperCase();
+
+    const preview = document.createElement("code");
+    preview.textContent = preset.message;
+
+    const actions = document.createElement("div");
+    actions.className = "debug-template-actions";
+
+    const loadButton = document.createElement("button");
+    loadButton.type = "button";
+    loadButton.className = "ghost-button";
+    loadButton.setAttribute(options.loadAttribute, preset.id);
+    loadButton.textContent = "填入";
+
+    const sendButton = document.createElement("button");
+    sendButton.type = "button";
+    sendButton.setAttribute(options.sendAttribute, preset.id);
+    sendButton.textContent = "发送";
+    sendButton.disabled = !options.connected;
+
+    header.append(title, format);
+    actions.append(loadButton, sendButton);
+    card.append(header, preview, actions);
+    container.append(card);
+  });
+}
+
+function loadMessageIntoManualSender(preset) {
+  if (elements.sendFormat) {
+    elements.sendFormat.value = preset.format;
+  }
+  if (elements.lineEnding) {
+    elements.lineEnding.value = "";
+  }
+  if (elements.manualCommand) {
+    elements.manualCommand.value = preset.message;
+    elements.manualCommand.focus();
+  }
+}
+
+function updatePayloadPreview(target, format, message, builder) {
+  if (!target) {
+    return;
+  }
+
+  try {
+    const payload = builder(format, message, { parseHexPayload });
+    target.textContent = typeof payload === "string" ? payload : bytesToHex(payload);
+    target.classList.remove("error");
+  } catch (error) {
+    target.textContent = error.message;
+    target.classList.add("error");
+  }
+}
+
+function renderParserPreview(target, telemetry) {
+  if (!target) {
+    return;
+  }
+
+  if (!telemetry) {
+    target.textContent = "未解析到数值";
+    target.classList.add("warning");
+    return;
+  }
+
+  target.textContent = `${telemetry.fieldName}: ${telemetry.value.toFixed(6)}${telemetry.unit ? ` ${telemetry.unit}` : ""}`;
+  target.classList.remove("warning");
+}
+
+function readCurrentTransportField(key) {
+  try {
+    return String(readTransportOptions()[key] ?? "").trim();
+  } catch {
+    return "";
+  }
 }
 
 function updateModbusDraftConfig() {
