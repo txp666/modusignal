@@ -9,8 +9,8 @@
           aria-hidden="true"
         />
         <div>
-          <h2>信号输出</h2>
-          <p data-field="deviceSummary">Modbus RTU 从站 1，轮询间隔 50 ms。</p>
+          <h2 data-i18n="aomaster.signalOutput">信号输出</h2>
+          <p data-field="deviceSummary">Modbus RTU slave 1, poll interval 50 ms。</p>
         </div>
       </div>
       <span data-field="driverState" class="state-pill">Modbus RTU</span>
@@ -18,21 +18,21 @@
 
     <div class="mode-row">
       <label for="outputModeSelect">
-        信号类型
+        <span data-i18n="aomaster.signalType">信号类型</span>
         <select id="outputModeSelect" name="outputMode"></select>
       </label>
     </div>
 
     <div class="mode-row">
       <label for="waveformSelect">
-        输出波形
+        <span data-i18n="aomaster.outputWaveform">输出波形</span>
         <select id="waveformSelect" name="waveform">
-          <option value="constant" selected>恒定输出</option>
-          <option value="step">阶跃</option>
-          <option value="ramp">斜坡</option>
-          <option value="square">方波</option>
-          <option value="triangle">三角波</option>
-          <option value="sine">正弦波</option>
+          <option value="constant" selected data-i18n="aomaster.waveform.constant">恒定输出</option>
+          <option value="step" data-i18n="aomaster.waveform.step">阶跃</option>
+          <option value="ramp" data-i18n="aomaster.waveform.ramp">斜坡</option>
+          <option value="square" data-i18n="aomaster.waveform.square">方波</option>
+          <option value="triangle" data-i18n="aomaster.waveform.triangle">三角波</option>
+          <option value="sine" data-i18n="aomaster.waveform.sine">正弦波</option>
         </select>
       </label>
     </div>
@@ -40,7 +40,7 @@
     <div class="mode-row value-display-row" aria-label="数值显示方式">
       <label class="segmented-option">
         <input type="radio" name="aomasterValueDisplayMode" value="value" checked />
-        <span>单位</span>
+        <span data-i18n="aomaster.value.unit">单位</span>
       </label>
       <label class="segmented-option">
         <input type="radio" name="aomasterValueDisplayMode" value="percent" />
@@ -51,7 +51,7 @@
     <div id="constantSetpointBlock">
       <div class="setpoint-row">
         <label class="range-label" for="setpointSlider">
-          <span id="setpointLabel">电流设定</span>
+          <span id="setpointLabel" data-i18n="aomaster.currentSetpoint">电流设定</span>
           <strong id="setpointReadout">12.000 mA</strong>
         </label>
         <input id="setpointSlider" data-field="setpointSlider" type="range" min="4" max="20" step="0.001" value="12" />
@@ -61,9 +61,9 @@
         </div>
       </div>
       <div class="preset-row" aria-label="快速设定">
-        <button type="button" data-preset="min">最小</button>
-        <button type="button" data-preset="mid">中点</button>
-        <button type="button" data-preset="max">最大</button>
+        <button type="button" data-preset="min" data-i18n="aomaster.preset.min">最小</button>
+        <button type="button" data-preset="mid" data-i18n="aomaster.preset.mid">中点</button>
+        <button type="button" data-preset="max" data-i18n="aomaster.preset.max">最大</button>
       </div>
     </div>
 
@@ -71,83 +71,83 @@
       <div id="waveAnalogParams">
         <div class="config-grid compact">
           <label>
-            低值
+            <span data-i18n="aomaster.waveLow">低值</span>
             <input id="waveLow" type="number" step="0.001" value="4" />
           </label>
           <label>
-            高值
+            <span data-i18n="aomaster.waveHigh">高值</span>
             <input id="waveHigh" type="number" step="0.001" value="20" />
           </label>
           <label>
-            周期/时长 (ms)
+            <span data-i18n="aomaster.wavePeriod">周期/时长 (ms)</span>
             <input id="wavePeriodMs" type="number" min="1" max="65535" step="1" value="1000" />
           </label>
           <label id="waveDutyField">
-            占空比 (%)
+            <span data-i18n="aomaster.waveDuty">占空比 (%)</span>
             <input id="waveDuty" type="number" min="1" max="99" step="1" value="50" />
           </label>
         </div>
         <div class="preset-row" aria-label="波形快速设定">
-          <button type="button" data-wave-preset="min-max">全量程</button>
-          <button type="button" data-wave-preset="mid">中间段</button>
-          <button type="button" data-wave-preset="narrow">窄脉冲</button>
+          <button type="button" data-wave-preset="min-max" data-i18n="aomaster.wavePreset.full">全量程</button>
+          <button type="button" data-wave-preset="mid" data-i18n="aomaster.wavePreset.mid">中间段</button>
+          <button type="button" data-wave-preset="narrow" data-i18n="aomaster.wavePreset.narrow">窄脉冲</button>
         </div>
       </div>
 
       <div id="stepSequenceBlock" class="step-sequence-panel" hidden>
         <div class="subsection-heading">
-          <h3>阶跃序列</h3>
-          <span>按顺序逐级跳变，每步保持相同时间</span>
+          <h3 data-i18n="aomaster.stepSequence">阶跃序列</h3>
+          <span data-i18n="aomaster.stepSequenceDesc">按顺序逐级跳变，每步保持相同时间</span>
         </div>
         <div id="stepSequenceList" class="step-sequence-list" aria-label="阶跃点列表"></div>
         <div class="step-sequence-actions preset-row">
-          <button id="addStepButton" type="button">添加阶跃点</button>
-          <button type="button" data-step-preset="five">五点均分</button>
-          <button type="button" data-step-preset="up-down">上→下</button>
-          <button type="button" data-step-preset="pulse">脉冲序列</button>
+          <button id="addStepButton" type="button" data-i18n="aomaster.addStep">添加阶跃点</button>
+          <button type="button" data-step-preset="five" data-i18n="aomaster.stepPreset.five">五点均分</button>
+          <button type="button" data-step-preset="up-down" data-i18n="aomaster.stepPreset.upDown">上→下</button>
+          <button type="button" data-step-preset="pulse" data-i18n="aomaster.stepPreset.pulse">脉冲序列</button>
         </div>
         <div class="config-grid compact">
           <label>
-            单步保持 (ms)
+            <span data-i18n="aomaster.stepDwell">单步保持 (ms)</span>
             <input id="stepDwellMs" type="number" min="1" max="65535" step="1" value="500" />
           </label>
           <label>
-            循环次数
+            <span data-i18n="aomaster.stepLoops">循环次数</span>
             <input id="stepLoops" type="number" min="0" max="65535" step="1" value="1" />
           </label>
         </div>
-        <p class="field-hint">循环次数填 0 表示无限循环。</p>
+        <p class="field-hint" data-i18n="aomaster.stepLoopsHint">循环次数填 0 表示无限循环。</p>
       </div>
     </div>
 
     <div class="command-preview">
       <div>
-        <span>驱动命令预览</span>
+        <span data-i18n="aomaster.driverCmdPreview">驱动命令预览</span>
         <code data-field="protocolPreview">01 10 00 00 ...</code>
       </div>
-      <button data-field="sendDriverCommand" type="button" disabled>发送设定</button>
+      <button data-field="sendDriverCommand" type="button" disabled data-i18n="aomaster.sendSetting">发送设定</button>
     </div>
   </section>
 
   <section class="panel custom-panel">
     <div class="panel-heading split">
       <div>
-        <h2>通讯参数</h2>
-        <p>寄存器：0x0000~0x0001 类型/波形；阶跃时 0x0002 点数、0x0003 保持(ms)、0x0004 循环、0x0007+ 序列值；0x0006 实际输出。</p>
+        <h2 data-i18n="aomaster.commParams">通讯参数</h2>
+        <p data-i18n="aomaster.commDesc">寄存器：0x0000~0x0001 类型/波形；阶跃时 0x0002 点数、0x0003 保持(ms)、0x0004 循环、0x0007+ 序列值；0x0006 实际输出。</p>
       </div>
       <div class="panel-actions">
-        <button id="resetAomasterConfig" class="ghost-button" type="button">恢复默认</button>
-        <button id="saveAomasterConfig" type="button">保存</button>
+        <button id="resetAomasterConfig" class="ghost-button" type="button" data-i18n="common.resetDefault">恢复默认</button>
+        <button id="saveAomasterConfig" type="button" data-i18n="common.save">保存</button>
       </div>
     </div>
     <div class="config-grid compact">
       <label>
-        从站地址
+        <span data-i18n="aomaster.slaveId">从站地址</span>
         <input id="aomasterSlaveId" type="number" min="1" max="247" step="1" value="1" />
       </label>
       <label>
-        回读轮询 (ms)
-        <input id="aomasterPollIntervalMs" type="number" min="0" step="1" value="50" title="大于 0 时可在监测面板手动开始轮询，默认 50" />
+        <span data-i18n="aomaster.pollInterval">回读轮询 (ms)</span>
+        <input id="aomasterPollIntervalMs" type="number" min="0" step="1" value="50" data-i18n-title="aomaster.pollIntervalTitle" title="大于 0 时可在监测面板手动开始轮询，默认 50" />
       </label>
     </div>
   </section>

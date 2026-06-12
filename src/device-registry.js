@@ -1,6 +1,6 @@
 import {
   AOMASTER_DEVICE_ID,
-  AOMASTER_PROFILE,
+  getAomasterProfile,
   createAOMasterSetOutputCommand,
   parseAOMasterTelemetry,
 } from "./devices/aomaster.js";
@@ -8,31 +8,31 @@ import {
   createCustomProfile,
   createCustomSetOutputCommand,
   CUSTOM_DEVICE_ID,
+  DEFAULT_CUSTOM_CONFIG,
   parseCustomTelemetry,
 } from "./devices/custom-device.js";
 import {
-  createModbusProfile,
   createModbusSetOutputCommand,
+  getModbusProfile,
   MODBUS_DEVICE_ID,
-  MODBUS_PROFILE,
   parseModbusTelemetry,
 } from "./devices/modbus-device.js";
 import {
   createHartSetOutputCommand,
+  getHartProfile,
   HART_DEVICE_ID,
-  HART_PROFILE,
   parseHartTelemetry,
 } from "./devices/hart-device.js";
 import {
   createMqttSetOutputCommand,
+  getMqttProfile,
   MQTT_DEVICE_ID,
-  MQTT_PROFILE,
   parseMqttTelemetry,
 } from "./devices/mqtt-device.js";
 import {
   createWebSocketSetOutputCommand,
+  getWebSocketProfile,
   WEBSOCKET_DEVICE_ID,
-  WEBSOCKET_PROFILE,
   parseWebSocketTelemetry,
 } from "./devices/websocket-device.js";
 
@@ -44,31 +44,28 @@ export const DEVICE_REGISTRY = [
   {
     id: AOMASTER_DEVICE_ID,
     pagePath: "pages/devices/aomaster.html",
-    profile: AOMASTER_PROFILE,
-    getProfile: () => AOMASTER_PROFILE,
+    getProfile: () => getAomasterProfile(),
     createCommand: (state, ctx, helpers) => createAOMasterSetOutputCommand(state, ctx.aomasterConfig, helpers),
     parseTelemetry: (text, bytes, ctx, helpers) => parseAOMasterTelemetry(bytes, ctx.aomasterConfig, ctx.deviceState?.mode),
   },
   {
     id: MODBUS_DEVICE_ID,
     pagePath: "pages/devices/modbus.html",
-    profile: MODBUS_PROFILE,
-    getProfile: (ctx) => createModbusProfile(ctx.modbusConfig),
+    getProfile: () => getModbusProfile(),
     createCommand: (state, ctx, helpers) => createModbusSetOutputCommand(state, ctx.modbusConfig, helpers),
     parseTelemetry: (text, bytes, ctx) => parseModbusTelemetry(bytes, ctx.modbusConfig),
   },
   {
     id: HART_DEVICE_ID,
     pagePath: "pages/devices/hart.html",
-    profile: HART_PROFILE,
-    getProfile: () => HART_PROFILE,
+    getProfile: () => getHartProfile(),
     createCommand: (state, ctx, helpers) => createHartSetOutputCommand(state, ctx.hartConfig, helpers),
     parseTelemetry: (text, bytes, ctx) => parseHartTelemetry(bytes, ctx.hartConfig),
   },
   {
     id: CUSTOM_DEVICE_ID,
     pagePath: "pages/devices/custom.html",
-    getProfile: (ctx) => createCustomProfile(ctx.customConfig),
+    getProfile: (ctx) => createCustomProfile(ctx?.customConfig ?? DEFAULT_CUSTOM_CONFIG),
     createCommand: (state, ctx, helpers) => createCustomSetOutputCommand(state, ctx.customConfig, helpers),
     parseTelemetry: (text, bytes, ctx, helpers) =>
       parseCustomTelemetry(text, ctx.customConfig, helpers.parseNumericTelemetry, bytes, helpers),
@@ -76,8 +73,7 @@ export const DEVICE_REGISTRY = [
   {
     id: MQTT_DEVICE_ID,
     pagePath: "pages/devices/mqtt.html",
-    profile: MQTT_PROFILE,
-    getProfile: () => MQTT_PROFILE,
+    getProfile: () => getMqttProfile(),
     createCommand: (state, ctx, helpers) => createMqttSetOutputCommand(state, ctx.mqttConfig, helpers),
     parseTelemetry: (text, bytes, ctx, helpers) =>
       parseMqttTelemetry(text, bytes, ctx.mqttConfig, helpers.parseNumericTelemetry, helpers),
@@ -85,8 +81,7 @@ export const DEVICE_REGISTRY = [
   {
     id: WEBSOCKET_DEVICE_ID,
     pagePath: "pages/devices/websocket.html",
-    profile: WEBSOCKET_PROFILE,
-    getProfile: () => WEBSOCKET_PROFILE,
+    getProfile: () => getWebSocketProfile(),
     createCommand: (state, ctx, helpers) => createWebSocketSetOutputCommand(state, ctx.websocketConfig, helpers),
     parseTelemetry: (text, bytes, ctx, helpers) =>
       parseWebSocketTelemetry(text, bytes, ctx.websocketConfig, helpers.parseNumericTelemetry, helpers),
@@ -98,7 +93,7 @@ export const DEVICE_REGISTRY_BY_ID = Object.fromEntries(DEVICE_REGISTRY.map((ent
 export const DEVICE_PAGE_IDS = DEVICE_REGISTRY.map((entry) => entry.id);
 
 export const DEVICE_PROFILES = Object.fromEntries(
-  DEVICE_REGISTRY.filter((entry) => entry.profile).map((entry) => [entry.id, entry.profile]),
+  DEVICE_REGISTRY.map((entry) => [entry.id, entry.getProfile()]),
 );
 
 export function getDeviceRegistryEntry(deviceId) {

@@ -1,3 +1,4 @@
+import i18n from "../i18n.js";
 import { parseJsonCurveTelemetry, describeJsonCurveSummary } from "./json-curve-config.js";
 import {
   describeHexCurveSummary,
@@ -68,13 +69,13 @@ export function buildDebugMessage(format, message, helpers) {
   if (normalizedFormat === "json") {
     const trimmed = content.trim();
     if (!trimmed) {
-      throw new Error("JSON 消息不能为空");
+      throw new Error(i18n("protocol.jsonMsgNotEmpty"));
     }
 
     try {
       JSON.parse(trimmed);
     } catch (error) {
-      throw new Error(`JSON 格式无效：${error.message}`);
+      throw new Error(`${i18n("protocol.jsonInvalid")}：${error.message}`);
     }
 
     return trimmed;

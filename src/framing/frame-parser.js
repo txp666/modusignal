@@ -68,7 +68,7 @@ export function parseHexTokenSpec(input) {
   return new Uint8Array(
     tokens.map((token) => {
       if (!/^[0-9a-fA-F]{1,2}$/.test(token)) {
-        throw new Error(`HEX 帧界无效：${token}`);
+        throw new Error(`HEX framing invalid: ${token}`);
       }
       return Number.parseInt(token, 16);
     }),

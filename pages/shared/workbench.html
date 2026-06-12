@@ -2,41 +2,41 @@
   <section class="panel chart-panel device-workbench">
     <div class="panel-heading split">
       <div>
-        <h2>监测面板</h2>
-        <p id="chartPanelSummary">自动尝试从接收数据中提取数值并绘制最近 120 个采样点。</p>
+        <h2 data-i18n="workbench.monitorPanel">监测面板</h2>
+        <p id="chartPanelSummary" data-i18n="workbench.chartSummary">自动尝试从接收数据中提取数值并绘制最近 120 个采样点。</p>
       </div>
       <div class="panel-actions poll-actions">
-        <span id="pollState" class="state-pill">轮询已停止</span>
-        <button id="togglePolling" type="button" disabled>开始轮询</button>
+        <span id="pollState" class="state-pill" data-i18n="workbench.pollStopped">轮询已停止</span>
+        <button id="togglePolling" type="button" disabled data-i18n="workbench.startPolling">开始轮询</button>
       </div>
-      <button id="clearChart" class="icon-button" type="button" aria-label="清空曲线" title="清空曲线">⌫</button>
+      <button id="clearChart" class="icon-button" type="button" data-i18n-aria-label="workbench.clearChart" data-i18n-title="workbench.clearChart" aria-label="清空曲线" title="清空曲线">&#9003;</button>
     </div>
 
     <div class="chart-panel-body">
       <div id="singleChartBlock" class="chart-view">
-        <div id="telemetryChart" class="echart-host line-host" aria-label="实时曲线"></div>
+        <div id="telemetryChart" class="echart-host line-host" data-i18n-aria-label="workbench.chartAria" aria-label="实时曲线"></div>
         <div class="chart-meta">
-          <span id="chartValue">暂无数据</span>
-          <span>总 <span id="singleChartPointCount">3000</span> 点 · 显示 <span id="singleChartVisiblePointCount">240</span> 点 · ECharts</span>
+          <span id="chartValue" data-i18n="workbench.noData">暂无数据</span>
+          <span>Total <span id="singleChartPointCount">3000</span> points · Show <span id="singleChartVisiblePointCount">240</span> points · ECharts</span>
         </div>
       </div>
       <div id="dualChartBlock" class="chart-view dual-chart-stack" hidden>
         <div class="chart-block">
           <div class="chart-block-heading">
-            <strong>设定预览</strong>
-            <span id="setpointChartValue">暂无设定</span>
+            <strong data-i18n="workbench.setpointPreview">设定预览</strong>
+            <span id="setpointChartValue" data-i18n="workbench.noSetpoint">暂无设定</span>
           </div>
-          <div id="setpointChart" class="echart-host line-host" aria-label="设定预览曲线"></div>
+          <div id="setpointChart" class="echart-host line-host" data-i18n-aria-label="workbench.setpointPreviewAria" aria-label="设定预览曲线"></div>
         </div>
         <div class="chart-block">
           <div class="chart-block-heading">
-            <strong>实时输出</strong>
-            <span id="actualChartValue">暂无数据</span>
+            <strong data-i18n="workbench.realtimeOutput">实时输出</strong>
+            <span id="actualChartValue" data-i18n="workbench.noData">暂无数据</span>
           </div>
-          <div id="actualChart" class="echart-host line-host" aria-label="实时输出曲线"></div>
+          <div id="actualChart" class="echart-host line-host" data-i18n-aria-label="workbench.realtimeOutputAria" aria-label="实时输出曲线"></div>
         </div>
         <div class="chart-meta">
-          <span>轮询回读设备实际值；总 <span id="dualChartPointCount">3000</span> 点 · 显示 <span id="dualChartVisiblePointCount">240</span> 点 · ECharts</span>
+          <span data-i18n="workbench.pollReadback">轮询回读设备实际值</span><span>; total <span id="dualChartPointCount">3000</span> points · show <span id="dualChartVisiblePointCount">240</span> points · ECharts</span>
         </div>
       </div>
     </div>
@@ -44,16 +44,16 @@
     <section id="chartCurveConfigBlock" class="chart-curve-panel" hidden>
       <header class="chart-curve-panel-header">
         <button id="chartCurveConfigToggle" class="chart-curve-panel-toggle" type="button" aria-expanded="true">
-          <span class="chart-curve-panel-title">曲线配置</span>
-          <span id="chartCurveConfigSummary" class="chart-curve-panel-summary">—</span>
-          <span class="chart-curve-panel-chevron" aria-hidden="true">▾</span>
+          <span class="chart-curve-panel-title" data-i18n="workbench.chartConfig">曲线配置</span>
+          <span id="chartCurveConfigSummary" class="chart-curve-panel-summary" data-i18n="workbench.chartSummaryDefault">—</span>
+          <span class="chart-curve-panel-chevron" aria-hidden="true">&#9662;</span>
         </button>
-        <button id="chartCurveHelpButton" class="ghost-button chart-curve-help-button" type="button">协议说明</button>
+        <button id="chartCurveHelpButton" class="ghost-button chart-curve-help-button" type="button" data-i18n="workbench.protocolHelp">协议说明</button>
       </header>
 
       <div id="chartCurveConfigBody" class="chart-curve-panel-body">
         <div id="chartCurveAomasterSection" class="chart-curve-section" hidden>
-          <p class="chart-curve-section-note">双曲线模式：设定预览与轮询回读的实际输出；波形参数在设备页配置。</p>
+          <p class="chart-curve-section-note" data-i18n="workbench.aomasterDualMode">双曲线模式：设定预览与轮询回读的实际输出；波形参数在设备页配置。</p>
         </div>
 
         <div id="chartCurveModbusSection" class="chart-curve-section" hidden></div>
@@ -62,7 +62,7 @@
 
         <div id="chartCurveHartSection" class="chart-curve-section" hidden>
           <div id="hartChartSeriesBlock" class="hart-chart-series">
-            <span class="hart-chart-series-label">显示曲线</span>
+            <span class="hart-chart-series-label" data-i18n="workbench.showCurves">显示曲线</span>
             <label><input type="checkbox" data-hart-series="pv" checked />PV</label>
             <label><input type="checkbox" data-hart-series="sv" checked />SV</label>
             <label><input type="checkbox" data-hart-series="tv" checked />TV</label>
@@ -78,7 +78,7 @@
 
     <div class="chart-settings">
       <label class="chart-settings-field">
-        曲线总点数
+        <span data-i18n="workbench.totalPoints">曲线总点数</span>
         <input
           id="chartPointCount"
           type="number"
@@ -86,11 +86,12 @@
           max="200000"
           step="1"
           value="3000"
+          data-i18n-title="workbench.totalPointsTitle"
           title="手动设置曲线总采样点数，点数越高历史越长"
         />
       </label>
       <label class="chart-settings-field">
-        显示点数
+        <span data-i18n="workbench.displayPoints">显示点数</span>
         <input
           id="visibleChartPointCount"
           type="number"
@@ -98,14 +99,15 @@
           max="5000"
           step="1"
           value="240"
+          data-i18n-title="workbench.displayPointsTitle"
           title="当前窗口显示点数，曲线可左右滑动查看总点数历史"
         />
       </label>
       <div class="chart-settings-actions">
-        <button id="exportChartCsv" class="ghost-button" type="button">导出 CSV</button>
-        <button id="loadChartCsv" class="ghost-button" type="button">加载 CSV</button>
-        <button id="resetChartConfig" class="ghost-button" type="button">恢复默认</button>
-        <button id="saveChartConfig" type="button">保存</button>
+        <button id="exportChartCsv" class="ghost-button" type="button" data-i18n="workbench.exportCsv">导出 CSV</button>
+        <button id="loadChartCsv" class="ghost-button" type="button" data-i18n="workbench.loadCsv">加载 CSV</button>
+        <button id="resetChartConfig" class="ghost-button" type="button" data-i18n="workbench.resetDefault">恢复默认</button>
+        <button id="saveChartConfig" type="button" data-i18n="workbench.save">保存</button>
       </div>
       <input id="loadChartCsvInput" type="file" accept=".csv,text/csv" hidden />
     </div>
@@ -114,8 +116,8 @@
   <dialog id="chartCurveHelpDialog" class="chart-curve-help-dialog">
     <div class="chart-curve-help-shell">
       <header class="chart-curve-help-header">
-        <h3 id="chartCurveHelpTitle">协议说明</h3>
-        <button id="chartCurveHelpClose" class="icon-button" type="button" aria-label="关闭">×</button>
+        <h3 id="chartCurveHelpTitle" data-i18n="workbench.protocolHelpTitle">协议说明</h3>
+        <button id="chartCurveHelpClose" class="icon-button" type="button" data-i18n-aria-label="common.close" aria-label="关闭">&#215;</button>
       </header>
       <div id="chartCurveHelpContent" class="chart-curve-help-content"></div>
     </div>
@@ -124,15 +126,15 @@
   <section class="panel console-panel device-workbench">
     <div class="panel-heading split">
       <div>
-        <h2>收发调试</h2>
-        <p>支持 ASCII 与 HEX，适合协议确认前做调试。</p>
+        <h2 data-i18n="workbench.transceiverDebug">收发调试</h2>
+        <p data-i18n="workbench.transceiverDesc">支持 ASCII 与 HEX，适合协议确认前做调试。</p>
       </div>
-      <button id="clearLog" class="icon-button" type="button" aria-label="清空日志" title="清空日志">⌫</button>
+      <button id="clearLog" class="icon-button" type="button" data-i18n-aria-label="workbench.clearLog" data-i18n-title="workbench.clearLog" aria-label="清空日志" title="清空日志">&#9003;</button>
     </div>
     <div id="serialLog" class="serial-log" aria-live="polite"></div>
     <div class="send-grid">
       <label>
-        格式
+        <span data-i18n="workbench.format">格式</span>
         <select id="sendFormat">
           <option value="ascii" selected>ASCII</option>
           <option value="json">JSON</option>
@@ -140,22 +142,23 @@
         </select>
       </label>
       <label>
-        行尾
+        <span data-i18n="workbench.lineEnding">行尾</span>
         <select id="lineEnding">
-          <option value="">无</option>
+          <option value="" data-i18n="common.none">无</option>
           <option value="\n">LF</option>
           <option value="\r\n" selected>CRLF</option>
         </select>
       </label>
       <label class="send-command">
-        命令
+        <span data-i18n="workbench.command">命令</span>
         <textarea
           id="manualCommand"
           rows="4"
+          data-i18n-placeholder="workbench.commandPlaceholder"
           placeholder="例如：READ?、01 03 00 00 或 {&quot;cmd&quot;:&quot;ping&quot;}"
         ></textarea>
       </label>
-      <button id="sendManual" type="button" disabled>发送</button>
+      <button id="sendManual" type="button" disabled data-i18n="workbench.send">发送</button>
     </div>
   </section>
 </div>

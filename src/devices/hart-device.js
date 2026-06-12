@@ -1,3 +1,4 @@
+import i18n from "../i18n.js";
 import {
   RX_ADDR_SHORT,
   buildHartFrame,
@@ -105,48 +106,50 @@ export const HART_UNIVERSAL_COMMANDS = HART_UNIVERSAL_COMMAND_ENTRIES.map((entry
   label: getHartCommandLabel(entry.value),
 }));
 
-export const HART_PROFILE = {
-  id: HART_DEVICE_ID,
-  name: "HART 通用设备",
-  type: "HART 现场总线",
-  image: "./images/hart.png",
-  protocolStatus: "ready",
-  defaultTransportId: "serial",
-  modes: {
-    readId: {
-      label: "设备标识",
-      unit: "",
-      min: 0,
-      max: 100,
-      step: 0.01,
-      presets: { min: 0, mid: 50, max: 100 },
+export function getHartProfile() {
+  return {
+    id: HART_DEVICE_ID,
+    name: i18n("hart.profile.name"),
+    type: i18n("hart.profile.type"),
+    image: "./images/hart.png",
+    protocolStatus: "ready",
+    defaultTransportId: "serial",
+    modes: {
+      readId: {
+        label: i18n("hart.mode.deviceId"),
+        unit: "",
+        min: 0,
+        max: 100,
+        step: 0.01,
+        presets: { min: 0, mid: 50, max: 100 },
+      },
+      readPv: {
+        label: "PV",
+        unit: "",
+        min: 0,
+        max: 100,
+        step: 0.01,
+        presets: { min: 0, mid: 50, max: 100 },
+      },
+      readLoop: {
+        label: "Loop Current",
+        unit: "mA",
+        min: 4,
+        max: 20,
+        step: 0.01,
+        presets: { min: 4, mid: 12, max: 20 },
+      },
+      readDynamic: {
+        label: "PV",
+        unit: "",
+        min: 0,
+        max: 100,
+        step: 0.01,
+        presets: { min: 0, mid: 50, max: 100 },
+      },
     },
-    readPv: {
-      label: "PV",
-      unit: "",
-      min: 0,
-      max: 100,
-      step: 0.01,
-      presets: { min: 0, mid: 50, max: 100 },
-    },
-    readLoop: {
-      label: "Loop Current",
-      unit: "mA",
-      min: 4,
-      max: 20,
-      step: 0.01,
-      presets: { min: 4, mid: 12, max: 20 },
-    },
-    readDynamic: {
-      label: "PV",
-      unit: "",
-      min: 0,
-      max: 100,
-      step: 0.01,
-      presets: { min: 0, mid: 50, max: 100 },
-    },
-  },
-};
+  };
+}
 
 export function resetHartRxBuffer() {
   rxBuffer = new Uint8Array(0);
@@ -206,7 +209,7 @@ export function formatHartCommandPreview(bytes, bytesToHex) {
 }
 
 export function createHartProfile() {
-  return { ...HART_PROFILE };
+  return getHartProfile();
 }
 
 export function getHartMode(command) {
@@ -258,7 +261,7 @@ function createHartCommandBytes(normalized, command, helpers) {
   if (command !== 0 && !normalized.device.discovered) {
     return {
       supported: false,
-      preview: "请先搜索设备（Cmd 0），再发送 Cmd 1+ 长地址帧",
+      preview: i18n("hart.searchFirst"),
       bytes: null,
     };
   }
@@ -308,7 +311,7 @@ export function parseHartTelemetry(bytes, config) {
       const device = parseCommand0Device(parsed);
       if (device) {
         return {
-          fieldName: "设备标识",
+          fieldName: i18n("hart.mode.deviceId"),
           unit: "",
           value: device.deviceId,
           rawValue: device.deviceId,
@@ -516,8 +519,8 @@ export function describeHartSummary(config) {
   const normalized = normalizeHartConfig(config);
   const deviceSummary = formatHartDeviceSummary(normalized.device);
   const pollLabel =
-    normalized.pollMode === "dynamic" ? "轮询 PV/SV/TV/QV (Cmd 3)" : "轮询 PV (Cmd 1)";
-  return `地址 ${normalized.pollAddress} · ${pollLabel} · ${normalized.pollIntervalMs} ms · ${deviceSummary}`;
+    normalized.pollMode === "dynamic" ? i18n("hart.pollDynamic") : i18n("hart.pollPv");
+  return `${i18n("hart.pollAddress")} ${normalized.pollAddress} · ${pollLabel} · ${normalized.pollIntervalMs} ms · ${deviceSummary}`;
 }
 
 export function mergeHartDiscovery(config, discovery) {

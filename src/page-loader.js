@@ -1,5 +1,6 @@
 import { assetUrl } from "./asset-url.js";
 import { DEVICE_REGISTRY } from "./device-registry.js";
+import i18n from "./i18n.js";
 
 const PAGE_PATHS = {
   home: "pages/home.html",
@@ -11,7 +12,7 @@ const PAGE_PATHS = {
 async function fetchPageFragment(path) {
   const response = await fetch(assetUrl(path));
   if (!response.ok) {
-    throw new Error(`无法加载页面片段 ${path}（${response.status}）`);
+    throw new Error(`${i18n("pageLoader.cannotLoad")} ${path}（${response.status}）`);
   }
 
   const html = await response.text();
@@ -27,10 +28,11 @@ async function fetchPageFragment(path) {
 
 function mountFragment(host, fragment) {
   if (!host) {
-    throw new Error("页面挂载点不存在");
+    throw new Error(i18n("pageLoader.noMount"));
   }
 
   host.replaceChildren(fragment);
+  i18n.apply(host);
 }
 
 export async function loadAppPages() {
@@ -47,6 +49,7 @@ export async function loadAppPages() {
   const deviceHost = document.querySelector("#devicePagesMount");
   deviceHost.replaceChildren();
   deviceHost.append(...deviceFragments);
+  i18n.apply(deviceHost);
   mountFragment(document.querySelector("#workbenchMount"), workbench);
 }
 

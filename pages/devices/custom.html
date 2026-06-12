@@ -2,108 +2,108 @@
   <section class="panel control-panel">
     <div class="panel-heading split">
       <div>
-        <h2>设定输出</h2>
-        <p data-field="deviceSummary">自定义串口设备模板可发送。</p>
+        <h2 data-i18n="custom.setpointOutput">设定输出</h2>
+        <p data-field="deviceSummary" data-i18n="custom.customProfile.desc">自定义串口设备模板可发送。</p>
       </div>
-      <span data-field="driverState" class="state-pill">模板可发送</span>
+      <span data-field="driverState" class="state-pill" data-i18n="custom.templateSendable">模板可发送</span>
     </div>
 
     <div class="setpoint-row" data-field="setpointRow">
       <label class="range-label">
-        <span data-field="setpointLabel">设定值</span>
+        <span data-field="setpointLabel" data-i18n="custom.setpointValue">设定值</span>
         <strong data-field="setpointReadout">50</strong>
       </label>
       <input data-field="setpointSlider" type="range" min="0" max="100" step="0.1" value="50" />
       <div class="numeric-entry">
         <input data-field="setpointInput" type="number" min="0" max="100" step="0.1" value="50" />
-        <span data-field="setpointUnit">值</span>
+        <span data-field="setpointUnit">value</span>
       </div>
     </div>
 
     <div class="preset-row" data-field="presetRow" aria-label="快速设定">
-      <button type="button" data-preset="min">最小</button>
-      <button type="button" data-preset="mid">中点</button>
-      <button type="button" data-preset="max">最大</button>
+      <button type="button" data-preset="min" data-i18n="aomaster.preset.min">最小</button>
+      <button type="button" data-preset="mid" data-i18n="aomaster.preset.mid">中点</button>
+      <button type="button" data-preset="max" data-i18n="aomaster.preset.max">最大</button>
     </div>
 
     <div class="command-preview">
       <div>
-        <span>驱动命令预览</span>
+        <span data-i18n="aomaster.driverCmdPreview">驱动命令预览</span>
         <code data-field="protocolPreview">SET 50</code>
       </div>
-      <button data-field="sendDriverCommand" type="button" disabled>发送设定</button>
+      <button data-field="sendDriverCommand" type="button" disabled data-i18n="common.sendSetting">发送设定</button>
     </div>
   </section>
 
   <section class="panel custom-panel">
     <div class="panel-heading split">
       <div>
-        <h2>设备配置</h2>
-        <p>设定范围与发送模板；曲线解析、帧界与 CRC 在监测面板配置。</p>
+        <h2 data-i18n="custom.deviceConfig">设备配置</h2>
+        <p data-i18n="custom.deviceConfigDesc">设定范围与发送模板；曲线解析、帧界与 CRC 在监测面板配置。</p>
       </div>
       <div class="panel-actions">
-        <button id="resetCustomConfig" class="ghost-button" type="button">恢复默认</button>
-        <button id="saveCustomConfig" type="button">保存</button>
+        <button id="resetCustomConfig" class="ghost-button" type="button" data-i18n="common.resetDefault">恢复默认</button>
+        <button id="saveCustomConfig" type="button" data-i18n="common.save">保存</button>
       </div>
     </div>
     <div class="config-grid">
       <label>
-        设备名称
+        <span data-i18n="custom.deviceName">设备名称</span>
         <input id="customDeviceName" type="text" value="自定义串口设备" />
       </label>
       <label>
-        设备类型
+        <span data-i18n="custom.deviceType">设备类型</span>
         <input id="customDeviceType" type="text" value="自定义串口设备" />
       </label>
       <label>
-        通道名称
+        <span data-i18n="custom.channelName">通道名称</span>
         <input id="customChannelLabel" type="text" value="设定值" />
       </label>
       <label>
-        单位
-        <input id="customUnit" type="text" placeholder="例如：mA、V、℃" />
+        <span data-i18n="custom.unit">单位</span>
+        <input id="customUnit" type="text" data-i18n-placeholder="custom.unitPlaceholder" placeholder="例如：mA、V、℃" />
       </label>
     </div>
     <div class="config-grid compact">
       <label>
-        最小值
+        <span data-i18n="custom.min">最小值</span>
         <input id="customMin" type="number" step="0.001" value="0" />
       </label>
       <label>
-        最大值
+        <span data-i18n="custom.max">最大值</span>
         <input id="customMax" type="number" step="0.001" value="100" />
       </label>
       <label>
-        步进
+        <span data-i18n="custom.step">步进</span>
         <input id="customStep" type="number" step="0.001" min="0.000001" value="0.1" />
       </label>
       <label>
-        默认值
+        <span data-i18n="custom.defaultValue">默认值</span>
         <input id="customDefaultValue" type="number" step="0.001" value="50" />
       </label>
     </div>
     <div class="subsection-heading">
-      <h3>发送模板</h3>
-      <span>支持 {value}、{value:2}、{unit}、{mode}</span>
+      <h3 data-i18n="custom.sendTemplate">发送模板</h3>
+      <span data-i18n="custom.templatePlaceholder">支持 {value}、{value:2}、{unit}、{mode}</span>
     </div>
     <div class="template-grid">
       <label>
-        格式
+        <span data-i18n="custom.format">格式</span>
         <select id="customCommandFormat">
           <option value="ascii" selected>ASCII</option>
           <option value="hex">HEX</option>
         </select>
       </label>
       <label>
-        行尾
+        <span data-i18n="custom.lineEnding">行尾</span>
         <select id="customCommandLineEnding">
-          <option value="">无</option>
+          <option value="" data-i18n="common.none">无</option>
           <option value="\n">LF</option>
           <option value="\r\n" selected>CRLF</option>
         </select>
       </label>
       <label class="template-input">
-        模板
+        <span data-i18n="custom.template">模板</span>
         <input id="customCommandTemplate" type="text" value="SET {value}" />
       </label>
     </div>

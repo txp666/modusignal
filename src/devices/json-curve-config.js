@@ -1,3 +1,5 @@
+import i18n from "../i18n.js";
+
 export const JSON_CURVE_SLOTS = [
   {
     key: "curve1",
@@ -151,10 +153,10 @@ export function describeJsonCurveSummary(config, defaults = DEFAULT_JSON_CURVE_C
   const series = listJsonChartSeries(normalized, defaults);
 
   if (series.length > 1) {
-    return `多曲线：${series.map((item) => item.fieldName).join(" / ")}`;
+    return `${i18n("curve.multiCurve", "多曲线")}：${series.map((item) => item.fieldName).join(" / ")}`;
   }
 
-  return series[0]?.path || "自动数字";
+  return series[0]?.path || i18n("curve.autoNumeric", "自动数字");
 }
 
 function buildCurveSeries(config) {

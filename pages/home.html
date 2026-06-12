@@ -2,65 +2,65 @@
   <div class="panel home-overview">
     <div class="panel-heading split">
       <div>
-        <h2>modusignal 在线设备调试</h2>
-        <p>通过浏览器连接设备，统一传输抽象（串口·WebSocket·MQTT），把设备驱动、调试收发和曲线查看放在一个在线工具里。</p>
+        <h2 data-i18n="home.pageTitle">modusignal 在线设备调试</h2>
+        <p data-i18n="home.pageDesc">通过浏览器连接设备，统一传输抽象（串口·WebSocket·MQTT），把设备驱动、调试收发和曲线查看放在一个在线工具里。</p>
       </div>
       <div class="panel-actions">
-        <a id="githubLink" class="action-link" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
-        <button class="ghost-button" type="button" data-page-target="request">请求新设备</button>
+        <a id="githubLink" class="action-link" href="https://github.com/" target="_blank" rel="noreferrer" data-i18n="home.github">GitHub</a>
+        <button class="ghost-button" type="button" data-page-target="request" data-i18n="home.requestDevice">请求新设备</button>
       </div>
     </div>
     <div id="homeDeviceGrid" class="home-grid"></div>
   </div>
 
   <div class="panel architecture-card">
-    <h2>当前架构</h2>
-    <div class="arch-diagram" role="img" aria-label="modusignal 架构框图：页面 UI 经 app.js 调度，分为正交的设备层与传输层，数据汇入曲线与日志">
+    <h2 data-i18n="home.architecture">当前架构</h2>
+    <div class="arch-diagram" role="img" data-i18n-aria-label="home.archAriaLabel" aria-label="modusignal 架构框图：页面 UI 经 app.js 调度，分为正交的设备层与传输层，数据汇入曲线与日志">
       <div class="arch-node arch-top">
-        页面 UI
-        <small>index.html + pages/</small>
+        <span data-i18n="home.archUi">页面 UI</span>
+        <small data-i18n="home.archUiSub">index.html + pages/</small>
       </div>
       <div class="arch-arrow">↑↓</div>
       <div class="arch-node arch-core">
-        app.js 调度
-        <small>状态 · 路由 · 事件 · 日志/曲线联动</small>
+        <span data-i18n="home.archCore">app.js 调度</span>
+        <small data-i18n="home.archCoreSub">状态 · 路由 · 事件 · 日志/曲线联动</small>
       </div>
       <div class="arch-arrow arch-split">
-        <span>设备 ↓</span>
-        <span>传输 ↓</span>
+        <span><span data-i18n="home.archDevice">设备</span> ↓</span>
+        <span><span data-i18n="home.archTransport">传输</span> ↓</span>
       </div>
       <div class="arch-columns">
         <div class="arch-group">
-          <span class="arch-group-title">设备层</span>
+          <span class="arch-group-title" data-i18n="home.archDeviceLayer">设备层</span>
           <div class="arch-node">
-            设备注册表
+            <span data-i18n="home.archDeviceRegistry">设备注册表</span>
             <small>protocols.js</small>
           </div>
           <div class="arch-arrow">↓</div>
           <div class="arch-node">
-            设备驱动
+            <span data-i18n="home.archDeviceDriver">设备驱动</span>
             <small>devices/aomaster · modbus · hart · websocket · mqtt · custom</small>
           </div>
         </div>
         <div class="arch-group">
-          <span class="arch-group-title">传输层</span>
+          <span class="arch-group-title" data-i18n="home.archTransportLayer">传输层</span>
           <div class="arch-node">
-            传输注册表
+            <span data-i18n="home.archTransportRegistry">传输注册表</span>
             <small>transports/registry.js</small>
           </div>
           <div class="arch-arrow">↓</div>
           <div class="arch-node">
-            串口 · WebSocket · MQTT
+            <span data-i18n="home.archSerialWsMqtt">串口 · WebSocket · MQTT</span>
             <small>BaseTransport 实现</small>
           </div>
         </div>
       </div>
-      <div class="arch-arrow">解析 / 收发 ↓</div>
+      <div class="arch-arrow"><span data-i18n="home.archParseSend">解析 / 收发</span> ↓</div>
       <div class="arch-node arch-bottom">
-        曲线 / 日志
-        <small>ECharts · 日志面板</small>
+        <span data-i18n="home.archChartLog">曲线 / 日志</span>
+        <small data-i18n="home.archChartLogSub">ECharts · 日志面板</small>
       </div>
     </div>
-    <p>设备层与传输层正交：设备只产出/解析字节，通过统一的 profile、命令构造和遥测解析接口接入；各设备可声明默认通讯方式，亦可在连接参数中手动切换。</p>
+    <p data-i18n="home.archDesc">设备层与传输层正交：设备只产出/解析字节，通过统一的 profile、命令构造和遥测解析接口接入；各设备可声明默认通讯方式，亦可在连接参数中手动切换。</p>
   </div>
 </section>

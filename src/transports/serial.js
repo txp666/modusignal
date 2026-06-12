@@ -1,4 +1,5 @@
 import { BaseTransport } from "./transport.js";
+import i18n from "../i18n.js";
 
 const decoder = new TextDecoder();
 const textEncoder = new TextEncoder();
@@ -25,7 +26,7 @@ export class SerialTransport extends BaseTransport {
 
   async connect(options) {
     if (!SerialTransport.isSupported()) {
-      throw new Error("当前浏览器不支持 Web Serial，请使用 Chrome 或 Edge 的 HTTPS 页面。");
+      throw new Error(i18n("transport.serial.notSupported"));
     }
 
     this.port = await navigator.serial.requestPort();
@@ -79,7 +80,7 @@ export class SerialTransport extends BaseTransport {
 
   async write(data) {
     if (!this.writer) {
-      throw new Error("连接未建立");
+      throw new Error(i18n("transport.serial.notConnected"));
     }
 
     const bytes = typeof data === "string" ? textEncoder.encode(data) : data;
@@ -124,22 +125,22 @@ export class SerialTransport extends BaseTransport {
 
 export const SERIAL_TRANSPORT = {
   id: SERIAL_TRANSPORT_ID,
-  label: "串口 (Web Serial)",
+  label: "transport.serial.label",
   requiresSecureContext: true,
   isSupported: () => SerialTransport.isSupported(),
   fields: [
     {
       key: "baudRate",
-      label: "波特率",
+      label: "transport.serial.baudRate",
       type: "select",
       default: 115200,
       options: [300, 600, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200, 230400, 460800, 921600],
     },
-    { key: "dataBits", label: "数据位", type: "select", default: 8, options: [7, 8] },
-    { key: "stopBits", label: "停止位", type: "select", default: 1, options: [1, 2] },
+    { key: "dataBits", label: "transport.serial.dataBits", type: "select", default: 8, options: [7, 8] },
+    { key: "stopBits", label: "transport.serial.stopBits", type: "select", default: 1, options: [1, 2] },
     {
       key: "parity",
-      label: "校验",
+      label: "transport.serial.parity",
       type: "select",
       default: "none",
       options: [
@@ -150,7 +151,7 @@ export const SERIAL_TRANSPORT = {
     },
     {
       key: "flowControl",
-      label: "流控",
+      label: "transport.serial.flowControl",
       type: "select",
       default: "none",
       options: [

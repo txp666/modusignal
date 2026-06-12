@@ -2,38 +2,38 @@
   <section class="panel control-panel">
     <div class="panel-heading split">
       <div>
-        <h2>MQTT 调试</h2>
-        <p data-field="deviceSummary">连接 MQTT Broker，发布/订阅主题并解析 JSON 回包。</p>
+        <h2 data-i18n="mqtt.title">MQTT 调试</h2>
+        <p data-field="deviceSummary" data-i18n="mqtt.desc">连接 MQTT Broker，发布/订阅主题并解析 JSON 回包。</p>
       </div>
-      <span data-field="driverState" class="state-pill">手动 / 轮询</span>
+      <span data-field="driverState" class="state-pill">Manual / Poll</span>
     </div>
 
     <div class="subsection-heading">
-      <h3>快捷发布</h3>
-      <span>可直接发布，也可填入下方收发调试区后再编辑</span>
+      <h3 data-i18n="mqtt.quickPublish">快捷发布</h3>
+      <span data-i18n="mqtt.quickPublishDesc">可直接发布，也可填入下方收发调试区后再编辑</span>
     </div>
     <div id="mqttQuickSendGrid" class="debug-template-grid" aria-label="MQTT 快捷发布"></div>
 
     <div class="debug-stat-grid mqtt-stats-grid" aria-label="MQTT 消息统计">
       <div class="debug-stat mqtt-stat">
         <strong id="mqttRxCount">0</strong>
-        <span>已接收</span>
+        <span data-i18n="mqtt.rxCount">已接收</span>
       </div>
       <div class="debug-stat mqtt-stat">
         <strong id="mqttTxCount">0</strong>
-        <span>已发送</span>
+        <span data-i18n="mqtt.txCount">已发送</span>
       </div>
       <div class="debug-stat mqtt-stat">
         <strong id="mqttSubscribeTopic">—</strong>
-        <span>订阅主题</span>
+        <span data-i18n="mqtt.subscribeTopic">订阅主题</span>
       </div>
       <div class="debug-stat mqtt-stat">
         <strong id="mqttEffectivePublishTopic">—</strong>
-        <span>发布主题</span>
+        <span data-i18n="mqtt.publishTopic">发布主题</span>
       </div>
       <div class="debug-stat mqtt-stat">
         <strong id="mqttPublishMode">QoS 0</strong>
-        <span>发布选项</span>
+        <span data-i18n="mqtt.publishOptions">发布选项</span>
       </div>
     </div>
   </section>
@@ -41,32 +41,32 @@
   <section class="panel custom-panel">
     <div class="panel-heading split">
       <div>
-        <h2>发布配置</h2>
-        <p>覆盖侧栏默认发布主题，设置 QoS 与保留标志。</p>
+        <h2 data-i18n="mqtt.publishConfig">发布配置</h2>
+        <p data-i18n="mqtt.publishConfigDesc">覆盖侧栏默认发布主题，设置 QoS 与保留标志。</p>
       </div>
     </div>
 
     <div class="config-grid compact">
       <label>
-        发布主题
-        <input id="mqttPublishTopic" type="text" placeholder="留空使用侧栏「发布主题」" />
+        <span data-i18n="mqtt.publishTopicField">发布主题</span>
+        <input id="mqttPublishTopic" type="text" data-i18n-placeholder="mqtt.publishTopicPlaceholder" placeholder="留空使用侧栏「发布主题」" />
       </label>
       <label>
         QoS
         <select id="mqttPublishQos">
-          <option value="0" selected>0 - 最多一次</option>
-          <option value="1">1 - 至少一次</option>
-          <option value="2">2 - 仅一次</option>
+          <option value="0" selected data-i18n="mqtt.qos0">0 - 最多一次</option>
+          <option value="1" data-i18n="mqtt.qos1">1 - 至少一次</option>
+          <option value="2" data-i18n="mqtt.qos2">2 - 仅一次</option>
         </select>
       </label>
       <label>
-        保留消息
+        <span data-i18n="mqtt.retain">保留消息</span>
         <input id="mqttPublishRetain" type="checkbox" />
       </label>
     </div>
 
     <div class="debug-preview">
-      <span>发布目标</span>
+      <span data-i18n="mqtt.publishTarget">发布目标</span>
       <code id="mqttPublishPreview">modusignal/tx · QoS 0</code>
     </div>
   </section>
@@ -74,22 +74,22 @@
   <section class="panel custom-panel">
     <div class="panel-heading split">
       <div>
-        <h2>调试配置</h2>
-        <p>轮询消息与发布选项；曲线解析在监测面板配置。</p>
+        <h2 data-i18n="mqtt.debugConfig">调试配置</h2>
+        <p data-i18n="mqtt.debugConfigDesc">轮询消息与发布选项；曲线解析在监测面板配置。</p>
       </div>
       <div class="panel-actions">
-        <button id="resetMqttConfig" class="ghost-button" type="button">恢复默认</button>
-        <button id="saveMqttConfig" type="button">保存</button>
+        <button id="resetMqttConfig" class="ghost-button" type="button" data-i18n="common.resetDefault">恢复默认</button>
+        <button id="saveMqttConfig" type="button" data-i18n="common.save">保存</button>
       </div>
     </div>
 
     <div class="config-grid compact">
       <label>
-        轮询间隔 (ms)
+        <span data-i18n="mqtt.pollInterval">轮询间隔 (ms)</span>
         <input id="mqttPollIntervalMs" type="number" min="0" step="1" value="0" />
       </label>
       <label>
-        轮询格式
+        <span data-i18n="mqtt.pollFormat">轮询格式</span>
         <select id="mqttHeartbeatFormat">
           <option value="json" selected>JSON</option>
           <option value="ascii">ASCII</option>
@@ -99,14 +99,14 @@
     </div>
 
     <label class="template-input">
-      轮询消息
+      <span data-i18n="mqtt.pollMessage">轮询消息</span>
       <input id="mqttHeartbeatMessage" type="text" value='{"type":"ping"}' />
     </label>
 
     <div class="debug-preview">
-      <span>轮询预览</span>
+      <span data-i18n="mqtt.pollPreview">轮询预览</span>
       <code id="mqttHeartbeatPreview">{"type":"ping"}</code>
-      <button id="loadMqttHeartbeat" class="ghost-button" type="button">填入发送框</button>
+      <button id="loadMqttHeartbeat" class="ghost-button" type="button" data-i18n="mqtt.fillSend">填入发送框</button>
     </div>
   </section>
 </section>

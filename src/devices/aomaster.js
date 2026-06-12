@@ -1,3 +1,4 @@
+import i18n from "../i18n.js";
 import {
   buildReadRegistersRequest,
   buildWriteMultipleRegistersRequest,
@@ -38,12 +39,12 @@ export const AOMASTER_WAVEFORMS = {
 };
 
 export const AOMASTER_WAVEFORM_OPTIONS = [
-  { id: "constant", label: "恒定输出" },
-  { id: "step", label: "阶跃" },
-  { id: "ramp", label: "斜坡" },
-  { id: "square", label: "方波" },
-  { id: "triangle", label: "三角波" },
-  { id: "sine", label: "正弦波" },
+  { id: "constant", label: "aomaster.waveform.constant" },
+  { id: "step", label: "aomaster.waveform.step" },
+  { id: "ramp", label: "aomaster.waveform.ramp" },
+  { id: "square", label: "aomaster.waveform.square" },
+  { id: "triangle", label: "aomaster.waveform.triangle" },
+  { id: "sine", label: "aomaster.waveform.sine" },
 ];
 
 export const AOMASTER_SCALE = 1000;
@@ -77,56 +78,58 @@ export const DEFAULT_AOMASTER_WAVE_STATE = {
 
 let rxBuffer = new Uint8Array(0);
 
-export const AOMASTER_PROFILE = {
-  id: AOMASTER_DEVICE_ID,
-  name: "AOMaster",
-  type: "模拟量信号发生器",
-  image: "./images/AOMaster.png",
-  protocolStatus: "ready",
-  defaultTransportId: "serial",
-  modes: {
-    current: {
-      label: "4-20mA 电流",
-      unit: "mA",
-      min: 4,
-      max: 20,
-      step: 0.001,
-      presets: { min: 4, mid: 12, max: 20 },
+export function getAomasterProfile() {
+  return {
+    id: AOMASTER_DEVICE_ID,
+    name: "AOMaster",
+    type: i18n("aomaster.profile.type"),
+    image: "./images/AOMaster.png",
+    protocolStatus: "ready",
+    defaultTransportId: "serial",
+    modes: {
+      current: {
+        label: i18n("aomaster.mode.current420"),
+        unit: "mA",
+        min: 4,
+        max: 20,
+        step: 0.001,
+        presets: { min: 4, mid: 12, max: 20 },
+      },
+      voltage: {
+        label: i18n("aomaster.mode.voltage010"),
+        unit: "V",
+        min: 0,
+        max: 10,
+        step: 0.001,
+        presets: { min: 0, mid: 5, max: 10 },
+      },
+      current020: {
+        label: i18n("aomaster.mode.current020"),
+        unit: "mA",
+        min: 0,
+        max: 20,
+        step: 0.001,
+        presets: { min: 0, mid: 10, max: 20 },
+      },
+      voltage05: {
+        label: i18n("aomaster.mode.voltage05"),
+        unit: "V",
+        min: 0,
+        max: 5,
+        step: 0.001,
+        presets: { min: 0, mid: 2.5, max: 5 },
+      },
+      current024: {
+        label: i18n("aomaster.mode.current024"),
+        unit: "mA",
+        min: 0,
+        max: 24,
+        step: 0.001,
+        presets: { min: 0, mid: 12, max: 24 },
+      },
     },
-    voltage: {
-      label: "0-10V 电压",
-      unit: "V",
-      min: 0,
-      max: 10,
-      step: 0.001,
-      presets: { min: 0, mid: 5, max: 10 },
-    },
-    current020: {
-      label: "0-20mA 电流",
-      unit: "mA",
-      min: 0,
-      max: 20,
-      step: 0.001,
-      presets: { min: 0, mid: 10, max: 20 },
-    },
-    voltage05: {
-      label: "0-5V 电压",
-      unit: "V",
-      min: 0,
-      max: 5,
-      step: 0.001,
-      presets: { min: 0, mid: 2.5, max: 5 },
-    },
-    current024: {
-      label: "0-24mA 电流",
-      unit: "mA",
-      min: 0,
-      max: 24,
-      step: 0.001,
-      presets: { min: 0, mid: 12, max: 24 },
-    },
-  },
-};
+  };
+}
 
 export function resetAomasterRxBuffer() {
   rxBuffer = new Uint8Array(0);
@@ -197,7 +200,7 @@ export function formatStepSequence(mode, sequence) {
 }
 
 export function getAomasterModeConfig(mode) {
-  return AOMASTER_PROFILE.modes[mode] ?? AOMASTER_PROFILE.modes.current;
+  return getAomasterProfile().modes[mode] ?? getAomasterProfile().modes.current;
 }
 
 export function getAomasterModeCode(mode) {
@@ -209,7 +212,8 @@ export function getAomasterWaveformCode(waveform) {
 }
 
 export function getAomasterWaveformLabel(waveform) {
-  return AOMASTER_WAVEFORM_OPTIONS.find((item) => item.id === waveform)?.label ?? "恒定输出";
+  const option = AOMASTER_WAVEFORM_OPTIONS.find((item) => item.id === waveform);
+  return option ? i18n(option.label) : i18n("aomaster.waveform.constant");
 }
 
 export function encodeAomasterValue(mode, value) {
@@ -223,10 +227,10 @@ export function decodeAomasterValue(mode, rawValue) {
 export function describeAomasterSummary(config) {
   const normalized = normalizeAomasterConfig(config);
   if (normalized.pollIntervalMs <= 0) {
-    return `Modbus RTU 从站 ${normalized.slaveId}，默认不轮询`;
+    return `Modbus RTU ${i18n("modbus.slaveId", "从站")} ${normalized.slaveId}，${i18n("aomaster.defaultNoPoll", "默认不轮询")}`;
   }
 
-  return `Modbus RTU 从站 ${normalized.slaveId}，轮询间隔 ${normalized.pollIntervalMs} ms`;
+  return `Modbus RTU ${i18n("modbus.slaveId", "从站")} ${normalized.slaveId}，${i18n("aomaster.pollSummaryLabel", "轮询间隔")} ${normalized.pollIntervalMs} ms`;
 }
 
 export function describeAomasterOutput(state) {
@@ -238,8 +242,10 @@ export function describeAomasterOutput(state) {
   }
 
   if (waveState.waveform === "step") {
-    const loopLabel = waveState.stepLoops === 0 ? "无限循环" : `${waveState.stepLoops} 次`;
-    return `阶跃序列 ${formatStepSequence(waveState.mode, waveState.stepSequence)} ${modeConfig.unit}，${waveState.stepDwellMs} ms/步，${loopLabel}`;
+    const loopLabel = waveState.stepLoops === 0
+      ? i18n("aomaster.infiniteLoop")
+      : `${waveState.stepLoops} ${i18n("num.times")}`;
+    return `${i18n("aomaster.waveform.step")} ${i18n("aomaster.stepSequence")} ${formatStepSequence(waveState.mode, waveState.stepSequence)} ${modeConfig.unit}，${waveState.stepDwellMs} ${i18n("num.msStep")}，${loopLabel}`;
   }
 
   return `${getAomasterWaveformLabel(waveState.waveform)} ${formatSetpoint(waveState.mode, waveState.waveLow)}~${formatSetpoint(waveState.mode, waveState.waveHigh)} ${modeConfig.unit}，${waveState.wavePeriodMs} ms`;
@@ -354,7 +360,7 @@ export function parseAOMasterTelemetry(bytes, config, mode = "current") {
     const value = decodeAomasterValue(mode, rawValue);
 
     return {
-      fieldName: "实际输出",
+      fieldName: i18n("aomaster.actualOutput"),
       unit: modeConfig.unit,
       value,
       rawValue,

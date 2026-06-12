@@ -1,3 +1,4 @@
+import i18n, { initI18n } from "./i18n.js";
 import { assetUrl } from "./asset-url.js";
 import { mountChartCurveSections } from "./debug-curve-section.js";
 import { loadAppPages } from "./page-loader.js";
@@ -443,16 +444,18 @@ const state = {
 boot();
 
 async function boot() {
+  initI18n();
   try {
     await loadAppPages();
+    i18n.apply(document.body);
     mountChartCurveSections();
     cacheElements();
     await initialize();
   } catch (error) {
-    console.error("应用启动失败", error);
+    console.error(i18n("app.bootFailed"), error);
     document.body.insertAdjacentHTML(
       "beforeend",
-      `<div class="boot-error" role="alert">页面加载失败：${error.message}</div>`,
+      `<div class="boot-error" role="alert">${i18n("app.bootError")}${error.message}</div>`,
     );
   }
 }
@@ -491,9 +494,47 @@ async function initialize() {
   void initMonitoringCharts();
   appendLog(
     "info",
-    "系统",
-    `${MODUSIGNAL_APP.name} 已就绪，当前设备：${getDeviceProfile(state.deviceId, customConfig, modbusConfig).name}`,
+    i18n("log.system"),
+    `${MODUSIGNAL_APP.name}${i18n("app.ready")}${getDeviceProfile(state.deviceId, customConfig, modbusConfig).name}`,
   );
+
+  // Language switcher
+  const langSwitchButton = document.getElementById("langSwitchButton");
+  if (langSwitchButton) {
+    updateLangSwitchButton(langSwitchButton);
+    langSwitchButton.addEventListener("click", () => {
+      const current = i18n.getLanguage();
+      const next = current === "zh" ? "en" : "zh";
+      i18n.setLanguage(next);
+      updateLangSwitchButton(langSwitchButton);
+      refreshAllDynamicUi();
+    });
+  }
+}
+
+function updateLangSwitchButton(button) {
+  button.textContent = i18n("lang.switchTarget");
+}
+
+function refreshAllDynamicUi() {
+  renderDeviceLibrary();
+  renderHomeDeviceCards();
+  updateDeviceUi();
+  updateConnectionUi(Boolean(session?.connected));
+  updatePollingUi();
+  updateSetpointUi();
+  syncChartCurvePanelUi();
+  updatePageUi();
+  populateTransportSelect();
+  renderTransportFields();
+  updateChartPointLabels();
+  populateCustomConfigForm(customConfig);
+  populateModbusConfigForm(modbusConfig);
+  populateHartConfigForm(hartConfig);
+  populateWebsocketConfigForm(websocketConfig);
+  populateMqttConfigForm(mqttConfig);
+  populateAomasterConfigForm(aomasterConfig);
+  syncAomasterValueDisplayControls();
 }
 
 function on(element, eventName, handler) {
@@ -521,24 +562,24 @@ async function initMonitoringCharts() {
       visiblePoints: chartPointSettings.visiblePointCount,
       color: "#0f766e",
       areaColor: "rgba(15, 118, 110, 0.12)",
-      emptyText: "连接设备并开启轮询后显示实时曲线",
-      title: "实时曲线",
+      emptyText: i18n("chart.emptyText"),
+      title: i18n("chart.realTimeChart"),
     });
     setpointChart = new EchartsLiveChart(elements.setpointChartCanvas, {
       maxPoints: chartPointSettings.totalPointCount,
       visiblePoints: chartPointSettings.visiblePointCount,
       color: "#2563eb",
       areaColor: "rgba(37, 99, 235, 0.12)",
-      emptyText: "调整设定值以预览曲线",
-      title: "设定预览",
+      emptyText: i18n("chart.emptySetpoint"),
+      title: i18n("chart.setpointPreview"),
     });
     actualChart = new EchartsLiveChart(elements.actualChartCanvas, {
       maxPoints: chartPointSettings.totalPointCount,
       visiblePoints: chartPointSettings.visiblePointCount,
       color: "#0f766e",
       areaColor: "rgba(15, 118, 110, 0.12)",
-      emptyText: "连接设备并开启轮询后显示实时输出",
-      title: "实时输出",
+      emptyText: i18n("chart.emptyActual"),
+      title: i18n("chart.realTimeOutput"),
     });
     allCharts = [chart, setpointChart, actualChart];
     chartsReady = true;
@@ -549,7 +590,7 @@ async function initMonitoringCharts() {
     chartsReady = false;
     console.error("initMonitoringCharts failed", error);
     if (elements.chartPanelSummary) {
-      elements.chartPanelSummary.textContent = `图表模块加载失败：${error.message}`;
+      elements.chartPanelSummary.textContent = `${i18n("chart.moduleLoadFailed")}${error.message}`;
     }
   }
 }
@@ -659,31 +700,31 @@ function buildJsonMultiChartSignature(seriesDefs) {
 function getJsonMultiChartMeta() {
   if (state.deviceId === WEBSOCKET_DEVICE_ID) {
     return {
-      title: "WebSocket 多曲线",
-      emptyText: "连接设备并接收 WebSocket 消息后显示多曲线",
+      title: i18n("chart.wsChart"),
+      emptyText: i18n("chart.wsEmpty"),
       seriesDefs: buildWebsocketChartSeriesDefs(),
     };
   }
 
   if (state.deviceId === CUSTOM_DEVICE_ID) {
     return {
-      title: "串口多曲线",
-      emptyText: "连接设备并接收串口数据后显示多曲线",
+      title: i18n("chart.serialChart"),
+      emptyText: i18n("chart.serialEmpty"),
       seriesDefs: buildCustomChartSeriesDefs(),
     };
   }
 
   if (state.deviceId === MODBUS_DEVICE_ID) {
     return {
-      title: "Modbus 多曲线",
-      emptyText: "连接设备并开始轮询后显示多曲线",
+      title: i18n("chart.modbusChart"),
+      emptyText: i18n("chart.modbusEmpty"),
       seriesDefs: buildModbusChartSeriesDefs(),
     };
   }
 
   return {
-    title: "MQTT 多曲线",
-    emptyText: "连接设备并接收 MQTT 消息后显示多曲线",
+    title: i18n("chart.mqttChart"),
+    emptyText: i18n("chart.mqttEmpty"),
     seriesDefs: buildMqttChartSeriesDefs(),
   };
 }
@@ -708,8 +749,8 @@ function ensureHartTelemetryChart() {
   hartChart = new EchartsMultiLiveChartClass(elements.telemetryChart, {
     maxPoints: chartPointSettings.totalPointCount,
     visiblePoints: chartPointSettings.visiblePointCount,
-    emptyText: "连接设备并开启轮询后显示实时曲线",
-    title: "HART 变量曲线",
+    emptyText: i18n("chart.emptyText"),
+    title: i18n("chart.hartVar"),
     series: buildHartChartSeriesDefs(),
   });
   allCharts = [hartChart, setpointChart, actualChart].filter(Boolean);
@@ -768,8 +809,8 @@ function ensureSingleTelemetryChart() {
     visiblePoints: chartPointSettings.visiblePointCount,
     color: "#0f766e",
     areaColor: "rgba(15, 118, 110, 0.12)",
-    emptyText: "连接设备并开启轮询后显示实时曲线",
-    title: "实时曲线",
+    emptyText: i18n("chart.emptyText"),
+    title: i18n("chart.realTimeChart"),
   });
   allCharts = [chart, setpointChart, actualChart].filter(Boolean);
   applyChartPointCountConfig();
@@ -843,7 +884,7 @@ function handleHartTelemetry(telemetry) {
       })
       .join(" · ");
     if (elements.chartValue) {
-      elements.chartValue.textContent = summary || "暂无数据";
+      elements.chartValue.textContent = summary || i18n("chart.noData");
     }
     return;
   }
@@ -906,58 +947,58 @@ function handleHartChartSeriesChange(event) {
 
 function describeChartPanelSummary(totalPointCount, visiblePointCount) {
   if (state.deviceId === DEFAULT_DEVICE_ID) {
-    return `ECharts 曲线预览设定波形，并跟踪轮询回读的实际输出；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`;
+    return i18n("chart.aomasterDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount);
   }
 
   if (state.deviceId === HART_DEVICE_ID) {
-    return `HART PV/SV/TV/QV 卡片与多曲线同步显示；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`;
+    return i18n("chart.hartDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount);
   }
 
   if (state.deviceId === MODBUS_DEVICE_ID) {
     return shouldUseModbusMultiChart()
-      ? `Modbus 多曲线；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`
-      : `Modbus 读回包自动解析寄存器数值；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`;
+      ? i18n("chart.modbusMultiDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount)
+      : i18n("chart.modbusSingleDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount);
   }
 
   if (state.deviceId === WEBSOCKET_DEVICE_ID) {
     return shouldUseWebsocketMultiChart()
-      ? `WebSocket 多曲线（JSON / HEX / Modbus）；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`
-      : `WebSocket 回包自动解析 JSON、HEX 或 Modbus 数值；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`;
+      ? i18n("chart.wsMultiDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount)
+      : i18n("chart.wsSingleDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount);
   }
 
   if (state.deviceId === MQTT_DEVICE_ID) {
     return shouldUseMqttMultiChart()
-      ? `MQTT 多曲线（JSON / HEX / Modbus）；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`
-      : `MQTT 订阅消息自动解析数值；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`;
+      ? i18n("chart.mqttMultiDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount)
+      : i18n("chart.mqttSingleDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount);
   }
 
   if (state.deviceId === CUSTOM_DEVICE_ID) {
     return shouldUseCustomMultiChart()
-      ? `自定义串口多曲线（JSON / HEX / Modbus）；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`
-      : `自定义串口回包自动解析数值；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`;
+      ? i18n("chart.customMultiDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount)
+      : i18n("chart.customSingleDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount);
   }
 
-  return `ECharts 曲线自动解析设备回读数值；保留 ${totalPointCount} 个采样点，当前显示 ${visiblePointCount} 个。`;
+  return i18n("chart.defaultDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount);
 }
 
 function describeChartCurveConfigSummary() {
   if (state.deviceId === DEFAULT_DEVICE_ID) {
-    return "双曲线 · 设定预览 + 实时输出";
+    return i18n("chart.dualCurve");
   }
 
   if (state.deviceId === MODBUS_DEVICE_ID) {
     const series = listModbusDeviceChartSeries(modbusConfig);
     if (series.length > 1) {
-      return `${series.length} 条 Modbus 曲线`;
+      return i18n("chart.modbusCurveCount").replace("{count}", series.length);
     }
     const normalized = normalizeModbusConfig(modbusConfig);
-    return `单曲线 · ${normalized.fieldName || "寄存器值"}`;
+    return `${i18n("chart.singleCurve")} · ${normalized.fieldName || i18n("chart.registryValue")}`;
   }
 
   if (state.deviceId === HART_DEVICE_ID) {
     const normalized = normalizeHartConfig(hartConfig);
     const labels = HART_VARIABLE_CARDS.filter((card) => normalized.chartSeries[card.key]).map((card) => card.label);
-    return labels.length ? labels.join(" / ") : "未选择变量";
+    return labels.length ? labels.join(" / ") : i18n("chart.notSelected");
   }
 
   if (state.deviceId === CUSTOM_DEVICE_ID) {
@@ -965,13 +1006,13 @@ function describeChartCurveConfigSummary() {
     const series = listCustomChartSeries(customConfig);
     if (series.length > 1) {
       const modeLabel = normalized.parserMode === "hex" ? "HEX" : normalized.parserMode === "modbus" ? "Modbus" : "JSON";
-      return `${series.length} 条 ${modeLabel} 曲线`;
+      return i18n("chart.multiCurveCount").replace("{count}", series.length).replace("{mode}", modeLabel);
     }
     if (normalized.parserMode === "hex") {
-      return "单曲线 · HEX 原始字节";
+      return `${i18n("chart.singleCurve")} · HEX ${i18n("chart.hexRaw").split(" · ").pop()}`;
     }
     if (normalized.parserMode === "modbus") {
-      return "单曲线 · Modbus RTU 载荷";
+      return `${i18n("chart.singleCurve")} · ${i18n("chart.modbusPayload").split(" · ").pop()}`;
     }
     return describeJsonCurveSummary(normalized, DEFAULT_CUSTOM_CONFIG);
   }
@@ -981,13 +1022,13 @@ function describeChartCurveConfigSummary() {
     const series = listWebSocketChartSeries(websocketConfig);
     if (series.length > 1) {
       const modeLabel = normalized.parserMode === "hex" ? "HEX" : normalized.parserMode === "modbus" ? "Modbus" : "JSON";
-      return `${series.length} 条 ${modeLabel} 曲线`;
+      return i18n("chart.multiCurveCount").replace("{count}", series.length).replace("{mode}", modeLabel);
     }
     if (normalized.parserMode === "hex") {
-      return "单曲线 · HEX 原始字节";
+      return `${i18n("chart.singleCurve")} · HEX ${i18n("chart.hexRaw").split(" · ").pop()}`;
     }
     if (normalized.parserMode === "modbus") {
-      return "单曲线 · Modbus RTU 载荷";
+      return `${i18n("chart.singleCurve")} · ${i18n("chart.modbusPayload").split(" · ").pop()}`;
     }
     return describeJsonCurveSummary(normalized, DEFAULT_WEBSOCKET_CONFIG);
   }
@@ -997,18 +1038,18 @@ function describeChartCurveConfigSummary() {
     const series = listMqttChartSeries(mqttConfig);
     if (series.length > 1) {
       const modeLabel = normalized.parserMode === "hex" ? "HEX" : normalized.parserMode === "modbus" ? "Modbus" : "JSON";
-      return `${series.length} 条 ${modeLabel} 曲线`;
+      return i18n("chart.multiCurveCount").replace("{count}", series.length).replace("{mode}", modeLabel);
     }
     if (normalized.parserMode === "hex") {
-      return "单曲线 · HEX 原始字节";
+      return `${i18n("chart.singleCurve")} · HEX ${i18n("chart.hexRaw").split(" · ").pop()}`;
     }
     if (normalized.parserMode === "modbus") {
-      return "单曲线 · Modbus RTU 载荷";
+      return `${i18n("chart.singleCurve")} · ${i18n("chart.modbusPayload").split(" · ").pop()}`;
     }
     return describeJsonCurveSummary(normalized, DEFAULT_MQTT_CONFIG);
   }
 
-  return "单曲线";
+  return i18n("chart.singleCurve");
 }
 
 function syncChartCurvePanelUi() {
@@ -1038,12 +1079,12 @@ function updateChartPointLabels() {
   }
   if (elements.chartPointCount) {
     elements.chartPointCount.value = String(totalPointCount);
-    elements.chartPointCount.title = "手动设置曲线总采样点数，点数越高历史越长";
+    elements.chartPointCount.title = i18n("workbench.totalPointsTitle");
   }
   if (elements.visibleChartPointCount) {
     elements.visibleChartPointCount.value = String(visiblePointCount);
     elements.visibleChartPointCount.max = String(totalPointCount);
-    elements.visibleChartPointCount.title = "当前窗口显示点数，曲线可左右滑动查看总点数历史";
+    elements.visibleChartPointCount.title = i18n("workbench.displayPointsTitle");
   }
   if (elements.chartPanelSummary) {
     elements.chartPanelSummary.textContent = describeChartPanelSummary(totalPointCount, visiblePointCount);
@@ -1117,14 +1158,14 @@ function resolveCurrentChartCsvTarget() {
   if (state.deviceId === DEFAULT_DEVICE_ID) {
     return {
       kind: "dual",
-      title: "AOMaster 双曲线",
+      title: i18n("chart.aomasterDual"),
       charts: {
         setpoint: setpointChart,
         actual: actualChart,
       },
       series: [
-        { key: "setpoint", name: "设定预览", unit: getAomasterDisplayUnit() },
-        { key: "actual", name: "实时输出", unit: getAomasterDisplayUnit() },
+        { key: "setpoint", name: i18n("chart.setpointPreview"), unit: getAomasterDisplayUnit() },
+        { key: "actual", name: i18n("chart.realTimeOutput"), unit: getAomasterDisplayUnit() },
       ],
     };
   }
@@ -1133,7 +1174,7 @@ function resolveCurrentChartCsvTarget() {
     ensureHartTelemetryChart();
     return {
       kind: "multi",
-      title: "HART 变量曲线",
+      title: i18n("chart.hartVar"),
       chart: hartChart,
       series: hartChart?.getSeriesDefs?.() ?? buildHartChartSeriesDefs(),
     };
@@ -1153,7 +1194,7 @@ function resolveCurrentChartCsvTarget() {
   ensureSingleTelemetryChart();
   return {
     kind: "single",
-    title: chart?.title || "实时曲线",
+    title: chart?.title || i18n("chart.realTimeChart"),
     chart,
     series: [getSingleChartCsvSeriesMeta()],
   };
@@ -1266,7 +1307,7 @@ function exportChartCsv() {
   const context = buildChartCsvContextFromTarget(target);
   const { text, pointCount } = buildChartCsvText(context);
   triggerChartCsvDownload(buildChartCsvFilename(), text);
-  appendLog("info", "曲线", `CSV 已导出：${context.series.length} 条曲线，共 ${pointCount} 点`);
+  appendLog("info", i18n("log.chart"), i18n("chart.csvExport") + `: ${context.series.length} ${i18n("num.curves", "curves")}, ${pointCount} ${i18n("num.points", "points")}`);
 }
 
 function parseCsvLine(line) {
@@ -1326,7 +1367,7 @@ function parseChartCsvText(text) {
   });
 
   if (!rows.length || rows[0].length < 2) {
-    throw new Error("CSV 至少需要一列索引和一列数据");
+    throw new Error(i18n("chart.csvNeedCols"));
   }
 
   const seriesKeys = rows[0]
@@ -1392,19 +1433,21 @@ function resolveImportedSeriesKey(parsed, targetSeries, fallbackIndex) {
 function formatImportedSingleReadout(series, values, pointCount) {
   const lastValue = getLastFiniteValue(values);
   if (!Number.isFinite(lastValue)) {
-    return `已加载 ${pointCount} 点`;
+    return `${i18n("chart.csvLoaded")} ${pointCount} ${i18n("num.points", "points")}`;
   }
 
-  return `${series.name} ${lastValue.toFixed(3)}${series.unit ? ` ${series.unit}` : ""} · 共 ${pointCount} 点`;
+  return `${series.name} ${lastValue.toFixed(3)}${series.unit ? ` ${series.unit}` : ""} · ${i18n("num.totalPointsPrefix")} ${pointCount} ${i18n("num.points", "points")}`;
 }
 
 function formatImportedDualReadout(values, unit, pointCount) {
   const lastValue = getLastFiniteValue(values);
   if (!Number.isFinite(lastValue)) {
-    return `已加载 ${pointCount} 点`;
+    return `${i18n("chart.csvLoaded")} ${pointCount} ${i18n("num.points", "points")}`;
   }
 
-  return `最新 ${lastValue.toFixed(3)}${unit ? ` ${unit}` : ""} · 共 ${pointCount} 点`;
+  return i18n("chart.latest")
+    .replace("{value}", `${lastValue.toFixed(3)}${unit ? ` ${unit}` : ""}`)
+    .replace("{points}", pointCount);
 }
 
 function formatImportedMultiReadout(seriesDefs, seriesData, pointCount) {
@@ -1420,7 +1463,7 @@ function formatImportedMultiReadout(seriesDefs, seriesData, pointCount) {
     .filter(Boolean)
     .join(" · ");
 
-  return summary || `已加载 ${pointCount} 点`;
+  return summary || `${i18n("chart.csvLoaded")} ${pointCount} ${i18n("num.points")}`;
 }
 
 function importChartCsv(parsed, sourceName = "CSV") {
@@ -1509,7 +1552,10 @@ function importChartCsv(parsed, sourceName = "CSV") {
   }
 
   requestChartResize();
-  appendLog("info", "曲线", `${sourceName} 已加载：${target.series.length} 条曲线，共 ${parsed.pointCount} 点`);
+  appendLog("info", i18n("log.chart"), i18n("log.curveLoaded")
+    .replace("{name}", sourceName)
+    .replace("{series}", target.series.length)
+    .replace("{points}", parsed.pointCount));
 }
 
 function openChartCsvPicker() {
@@ -1527,7 +1573,7 @@ async function loadChartCsv(event) {
     const parsed = parseChartCsvText(text);
     importChartCsv(parsed, file.name);
   } catch (error) {
-    appendLog("error", "曲线", error.message);
+    appendLog("error", i18n("log.chart"), error.message);
   } finally {
     event.target.value = "";
   }
@@ -1563,7 +1609,7 @@ function bindEvents() {
     if (quickSend) {
       const preset = WEBSOCKET_QUICK_MESSAGES.find((item) => item.id === quickSend.dataset.wsQuickSend);
       if (preset) {
-        sendWebSocketQuickMessage(preset).catch((error) => appendLog("error", "发送", error.message));
+        sendWebSocketQuickMessage(preset).catch((error) => appendLog("error", i18n("log.send"), error.message));
       }
       return;
     }
@@ -1581,7 +1627,7 @@ function bindEvents() {
     if (mqttQuickSend) {
       const preset = MQTT_QUICK_MESSAGES.find((item) => item.id === mqttQuickSend.dataset.mqttQuickSend);
       if (preset) {
-        sendMqttQuickMessage(preset).catch((error) => appendLog("error", "发送", error.message));
+        sendMqttQuickMessage(preset).catch((error) => appendLog("error", i18n("log.send"), error.message));
       }
       return;
     }
@@ -1608,11 +1654,11 @@ function bindEvents() {
   on(elements.clearLog, "click", () => {
     resetRxLogCoalesce();
     elements.serialLog.innerHTML = "";
-    appendLog("info", "系统", "日志已清空");
+    appendLog("info", i18n("log.system"), i18n("log.logCleared"));
   });
   on(elements.clearChart, "click", () => {
     clearAllCharts();
-    appendLog("info", "系统", "曲线已清空");
+    appendLog("info", i18n("log.system"), i18n("log.chartCleared"));
   });
   on(elements.togglePolling, "click", togglePolling);
 
@@ -1803,11 +1849,11 @@ function bindSidebarPanelCollapse() {
 function setSidebarPanelCollapsed(panel, toggle, collapsed) {
   panel.classList.toggle("collapsed", collapsed);
   toggle.setAttribute("aria-expanded", collapsed ? "false" : "true");
-  toggle.title = collapsed ? "展开" : "折叠";
+  toggle.title = collapsed ? i18n("panel.expand") : i18n("panel.collapse");
   toggle.textContent = collapsed ? "▸" : "▾";
 
-  const label = panel.querySelector("h2")?.textContent?.trim() || "面板";
-  toggle.setAttribute("aria-label", collapsed ? `展开${label}` : `折叠${label}`);
+  const label = panel.querySelector("h2")?.textContent?.trim() || i18n("panel.default");
+  toggle.setAttribute("aria-label", collapsed ? `${i18n("panel.expand")}${label}` : `${i18n("panel.collapse")}${label}`);
 }
 
 function loadSidebarPanelState() {
@@ -1838,7 +1884,7 @@ function bindSessionEvents(target) {
     resetCustomRxBuffer(customConfig);
     updateConnectionUi(true);
     updateActivePolling();
-    appendLog("info", "连接", describeConnectionSummary());
+    appendLog("info", i18n("log.connect"), describeConnectionSummary());
   });
 
   target.addEventListener("disconnected", () => {
@@ -1854,7 +1900,7 @@ function bindSessionEvents(target) {
     updateConnectionUi(false);
     resetWebSocketMessageStats();
     resetMqttMessageStats();
-    appendLog("info", "连接", "已断开");
+    appendLog("info", i18n("log.connect"), i18n("log.disconnected"));
   });
 
   target.addEventListener("rx", (event) => {
@@ -1946,13 +1992,13 @@ function bindSessionEvents(target) {
   });
 
   target.addEventListener("error", (event) => {
-    appendLog("error", "错误", event.detail.error?.message ?? String(event.detail.error));
+    appendLog("error", i18n("log.error"), event.detail.error?.message ?? String(event.detail.error));
   });
 }
 
 async function setTransport(transportId) {
   if (session && session.connected) {
-    await session.disconnect().catch((error) => appendLog("error", "连接", error.message));
+    await session.disconnect().catch((error) => appendLog("error", i18n("log.connect"), error.message));
   }
 
   state.transportId = getTransportDescriptor(transportId).id;
@@ -1969,7 +2015,7 @@ function populateTransportSelect() {
   listTransports().forEach((descriptor) => {
     const option = document.createElement("option");
     option.value = descriptor.id;
-    option.textContent = descriptor.label;
+    option.textContent = i18n(descriptor.label);
     elements.transportSelect.append(option);
   });
   elements.transportSelect.value = state.transportId;
@@ -2019,7 +2065,7 @@ function renderTransportFields() {
 
   descriptor.fields.forEach((field) => {
     const label = document.createElement("label");
-    label.textContent = field.label;
+    label.textContent = i18n(field.label, field.label);
 
     const control = field.type === "select" ? document.createElement("select") : document.createElement("input");
     control.dataset.fieldKey = field.key;
@@ -2076,35 +2122,35 @@ function readTransportOptions() {
 
 function describeDeviceTransportDefaults(deviceId) {
   if (state.transportId === MQTT_TRANSPORT_ID) {
-    return "默认 MQTT Broker 与主题";
+    return i18n("transport.defaults.mqtt");
   }
 
   if (state.transportId === WEBSOCKET_TRANSPORT_ID) {
     if (deviceId === MODBUS_DEVICE_ID) {
-      return "Modbus 默认 WebSocket 地址";
+      return i18n("transport.defaults.modbusWs");
     }
     if (deviceId === WEBSOCKET_DEVICE_ID) {
-      return "WebSocket 调试默认连接地址";
+      return i18n("transport.defaults.wsDebug");
     }
     if (deviceId === MQTT_DEVICE_ID) {
-      return "MQTT 调试默认 Broker 与主题";
+      return i18n("transport.defaults.mqttDebug");
     }
-    return "默认 WebSocket 地址";
+    return i18n("transport.defaults.ws");
   }
 
   if (deviceId === HART_DEVICE_ID) {
-    return "HART 默认串口参数（1200 8O1）";
+    return i18n("transport.defaults.hart");
   }
   if (deviceId === AOMASTER_DEVICE_ID) {
-    return "AOMaster 默认串口参数（115200 8N1）";
+    return i18n("transport.defaults.aomaster");
   }
   if (deviceId === MODBUS_DEVICE_ID) {
-    return "Modbus 默认串口参数（9600 8N1）";
+    return i18n("transport.defaults.modbus");
   }
   if (deviceId === CUSTOM_DEVICE_ID) {
-    return "自定义串口设备默认串口参数（115200 8N1）";
+    return i18n("transport.defaults.custom");
   }
-  return "设备默认连接参数";
+  return i18n("transport.defaults.generic");
 }
 
 function applyDeviceTransportDefaults(deviceId = state.deviceId) {
@@ -2134,7 +2180,7 @@ function applyDeviceTransportDefaults(deviceId = state.deviceId) {
   }
 
   if (changed && session?.connected) {
-    appendLog("info", "连接", `已切换 ${describeDeviceTransportDefaults(deviceId)}，断开后重新连接生效`);
+    appendLog("info", i18n("log.connect"), `${i18n("log.switchedTransport")} ${describeDeviceTransportDefaults(deviceId)}${i18n("conn.reconnectHint")}`);
   }
 
   return changed;
@@ -2175,7 +2221,7 @@ function selectDevice(deviceId) {
   updateDeviceUi();
   updateActivePolling();
   updatePollingUi();
-  appendLog("info", "设备", `已切换到 ${getDeviceProfile(state.deviceId, customConfig, modbusConfig).name}`);
+  appendLog("info", i18n("log.device"), `${i18n("log.switchedTo")} ${getDeviceProfile(state.deviceId, customConfig, modbusConfig).name}`);
 }
 
 function navigateToPage(pageId) {
@@ -2205,14 +2251,14 @@ function updateSecureState() {
   const descriptor = getTransportDescriptor(state.transportId);
 
   if (descriptor.requiresSecureContext && !window.isSecureContext) {
-    elements.secureState.textContent = "需要 HTTPS 或 localhost";
+    elements.secureState.textContent = i18n("env.needHttps");
     elements.secureState.classList.add("warning");
     elements.connectButton.disabled = true;
     return;
   }
 
   if (!descriptor.isSupported()) {
-    elements.secureState.textContent = `当前环境不支持${descriptor.label}`;
+    elements.secureState.textContent = i18n("env.notSupported") + i18n(descriptor.label);
     elements.secureState.classList.add("warning");
     elements.connectButton.disabled = true;
     return;
@@ -2236,7 +2282,7 @@ function updateSecureState() {
     }
   }
 
-  elements.secureState.textContent = `${descriptor.label} 可用`;
+  elements.secureState.textContent = i18n(descriptor.label) + i18n("env.available");
   elements.secureState.classList.remove("warning");
 }
 
@@ -2316,7 +2362,7 @@ function updateDeviceUi() {
   const summary = queryDeviceField("deviceSummary");
   if (summary) {
     if (isCustom) {
-      summary.textContent = `${profile.name}；设定范围与发送模板在本页配置，曲线解析在监测面板。`;
+      summary.textContent = `${profile.name}${i18n("custom.deviceConfigDescSummary")}`;
     } else if (isModbus) {
       summary.textContent = describeModbusSummary(modbusConfig);
     } else if (isHart) {
@@ -2355,7 +2401,7 @@ function updateDeviceUi() {
 
   if (!isAomaster && !isHart && !isMessageDebug && chart) {
     const chartConfig = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
-    chart.setMeta({ title: "实时曲线", unit: chartConfig.unit });
+    chart.setMeta({ title: i18n("chart.realTimeChart"), unit: chartConfig.unit });
   }
 
   if (isHart) {
@@ -2466,8 +2512,8 @@ function renderDeviceLibrary() {
     const empty = document.createElement("p");
     empty.className = "device-library-empty";
     empty.textContent = deviceLibrarySearchQuery.trim()
-      ? "没有匹配的设备，请换个关键词试试。"
-      : "设备库为空。";
+      ? i18n("device.noMatch")
+      : i18n("device.libraryEmpty");
     elements.deviceLibrary.append(empty);
     return;
   }
@@ -2492,7 +2538,7 @@ function renderDeviceLibrary() {
 
     const subtitle = document.createElement("small");
     subtitle.textContent =
-      entry.deviceId === CUSTOM_DEVICE_ID ? "模板发送 / JSON·HEX·Modbus 解析" : entry.profile.type;
+      entry.deviceId === CUSTOM_DEVICE_ID ? i18n("custom.cardDesc") : entry.profile.type;
 
     text.append(title, subtitle);
     button.append(icon, text);
@@ -2523,17 +2569,17 @@ function renderHomeDeviceCards() {
 
     const summary = document.createElement("span");
     if (entry.deviceId === DEFAULT_DEVICE_ID) {
-      summary.textContent = "阶跃/斜坡/方波等波形输出，双曲线预览，监测面板可手动轮询回读。";
+      summary.textContent = i18n("home.aomasterCardDesc");
     } else if (entry.deviceId === MODBUS_DEVICE_ID) {
-      summary.textContent = "RTU 寄存器读写，支持轮询读取与曲线显示。";
+      summary.textContent = i18n("home.modbusCardDesc");
     } else if (entry.deviceId === HART_DEVICE_ID) {
-      summary.textContent = "通用命令读写，PV/SV/TV/QV 轮询与多曲线，完整 HART 上位机调试。";
+      summary.textContent = i18n("home.hartCardDesc");
     } else if (entry.deviceId === WEBSOCKET_DEVICE_ID) {
-      summary.textContent = "WebSocket 连接调试，快捷 JSON/文本发送与回包解析。";
+      summary.textContent = i18n("home.card.websocket");
     } else if (entry.deviceId === MQTT_DEVICE_ID) {
-      summary.textContent = "MQTT over WebSocket 调试，主题发布/订阅、QoS 与 JSON 解析。";
+      summary.textContent = i18n("home.mqttCardDesc");
     } else {
-      summary.textContent = "用模板发送和解析规则快速适配未知串口设备。";
+      summary.textContent = i18n("home.customCardDesc");
     }
 
     body.append(title, summary);
@@ -2555,10 +2601,10 @@ function renderHomeDeviceCards() {
   requestBody.className = "home-card-body";
 
   const requestTitle = document.createElement("strong");
-  requestTitle.textContent = "新增设备请求";
+  requestTitle.textContent = i18n("home.requestDevice");
 
   const requestSummary = document.createElement("span");
-  requestSummary.textContent = "整理设备资料、协议、截图和期望 UI，方便贡献设备驱动。";
+  requestSummary.textContent = i18n("home.requestCardDesc");
 
   requestBody.append(requestTitle, requestSummary);
   requestButton.append(requestIcon, requestBody);
@@ -2672,7 +2718,7 @@ function updateSetpointUi() {
     setpointReadout.textContent = isPercent ? `${formatted} %` : `${formatted}${config.unit ? ` ${config.unit}` : ""}`;
   }
   if (setpointUnit) {
-    setpointUnit.textContent = isPercent ? "%" : config.unit || "值";
+    setpointUnit.textContent = isPercent ? "%" : config.unit || i18n("common.val");
   }
   if (setpointSlider) {
     setpointSlider.min = String(controlMin);
@@ -2706,10 +2752,10 @@ function updateSetpointUi() {
   }
   if (state.deviceId === HART_DEVICE_ID && elements.hartFrameChecksum) {
     if (command.supported && Number.isFinite(command.checksum)) {
-      elements.hartFrameChecksum.textContent = `0x${command.checksum.toString(16).toUpperCase().padStart(2, "0")}（XOR 自动计算）`;
+      elements.hartFrameChecksum.textContent = `0x${command.checksum.toString(16).toUpperCase().padStart(2, "0")}${i18n("hart.xorAuto")}`;
     } else if (command.supported && command.bytes?.length) {
       const checksum = command.bytes[command.bytes.length - 1];
-      elements.hartFrameChecksum.textContent = `0x${checksum.toString(16).toUpperCase().padStart(2, "0")}（XOR 自动计算）`;
+      elements.hartFrameChecksum.textContent = `0x${checksum.toString(16).toUpperCase().padStart(2, "0")}${i18n("hart.xorAuto")}`;
     } else {
       elements.hartFrameChecksum.textContent = "--";
     }
@@ -2722,10 +2768,10 @@ function updateSetpointUi() {
     const normalized = normalizeModbusConfig(modbusConfig);
     const isRead = isReadFunctionCode(normalized.functionCode);
     if (sendDriverCommand) {
-      sendDriverCommand.textContent = isRead ? "读取寄存器" : "写入寄存器";
+      sendDriverCommand.textContent = isRead ? i18n("driver.readRegister") : i18n("driver.writeRegister");
     }
     if (driverState) {
-      driverState.textContent = "Modbus RTU";
+      driverState.textContent = i18n("driver.modbusRtu");
       driverState.classList.remove("warning");
     }
     return;
@@ -2734,13 +2780,13 @@ function updateSetpointUi() {
   if (state.deviceId === HART_DEVICE_ID) {
     updateHartDeviceInfo();
     if (sendDriverCommand) {
-      sendDriverCommand.textContent = "发送命令";
+      sendDriverCommand.textContent = i18n("driver.sendCommand");
     }
     if (elements.hartSearchDevice) {
       elements.hartSearchDevice.disabled = !session?.connected;
     }
     if (driverState) {
-      driverState.textContent = normalizeHartConfig(hartConfig).device.discovered ? "HART 已识别" : "HART 未搜索";
+      driverState.textContent = normalizeHartConfig(hartConfig).device.discovered ? i18n("driver.hartIdentified") : i18n("driver.hartNotSearched");
       driverState.classList.toggle("warning", !normalizeHartConfig(hartConfig).device.discovered);
     }
     return;
@@ -2748,20 +2794,20 @@ function updateSetpointUi() {
 
   if (state.deviceId === DEFAULT_DEVICE_ID) {
     if (sendDriverCommand) {
-      sendDriverCommand.textContent = "发送设定";
+      sendDriverCommand.textContent = i18n("driver.sendSetting");
     }
     if (driverState) {
-      driverState.textContent = "Modbus RTU";
+      driverState.textContent = i18n("driver.modbusRtu");
       driverState.classList.remove("warning");
     }
     return;
   }
 
   if (sendDriverCommand) {
-    sendDriverCommand.textContent = "发送设定";
+    sendDriverCommand.textContent = i18n("driver.sendSetting");
   }
   if (driverState) {
-    driverState.textContent = command.supported ? "模板可发送" : "协议待配置";
+    driverState.textContent = command.supported ? i18n("driver.templateReady") : i18n("driver.protocolPending");
     driverState.classList.toggle("warning", !command.supported);
   }
 }
@@ -2785,12 +2831,12 @@ function updateMessageDebugCommandUi() {
     protocolPreview.textContent = command.preview;
   }
   if (sendDriverCommand) {
-    sendDriverCommand.textContent = "发送轮询消息";
+    sendDriverCommand.textContent = i18n("driver.sendPollMsg");
     sendDriverCommand.disabled = !command.supported || !session?.connected;
   }
   if (driverState) {
-    const label = state.deviceId === MQTT_DEVICE_ID ? "MQTT 调试" : "WebSocket 调试";
-    driverState.textContent = command.supported ? label : "请配置轮询消息";
+    const label = state.deviceId === MQTT_DEVICE_ID ? i18n("driver.mqttDebug") : i18n("driver.wsDebug");
+    driverState.textContent = command.supported ? label : i18n("driver.configPollMsg");
     driverState.classList.toggle("warning", !command.supported);
   }
 }
@@ -2800,19 +2846,19 @@ function describeConnectionSummary() {
   const options = readTransportOptions();
 
   if (state.transportId === MQTT_TRANSPORT_ID) {
-    return `MQTT 已连接 · ${options.brokerUrl} · 订阅 ${options.subscribeTopic}`;
+    return i18n("conn.mqttConnected") + ` · ${options.brokerUrl} · ` + i18n("conn.subscribed") + ` ${options.subscribeTopic}`;
   }
 
   if (state.transportId === WEBSOCKET_TRANSPORT_ID) {
-    return `WebSocket 已连接 · ${options.url}`;
+    return i18n("conn.wsConnected") + ` · ${options.url}`;
   }
 
   if (state.transportId === DEFAULT_TRANSPORT_ID) {
     const parity = options.parity === "none" ? "N" : options.parity === "even" ? "E" : "O";
-    return `串口已连接 · ${options.baudRate} ${options.dataBits}${parity}${options.stopBits}`;
+    return i18n("conn.serialConnected") + ` · ${options.baudRate} ${options.dataBits}${parity}${options.stopBits}`;
   }
 
-  return `${descriptor.label} 已连接`;
+  return i18n(descriptor.label) + i18n("conn.connected");
 }
 
 function syncSecureState(connected) {
@@ -2836,7 +2882,7 @@ function updateConnectionUi(connected) {
   elements.disconnectButton.disabled = !connected;
   elements.sendManual.disabled = !connected;
   elements.transportSelect.disabled = connected;
-  elements.connectionState.textContent = connected ? "已连接" : "未连接";
+  elements.connectionState.textContent = connected ? i18n("nav.connected") : i18n("nav.notConnected");
   elements.connectionState.classList.toggle("connected", connected);
   if (connected) {
     elements.connectionState.title = describeConnectionSummary();
@@ -2873,7 +2919,7 @@ function saveCustomConfig() {
   renderDeviceLibrary();
   renderHomeDeviceCards();
   updateDeviceUi();
-  appendLog("info", "设备", "自定义串口设备配置已保存");
+  appendLog("info", i18n("log.device"), i18n("settings.saved.custom"));
 }
 
 function resetCustomConfig() {
@@ -2888,18 +2934,18 @@ function resetCustomConfig() {
   }
 
   updateDeviceUi();
-  appendLog("info", "设备", "自定义串口设备配置已恢复默认");
+  appendLog("info", i18n("log.device"), i18n("settings.reset.custom"));
 }
 
 async function copyRequestTemplate() {
   try {
     await navigator.clipboard.writeText(elements.deviceRequestTemplate.value);
-    elements.copyRequestTemplate.textContent = "已复制";
+    elements.copyRequestTemplate.textContent = i18n("common.copied");
     window.setTimeout(() => {
-      elements.copyRequestTemplate.textContent = "复制模板";
+      elements.copyRequestTemplate.textContent = i18n("request.copyTemplate");
     }, 1400);
   } catch {
-    appendLog("error", "系统", "复制失败，请手动选择模板文本");
+    appendLog("error", i18n("log.system"), i18n("request.copyFailed"));
   }
 }
 
@@ -2910,7 +2956,7 @@ async function connect() {
       updateConnectionUi(true);
     }
   } catch (error) {
-    appendLog("error", "连接", error.message);
+    appendLog("error", i18n("log.connect"), error.message);
   }
 }
 
@@ -2932,7 +2978,7 @@ async function sendDeviceCommand() {
   );
     const frames = command.frames ?? (command.bytes ? [command.bytes] : []);
     if (!command.supported || frames.length === 0) {
-      appendLog("error", "发送", command.preview || "当前设备没有可发送的驱动命令");
+      appendLog("error", i18n("log.send"), command.preview || i18n("common.noDriverCmd"));
       return;
     }
 
@@ -2941,7 +2987,7 @@ async function sendDeviceCommand() {
       await session.write(frame, writeOptions);
     }
   } catch (error) {
-    appendLog("error", "发送", error.message);
+    appendLog("error", i18n("log.send"), error.message);
   }
 }
 
@@ -2949,7 +2995,7 @@ async function sendManualCommand() {
   try {
     const command = elements.manualCommand.value;
     if (!command.trim()) {
-      appendLog("error", "发送", "命令不能为空");
+      appendLog("error", i18n("log.send"), i18n("common.cmdNotEmpty"));
       return;
     }
 
@@ -2961,7 +3007,7 @@ async function sendManualCommand() {
 
     await session.write(payload);
   } catch (error) {
-    appendLog("error", "发送", error.message);
+    appendLog("error", i18n("log.send"), error.message);
   }
 }
 
@@ -3007,7 +3053,7 @@ function populateCustomConfigForm(config) {
   populateDebugCurveConfigForm("custom", normalized, elements);
   syncDebugCurveConfigRows("custom", normalized);
   if (elements.customParserPreview) {
-    elements.customParserPreview.textContent = "等待测试";
+    elements.customParserPreview.textContent = i18n("curve.waitingTest");
   }
 }
 
@@ -3151,28 +3197,28 @@ function updatePollingUi() {
     elements.pollState.classList.toggle("connected", state.pollingActive && connected);
 
     if (!connected) {
-      elements.pollState.textContent = "未连接";
+      elements.pollState.textContent = i18n("nav.notConnected");
     } else if (state.deviceId === CUSTOM_DEVICE_ID) {
-      elements.pollState.textContent = "当前设备不支持轮询";
+      elements.pollState.textContent = i18n("workbench.pollNotSupported");
     } else if (state.deviceId === MODBUS_DEVICE_ID && !isReadFunctionCode(normalizeModbusConfig(modbusConfig).functionCode)) {
-      elements.pollState.textContent = "读模式方可轮询";
+      elements.pollState.textContent = i18n("workbench.pollNeedRead");
     } else if (state.deviceId === HART_DEVICE_ID && !canPoll) {
-      elements.pollState.textContent = "请先搜索设备";
+      elements.pollState.textContent = i18n("workbench.pollNeedSearch");
     } else if (state.deviceId === WEBSOCKET_DEVICE_ID && !canPoll) {
-      elements.pollState.textContent = "请配置轮询间隔与消息";
+      elements.pollState.textContent = i18n("workbench.pollNeedConfig");
     } else if (state.deviceId === MQTT_DEVICE_ID && !canPoll) {
-      elements.pollState.textContent = "请配置轮询间隔与消息";
+      elements.pollState.textContent = i18n("workbench.pollNeedConfig");
     } else if (interval <= 0) {
-      elements.pollState.textContent = "请设置轮询间隔";
+      elements.pollState.textContent = i18n("workbench.pollNeedInterval");
     } else if (state.pollingActive) {
-      elements.pollState.textContent = `轮询中 · ${interval} ms`;
+      elements.pollState.textContent = i18n("workbench.polling") + ` · ${interval} ms`;
     } else {
-      elements.pollState.textContent = "轮询已停止";
+      elements.pollState.textContent = i18n("workbench.pollStopped");
     }
   }
 
   elements.togglePolling.disabled = !connected || !canPoll;
-  elements.togglePolling.textContent = state.pollingActive ? "停止轮询" : "开始轮询";
+  elements.togglePolling.textContent = state.pollingActive ? i18n("workbench.stopPolling") : i18n("workbench.startPolling");
 }
 
 function togglePolling() {
@@ -3184,10 +3230,10 @@ function togglePolling() {
 
   if (state.pollingActive) {
     updateActivePolling();
-    appendLog("info", "轮询", `已开始，间隔 ${getCurrentPollIntervalMs()} ms`);
+    appendLog("info", i18n("poll.category"), `${i18n("poll.startedPrefix")} ${getCurrentPollIntervalMs()} ms`);
   } else {
     stopAllPolling();
-    appendLog("info", "轮询", "已停止");
+    appendLog("info", i18n("poll.category"), i18n("poll.stopped"));
   }
 
   updatePollingUi();
@@ -3243,7 +3289,7 @@ function saveWebsocketConfig() {
   populateWebsocketConfigForm(websocketConfig);
   updateDeviceUi();
   updateActivePolling();
-  appendLog("info", "设备", "WebSocket 调试配置已保存");
+  appendLog("info", i18n("log.device"), `${i18n("device.ws")}${i18n("common.configSavedShort")}`);
 }
 
 function resetWebsocketConfig() {
@@ -3252,7 +3298,7 @@ function resetWebsocketConfig() {
   populateWebsocketConfigForm(websocketConfig);
   updateDeviceUi();
   updateActivePolling();
-  appendLog("info", "设备", "WebSocket 调试配置已恢复默认");
+  appendLog("info", i18n("log.device"), `${i18n("device.ws")}${i18n("common.configResetShort")}`);
 }
 
 function loadWebsocketConfig() {
@@ -3540,7 +3586,7 @@ function renderWebSocketQuickSends() {
 
 async function sendWebSocketQuickMessage(preset) {
   if (!session?.connected) {
-    throw new Error("请先连接 WebSocket");
+    throw new Error(i18n("common.connectFirst.ws"));
   }
 
   const payload = buildWebSocketMessage(preset.format, preset.message, { parseHexPayload });
@@ -3551,7 +3597,7 @@ function readWebsocketHeartbeatPreset() {
   const normalized = normalizeWebSocketConfig(websocketConfig);
   return {
     id: "websocket-heartbeat",
-    label: "轮询消息",
+    label: i18n("ws.pollMessage"),
     format: normalized.heartbeatFormat,
     message: normalized.heartbeatMessage,
   };
@@ -3647,7 +3693,7 @@ function saveMqttConfig() {
   populateMqttConfigForm(mqttConfig);
   updateDeviceUi();
   updateActivePolling();
-  appendLog("info", "设备", "MQTT 调试配置已保存");
+  appendLog("info", i18n("log.device"), `${i18n("device.mqtt")}${i18n("common.configSavedShort")}`);
 }
 
 function resetMqttConfig() {
@@ -3656,7 +3702,7 @@ function resetMqttConfig() {
   populateMqttConfigForm(mqttConfig);
   updateDeviceUi();
   updateActivePolling();
-  appendLog("info", "设备", "MQTT 调试配置已恢复默认");
+  appendLog("info", i18n("log.device"), `${i18n("device.mqtt")}${i18n("common.configResetShort")}`);
 }
 
 function loadMqttConfig() {
@@ -3830,7 +3876,7 @@ function renderMqttQuickSends() {
 
 async function sendMqttQuickMessage(preset) {
   if (!session?.connected) {
-    throw new Error("请先连接 MQTT");
+    throw new Error(i18n("common.connectFirst.mqtt"));
   }
 
   const payload = buildMqttMessage(preset.format, preset.message, { parseHexPayload });
@@ -3841,7 +3887,7 @@ function readMqttHeartbeatPreset() {
   const normalized = normalizeMqttConfig(mqttConfig);
   return {
     id: "mqtt-heartbeat",
-    label: "轮询消息",
+    label: i18n("mqtt.pollMessage"),
     format: normalized.heartbeatFormat,
     message: normalized.heartbeatMessage,
   };
@@ -3852,7 +3898,7 @@ function updateMqttDebuggerUi() {
 
   const options = readMqttWriteOptions();
   if (elements.mqttPublishPreview) {
-    elements.mqttPublishPreview.textContent = `${options.topic || "未配置发布主题"} · QoS ${options.qos}${options.retain ? " · retain" : ""}`;
+    elements.mqttPublishPreview.textContent = `${options.topic || i18n("common.notConfigured")} · QoS ${options.qos}${options.retain ? " · retain" : ""}`;
   }
 
   const normalized = normalizeMqttConfig(mqttConfig);
@@ -3884,12 +3930,12 @@ function renderDebugTemplateCards(container, presets, options) {
     loadButton.type = "button";
     loadButton.className = "ghost-button";
     loadButton.setAttribute(options.loadAttribute, preset.id);
-    loadButton.textContent = "填入";
+    loadButton.textContent = i18n("common.fill");
 
     const sendButton = document.createElement("button");
     sendButton.type = "button";
     sendButton.setAttribute(options.sendAttribute, preset.id);
-    sendButton.textContent = "发送";
+    sendButton.textContent = i18n("workbench.send");
     sendButton.disabled = !options.connected;
 
     header.append(title, format);
@@ -4021,7 +4067,7 @@ function renderParserPreview(target, telemetry) {
   }
 
   if (!telemetry) {
-    target.textContent = "未解析到数值";
+    target.textContent = i18n("chart.notParsed");
     target.classList.add("warning");
     return;
   }
@@ -4072,7 +4118,7 @@ function saveModbusConfig() {
   populateModbusConfigForm(modbusConfig);
   updateDeviceUi();
   updateActivePolling();
-  appendLog("info", "设备", "Modbus 配置已保存");
+  appendLog("info", i18n("log.device"), `${i18n("device.modbus")}${i18n("common.configSavedShort")}`);
 }
 
 function resetModbusConfig() {
@@ -4088,7 +4134,7 @@ function resetModbusConfig() {
 
   updateDeviceUi();
   updateActivePolling();
-  appendLog("info", "设备", "Modbus 配置已恢复默认");
+  appendLog("info", i18n("log.device"), `${i18n("device.modbus")}${i18n("common.configResetShort")}`);
 }
 
 function loadModbusConfig() {
@@ -4121,7 +4167,7 @@ function populateModbusConfigForm(config) {
   populateDebugCurveConfigForm("modbus", normalized, elements);
   syncDebugCurveConfigRows("modbus", normalized);
   if (elements.modbusParserPreview) {
-    elements.modbusParserPreview.textContent = "等待测试";
+    elements.modbusParserPreview.textContent = i18n("curve.waitingTest");
   }
 }
 
@@ -4190,7 +4236,7 @@ function saveHartConfig() {
   populateHartConfigForm(hartConfig);
   updateDeviceUi();
   updateActivePolling();
-  appendLog("info", "设备", "HART 配置已保存");
+  appendLog("info", i18n("log.device"), `${i18n("device.hart")}${i18n("common.configSavedShort")}`);
 }
 
 function resetHartConfig() {
@@ -4206,7 +4252,7 @@ function resetHartConfig() {
 
   updateDeviceUi();
   updateActivePolling();
-  appendLog("info", "设备", "HART 配置已恢复默认");
+  appendLog("info", i18n("log.device"), `${i18n("device.hart")}${i18n("common.configResetShort")}`);
 }
 
 function loadHartConfig() {
@@ -4246,7 +4292,7 @@ function populateHartCommandSelect(selectedCommand = hartConfig.command) {
 
   let currentGroup = null;
   HART_UNIVERSAL_COMMANDS.forEach((entry) => {
-    const groupName = entry.kind === "write" ? "写命令" : "读命令";
+    const groupName = entry.kind === "write" ? i18n("hart.cmdGroup.write") : i18n("hart.cmdGroup.read");
     if (groupName !== currentGroup) {
       currentGroup = groupName;
       const optgroup = document.createElement("optgroup");
@@ -4332,7 +4378,7 @@ function updateHartDeviceInfo() {
     return;
   }
 
-  elements.hartDeviceInfo.textContent = `设备：${formatHartDeviceSummary(normalizeHartConfig(hartConfig).device)}`;
+  elements.hartDeviceInfo.textContent = `${i18n("hart.devicePrefix")}${formatHartDeviceSummary(normalizeHartConfig(hartConfig).device)}`;
 }
 
 async function sendHartSearchCommand() {
@@ -4406,7 +4452,7 @@ function saveAomasterConfig() {
   populateAomasterConfigForm(aomasterConfig);
   updateDeviceUi();
   updateActivePolling();
-  appendLog("info", "设备", "AOMaster 配置已保存");
+  appendLog("info", i18n("log.device"), `${i18n("device.aomaster")}${i18n("common.configSavedShort")}`);
 }
 
 function resetAomasterConfig() {
@@ -4416,7 +4462,7 @@ function resetAomasterConfig() {
   resetAomasterRxBuffer();
   updateDeviceUi();
   updateActivePolling();
-  appendLog("info", "设备", "AOMaster 配置已恢复默认");
+  appendLog("info", i18n("log.device"), `${i18n("device.aomaster")}${i18n("common.configResetShort")}`);
 }
 
 function loadAomasterConfig() {
@@ -4453,7 +4499,7 @@ function setAomasterValueDisplayMode(mode) {
   renderStepSequenceList();
   actualChart?.clear();
   if (elements.actualChartValue) {
-    elements.actualChartValue.textContent = "暂无数据";
+    elements.actualChartValue.textContent = i18n("chart.noData");
   }
   updateSetpointUi();
   syncAomasterChartRanges();
@@ -4493,7 +4539,7 @@ function saveChartConfig() {
   localStorage.setItem(CHART_CONFIG_STORAGE_KEY, JSON.stringify(chartConfig));
   populateChartConfigForm(chartConfig);
   applyChartPointCountConfig();
-  appendLog("info", "曲线", "曲线缩放配置已保存");
+  appendLog("info", i18n("log.chart"), i18n("chart.scaleConfigSaved"));
 }
 
 function resetChartConfig() {
@@ -4501,7 +4547,7 @@ function resetChartConfig() {
   localStorage.setItem(CHART_CONFIG_STORAGE_KEY, JSON.stringify(chartConfig));
   populateChartConfigForm(chartConfig);
   applyChartPointCountConfig();
-  appendLog("info", "曲线", "曲线缩放配置已恢复默认");
+  appendLog("info", i18n("log.chart"), i18n("chart.scaleConfigReset"));
 }
 
 function loadChartConfig() {
@@ -4688,7 +4734,7 @@ function renderStepSequenceList() {
 
     const removeButton = document.createElement("button");
     removeButton.type = "button";
-    removeButton.textContent = "删除";
+    removeButton.textContent = i18n("curve.delete");
     removeButton.disabled = sequence.length <= 2;
     removeButton.addEventListener("click", () => {
       removeAomasterStepPoint(index);
@@ -4707,7 +4753,7 @@ function readStepSequenceFromForm() {
 
 function addAomasterStepPoint() {
   if (state.stepSequence.length >= AOMASTER_MAX_STEP_SEQUENCE) {
-    appendLog("error", "阶跃", `最多支持 ${AOMASTER_MAX_STEP_SEQUENCE} 个阶跃点`);
+    appendLog("error", i18n("step.category"), i18n("step.maxPoints").replace("{max}", AOMASTER_MAX_STEP_SEQUENCE));
     return;
   }
 
@@ -4826,10 +4872,10 @@ function refreshAomasterPreviewChart() {
   syncAomasterChartRanges();
 
   if (state.waveform === "constant") {
-    elements.setpointChartValue.textContent = `设定 ${formatAomasterDisplayValue(state.setpoint)}`;
+    elements.setpointChartValue.textContent = `${i18n("chart.setpointPrefix")} ${formatAomasterDisplayValue(state.setpoint)}`;
   } else if (state.waveform === "step") {
-    const loopLabel = state.stepLoops === 0 ? "无限循环" : `${state.stepLoops} 次`;
-    elements.setpointChartValue.textContent = `阶跃 ${formatAomasterDisplaySequence(state.stepSequence)} ${getAomasterDisplayUnit()} · ${state.stepDwellMs} ms/步 · ${loopLabel}`;
+    const loopLabel = state.stepLoops === 0 ? i18n("aomaster.infiniteLoop") : `${state.stepLoops}${i18n("num.times")}`;
+    elements.setpointChartValue.textContent = `${i18n("chart.stepLabel")} ${formatAomasterDisplaySequence(state.stepSequence)} ${getAomasterDisplayUnit()} · ${state.stepDwellMs}${i18n("num.msStep")} · ${loopLabel}`;
   } else {
     elements.setpointChartValue.textContent = `${getAomasterWaveformLabel(state.waveform)} ${formatAomasterDisplayNumber(state.waveLow)}~${formatAomasterDisplayNumber(state.waveHigh)} ${getAomasterDisplayUnit()}`;
   }
@@ -4938,8 +4984,8 @@ function syncAomasterChartRanges() {
 function clearAomasterCharts() {
   setpointChart?.clear();
   actualChart?.clear();
-  elements.setpointChartValue.textContent = "暂无设定";
-  elements.actualChartValue.textContent = "暂无数据";
+  elements.setpointChartValue.textContent = i18n("workbench.noSetpoint");
+  elements.actualChartValue.textContent = i18n("chart.noData");
 }
 
 function clearAllCharts() {
@@ -4947,7 +4993,7 @@ function clearAllCharts() {
   hartChart?.clear();
   jsonMultiChart?.clear();
   clearAomasterCharts();
-  elements.chartValue.textContent = "暂无数据";
+  elements.chartValue.textContent = i18n("chart.noData");
   updateHartVariableCards();
   requestChartResize();
 }

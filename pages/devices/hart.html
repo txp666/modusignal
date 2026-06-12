@@ -2,56 +2,56 @@
   <section class="panel control-panel">
     <div class="panel-heading split">
       <div>
-        <h2>变量读取</h2>
-        <p data-field="deviceSummary">地址 0 · 轮询 PV (Cmd 1) · 1000 ms · 尚未搜索到设备</p>
+        <h2 data-i18n="hart.variableRead">变量读取</h2>
+        <p data-field="deviceSummary">Address 0 · poll PV (Cmd 1) · 1000 ms · device not found</p>
       </div>
       <span data-field="driverState" class="state-pill">HART</span>
     </div>
 
     <div class="hart-device-info">
-      <code id="hartDeviceInfo">设备：尚未搜索</code>
+      <code id="hartDeviceInfo" data-i18n="hart.deviceNotSearched">设备：尚未搜索</code>
     </div>
 
     <div id="hartVariableCards" class="hart-variable-cards" aria-label="HART 动态变量">
       <article class="hart-value-card" data-hart-card="pv">
         <span class="hart-value-label">PV</span>
-        <small class="hart-value-subtitle">Primary</small>
+        <small class="hart-value-subtitle" data-i18n="hart.primaryVariable">Primary Variable</small>
         <strong class="hart-value-readout">--</strong>
         <small class="hart-value-unit"></small>
       </article>
       <article class="hart-value-card" data-hart-card="sv">
         <span class="hart-value-label">SV</span>
-        <small class="hart-value-subtitle">Secondary</small>
+        <small class="hart-value-subtitle" data-i18n="hart.secondaryVariable">Secondary Variable</small>
         <strong class="hart-value-readout">--</strong>
         <small class="hart-value-unit"></small>
       </article>
       <article class="hart-value-card" data-hart-card="tv">
         <span class="hart-value-label">TV</span>
-        <small class="hart-value-subtitle">Tertiary</small>
+        <small class="hart-value-subtitle" data-i18n="hart.tertiaryVariable">Tertiary Variable</small>
         <strong class="hart-value-readout">--</strong>
         <small class="hart-value-unit"></small>
       </article>
       <article class="hart-value-card" data-hart-card="qv">
         <span class="hart-value-label">QV</span>
-        <small class="hart-value-subtitle">Quaternary</small>
+        <small class="hart-value-subtitle" data-i18n="hart.quaternaryVariable">Quaternary Variable</small>
         <strong class="hart-value-readout">--</strong>
         <small class="hart-value-unit"></small>
       </article>
     </div>
 
     <div class="hart-command-response">
-      <span class="hart-command-response-label">通用命令应答</span>
-      <code id="hartCommandResponse">尚未收到应答</code>
+      <span class="hart-command-response-label" data-i18n="hart.cmdResponse">通用命令应答</span>
+      <code id="hartCommandResponse" data-i18n="hart.noResponse">尚未收到应答</code>
     </div>
 
     <div class="command-preview">
       <div>
-        <span>驱动命令预览</span>
+        <span data-i18n="aomaster.driverCmdPreview">驱动命令预览</span>
         <code data-field="protocolPreview">FF FF FF FF FF 02 80 00 00 ...</code>
       </div>
       <div class="panel-actions">
-        <button id="hartSearchDevice" type="button" disabled>搜索设备</button>
-        <button data-field="sendDriverCommand" type="button" disabled>发送命令</button>
+        <button id="hartSearchDevice" type="button" disabled data-i18n="hart.searchDevice">搜索设备</button>
+        <button data-field="sendDriverCommand" type="button" disabled data-i18n="hart.sendCommand">发送命令</button>
       </div>
     </div>
   </section>
@@ -59,28 +59,28 @@
   <section class="panel custom-panel">
     <div class="panel-heading split">
       <div>
-        <h2>通讯参数</h2>
-        <p>支持预设通用命令或自定义命令号 + HEX 数据，帧 XOR 校验自动计算。</p>
+        <h2 data-i18n="hart.commParams">通讯参数</h2>
+        <p data-i18n="hart.commDesc">支持预设通用命令或自定义命令号 + HEX 数据，帧 XOR 校验自动计算。</p>
       </div>
       <div class="panel-actions">
-        <button id="resetHartConfig" class="ghost-button" type="button">恢复默认</button>
-        <button id="saveHartConfig" type="button">保存</button>
+        <button id="resetHartConfig" class="ghost-button" type="button" data-i18n="common.resetDefault">恢复默认</button>
+        <button id="saveHartConfig" type="button" data-i18n="common.save">保存</button>
       </div>
     </div>
     <div class="config-grid compact">
       <label>
-        轮询地址
+        <span data-i18n="hart.pollAddress">轮询地址</span>
         <input id="hartPollAddress" type="number" min="0" max="15" step="1" value="0" />
       </label>
       <label>
-        主站类型
+        <span data-i18n="hart.masterType">主站类型</span>
         <select id="hartMasterType">
           <option value="primary" selected>Primary (0x80)</option>
           <option value="secondary">Secondary (0x00)</option>
         </select>
       </label>
       <label>
-        前导码
+        <span data-i18n="hart.preambleLen">前导码</span>
         <select id="hartPreambleLength">
           <option value="5" selected>5</option>
           <option value="8">8</option>
@@ -90,61 +90,61 @@
         </select>
       </label>
       <label>
-        轮询间隔 (ms)
-        <input id="hartPollIntervalMs" type="number" min="0" step="100" value="1000" title="大于 0 时可在监测面板手动开始轮询，默认 1000" />
+        <span data-i18n="hart.pollInterval">轮询间隔 (ms)</span>
+        <input id="hartPollIntervalMs" type="number" min="0" step="100" value="1000" data-i18n-title="hart.pollIntervalTitle" title="大于 0 时可在监测面板手动开始轮询，默认 1000" />
       </label>
     </div>
     <div class="config-grid compact">
       <label>
-        命令方式
+        <span data-i18n="hart.commandMode">命令方式</span>
         <select id="hartCommandMode">
-          <option value="preset" selected>预设通用命令</option>
-          <option value="custom">自定义命令</option>
+          <option value="preset" selected data-i18n="hart.cmdPreset">预设通用命令</option>
+          <option value="custom" data-i18n="hart.cmdCustom">自定义命令</option>
         </select>
       </label>
     </div>
     <div class="config-grid compact">
       <label id="hartPresetCommandField">
-        通用命令
+        <span data-i18n="hart.universalCmd">通用命令</span>
         <select id="hartCommand"></select>
       </label>
       <label id="hartCustomCommandField" hidden>
-        命令号
-        <input id="hartCustomCommand" type="number" min="0" max="255" step="1" value="1" title="0–255，自动组帧并计算 XOR 校验" />
+        <span data-i18n="hart.cmdNumber">命令号</span>
+        <input id="hartCustomCommand" type="number" min="0" max="255" step="1" value="1" data-i18n-title="hart.cmdNumberTitle" title="0–255，自动组帧并计算 XOR 校验" />
       </label>
       <label>
-        命令数据 (HEX)
-        <input id="hartCustomCommandData" type="text" placeholder="可选；写命令或带参数读命令时填入，校验自动计算" />
+        <span data-i18n="hart.cmdData">命令数据 (HEX)</span>
+        <input id="hartCustomCommandData" type="text" data-i18n-placeholder="hart.cmdDataPlaceholder" placeholder="可选；写命令或带参数读命令时填入，校验自动计算" />
       </label>
     </div>
     <p class="hart-frame-meta">
-      <span>帧校验 (XOR)</span>
+      <span data-i18n="hart.frameChecksum">帧校验 (XOR)</span>
       <code id="hartFrameChecksum">--</code>
     </p>
     <div class="config-grid compact">
       <label>
-        轮询方式
+        <span data-i18n="hart.pollMode">轮询方式</span>
         <select id="hartPollMode">
-          <option value="pv" selected>轮询 PV (Cmd 1)</option>
-          <option value="dynamic">轮询 PV/SV/TV/QV (Cmd 3)</option>
+          <option value="pv" selected data-i18n="hart.pollPv">轮询 PV (Cmd 1)</option>
+          <option value="dynamic" data-i18n="hart.pollDynamic">轮询 PV/SV/TV/QV (Cmd 3)</option>
         </select>
       </label>
     </div>
     <div class="config-grid">
       <label>
-        PV 显示名
+        <span data-i18n="hart.pvDisplayName">PV 显示名</span>
         <input id="hartFieldName" type="text" value="PV" />
       </label>
       <label>
-        PV 单位覆盖
-        <input id="hartUnit" type="text" placeholder="留空则使用 HART 单位码" />
+        <span data-i18n="hart.pvUnitOverride">PV 单位覆盖</span>
+        <input id="hartUnit" type="text" data-i18n-placeholder="hart.pvUnitPlaceholder" placeholder="留空则使用 HART 单位码" />
       </label>
       <label>
-        PV 比例
+        <span data-i18n="hart.pvScale">PV 比例</span>
         <input id="hartScale" type="number" step="0.000001" value="1" />
       </label>
       <label>
-        PV 偏移
+        <span data-i18n="hart.pvOffset">PV 偏移</span>
         <input id="hartOffset" type="number" step="0.000001" value="0" />
       </label>
     </div>

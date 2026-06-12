@@ -4,9 +4,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description"
+  <meta name="description" data-i18n-content="app.metaDesc"
     content="modusignal 在线设备调试平台：Web Serial 串口与 WebSocket，支持 AOMaster Modbus RTU、HART、Modbus RTU、WebSocket 调试与自定义协议，实时曲线、收发日志与监测轮询。" />
-  <meta name="keywords" content="modusignal,设备调试,串口调试,Web Serial,WebSocket,HART,Modbus RTU,4-20mA,信号发生器,在线调试,工业协议" />
+  <meta name="keywords" data-i18n-content="app.metaKeywords"
+    content="modusignal,设备调试,串口调试,Web Serial,WebSocket,HART,Modbus RTU,4-20mA,信号发生器,在线调试,工业协议" />
   <meta name="robots" content="index, follow" />
   <meta name="author" content="飞起小鹏" />
   <link rel="canonical" href="https://modusignal.cn/" />
@@ -14,14 +15,16 @@
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="zh_CN" />
   <meta property="og:site_name" content="modusignal" />
-  <meta property="og:title" content="modusignal 在线设备调试" />
-  <meta property="og:description" content="浏览器端在线设备/信号调试：串口·WebSocket·HART·Modbus·自定义协议，实时曲线与收发调试。" />
+  <meta property="og:title" data-i18n-content="app.ogTitle" content="modusignal 在线设备调试" />
+  <meta property="og:description" data-i18n-content="app.ogDesc"
+    content="浏览器端在线设备/信号调试：串口·WebSocket·HART·Modbus·自定义协议，实时曲线与收发调试。" />
   <meta property="og:url" content="https://modusignal.cn/" />
   <meta property="og:image" content="https://modusignal.cn/images/modusignal-logo.svg" />
   <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="modusignal 在线设备调试" />
-  <meta name="twitter:description" content="浏览器端在线设备/信号调试：串口·WebSocket·HART·Modbus·自定义协议，实时曲线与收发调试。" />
-  <title>modusignal 在线设备调试</title>
+  <meta name="twitter:title" data-i18n-content="app.ogTitle" content="modusignal 在线设备调试" />
+  <meta name="twitter:description" data-i18n-content="app.ogDesc"
+    content="浏览器端在线设备/信号调试：串口·WebSocket·HART·Modbus·自定义协议，实时曲线与收发调试。" />
+  <title data-i18n="app.title">modusignal 在线设备调试</title>
   <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -50,16 +53,17 @@
       <div class="brand-block">
         <img class="brand-logo" src="./images/modusignal-logo.svg?v=__ASSET_VERSION__" alt="modusignal" width="1500"
           height="460" />
-        <p>在线设备调试平台（串口·WebSocket·HART·MQTT）</p>
+        <p data-i18n="app.subtitle">在线设备调试平台（串口·WebSocket·HART·MQTT）</p>
       </div>
       <div class="topbar-actions">
-        <span id="secureState" class="state-pill">检测环境</span>
+        <button id="langSwitchButton" class="ghost-button lang-switch" type="button" data-i18n="lang.switch" aria-label="切换语言" title="切换语言">EN</button>
+        <span id="secureState" class="state-pill" data-i18n="nav.checkingEnv">检测环境</span>
         <button id="connectButton" class="primary-button" type="button">
-          <span aria-hidden="true">↔</span>
-          连接
+          <span aria-hidden="true">&#8596;</span>
+          <span data-i18n="nav.connect">连接</span>
         </button>
-        <button id="disconnectButton" class="icon-button" type="button" disabled aria-label="断开连接" title="断开连接">
-          ⏻
+        <button id="disconnectButton" class="icon-button" type="button" disabled data-i18n-aria-label="nav.disconnect" data-i18n-title="nav.disconnect" aria-label="断开连接" title="断开连接">
+          &#9211;
         </button>
       </div>
     </header>
@@ -67,23 +71,22 @@
     <aside class="sidebar" aria-label="设备导航">
       <section class="panel device-panel sidebar-panel" data-sidebar-panel="project">
         <div class="panel-heading sidebar-panel-heading">
-          <h2>项目</h2>
-          <button type="button" class="sidebar-collapse-toggle icon-button" aria-expanded="true" aria-label="折叠项目"
-            title="折叠">▾</button>
+          <h2 data-i18n="nav.project">项目</h2>
+          <button type="button" class="sidebar-collapse-toggle icon-button" aria-expanded="true" data-i18n-aria-label="nav.collapseProject" data-i18n-title="panel.collapse" aria-label="折叠项目" title="折叠">&#9662;</button>
         </div>
         <div class="sidebar-panel-body">
           <button class="device-item active" type="button" data-page-target="home">
             <span class="device-icon" aria-hidden="true">M</span>
             <span>
-              <strong>主页</strong>
-              <small>项目概览 / GitHub / 请求设备</small>
+              <strong data-i18n="nav.home">主页</strong>
+              <small data-i18n="nav.homeDesc">项目概览 / GitHub / 请求设备</small>
             </span>
           </button>
           <button class="device-item" type="button" data-page-target="request">
             <span class="device-icon" aria-hidden="true">R</span>
             <span>
-              <strong>请求新设备</strong>
-              <small>提交协议和 UI 需求</small>
+              <strong data-i18n="nav.requestDevice">请求新设备</strong>
+              <small data-i18n="nav.requestDeviceDesc">提交协议和 UI 需求</small>
             </span>
           </button>
         </div>
@@ -92,16 +95,15 @@
       <section class="panel device-panel sidebar-panel" data-sidebar-panel="library">
         <div class="panel-heading sidebar-panel-heading">
           <div class="sidebar-panel-title">
-            <h2>设备库</h2>
-            <span id="connectionState" class="status-dot">未连接</span>
+            <h2 data-i18n="nav.deviceLibrary">设备库</h2>
+            <span id="connectionState" class="status-dot" data-i18n="nav.notConnected">未连接</span>
           </div>
-          <button type="button" class="sidebar-collapse-toggle icon-button" aria-expanded="true" aria-label="折叠设备库"
-            title="折叠">▾</button>
+          <button type="button" class="sidebar-collapse-toggle icon-button" aria-expanded="true" data-i18n-aria-label="nav.collapseLibrary" data-i18n-title="panel.collapse" aria-label="折叠设备库" title="折叠">&#9662;</button>
         </div>
         <div class="sidebar-panel-body">
           <label class="device-library-search">
-            搜索
-            <input id="deviceLibrarySearch" type="search" placeholder="名称 / 协议 / ID" autocomplete="off"
+            <span data-i18n="nav.search">搜索</span>
+            <input id="deviceLibrarySearch" type="search" data-i18n-placeholder="nav.searchPlaceholder" placeholder="名称 / 协议 / ID" autocomplete="off"
               spellcheck="false" />
           </label>
           <div id="deviceLibrary" class="device-library"></div>
@@ -110,13 +112,12 @@
 
       <section class="panel sidebar-panel" data-sidebar-panel="transport">
         <div class="panel-heading sidebar-panel-heading">
-          <h2>连接参数</h2>
-          <button type="button" class="sidebar-collapse-toggle icon-button" aria-expanded="true" aria-label="折叠连接参数"
-            title="折叠">▾</button>
+          <h2 data-i18n="nav.connectionParams">连接参数</h2>
+          <button type="button" class="sidebar-collapse-toggle icon-button" aria-expanded="true" data-i18n-aria-label="nav.collapseParams" data-i18n-title="panel.collapse" aria-label="折叠连接参数" title="折叠">&#9662;</button>
         </div>
         <div class="sidebar-panel-body">
           <label>
-            传输方式
+            <span data-i18n="nav.transportMode">传输方式</span>
             <select id="transportSelect"></select>
           </label>
           <div id="transportFields" class="transport-fields"></div>
@@ -138,9 +139,9 @@
     <footer class="site-footer" aria-label="站点信息">
       <p>
         <span id="footerCopyright"></span>
-        · 开源协议：
+        <span data-i18n="footer.license">· 开源协议：</span>
         <a id="footerLicenseLink" href="./LICENSE.txt" target="_blank" rel="license noreferrer">Apache License 2.0</a>
-        · 版本 <span id="footerVersion">__ASSET_VERSION__</span>
+        <span data-i18n="footer.version">· 版本</span> <span id="footerVersion">__ASSET_VERSION__</span>
       </p>
     </footer>
   </div>

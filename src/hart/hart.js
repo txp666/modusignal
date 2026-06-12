@@ -1,3 +1,5 @@
+import i18n from "../i18n.js";
+
 export const TX_ADDR_SHORT = 0x02;
 export const TX_ADDR_LONG = 0x82;
 export const RX_ADDR_SHORT = 0x06;
@@ -248,7 +250,7 @@ export function parseCommand0Device(parsedFrame) {
 
 export function formatHartDeviceSummary(device) {
   if (!device?.discovered) {
-    return "尚未搜索到设备";
+    return i18n("hart.deviceNotFound");
   }
 
   return `Mfr 0x${device.manufacturer.toString(16).padStart(2, "0").toUpperCase()} · Type 0x${device.deviceType
@@ -281,7 +283,7 @@ export function parseHartTelemetryValue(parsedFrame, preferredCommand) {
     }
 
     return {
-      fieldName: "环路电流",
+      fieldName: i18n("hart.loopCurrent"),
       unit: "mA",
       value: current,
       rawValue: current,
@@ -309,45 +311,46 @@ export function parseHartTelemetryValue(parsedFrame, preferredCommand) {
 }
 
 export const HART_COMMAND_LABELS = {
-  0: "0 读设备标识",
-  1: "1 读主变量 (PV)",
-  2: "2 读环路电流 / 百分比",
-  3: "3 读动态变量 (PV/SV/TV/QV)",
-  6: "6 读轮询地址",
-  7: "7 读环路配置",
-  8: "8 读动态变量分类",
-  9: "9 读带状态的设备变量",
-  11: "11 读标签 / 描述符 / 日期",
-  12: "12 读设备消息",
-  13: "13 读标签 / 描述符 / 日期",
-  14: "14 读传感器信息",
-  15: "15 读输出信息",
-  16: "16 读最终装配号",
-  17: "17 写设备消息",
-  18: "18 写标签 / 描述符 / 日期",
-  20: "20 读长标签",
-  21: "21 读长标签关联的设备标识",
-  22: "22 写长标签",
-  33: "33 读变送器变量",
-  34: "34 写阻尼值",
-  35: "35 写主变量量程",
-  36: "36 设置主变量上限",
-  37: "37 设置主变量下限",
-  38: "38 复位配置变更标志",
-  39: "39 钳位主变量",
-  40: "40 写 PV 传感器信息",
-  41: "41 写轮询地址",
-  43: "43 设置 PV 零点",
-  44: "44 写环路电流模式",
-  45: "45 写 PV 单位",
-  46: "46 校准环路电流零点",
-  47: "47 校准环路电流增益",
-  48: "48 读附加设备状态",
-  49: "49 写 PV 传感器序列号",
+  0: "hart.cmd.0",
+  1: "hart.cmd.1",
+  2: "hart.cmd.2",
+  3: "hart.cmd.3",
+  6: "hart.cmd.6",
+  7: "hart.cmd.7",
+  8: "hart.cmd.8",
+  9: "hart.cmd.9",
+  11: "hart.cmd.11",
+  12: "hart.cmd.12",
+  13: "hart.cmd.13",
+  14: "hart.cmd.14",
+  15: "hart.cmd.15",
+  16: "hart.cmd.16",
+  17: "hart.cmd.17",
+  18: "hart.cmd.18",
+  20: "hart.cmd.20",
+  21: "hart.cmd.21",
+  22: "hart.cmd.22",
+  33: "hart.cmd.33",
+  34: "hart.cmd.34",
+  35: "hart.cmd.35",
+  36: "hart.cmd.36",
+  37: "hart.cmd.37",
+  38: "hart.cmd.38",
+  39: "hart.cmd.39",
+  40: "hart.cmd.40",
+  41: "hart.cmd.41",
+  43: "hart.cmd.43",
+  44: "hart.cmd.44",
+  45: "hart.cmd.45",
+  46: "hart.cmd.46",
+  47: "hart.cmd.47",
+  48: "hart.cmd.48",
+  49: "hart.cmd.49",
 };
 
 export function getHartCommandLabel(command) {
-  return HART_COMMAND_LABELS[command] ?? `命令 ${command}`;
+  const key = HART_COMMAND_LABELS[command];
+  return key ? i18n(key) : `${i18n("hart.universalCmd", "命令")} ${command}`;
 }
 
 export function decodeHartPackedAscii(bytes, offset = 0, length = bytes?.length ?? 0) {
@@ -469,10 +472,10 @@ export function parseHartUniversalResponse(parsedFrame) {
       commandLabel: getHartCommandLabel(command),
       summary: `${formatHartDeviceSummary(device)}${statusSuffix}`,
       lines: [
-        `制造商 0x${device.manufacturer.toString(16).toUpperCase().padStart(2, "0")}`,
-        `设备类型 0x${device.deviceType.toString(16).toUpperCase().padStart(2, "0")}`,
-        `设备 ID 0x${device.deviceId.toString(16).padStart(6, "0").toUpperCase()}`,
-        `HART 修订 ${device.hartRevision} · 前导码 ${device.minPreambleCount}`,
+        `${i18n("hart.manufacturer")} 0x${device.manufacturer.toString(16).toUpperCase().padStart(2, "0")}`,
+        `${i18n("hart.deviceType")} 0x${device.deviceType.toString(16).toUpperCase().padStart(2, "0")}`,
+        `${i18n("hart.deviceId")} 0x${device.deviceId.toString(16).padStart(6, "0").toUpperCase()}`,
+        `${i18n("hart.hartRevision")} ${device.hartRevision} · ${i18n("hart.preambleLen")} ${device.minPreambleCount}`,
       ],
       device,
     };
@@ -499,9 +502,9 @@ export function parseHartUniversalResponse(parsedFrame) {
       return null;
     }
 
-    const lines = [formatHartVariableLine("环路电流", variables.loopCurrent.value, "mA")];
+    const lines = [formatHartVariableLine(i18n("hart.loopCurrent"), variables.loopCurrent.value, "mA")];
     if (variables.percent) {
-      lines.push(formatHartVariableLine("量程百分比", variables.percent.value, "%"));
+      lines.push(formatHartVariableLine(i18n("hart.percentRange"), variables.percent.value, "%"));
     }
 
     return {
@@ -533,7 +536,7 @@ export function parseHartUniversalResponse(parsedFrame) {
       .filter(Boolean);
 
     if (variables.loopCurrent) {
-      lines.unshift(formatHartVariableLine("环路电流", variables.loopCurrent.value, "mA"));
+      lines.unshift(formatHartVariableLine(i18n("hart.loopCurrent"), variables.loopCurrent.value, "mA"));
     }
 
     return {
@@ -552,8 +555,8 @@ export function parseHartUniversalResponse(parsedFrame) {
     return {
       command,
       commandLabel: getHartCommandLabel(command),
-      summary: `轮询地址 ${pollingAddress} · 环路模式 ${loopMode}${statusSuffix}`,
-      lines: [`轮询地址 ${pollingAddress}`, `环路电流模式 ${loopMode}`],
+      summary: `${i18n("hart.pollAddress")} ${pollingAddress} · ${i18n("hart.loopCurrent")} ${i18n("hart.mode.deviceId", "模式")} ${loopMode}${statusSuffix}`,
+      lines: [`${i18n("hart.pollAddress")} ${pollingAddress}`, `${i18n("hart.loopCurrent")} ${i18n("hart.mode.deviceId", "模式")} ${loopMode}`],
     };
   }
 
@@ -561,14 +564,14 @@ export function parseHartUniversalResponse(parsedFrame) {
     return {
       command,
       commandLabel: getHartCommandLabel(command),
-      summary: `环路电流模式 ${data[0]} · 请求前导码 ${data[1]}${statusSuffix}`,
-      lines: [`环路电流模式 ${data[0]}`, `请求前导码 ${data[1]}`],
+      summary: `${i18n("hart.loopCurrent")} ${i18n("hart.mode.deviceId", "模式")} ${data[0]} · ${i18n("hart.preambleLen", "请求前导码")} ${data[1]}${statusSuffix}`,
+      lines: [`${i18n("hart.loopCurrent")} ${i18n("hart.mode.deviceId", "模式")} ${data[0]}`, `${i18n("hart.preambleLen", "请求前导码")} ${data[1]}`],
     };
   }
 
   if (command === 8 && data.length >= 4) {
     const labels = ["PV", "SV", "TV", "QV"];
-    const lines = labels.map((label, index) => `${label} 分类 ${data[index]}`);
+    const lines = labels.map((label, index) => `${label} ${i18n("hart.classification", "分类")} ${data[index]}`);
     return {
       command,
       commandLabel: getHartCommandLabel(command),
@@ -579,11 +582,12 @@ export function parseHartUniversalResponse(parsedFrame) {
 
   if (command === 12 && data.length > 0) {
     const message = decodeHartPackedAscii(data, 0, Math.min(24, data.length));
+    const emptyMsg = i18n("hart.emptyMsg");
     return {
       command,
       commandLabel: getHartCommandLabel(command),
-      summary: `${message || "(空消息)"}${statusSuffix}`,
-      lines: [message || "(空消息)"],
+      summary: `${message || emptyMsg}${statusSuffix}`,
+      lines: [message || emptyMsg],
     };
   }
 
@@ -594,7 +598,7 @@ export function parseHartUniversalResponse(parsedFrame) {
       data.length >= 21
         ? `${2000 + (data[20] & 0x7f)}/${data[19]}/${data[18]}`
         : "";
-    const lines = [`标签 ${tag || "--"}`, `描述符 ${descriptor || "--"}`, date ? `日期 ${date}` : null].filter(Boolean);
+    const lines = [`${i18n("hart.tag")} ${tag || "--"}`, `${i18n("hart.descriptor")} ${descriptor || "--"}`, date ? `${i18n("hart.date")} ${date}` : null].filter(Boolean);
     return {
       command,
       commandLabel: getHartCommandLabel(command),
@@ -609,9 +613,9 @@ export function parseHartUniversalResponse(parsedFrame) {
     const lower = readHartVariable(data, 5, 6);
     const minSpan = readHartVariable(data, 10, 11);
     const lines = [
-      upper ? formatHartVariableLine("上限", upper.value, upper.unit) : null,
-      lower ? formatHartVariableLine("下限", lower.value, lower.unit) : null,
-      minSpan ? formatHartVariableLine("最小量程", minSpan.value, minSpan.unit) : null,
+      upper ? formatHartVariableLine(i18n("hart.upperRange"), upper.value, upper.unit) : null,
+      lower ? formatHartVariableLine(i18n("hart.lowerRange"), lower.value, lower.unit) : null,
+      minSpan ? formatHartVariableLine(i18n("hart.minSpan"), minSpan.value, minSpan.unit) : null,
     ].filter(Boolean);
     return {
       command,
@@ -626,10 +630,10 @@ export function parseHartUniversalResponse(parsedFrame) {
     const lower = readHartVariable(data, 7, 8);
     const damping = byteArrayToFloat(data, 12);
     const lines = [
-      `报警 ${data[0]} · 传递函数 ${data[1]}`,
-      upper ? formatHartVariableLine("上限量程", upper.value, upper.unit) : null,
-      lower ? formatHartVariableLine("下限量程", lower.value, lower.unit) : null,
-      Number.isFinite(damping) ? formatHartVariableLine("阻尼", damping, "s") : null,
+      `${i18n("hart.alarm")} ${data[0]} · ${i18n("hart.transferFunc")} ${data[1]}`,
+      upper ? formatHartVariableLine(i18n("hart.upperRangeLimit"), upper.value, upper.unit) : null,
+      lower ? formatHartVariableLine(i18n("hart.lowerRangeLimit"), lower.value, lower.unit) : null,
+      Number.isFinite(damping) ? formatHartVariableLine(i18n("hart.damping"), damping, "s") : null,
     ].filter(Boolean);
     return {
       command,
@@ -644,18 +648,19 @@ export function parseHartUniversalResponse(parsedFrame) {
     return {
       command,
       commandLabel: getHartCommandLabel(command),
-      summary: `装配号 0x${assembly.toString(16).toUpperCase().padStart(6, "0")}${statusSuffix}`,
-      lines: [`装配号 0x${assembly.toString(16).toUpperCase().padStart(6, "0")}`],
+      summary: `${i18n("hart.assemblyNumber")} 0x${assembly.toString(16).toUpperCase().padStart(6, "0")}${statusSuffix}`,
+      lines: [`${i18n("hart.assemblyNumber")} 0x${assembly.toString(16).toUpperCase().padStart(6, "0")}`],
     };
   }
 
   if (command === 20 && data.length > 0) {
     const longTag = decodeHartPackedAscii(data, 0, Math.min(32, data.length));
+    const emptyLongTag = i18n("hart.emptyLongTag");
     return {
       command,
       commandLabel: getHartCommandLabel(command),
-      summary: `${longTag || "(空长标签)"}${statusSuffix}`,
-      lines: [longTag || "(空长标签)"],
+      summary: `${longTag || emptyLongTag}${statusSuffix}`,
+      lines: [longTag || emptyLongTag],
     };
   }
 
@@ -663,8 +668,8 @@ export function parseHartUniversalResponse(parsedFrame) {
     return {
       command,
       commandLabel: getHartCommandLabel(command),
-      summary: `附加状态 ${formatHexBytes(data)}${statusSuffix}`,
-      lines: [`附加状态 ${formatHexBytes(data)}`],
+      summary: `${i18n("hart.additionalStatus")} ${formatHexBytes(data)}${statusSuffix}`,
+      lines: [`${i18n("hart.additionalStatus")} ${formatHexBytes(data)}`],
     };
   }
 
@@ -672,16 +677,16 @@ export function parseHartUniversalResponse(parsedFrame) {
     return {
       command,
       commandLabel: getHartCommandLabel(command),
-      summary: `命令 ${command} · 无数据${statusSuffix}`,
-      lines: [`命令 ${command} · 无数据`],
+      summary: `${i18n("har.cmd", "命令")} ${command} · ${i18n("hart.noData", "无数据")}${statusSuffix}`,
+      lines: [`${i18n("har.cmd", "命令")} ${command} · ${i18n("hart.noData", "无数据")}`],
     };
   }
 
   return {
     command,
     commandLabel: getHartCommandLabel(command),
-    summary: `命令 ${command} · ${byteCount} 字节 · ${formatHexBytes(data)}${statusSuffix}`,
-    lines: [`命令 ${command} · ${byteCount} 字节`, formatHexBytes(data)],
+    summary: `${i18n("har.cmd", "命令")} ${command} · ${byteCount} ${i18n("hart.bytes", "字节")} · ${formatHexBytes(data)}${statusSuffix}`,
+    lines: [`${i18n("har.cmd", "命令")} ${command} · ${byteCount} ${i18n("hart.bytes", "字节")}`, formatHexBytes(data)],
   };
 }
 

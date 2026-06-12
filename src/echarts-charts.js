@@ -190,7 +190,7 @@ export class EchartsLiveChart {
     this.visiblePoints = options.visiblePoints ?? this.maxPoints;
     this.color = options.color ?? "#0f766e";
     this.areaColor = options.areaColor ?? "rgba(15, 118, 110, 0.12)";
-    this.emptyText = options.emptyText ?? "等待数据";
+    this.emptyText = options.emptyText ?? "";
     this.title = options.title ?? "";
     this.unit = options.unit ?? "";
     this.values = [];
@@ -439,8 +439,8 @@ export class EchartsMultiLiveChart {
     initChartMixin(this);
     this.maxPoints = options.maxPoints ?? 120;
     this.visiblePoints = options.visiblePoints ?? this.maxPoints;
-    this.emptyText = options.emptyText ?? "连接设备并开启轮询后显示实时曲线";
-    this.title = options.title ?? "HART 变量曲线";
+    this.emptyText = options.emptyText ?? "";
+    this.title = options.title ?? "";
     this.seriesDefs = options.series ?? [];
     this.visible = Object.fromEntries(this.seriesDefs.map((item) => [item.key, item.visible !== false]));
     this.values = Object.fromEntries(this.seriesDefs.map((item) => [item.key, []]));

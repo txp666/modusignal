@@ -2,30 +2,30 @@
   <section class="panel control-panel">
     <div class="panel-heading split">
       <div>
-        <h2>WebSocket 调试</h2>
-        <p data-field="deviceSummary">连接 WebSocket 服务，快捷发送 JSON/文本并解析回包。</p>
+        <h2 data-i18n="ws.title">WebSocket 调试</h2>
+        <p data-field="deviceSummary" data-i18n="ws.desc">连接 WebSocket 服务，快捷发送 JSON/文本并解析回包。</p>
       </div>
-      <span data-field="driverState" class="state-pill">手动 / 轮询</span>
+      <span data-field="driverState" class="state-pill">Manual / Poll</span>
     </div>
 
     <div class="debug-stat-grid" aria-label="WebSocket 调试状态">
       <div class="debug-stat">
         <strong id="websocketRxCount">0</strong>
-        <span>已接收</span>
+        <span data-i18n="ws.rxCount">已接收</span>
       </div>
       <div class="debug-stat">
         <strong id="websocketTxCount">0</strong>
-        <span>已发送</span>
+        <span data-i18n="ws.txCount">已发送</span>
       </div>
       <div class="debug-stat wide">
         <strong id="websocketEndpoint">—</strong>
-        <span>连接地址</span>
+        <span data-i18n="ws.endpoint">连接地址</span>
       </div>
     </div>
 
     <div class="subsection-heading">
-      <h3>快捷发送</h3>
-      <span>可直接发送，也可填入下方收发调试区后再编辑</span>
+      <h3 data-i18n="ws.quickSend">快捷发送</h3>
+      <span data-i18n="ws.quickSendDesc">可直接发送，也可填入下方收发调试区后再编辑</span>
     </div>
     <div id="wsQuickSendGrid" class="debug-template-grid" aria-label="WebSocket 快捷发送"></div>
   </section>
@@ -33,22 +33,22 @@
   <section class="panel custom-panel">
     <div class="panel-heading split">
       <div>
-        <h2>调试配置</h2>
-        <p>轮询消息；曲线解析在监测面板配置。</p>
+        <h2 data-i18n="ws.debugConfig">调试配置</h2>
+        <p data-i18n="ws.debugConfigDesc">轮询消息；曲线解析在监测面板配置。</p>
       </div>
       <div class="panel-actions">
-        <button id="resetWebsocketConfig" class="ghost-button" type="button">恢复默认</button>
-        <button id="saveWebsocketConfig" type="button">保存</button>
+        <button id="resetWebsocketConfig" class="ghost-button" type="button" data-i18n="common.resetDefault">恢复默认</button>
+        <button id="saveWebsocketConfig" type="button" data-i18n="common.save">保存</button>
       </div>
     </div>
 
     <div class="config-grid compact">
       <label>
-        轮询间隔 (ms)
+        <span data-i18n="ws.pollInterval">轮询间隔 (ms)</span>
         <input id="websocketPollIntervalMs" type="number" min="0" step="1" value="0" />
       </label>
       <label>
-        轮询格式
+        <span data-i18n="ws.pollFormat">轮询格式</span>
         <select id="websocketHeartbeatFormat">
           <option value="json" selected>JSON</option>
           <option value="ascii">ASCII</option>
@@ -58,14 +58,14 @@
     </div>
 
     <label class="template-input">
-      轮询消息
+      <span data-i18n="ws.pollMessage">轮询消息</span>
       <input id="websocketHeartbeatMessage" type="text" value='{"type":"ping"}' />
     </label>
 
     <div class="debug-preview">
-      <span>轮询预览</span>
+      <span data-i18n="ws.pollPreview">轮询预览</span>
       <code id="websocketHeartbeatPreview">{"type":"ping"}</code>
-      <button id="loadWebsocketHeartbeat" class="ghost-button" type="button">填入发送框</button>
+      <button id="loadWebsocketHeartbeat" class="ghost-button" type="button" data-i18n="ws.fillSend">填入发送框</button>
     </div>
   </section>
 </section>

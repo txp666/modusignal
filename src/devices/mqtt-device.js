@@ -1,3 +1,4 @@
+import i18n from "../i18n.js";
 import {
   DEFAULT_BINARY_MULTI_FIELDS,
   listHexChartSeries,
@@ -36,13 +37,13 @@ export const MQTT_DEVICE_TRANSPORT_DEFAULTS = {
 export const MQTT_QUICK_MESSAGES = [
   {
     id: "hello",
-    label: "Hello JSON",
+    label: () => i18n("msg.helloJson"),
     format: "json",
     message: '{"message":"Hello from modusignal","value":42}',
   },
-  { id: "ping", label: "Ping", format: "json", message: '{"type":"ping"}' },
-  { id: "sensor", label: "传感器", format: "json", message: '{"sensor":"temp","value":25.6,"unit":"C"}' },
-  { id: "text", label: "测试文本", format: "ascii", message: "Hello MQTT!" },
+  { id: "ping", label: () => i18n("msg.ping"), format: "json", message: '{"type":"ping"}' },
+  { id: "sensor", label: () => i18n("msg.sensor"), format: "json", message: '{"sensor":"temp","value":25.6,"unit":"C"}' },
+  { id: "text", label: () => i18n("msg.testText"), format: "ascii", message: "Hello MQTT!" },
 ];
 
 export const DEFAULT_MQTT_CONFIG = {
@@ -57,14 +58,16 @@ export const DEFAULT_MQTT_CONFIG = {
   publishRetain: false,
 };
 
-export const MQTT_PROFILE = {
-  id: MQTT_DEVICE_ID,
-  name: "MQTT 调试",
-  type: "MQTT 消息调试",
-  protocolStatus: "ready",
-  defaultTransportId: "mqtt",
-  image: "./images/mqtt.png",
-};
+export function getMqttProfile() {
+  return {
+    id: MQTT_DEVICE_ID,
+    name: i18n("mqtt.profile.name"),
+    type: i18n("mqtt.profile.type"),
+    protocolStatus: "ready",
+    defaultTransportId: "mqtt",
+    image: "./images/mqtt.png",
+  };
+}
 
 const mqttModbusBuffer = createModbusRxBuffer();
 let mqttFramingState = createDebugFramingState(DEFAULT_MQTT_CONFIG);
@@ -112,7 +115,7 @@ export function createMqttSetOutputCommand(_state, config, helpers) {
   if (!normalized.heartbeatMessage.trim()) {
     return {
       supported: false,
-      preview: "未配置轮询消息",
+      preview: i18n("mqtt.noPollMsg"),
       bytes: null,
     };
   }
@@ -151,10 +154,10 @@ export function resetMqttRxBuffer() {
 
 export function describeMqttSummary(config) {
   const normalized = normalizeMqttConfig(config);
-  const interval = normalized.pollIntervalMs > 0 ? `${normalized.pollIntervalMs} ms 轮询` : "手动收发";
-  const topic = normalized.publishTopic || "侧栏发布主题";
-  const qosLabel = normalized.publishRetain ? `QoS ${normalized.publishQos} · 保留` : `QoS ${normalized.publishQos}`;
-  return `MQTT 调试；${interval}；发布 ${topic}（${qosLabel}）；解析 ${describeDebugParserSummary(normalized, DEFAULT_MQTT_CONFIG, "MQTT")}`;
+  const interval = normalized.pollIntervalMs > 0 ? `${normalized.pollIntervalMs} ms ${i18n("workbench.polling")}` : i18n("conn.manualMode");
+  const topic = normalized.publishTopic || i18n("conn.sidebarTopic");
+  const qosLabel = normalized.publishRetain ? `QoS ${normalized.publishQos} · ${i18n("mqtt.retain")}` : `QoS ${normalized.publishQos}`;
+  return `MQTT ${i18n("mqtt.profile.type")}；${interval}；${i18n("mqtt.publishTopic")} ${topic}（${qosLabel}）；${i18n("workbench.showCurves", "解析")} ${describeDebugParserSummary(normalized, DEFAULT_MQTT_CONFIG, "MQTT")}`;
 }
 
 export function getMqttPublishOptions(config, transportPublishTopic = "") {

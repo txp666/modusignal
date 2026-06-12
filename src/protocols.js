@@ -1,4 +1,5 @@
 import { MODUSIGNAL_APP } from "./config.js";
+import i18n from "./i18n.js";
 import {
   AOMASTER_DEVICE_ID,
   DEFAULT_AOMASTER_CONFIG,
@@ -155,7 +156,7 @@ export function getModeConfig(
 
   if (!modes) {
     return {
-      label: "数值",
+      label: i18n("chart.singleCurve"),
       unit: "",
       min: 0,
       max: 100,
@@ -189,7 +190,7 @@ export function createDeviceSetOutputCommand(
   if (!entry?.createCommand) {
     return {
       supported: false,
-      preview: "未选择可发送的设备驱动",
+      preview: i18n("protocol.noDeviceDriver"),
       bytes: null,
     };
   }
@@ -254,13 +255,13 @@ export function buildManualPayload(format, command, lineEnding) {
   if (format === "json") {
     const trimmed = command.trim();
     if (!trimmed) {
-      throw new Error("JSON 命令不能为空");
+      throw new Error(i18n("protocol.jsonNotEmpty"));
     }
 
     try {
       JSON.parse(trimmed);
     } catch (error) {
-      throw new Error(`JSON 格式无效：${error.message}`);
+      throw new Error(i18n("protocol.jsonInvalid") + ": " + error.message);
     }
 
     return trimmed;
@@ -277,12 +278,12 @@ export function parseHexPayload(input) {
     .filter(Boolean);
 
   if (tokens.length === 0) {
-    throw new Error("HEX 命令不能为空");
+    throw new Error(i18n("protocol.hexNotEmpty"));
   }
 
   const bytes = tokens.map((token) => {
     if (!/^[0-9a-fA-F]{1,2}$/.test(token)) {
-      throw new Error(`HEX 字节无效：${token}`);
+      throw new Error(i18n("protocol.hexByteInvalid") + ": " + token);
     }
 
     return Number.parseInt(token, 16);

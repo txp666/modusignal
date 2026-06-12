@@ -2,15 +2,15 @@
   <div class="panel request-panel">
     <div class="panel-heading split">
       <div>
-        <h2>新增设备请求</h2>
-        <p>提交新设备前，请尽量准备协议、连接/串口参数、典型命令、回包样例和期望页面 UI。</p>
+        <h2 data-i18n="request.title">新增设备请求</h2>
+        <p data-i18n="request.desc">提交新设备前，请尽量准备协议、连接/串口参数、典型命令、回包样例和期望页面 UI。</p>
       </div>
-      <a id="newDeviceRequestLink" class="action-link" href="https://github.com/" target="_blank" rel="noreferrer">去 GitHub 提交</a>
+      <a id="newDeviceRequestLink" class="action-link" href="https://github.com/" target="_blank" rel="noreferrer" data-i18n="request.toGithub">去 GitHub 提交</a>
     </div>
     <div class="request-template">
       <label>
-        请求模板
-        <textarea id="deviceRequestTemplate" readonly>设备名称：
+        <span data-i18n="request.template">请求模板</span>
+        <textarea id="deviceRequestTemplate" readonly data-i18n-value="request.templateContent">设备名称：
 设备类型：
 传输方式（串口/WebSocket/MQTT 等）：
 默认连接参数：
@@ -21,7 +21,7 @@
 安全注意事项：
 参考资料链接：</textarea>
       </label>
-      <button id="copyRequestTemplate" type="button">复制模板</button>
+      <button id="copyRequestTemplate" type="button" data-i18n="request.copyTemplate">复制模板</button>
     </div>
   </div>
 </section>

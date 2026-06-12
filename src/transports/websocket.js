@@ -1,4 +1,5 @@
 import { BaseTransport } from "./transport.js";
+import i18n from "../i18n.js";
 
 const decoder = new TextDecoder();
 
@@ -11,18 +12,18 @@ export const WEBSOCKET_CONNECT_DEFAULTS = {
 function normalizeWebSocketUrl(url) {
   const value = String(url || "").trim();
   if (!value) {
-    throw new Error("请填写 WebSocket 地址");
+    throw new Error(i18n("transport.ws.noUrl"));
   }
 
   let parsed;
   try {
     parsed = new URL(value);
   } catch {
-    throw new Error("WebSocket 地址格式无效");
+    throw new Error(i18n("transport.ws.invalidUrl"));
   }
 
   if (parsed.protocol !== "ws:" && parsed.protocol !== "wss:") {
-    throw new Error("WebSocket 地址必须以 ws:// 或 wss:// 开头");
+    throw new Error(i18n("transport.ws.mustStartWith"));
   }
 
   return parsed.toString();
@@ -45,7 +46,7 @@ export function describeWebSocketUrlWarning(url) {
       return null;
     }
 
-    return "HTTPS 下远程 ws:// 可能被浏览器拦截，可改用 wss://";
+    return i18n("transport.ws.wsWarning");
   } catch {
     return null;
   }
@@ -68,7 +69,7 @@ export class WebSocketTransport extends BaseTransport {
 
   async connect(options) {
     if (!WebSocketTransport.isSupported()) {
-      throw new Error("当前浏览器不支持 WebSocket。");
+      throw new Error(i18n("transport.ws.notSupported"));
     }
 
     if (this.socket) {
@@ -96,8 +97,8 @@ export class WebSocketTransport extends BaseTransport {
       };
 
       const onOpen = () => finish(null);
-      const onError = () => finish(new Error(`无法连接 WebSocket：${url}`));
-      const onClose = (event) => finish(new Error(event.reason || `WebSocket 连接失败：${url}`));
+      const onError = () => finish(new Error(i18n("transport.ws.cannotConnect") + ": " + url));
+      const onClose = (event) => finish(new Error(event.reason || i18n("transport.ws.connectFailed") + ": " + url));
       const cleanup = () => {
         socket.removeEventListener("open", onOpen);
         socket.removeEventListener("error", onError);
@@ -151,7 +152,7 @@ export class WebSocketTransport extends BaseTransport {
     });
 
     socket.addEventListener("error", () => {
-      this.emit("error", { error: new Error("WebSocket 通信错误") });
+      this.emit("error", { error: new Error(i18n("transport.ws.commError")) });
     });
   }
 
@@ -180,7 +181,7 @@ export class WebSocketTransport extends BaseTransport {
 
   async write(data) {
     if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
-      throw new Error("连接未建立");
+      throw new Error(i18n("transport.serial.notConnected"));
     }
 
     if (typeof data === "string") {
@@ -206,7 +207,7 @@ export const WEBSOCKET_TRANSPORT = {
   fields: [
     {
       key: "url",
-      label: "地址",
+      label: "transport.ws.url",
       type: "text",
       default: WEBSOCKET_CONNECT_DEFAULTS.url,
     },

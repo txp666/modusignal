@@ -1,3 +1,4 @@
+import i18n from "../i18n.js";
 import {
   DEFAULT_BINARY_MULTI_FIELDS,
   listHexChartSeries,
@@ -29,9 +30,9 @@ export const WEBSOCKET_TRANSPORT_DEFAULTS = {
 };
 
 export const WEBSOCKET_QUICK_MESSAGES = [
-  { id: "ping", label: "Ping JSON", format: "json", message: '{"type":"ping"}' },
-  { id: "hello", label: "Hello", format: "ascii", message: "Hello WebSocket!" },
-  { id: "time", label: "时间戳", format: "json", message: '{"type":"time"}' },
+  { id: "ping", label: () => i18n("msg.pingJson"), format: "json", message: '{"type":"ping"}' },
+  { id: "hello", label: () => i18n("msg.hello"), format: "ascii", message: "Hello WebSocket!" },
+  { id: "time", label: () => i18n("msg.timestamp"), format: "json", message: '{"type":"time"}' },
 ];
 
 export const DEFAULT_WEBSOCKET_CONFIG = {
@@ -43,14 +44,16 @@ export const DEFAULT_WEBSOCKET_CONFIG = {
   ...DEFAULT_BINARY_MULTI_FIELDS,
 };
 
-export const WEBSOCKET_PROFILE = {
-  id: WEBSOCKET_DEVICE_ID,
-  name: "WebSocket 调试",
-  type: "WebSocket 消息调试",
-  protocolStatus: "ready",
-  defaultTransportId: "websocket",
-  image: "./images/websocket.png",
-};
+export function getWebSocketProfile() {
+  return {
+    id: WEBSOCKET_DEVICE_ID,
+    name: i18n("ws.profile.name"),
+    type: i18n("ws.profile.type"),
+    protocolStatus: "ready",
+    defaultTransportId: "websocket",
+    image: "./images/websocket.png",
+  };
+}
 
 const websocketModbusBuffer = createModbusRxBuffer();
 let websocketFramingState = createDebugFramingState(DEFAULT_WEBSOCKET_CONFIG);
@@ -93,7 +96,7 @@ export function createWebSocketSetOutputCommand(_state, config, helpers) {
   if (!normalized.heartbeatMessage.trim()) {
     return {
       supported: false,
-      preview: "未配置轮询消息",
+      preview: i18n("ws.noPollMsg"),
       bytes: null,
     };
   }
@@ -132,8 +135,8 @@ export function resetWebSocketRxBuffer() {
 
 export function describeWebSocketSummary(config) {
   const normalized = normalizeWebSocketConfig(config);
-  const interval = normalized.pollIntervalMs > 0 ? `${normalized.pollIntervalMs} ms 轮询` : "手动收发";
-  return `WebSocket 调试；${interval}；解析 ${describeDebugParserSummary(normalized, DEFAULT_WEBSOCKET_CONFIG, "WS")}`;
+  const interval = normalized.pollIntervalMs > 0 ? `${normalized.pollIntervalMs} ms ${i18n("workbench.polling")}` : i18n("conn.manualMode");
+  return `WebSocket ${i18n("ws.profile.type")}；${interval}；${i18n("workbench.showCurves", "解析")} ${describeDebugParserSummary(normalized, DEFAULT_WEBSOCKET_CONFIG, "WS")}`;
 }
 
 function clamp(value, min, max) {

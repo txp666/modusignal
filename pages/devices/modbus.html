@@ -2,75 +2,75 @@
   <section class="panel control-panel">
     <div class="panel-heading split">
       <div>
-        <h2>寄存器操作</h2>
-        <p data-field="deviceSummary">读取从站 1 保持寄存器。</p>
+        <h2 data-i18n="modbus.registerOps">寄存器操作</h2>
+        <p data-field="deviceSummary">Read slave 1 holding registers。</p>
       </div>
       <span data-field="driverState" class="state-pill">Modbus RTU</span>
     </div>
 
     <div class="setpoint-row" data-field="setpointRow">
       <label class="range-label">
-        <span data-field="setpointLabel">写入值</span>
+        <span data-field="setpointLabel" data-i18n="modbus.writeValue">写入值</span>
         <strong data-field="setpointReadout">0</strong>
       </label>
       <input data-field="setpointSlider" type="range" min="0" max="65535" step="1" value="0" />
       <div class="numeric-entry">
         <input data-field="setpointInput" type="number" min="0" max="65535" step="1" value="0" />
-        <span data-field="setpointUnit">值</span>
+        <span data-field="setpointUnit">value</span>
       </div>
     </div>
 
     <div class="preset-row" data-field="presetRow" aria-label="快速设定">
-      <button type="button" data-preset="min">最小</button>
-      <button type="button" data-preset="mid">中点</button>
-      <button type="button" data-preset="max">最大</button>
+      <button type="button" data-preset="min" data-i18n="aomaster.preset.min">最小</button>
+      <button type="button" data-preset="mid" data-i18n="aomaster.preset.mid">中点</button>
+      <button type="button" data-preset="max" data-i18n="aomaster.preset.max">最大</button>
     </div>
 
     <div class="command-preview">
       <div>
-        <span>驱动命令预览</span>
+        <span data-i18n="aomaster.driverCmdPreview">驱动命令预览</span>
         <code data-field="protocolPreview">01 03 00 00 ...</code>
       </div>
-      <button data-field="sendDriverCommand" type="button" disabled>读取寄存器</button>
+      <button data-field="sendDriverCommand" type="button" disabled data-i18n="modbus.readRegister">读取寄存器</button>
     </div>
   </section>
 
   <section class="panel custom-panel">
     <div class="panel-heading split">
       <div>
-        <h2>通讯参数</h2>
-        <p>配置从站、功能码、地址与轮询；曲线解码在监测面板配置。</p>
+        <h2 data-i18n="modbus.commParams">通讯参数</h2>
+        <p data-i18n="modbus.commDesc">配置从站、功能码、地址与轮询；曲线解码在监测面板配置。</p>
       </div>
       <div class="panel-actions">
-        <button id="resetModbusConfig" class="ghost-button" type="button">恢复默认</button>
-        <button id="saveModbusConfig" type="button">保存</button>
+        <button id="resetModbusConfig" class="ghost-button" type="button" data-i18n="common.resetDefault">恢复默认</button>
+        <button id="saveModbusConfig" type="button" data-i18n="common.save">保存</button>
       </div>
     </div>
     <div class="config-grid compact">
       <label>
-        从站地址
+        <span data-i18n="modbus.slaveId">从站地址</span>
         <input id="modbusSlaveId" type="number" min="1" max="247" step="1" value="1" />
       </label>
       <label>
-        功能码
+        <span data-i18n="modbus.functionCode">功能码</span>
         <select id="modbusFunctionCode">
-          <option value="3" selected>03 读保持寄存器</option>
-          <option value="4">04 读输入寄存器</option>
-          <option value="6">06 写单寄存器</option>
-          <option value="16">16 写多寄存器</option>
+          <option value="3" selected data-i18n="modbus.fc03">03 读保持寄存器</option>
+          <option value="4" data-i18n="modbus.fc04">04 读输入寄存器</option>
+          <option value="6" data-i18n="modbus.fc06">06 写单寄存器</option>
+          <option value="16" data-i18n="modbus.fc16">16 写多寄存器</option>
         </select>
       </label>
       <label>
-        起始地址
+        <span data-i18n="modbus.startAddr">起始地址</span>
         <input id="modbusAddress" type="number" min="0" max="65535" step="1" value="0" />
       </label>
       <label>
-        寄存器数量
-        <input id="modbusQuantity" type="number" min="1" max="125" step="1" value="1" title="读模式下若小于曲线所需范围，会自动扩大" />
+        <span data-i18n="modbus.quantity">寄存器数量</span>
+        <input id="modbusQuantity" type="number" min="1" max="125" step="1" value="1" data-i18n-title="modbus.quantityTitle" title="读模式下若小于曲线所需范围，会自动扩大" />
       </label>
       <label>
-        轮询间隔 (ms)
-        <input id="modbusPollIntervalMs" type="number" min="0" step="100" value="500" title="读模式下大于 0 时可在监测面板手动开始轮询，默认 500" />
+        <span data-i18n="modbus.pollInterval">轮询间隔 (ms)</span>
+        <input id="modbusPollIntervalMs" type="number" min="0" step="100" value="500" data-i18n-title="modbus.pollIntervalTitle" title="读模式下大于 0 时可在监测面板手动开始轮询，默认 500" />
       </label>
     </div>
   </section>

@@ -1,5 +1,6 @@
 import mqtt from "../../vendor/mqtt.esm.js";
 import { BaseTransport } from "./transport.js";
+import i18n from "../i18n.js";
 
 const decoder = new TextDecoder();
 const textEncoder = new TextEncoder();
@@ -18,18 +19,18 @@ export const MQTT_CONNECT_DEFAULTS = {
 function normalizeBrokerUrl(url) {
   const value = String(url || "").trim();
   if (!value) {
-    throw new Error("请填写 MQTT Broker 地址");
+    throw new Error(i18n("transport.mqtt.noBroker"));
   }
 
   let parsed;
   try {
     parsed = new URL(value);
   } catch {
-    throw new Error("MQTT Broker 地址格式无效");
+    throw new Error(i18n("transport.mqtt.invalidBroker"));
   }
 
   if (parsed.protocol !== "ws:" && parsed.protocol !== "wss:") {
-    throw new Error("浏览器端 MQTT 须使用 ws:// 或 wss:// Broker 地址");
+    throw new Error(i18n("transport.mqtt.mustUseWs"));
   }
 
   return parsed.toString();
@@ -47,7 +48,7 @@ function resolveClientId(clientId) {
 function normalizeTopic(value, label) {
   const topic = String(value || "").trim();
   if (!topic) {
-    throw new Error(`请填写${label}`);
+    throw new Error(i18n("transport.mqtt.pleaseProvide").replace("{label}", label));
   }
   return topic;
 }
@@ -77,7 +78,7 @@ export function describeMqttUrlWarning(url) {
       return null;
     }
 
-    return "HTTPS 下远程 ws:// Broker 可能被浏览器拦截，可改用 wss://";
+    return i18n("transport.mqtt.wsWarning");
   } catch {
     return null;
   }
@@ -101,7 +102,7 @@ export class MqttTransport extends BaseTransport {
 
   async connect(options) {
     if (!MqttTransport.isSupported()) {
-      throw new Error("当前浏览器不支持 WebSocket，无法使用 MQTT。");
+      throw new Error(i18n("transport.mqtt.notSupported"));
     }
 
     if (this.client) {
@@ -109,8 +110,8 @@ export class MqttTransport extends BaseTransport {
     }
 
     const brokerUrl = normalizeBrokerUrl(options.brokerUrl);
-    const subscribeTopic = normalizeTopic(options.subscribeTopic, "订阅主题");
-    const publishTopic = normalizeTopic(options.publishTopic, "发布主题");
+    const subscribeTopic = normalizeTopic(options.subscribeTopic, i18n("transport.mqtt.subscribeTopic"));
+    const publishTopic = normalizeTopic(options.publishTopic, i18n("transport.mqtt.publishTopic"));
     const username = String(options.username || "").trim();
     const password = String(options.password || "");
 
@@ -140,7 +141,7 @@ export class MqttTransport extends BaseTransport {
       };
 
       const onConnect = () => finish(null);
-      const onError = (error) => finish(new Error(error?.message || `无法连接 MQTT Broker：${brokerUrl}`));
+      const onError = (error) => finish(new Error(error?.message || i18n("transport.mqtt.cannotConnect") + ": " + brokerUrl));
       const cleanup = () => {
         client.off("connect", onConnect);
         client.off("error", onError);
@@ -154,7 +155,7 @@ export class MqttTransport extends BaseTransport {
       client.subscribe(subscribeTopic, { qos: 0 }, (error) => {
         if (error) {
           client.end(true);
-          reject(new Error(`MQTT 订阅失败：${error.message}`));
+          reject(new Error(i18n("transport.mqtt.subscribeFailed") + ": " + error.message));
           return;
         }
         resolve();
@@ -221,10 +222,10 @@ export class MqttTransport extends BaseTransport {
 
   async write(data, options = {}) {
     if (!this.client || !this.connectedFlag) {
-      throw new Error("连接未建立");
+      throw new Error(i18n("transport.serial.notConnected"));
     }
 
-    const topic = normalizeTopic(options.topic || this.publishTopic, "发布主题");
+    const topic = normalizeTopic(options.topic || this.publishTopic, i18n("transport.mqtt.publishTopic"));
     const qos = clampQos(options.qos);
     const retain = Boolean(options.retain);
     const payload = typeof data === "string" ? data : data;
@@ -232,7 +233,7 @@ export class MqttTransport extends BaseTransport {
     await new Promise((resolve, reject) => {
       this.client.publish(topic, payload, { qos, retain }, (error) => {
         if (error) {
-          reject(new Error(error.message || "MQTT 发布失败"));
+          reject(new Error(error.message || i18n("transport.mqtt.publishFailed")));
           return;
         }
         resolve();
@@ -269,7 +270,7 @@ export const MQTT_TRANSPORT = {
   fields: [
     {
       key: "brokerUrl",
-      label: "Broker 地址",
+      label: "transport.mqtt.brokerUrl",
       type: "text",
       default: MQTT_CONNECT_DEFAULTS.brokerUrl,
     },
@@ -281,25 +282,25 @@ export const MQTT_TRANSPORT = {
     },
     {
       key: "subscribeTopic",
-      label: "订阅主题",
+      label: "transport.mqtt.subscribeTopic",
       type: "text",
       default: MQTT_CONNECT_DEFAULTS.subscribeTopic,
     },
     {
       key: "publishTopic",
-      label: "发布主题",
+      label: "transport.mqtt.publishTopic",
       type: "text",
       default: MQTT_CONNECT_DEFAULTS.publishTopic,
     },
     {
       key: "username",
-      label: "用户名",
+      label: "transport.mqtt.username",
       type: "text",
       default: MQTT_CONNECT_DEFAULTS.username,
     },
     {
       key: "password",
-      label: "密码",
+      label: "transport.mqtt.password",
       type: "text",
       default: MQTT_CONNECT_DEFAULTS.password,
     },

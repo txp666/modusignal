@@ -1,3 +1,4 @@
+import i18n from "../i18n.js";
 import {
   DEFAULT_BINARY_MULTI_FIELDS,
   decodeModbusReadDataCurves,
@@ -61,48 +62,50 @@ export const DEFAULT_MODBUS_CONFIG = {
 
 let rxBuffer = new Uint8Array(0);
 
-export const MODBUS_PROFILE = {
-  id: MODBUS_DEVICE_ID,
-  name: "Modbus",
-  type: "RTU 寄存器读写",
-  image: "./images/modusignal-logo.svg",
-  protocolStatus: "ready",
-  defaultTransportId: "serial",
-  modes: {
-    readHolding: {
-      label: "读保持寄存器",
-      unit: "",
-      min: 0,
-      max: 65535,
-      step: 1,
-      presets: { min: 0, mid: 0, max: 65535 },
+export function getModbusProfile() {
+  return {
+    id: MODBUS_DEVICE_ID,
+    name: "Modbus",
+    type: i18n("modbus.profile.type"),
+    image: "./images/modusignal-logo.svg",
+    protocolStatus: "ready",
+    defaultTransportId: "serial",
+    modes: {
+      readHolding: {
+        label: i18n("modbus.readHolding"),
+        unit: "",
+        min: 0,
+        max: 65535,
+        step: 1,
+        presets: { min: 0, mid: 0, max: 65535 },
+      },
+      readInput: {
+        label: i18n("modbus.readInput"),
+        unit: "",
+        min: 0,
+        max: 65535,
+        step: 1,
+        presets: { min: 0, mid: 0, max: 65535 },
+      },
+      writeSingle: {
+        label: i18n("modbus.writeValue"),
+        unit: "",
+        min: 0,
+        max: 65535,
+        step: 1,
+        presets: { min: 0, mid: 100, max: 1000 },
+      },
+      writeMultiple: {
+        label: i18n("modbus.writeValue"),
+        unit: "",
+        min: 0,
+        max: 65535,
+        step: 1,
+        presets: { min: 0, mid: 100, max: 1000 },
+      },
     },
-    readInput: {
-      label: "读输入寄存器",
-      unit: "",
-      min: 0,
-      max: 65535,
-      step: 1,
-      presets: { min: 0, mid: 0, max: 65535 },
-    },
-    writeSingle: {
-      label: "写入值",
-      unit: "",
-      min: 0,
-      max: 65535,
-      step: 1,
-      presets: { min: 0, mid: 100, max: 1000 },
-    },
-    writeMultiple: {
-      label: "写入值",
-      unit: "",
-      min: 0,
-      max: 65535,
-      step: 1,
-      presets: { min: 0, mid: 100, max: 1000 },
-    },
-  },
-};
+  };
+}
 
 export function resetModbusRxBuffer() {
   rxBuffer = new Uint8Array(0);
@@ -159,7 +162,7 @@ export function listModbusDeviceChartSeries(config = {}) {
 }
 
 export function createModbusProfile() {
-  return { ...MODBUS_PROFILE };
+  return getModbusProfile();
 }
 
 export function getModbusMode(functionCode) {
@@ -199,7 +202,7 @@ export function createModbusSetOutputCommand(state, config, helpers) {
   if (!bytes) {
     return {
       supported: false,
-      preview: "不支持的 Modbus 功能码",
+      preview: i18n("modbus.unsupportedFunction"),
       bytes: null,
     };
   }
@@ -244,12 +247,12 @@ export function parseModbusTelemetry(bytes, config) {
 export function describeModbusSummary(config) {
   const normalized = normalizeModbusConfig(config);
   const action = isReadFunctionCode(normalized.functionCode)
-    ? "读取"
+    ? i18n("modbus.readRegister", "读取")
     : isWriteFunctionCode(normalized.functionCode)
-      ? "写入"
-      : "操作";
+      ? i18n("modbus.writeRegister", "写入")
+      : i18n("modbus.operation", "操作");
 
-  return `${action} 从站 ${normalized.slaveId}，功能码 ${normalized.functionCode}，地址 ${normalized.address}`;
+  return `${action} ${i18n("modbus.slaveId", "从站")} ${normalized.slaveId}，${i18n("modbus.functionCode")} ${normalized.functionCode}，${i18n("modbus.startAddr")} ${normalized.address}`;
 }
 
 function toModbusCurveConfig(normalized) {
