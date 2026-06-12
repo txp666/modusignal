@@ -329,16 +329,22 @@ label {
 
 .device-shell .device-page.active {
   display: flex;
-  flex: 0 1 minmax(22rem, 42%);
+  flex: 0 1 42%;
+  flex-basis: 42%;
+  width: 42%;
+  max-width: 42%;
+  min-width: 22rem;
   flex-direction: column;
   gap: 1rem;
-  min-width: 0;
+  box-sizing: border-box;
 }
 
 .device-shell.active .control-panel,
 .device-shell.active .custom-panel {
   flex: 0 0 auto;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .page-mount,
@@ -407,12 +413,15 @@ label {
 
 .device-workbench-column {
   display: flex;
-  flex: 1 1 minmax(24rem, 58%);
+  flex: 1 1 58%;
+  flex-basis: 58%;
+  width: 58%;
+  min-width: 24rem;
   flex-direction: column;
   gap: 1rem;
   align-self: stretch;
-  min-width: 0;
   min-height: 0;
+  box-sizing: border-box;
 }
 
 .chart-panel {
@@ -599,6 +608,8 @@ button:focus-visible {
   color: var(--muted);
   font-size: 0.8rem;
   font-weight: 700;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .device-panel {
@@ -980,6 +991,10 @@ button:focus-visible {
 
 .step-sequence-actions {
   flex-wrap: wrap;
+}
+
+.step-sequence-actions button {
+  flex: 0 1 auto;
 }
 
 .field-hint {
@@ -1512,6 +1527,12 @@ output.warning {
   border: 1px dashed #b8c2ce;
   border-radius: 0.5rem;
   background: #fbfcfd;
+  min-width: 0;
+}
+
+.command-preview > div:first-child {
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .command-preview span {
@@ -1524,6 +1545,11 @@ output.warning {
 code {
   color: var(--text);
   word-break: break-all;
+}
+
+.command-preview code {
+  display: block;
+  overflow-wrap: anywhere;
 }
 
 .command-preview button,
@@ -1747,6 +1773,8 @@ code {
   .device-workbench-column {
     flex: 1 1 auto;
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .home-grid {
