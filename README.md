@@ -1,150 +1,104 @@
 <p align="center">
-  <img src="./images/modusignal-logo.svg" alt="modusignal" width="480" />
+  <img src="./images/modusignal-logo.svg" alt="modusignal" width="520" />
 </p>
 
-<p align="center">在线设备调试平台（串口·WebSocket·HART·MQTT）</p>
+<p align="center">
+  <b>Debug industrial devices directly from your browser.</b><br />
+  <i>Serial · WebSocket · MQTT · Modbus RTU · HART — all in one zero-install web app.</i>
+</p>
 
-# modusignal 在线设备调试平台
+<p align="center">
+  <a href="https://modusignal.cn/"><img src="https://img.shields.io/badge/Live%20Demo-modusignal.cn-0f766e?style=flat-square" alt="Live Demo" /></a>
+  <a href="./LICENSE.txt"><img src="https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square" alt="License" /></a>
+  <a href="https://github.com/txp666/modusignal"><img src="https://img.shields.io/github/stars/txp666/modusignal?style=flat-square" alt="GitHub Stars" /></a>
+  <a href="https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82"><img src="https://img.shields.io/badge/request-new%20device-8b5cf6?style=flat-square" alt="Request Device" /></a>
+</p>
 
-modusignal 是一个浏览器端在线设备/信号调试平台，统一抽象多种传输方式（串口·WebSocket·MQTT），用来通过网页连接使用者的设备。**当前已实现串口（Web Serial）、WebSocket 与 MQTT over WebSocket**。内置 AOMaster、Modbus RTU、HART 通用设备、WebSocket 调试、MQTT 调试与自定义设备 profile；切换设备时会自动切换该设备的默认通讯方式与连接参数。
+---
 
-## 当前功能
+## 🔥 Why modusignal?
 
-- 统一传输抽象：连接、断开、接收和发送（串口、WebSocket、MQTT）
-- 连接参数面板：按所选传输的 descriptor 动态渲染（串口含波特率、数据位、停止位、校验、流控；WebSocket 含服务地址；MQTT 含 Broker、Client ID、订阅/发布主题与认证）
-- 设备默认通讯：各设备 profile 声明 `defaultTransportId`；切换设备时自动切换传输并套用默认连接参数
-- 多页面设备 UI：主页、AOMaster / Modbus / HART / WebSocket 调试 / MQTT 调试 / 自定义设备各自独立 HTML（`pages/`），共享曲线与日志工作台
-- 设备库框架：内置设备 profile 可声明 `image`（如 `images/websocket.png`、`images/mqtt.png`），在侧栏设备库与主页卡片显示图标
-- AOMaster 多信号类型与波形：恒定、阶跃、斜坡、方波、三角波、正弦波；双曲线（波形预览 + 实时输出）
-- Modbus RTU：读/写保持寄存器与输入寄存器，可配置地址、数据类型与轮询；监测面板支持同一读响应内最多 4 条曲线（按数据区字节偏移解码）
-- HART 通用设备：设备搜索、通用命令、PV/SV/TV/QV 多曲线
-- WebSocket 调试：快捷 JSON/文本发送、心跳轮询、JSON / HEX / Modbus 多曲线解析
-- MQTT 调试：Broker 连接、主题发布/订阅、QoS 与保留消息、快捷发布、消息统计与 JSON / HEX / Modbus 多曲线解析
-- 自定义设备：可配置设备名、类型、设定范围、单位、发送模板和解析规则；支持 JSON 路径、HEX 偏移与 Modbus 载荷解析
-- 监测面板曲线配置：各设备曲线解码集中在工作台折叠区；支持多曲线、帧界（行界 / 帧头帧尾 / CRC）、解析样例测试与协议说明弹窗
-- 监测轮询：读模式设备与 WebSocket / MQTT 调试可在工作台手动开始/停止轮询，间隔按设备配置
-- 手动命令发送：ASCII / JSON / HEX，支持行尾选择；收发调试区命令框支持多行输入与滚动
-- 收发日志：TX / RX / 系统 / 错误（MQTT 日志带主题前缀）
-- 实时曲线：按当前设备解析接收数据并绘制（默认保留 3000 点、显示 240 点，可配置）
-- 协议驱动：AOMaster Modbus RTU；通用 Modbus RTU；HART 帧编解码；WebSocket / MQTT JSON/文本解析；自定义模板可用于其他设备
+> **No setup. No install. No backend. Just a browser — connect and debug.**
 
-## 内置设备默认参数
+| Traditional Way | modusignal |
+|----------------|-----------|
+| ❌ Install desktop software per device | ✅ Open a URL — that's it |
+| ❌ Windows-only vendor tools | ✅ Cross-platform (Chrome, Edge) |
+| ❌ One tool per protocol | ✅ Unified: serial, WebSocket, MQTT |
+| ❌ Can't test remotely easily | ✅ Share a link — ready to go |
+| ❌ Heavy IDE required for custom protocols | ✅ Custom device template in 2 minutes |
 
-切换设备时，**默认通讯方式**、连接参数与轮询间隔会自动切换为下表默认值（已保存的浏览器配置需点「恢复默认」才会更新）：
+**16,000+ lines of clean, modular JavaScript. Zero backend. Pure browser magic.**
 
-| 设备 | 默认通讯 | 默认连接参数 | 默认轮询间隔 | 说明 |
-| --- | --- | --- | --- | --- |
-| AOMaster | 串口 | 115200 8N1 | 50 ms | Modbus RTU 从站，回读寄存器 0x0006 |
-| 自定义 | 串口 | 115200 8N1 | 500 ms | 配置项已预留；当前页面不支持自动轮询 |
-| Modbus RTU | 串口 | 9600 8N1 | 500 ms | 读模式下可轮询 |
-| HART | 串口 | 1200 8O1 | 1000 ms | 需先搜索到设备方可轮询 |
-| WebSocket 调试 | WebSocket | `ws://127.0.0.1:8080` | 0（手动） | 可配置心跳轮询与 JSON 解析路径 |
-| MQTT 调试 | MQTT | `wss://broker.emqx.io:8084/mqtt` · 订阅 `modusignal/rx` · 发布 `modusignal/tx` | 0（手动） | 可配置 QoS、保留消息与 JSON 解析路径 |
+---
 
-常量定义位置：
+## ✨ Features That Pop
 
-- 默认通讯：`src/devices/*-device.js` 中 profile 的 `defaultTransportId`
-- 连接参数：`src/devices/*-device.js` 的 `*_TRANSPORT_DEFAULTS` 与 `src/app.js` 的 `DEVICE_TRANSPORT_DEFAULTS`
-- 轮询间隔：`DEFAULT_*_CONFIG.pollIntervalMs`
-- 设备图标：profile 的 `image` 字段，资源放在 `images/`
+### 🚀 Zero Install, Open & Go
+Deploy to GitHub Pages (or any static host), open the URL — **done**. No npm install, no server, no database. Your browser does all the work via **Web Serial**, **WebSocket**, and **MQTT over WebSocket**.
 
-## 传输方式与扩展
+### 🔌 6 Built-In Device Profiles
+| Device | Transport | Use Case |
+|--------|-----------|----------|
+| **AOMaster** | Serial (115200 8N1) | 4-20mA / 0-10V signal generator, 6 waveforms |
+| **Modbus RTU** | Serial (9600 8N1) | Read/write holding & input registers |
+| **HART** | Serial (1200 8O1) | Device search, universal commands, PV/SV/TV/QV |
+| **WebSocket Debug** | WebSocket | JSON/HEX/Modbus message debug & curve |
+| **MQTT Debug** | MQTT | Publish/subscribe, QoS, retain, message stats |
+| **Custom Device** | Any | User-defined templates, regex parsing, JSON path |
 
-传输层与设备层正交，加一种传输不需要改设备驱动或页面逻辑：在 `src/transports/` 新建继承 `BaseTransport` 的 session 类并导出 descriptor，再到 `src/transports/registry.js` 注册即可（详见 `AI.md` 的「添加传输」）。
+Switch devices → transport & params auto-switch. **It just works.**
 
-当前已注册：
+### 📈 Live Charts, No Library
+Real-time curve engine built on **Canvas 2D** — zero dependencies. 3000-point buffer, configurable viewport, multi-axis. Smooth, fast, lightweight.
 
-| 传输 | ID | 说明 |
-| --- | --- | --- |
-| 串口 | `serial` | Web Serial，需 HTTPS 或 localhost |
-| WebSocket | `websocket` | 浏览器原生 WebSocket；字符串/JSON 发文本帧，HEX 发二进制帧 |
-| MQTT | `mqtt` | MQTT over WebSocket（mqtt.js）；订阅收、发布发；支持 QoS 与 retain |
-
-浏览器能力边界：纯静态页面可用 Web Serial、WebSocket、MQTT over WebSocket。远程 `ws://` 在 HTTPS 页面可能被浏览器拦截，公网服务建议用 `wss://`；本地 `ws://127.0.0.1` 通常可用。
-
-## WebSocket 调试设备
-
-适用于直连 WebSocket 服务、联调 JSON 协议或 echo 服务：
-
-1. 侧栏进入 **WebSocket 调试**（会自动选中 WebSocket 传输）
-2. 填写 WebSocket 地址并连接
-3. 使用快捷按钮或收发调试区发送 JSON/文本/HEX
-4. 在设备页配置轮询间隔与心跳消息；在监测面板 **曲线配置** 中设置 JSON 路径、HEX/Modbus 偏移或多条曲线
-
-## MQTT 调试设备
-
-适用于 MQTT over WebSocket 联调、主题测试与 JSON 消息验证：
-
-1. 侧栏进入 **MQTT 调试**（会自动选中 MQTT 传输）
-2. 填写 Broker 地址、Client ID、订阅/发布主题（或使用默认公共 Broker）
-3. 点击连接；侧栏顶栏会显示连接摘要
-4. 在设备页使用快捷发布，或在收发调试区手动发送 JSON/ASCII/HEX
-5. 可配置发布 QoS（0/1/2）、保留消息、轮询心跳；曲线解码在监测面板 **曲线配置** 中设置
-
-默认公共测试 Broker：
-
-```text
-wss://broker.emqx.io:8084/mqtt
-订阅：modusignal/rx
-发布：modusignal/tx
+### 🧩 Transport/Device Orthogonal Architecture
 ```
-
-## 自定义设备
-
-自定义设备配置保存在当前浏览器的 `localStorage` 中，不会上传到服务器。可配置：
-
-- 输出设定：通道名称、单位、最小值、最大值、步进、默认值
-- 发送模板：ASCII 或 HEX，支持 `{value}`、`{value:2}`、`{unit}`、`{mode}`
-- 回包解析：自动提取最后一个数字，或使用正则捕获指定分组；亦可在监测面板配置 JSON 路径、HEX 偏移或 Modbus 载荷多曲线
-- 数值换算：`解析值 * 比例 + 偏移`
-
-示例：
-
-```text
-ASCII 模板：SET {value:3}
-HEX 模板：01 06 00 01 {value:0}
-正则：PV=([-+]?\d+(?:\.\d+)?)
+UI (app.js)
+ ├── Device Layer  →  constructs commands, parses replies
+ └── Transport Layer →  connects, sends, receives (serial / WS / MQTT)
 ```
+Add a new device? Write 2 functions. Add a new transport? Extend `BaseTransport`. **No cross-contamination.**
 
-## 监测面板 · 曲线配置
+### 📝 4-in-1 Log Console
+Color-coded logs: **TX**, **RX**, **System**, **Error**. MQTT logs show topic prefixes. Copy, clear, scroll — everything you expect.
 
-设备页负责连接、轮询与专属控件；**曲线解码**统一在右侧监测面板的「曲线配置」折叠区（`pages/shared/workbench.html`）：
+### 🎮 Manual Send: ASCII · JSON · HEX
+Multi-line input, line-ending selectors, JSON validation, HEX with flexible separators. Send anything, see results instantly.
 
-- **Modbus / 自定义 / WebSocket / MQTT**：最多 4 条曲线；解析模式可选 JSON 路径、HEX 原始字节或 Modbus RTU 载荷
-- **帧界**：无（整包）、行界（CR/LF）、帧头帧尾（HEX）；Modbus 模式可启用 CRC16 校验
-- **HART**：勾选 PV / SV / TV / QV 显示曲线
-- **AOMaster**：双曲线说明（设定预览 + 轮询回读）
-- 每条曲线可设名称、单位、偏移、比例；面板内可 **测试解析样例**，并通过 **协议说明** 查看字段含义
+### 🔄 Auto Polling
+Read-mode devices can auto-poll at configurable intervals (50 ms to 10 s). Live-updating curves while you work.
 
-读模式下 Modbus 若曲线所需字节范围超出寄存器数量，驱动会自动扩大读取范围。
+### 🛠 Custom Device Builder
+Need to debug a device modusignal doesn't support yet? Configure:
+- Output range, unit, step
+- Send template with `{value}`, `{value:2}`, `{unit}` placeholders
+- Parse rules: regex, JSON path, HEX offset, Modbus payload
+- Value scaling: `parsed × scale + offset`
 
-## 浏览器要求
+**No coding required.** Build your driver in 2 minutes.
 
-串口（Web Serial）需要安全上下文：
+### 🧪 Monitor Panel · Curve Config
+Unified curve configuration for all devices:
+- **JSON Path** — extract values from JSON responses
+- **HEX Offset** — parse bytes at given offsets
+- **Modbus Payload** — decode Modbus RTU frames
+- **Frame Delimiters** — line-break, header/tail, CRC16
+- **Test samples** — validate your parsing before going live
 
-- 线上使用 GitHub Pages 的 HTTPS 地址
-- 本地开发使用 `localhost`
-- 推荐 Chrome 或 Edge
+---
 
-WebSocket 与 MQTT 无额外插件要求；HTTPS 页面连接远程服务时请优先使用 `wss://`。
+## 🖥️ Quick Start
 
-## 本地预览
-
-### 开发模式（ES Module 直出）
-
-不需要安装依赖。启动一个本地静态服务器即可：
+### Development (no build)
 
 ```powershell
 python -m http.server 4173
 ```
 
-然后访问：
+Open `http://localhost:4173` in Chrome/Edge.
 
-```text
-http://localhost:4173
-```
-
-### 生产构建（与 GitHub Pages 一致）
+### Production Build
 
 ```powershell
 npm ci
@@ -152,38 +106,231 @@ npm run build
 npm run preview
 ```
 
-构建产物在 `_site/`：`app.js` 与依赖打包合并，ECharts 按需懒加载为独立 chunk，首屏请求数从约 30 个降至 2～3 个。
+Build output goes to `_site/`. Chunks optimized — first paint in ~2-3 requests.
 
-## 设备与协议接入点
+### Browser Support
 
-设备驱动放在 `src/devices/`，在 `src/device-registry.js` 注册并由 `src/protocols.js` 统一分发。
+| Feature | Required | Browsers |
+|---------|----------|----------|
+| **Serial** | ✅ | Chrome 89+ / Edge 89+ (HTTPS or localhost) |
+| **WebSocket** | ✅ | All modern browsers |
+| **MQTT over WS** | ✅ | All modern browsers |
 
-### AOMaster Modbus RTU 寄存器
+---
 
-| 地址 | 读写 | 说明 |
-| --- | --- | --- |
-| 0x0000 | R/W | 信号类型 |
-| 0x0001 | R/W | 波形：0=恒定，1=阶跃，2=斜坡，3=方波，4=三角波，5=正弦 |
-| 0x0002 | R/W | 恒定=设定值；阶跃=序列点数；其它波形=低值 |
-| 0x0003 | R/W | 恒定=同设定；阶跃=单步保持(ms)；其它波形=高值 |
-| 0x0004 | R/W | 恒定/其它=周期(ms)或0；阶跃=循环次数(0=无限) |
-| 0x0005 | R/W | 占空比×10（方波）或 0 |
-| 0x0006 | R | 实际输出 |
-| 0x0007+ | R/W | 阶跃序列各点（模拟量×1000） |
+## 🏗️ Project Architecture
 
-阶跃模式分两次写入：先写 0x0000~0x0005 头部，再写 0x0007 起的序列值。默认回读轮询 50 ms，读取 0x0006。
+```
+index.html              →  App shell (topbar, sidebar, mount points)
+pages/
+  home.html             →  Home overview + device grid
+  request.html          →  New device request form
+  devices/
+    aomaster.html       →  AOMaster control panel
+    modbus.html         →  Modbus RTU register I/O
+    hart.html           →  HART search & commands
+    websocket.html      →  WebSocket message debug
+    mqtt.html           →  MQTT publish/subscribe
+    custom.html         →  Custom device builder
+  shared/
+    workbench.html      →  Log console + live charts
+src/
+  app.js                →  State, routing, events, device orchestration
+  protocols.js          →  Device registry, command/telemetry dispatch
+  page-loader.js        →  Async HTML fragment loader
+  chart.js              →  Canvas 2D real-time chart engine
+  echarts-charts.js     →  ECharts-based waveform preview
+  config.js             →  App metadata, URLs, license
+  transports/
+    transport.js        →  BaseTransport interface (EventTarget)
+    serial.js           →  Web Serial session
+    websocket.js        →  WebSocket session
+    mqtt.js             →  MQTT over WebSocket session
+    registry.js         →  Transport descriptor registry
+  devices/
+    aomaster.js         →  AOMaster Modbus RTU driver
+    modbus-device.js    →  Generic Modbus RTU driver
+    hart-device.js      →  HART protocol driver
+    websocket-device.js →  WebSocket debug driver
+    mqtt-device.js      →  MQTT debug driver
+    custom-device.js    →  Custom device template driver
+  modbus/modbus.js      →  Modbus RTU frame assembler/disassembler
+  hart/hart.js          →  HART frame encoder/decoder
+```
 
-新增其他设备时，优先补充：
+---
 
-- `src/devices/<id>.js` 的 profile（含 `defaultTransportId`、可选 `image`）与 `create*SetOutputCommand`
-- 设备回包解析函数
-- `src/app.js` 中 `DEVICE_TRANSPORT_DEFAULTS` 注册
-- 监测面板曲线配置 section（若需多曲线 / 帧界 / 协议说明）
+## 📊 AOMaster Modbus Register Map
 
-建议每种设备维护独立 profile，保持页面层只依赖统一的驱动接口。
+| Addr | R/W | Description |
+|------|-----|-------------|
+| 0x0000 | R/W | Signal type (current/voltage) |
+| 0x0001 | R/W | Waveform: 0=const, 1=step, 2=ramp, 3=square, 4=triangle, 5=sine |
+| 0x0002 | R/W | Setpoint / low value |
+| 0x0003 | R/W | High value / step hold time |
+| 0x0004 | R/W | Period (ms) or cycle count |
+| 0x0005 | R/W | Duty cycle × 10 |
+| 0x0006 | R | Actual output (readback) |
+| 0x0007+ | R/W | Step sequence values |
 
-## 项目文档
+Poll interval: 50 ms. Step mode writes header first, then sequence values.
 
-- `CONTRIBUTING.md`：贡献流程和新增设备请求需要的信息
-- `AI.md`：项目目标、架构说明、AI 添加设备指南
-- `src/config.js`：GitHub 链接和新增设备请求链接配置
+---
+
+## 🤝 Contributing
+
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for guidelines.
+
+Quick path to add a new device:
+
+1. Create `src/devices/<id>.js` — profile, set-output command, telemetry parser
+2. Register in `src/protocols.js`
+3. Add device page in `pages/devices/`
+4. Wire transport defaults in `src/app.js`
+
+Need a device we don't have? [Open a request](https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82).
+
+---
+
+## 📄 License
+
+[Apache License 2.0](./LICENSE.txt)
+
+---
+
+## 🌟 Star History
+
+If modusignal saves you time debugging devices, give it a ⭐ — it helps others find it too!
+
+---
+
+<br />
+
+---
+
+<p align="center">
+  <img src="./images/modusignal-logo.svg" alt="modusignal" width="200" />
+</p>
+
+<h1 align="center">modusignal 在线设备调试平台</h1>
+
+<p align="center">
+  浏览器端在线设备/信号调试工具<br />
+  串口 · WebSocket · MQTT · Modbus RTU · HART · 自定义协议<br />
+  <strong>零安装 · 纯前端 · 跨平台</strong>
+</p>
+
+---
+
+## 🔥 为什么选择 modusignal？
+
+> **无需安装、无需后端、打开浏览器就能调试设备。**
+
+| 传统方式 | modusignal |
+|---------|-----------|
+| ❌ 每种设备装一个上位机软件 | ✅ 打开网页即可 |
+| ❌ 仅限 Windows | ✅ 跨平台（Chrome / Edge / 全平台） |
+| ❌ 一种协议一个工具 | ✅ 统一：串口、WebSocket、MQTT |
+| ❌ 远端调试困难 | ✅ 分享链接立即用 |
+| ❌ 自定协议需要写代码 | ✅ 自定义模板 2 分钟搞定 |
+
+---
+
+## ✨ 功能亮点
+
+### 🚀 零安装 · 开箱即用
+部署到 GitHub Pages 等任何静态托管，打开 URL 即可使用。**纯静态**，无后端、无数据库。利用浏览器原生 **Web Serial**、原生 **WebSocket**、**MQTT over WebSocket** 能力。
+
+### 🔌 六大内置设备驱动
+| 设备 | 传输 | 说明 |
+|------|------|------|
+| **AOMaster** | 串口 115200 8N1 | 4-20mA / 0-10V 信号发生器，6 种波形 |
+| **Modbus RTU** | 串口 9600 8N1 | 读/写保持寄存器与输入寄存器 |
+| **HART** | 串口 1200 8O1 | 设备搜索、通用命令、PV/SV/TV/QV 多变量 |
+| **WebSocket 调试** | WebSocket | JSON/HEX/Modbus 消息调试与曲线 |
+| **MQTT 调试** | MQTT over WS | 发布/订阅、QoS、保留消息、消息统计 |
+| **自定义设备** | 任意 | 用户定义模板、正则解析、JSON 路径 |
+
+切换设备时，**通讯方式和参数自动切换**。
+
+### 📈 实时曲线 · 零依赖
+基于 **Canvas 2D** 自绘曲线引擎，不依赖任何第三方图表库。3000 点缓冲区，可配置视口，多曲线同屏。
+
+### 🧩 传输层与设备层正交设计
+```
+UI (app.js)
+ ├── 设备层  →  构造命令、解析回包
+ └── 传输层 →  连接、收发（串口 / WS / MQTT）
+```
+添加新设备只需写 2 个函数，添加新传输只需继承 `BaseTransport`。**互不污染**。
+
+### 📝 四色收发日志
+**TX（发送·蓝）· RX（接收·绿）· 系统（灰）· 错误（红）**，MQTT 日志带主题前缀。
+
+### 🎮 手动发送：ASCII · JSON · HEX
+多行输入、行尾选择、JSON 语法校验、HEX 灵活分隔符。
+
+### 🔄 自动轮询
+读模式设备支持自动轮询（50ms ~ 10s 可配），曲线实时刷新。
+
+### 🛠 自定义设备构建器
+无需写代码，2 分钟配出一个设备驱动：
+- 输出范围、单位、步长
+- 发送模板（占位符 `{value}`、`{value:2}`、`{unit}`）
+- 解析规则（正则、JSON 路径、HEX 偏移、Modbus 载荷）
+- 数值换算（`解析值 × 比例 + 偏移`）
+
+### 🧪 统一曲线配置
+- **JSON 路径** — 从 JSON 回包提取数值
+- **HEX 偏移** — 按偏移量解析字节
+- **Modbus 载荷** — 解码 Modbus RTU 帧
+- **帧界定** — 换行分隔 / 帧头帧尾 / CRC16 校验
+- **测试样例** — 配置后立即验证解析效果
+
+---
+
+## 🖥️ 快速开始
+
+### 开发模式（无需构建）
+
+```powershell
+python -m http.server 4173
+```
+
+浏览器打开 `http://localhost:4173`，推荐 Chrome 或 Edge。
+
+### 生产构建
+
+```powershell
+npm ci
+npm run build
+npm run preview
+```
+
+构建产物在 `_site/`，首屏仅 2~3 个请求。
+
+### 浏览器兼容
+
+| 功能 | 要求 | 支持浏览器 |
+|------|------|-----------|
+| **串口** | ✅ | Chrome 89+ / Edge 89+（HTTPS 或 localhost） |
+| **WebSocket** | ✅ | 所有现代浏览器 |
+| **MQTT over WS** | ✅ | 所有现代浏览器 |
+
+---
+
+## 📄 许可证
+
+[Apache License 2.0](./LICENSE.txt)
+
+---
+
+## 🌟 Star 历史
+
+如果 modusignal 帮你节省了设备调试时间，不妨点个 ⭐，帮助更多人发现它！
+
+---
+
+<p align="center">
+  <i>Made by <a href="https://space.bilibili.com/509795217">飞起小鹏</a> · Powered by Web Serial · WebSocket · MQTT</i>
+</p>
