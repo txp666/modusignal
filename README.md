@@ -3,334 +3,286 @@
 </p>
 
 <p align="center">
-  <b>Debug industrial devices directly from your browser.</b><br />
-  <i>Serial · WebSocket · MQTT · Modbus RTU · HART — all in one zero-install web app.</i>
+  <b>Talk to industrial devices from a browser tab.</b><br/>
+  <b>在浏览器里直接调设备。</b><br/>
+  <sub>Serial · WebSocket · MQTT · Modbus RTU · HART · custom protocols</sub>
 </p>
 
 <p align="center">
-  <a href="https://modusignal.cn/"><img src="https://img.shields.io/badge/Live%20Demo-modusignal.cn-0f766e?style=flat-square" alt="Live Demo" /></a>
-  <a href="./LICENSE.txt"><img src="https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square" alt="License" /></a>
-  <a href="https://github.com/txp666/modusignal"><img src="https://img.shields.io/github/stars/txp666/modusignal?style=flat-square" alt="GitHub Stars" /></a>
-  <a href="https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82"><img src="https://img.shields.io/badge/request-new%20device-8b5cf6?style=flat-square" alt="Request Device" /></a>
+  <a href="https://modusignal.cn/"><img src="https://img.shields.io/badge/live%20demo-modusignal.cn-0f766e?style=flat-square" alt="Live demo"></a>
+  <a href="./LICENSE.txt"><img src="https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square" alt="License"></a>
+  <a href="https://github.com/txp666/modusignal/stargazers"><img src="https://img.shields.io/github/stars/txp666/modusignal?style=flat-square" alt="Stars"></a>
+  <a href="https://github.com/txp666/modusignal/issues"><img src="https://img.shields.io/github/issues/txp666/modusignal?style=flat-square" alt="Issues"></a>
+  <a href="https://github.com/txp666/modusignal/commits"><img src="https://img.shields.io/github/last-commit/txp666/modusignal?style=flat-square" alt="Last commit"></a>
+</p>
+
+<p align="center">
+  <a href="#english"><b>English</b></a> ·
+  <a href="#中文"><b>中文</b></a> ·
+  <a href="https://modusignal.cn/">Try it now →</a> ·
+  <a href="https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82">Request a device</a>
 </p>
 
 ---
 
-## 🔥 Why modusignal?
-
-> **No setup. No install. No backend. Just a browser — connect and debug.**
-
-| Traditional Way | modusignal |
-|----------------|-----------|
-| ❌ Install desktop software per device | ✅ Open a URL — that's it |
-| ❌ Windows-only vendor tools | ✅ Cross-platform (Chrome, Edge) |
-| ❌ One tool per protocol | ✅ Unified: serial, WebSocket, MQTT |
-| ❌ Can't test remotely easily | ✅ Share a link — ready to go |
-| ❌ Heavy IDE required for custom protocols | ✅ Custom device template in 2 minutes |
-
-**16,000+ lines of clean, modular JavaScript. Zero backend. Pure browser magic.**
-
----
-
-## ✨ Features That Pop
-
-### 🚀 Zero Install, Open & Go
-Deploy to GitHub Pages (or any static host), open the URL — **done**. No npm install, no server, no database. Your browser does all the work via **Web Serial**, **WebSocket**, and **MQTT over WebSocket**.
-
-### 🔌 6 Built-In Device Profiles
-| Device | Transport | Use Case |
-|--------|-----------|----------|
-| **AOMaster** | Serial (115200 8N1) | 4-20mA / 0-10V signal generator, 6 waveforms |
-| **Modbus RTU** | Serial (9600 8N1) | Read/write holding & input registers |
-| **HART** | Serial (1200 8O1) | Device search, universal commands, PV/SV/TV/QV |
-| **WebSocket Debug** | WebSocket | JSON/HEX/Modbus message debug & curve |
-| **MQTT Debug** | MQTT | Publish/subscribe, QoS, retain, message stats |
-| **Custom Device** | Any | User-defined templates, regex parsing, JSON path |
-
-Switch devices → transport & params auto-switch. **It just works.**
-
-### 📈 Live Charts, No Library
-Real-time curve engine built on **Canvas 2D** — zero dependencies. 3000-point buffer, configurable viewport, multi-axis. Smooth, fast, lightweight.
-
-### 🧩 Transport/Device Orthogonal Architecture
-```
-UI (app.js)
- ├── Device Layer  →  constructs commands, parses replies
- └── Transport Layer →  connects, sends, receives (serial / WS / MQTT)
-```
-Add a new device? Write 2 functions. Add a new transport? Extend `BaseTransport`. **No cross-contamination.**
-
-### 📝 4-in-1 Log Console
-Color-coded logs: **TX**, **RX**, **System**, **Error**. MQTT logs show topic prefixes. Copy, clear, scroll — everything you expect.
-
-### 🎮 Manual Send: ASCII · JSON · HEX
-Multi-line input, line-ending selectors, JSON validation, HEX with flexible separators. Send anything, see results instantly.
-
-### 🔄 Auto Polling
-Read-mode devices can auto-poll at configurable intervals (50 ms to 10 s). Live-updating curves while you work.
-
-### 🛠 Custom Device Builder
-Need to debug a device modusignal doesn't support yet? Configure:
-- Output range, unit, step
-- Send template with `{value}`, `{value:2}`, `{unit}` placeholders
-- Parse rules: regex, JSON path, HEX offset, Modbus payload
-- Value scaling: `parsed × scale + offset`
-
-**No coding required.** Build your driver in 2 minutes.
-
-### 🧪 Monitor Panel · Curve Config
-Unified curve configuration for all devices:
-- **JSON Path** — extract values from JSON responses
-- **HEX Offset** — parse bytes at given offsets
-- **Modbus Payload** — decode Modbus RTU frames
-- **Frame Delimiters** — line-break, header/tail, CRC16
-- **Test samples** — validate your parsing before going live
+<table>
+  <tr>
+    <td width="50%" align="center">
+      <img src="./images/AOMaster.png" alt="AOMaster" /><br/>
+      <sub><b>AOMaster</b> · 4-20 mA / 0-10 V signal source, 6 waveforms</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="./images/hart.png" alt="HART" /><br/>
+      <sub><b>HART</b> · vendor-agnostic field debug, PV/SV/TV/QV</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" align="center">
+      <img src="./images/websocket.png" alt="WebSocket" /><br/>
+      <sub><b>WebSocket</b> · JSON / HEX / Modbus message debug + live chart</sub>
+    </td>
+    <td width="50%" align="center">
+      <img src="./images/mqtt.png" alt="MQTT" /><br/>
+      <sub><b>MQTT</b> · pub / sub, QoS, retain, real-time curve</sub>
+    </td>
+  </tr>
+</table>
 
 ---
 
-## 🖥️ Quick Start
+<a id="english"></a>
 
-### Development (no build)
+## What it is
+
+A static web app for debugging serial / WebSocket / MQTT devices from a browser.
+No installer, no backend, no database. Open the page, pick a device, connect, and you get raw frames, manual send, parsed values, and a real-time chart.
+
+> Open a tab. Plug in a device. Talk to it.
+
+## Use cases
+
+- Bench-test a Modbus RTU board without firing up a 200 MB vendor tool
+- Walk into a plant with a USB-to-485 dongle and a laptop, and you have a HART debugger
+- Bring up a new MQTT/WebSocket-speaking device and watch traffic on a live curve
+- Hand a colleague a URL instead of a `setup.exe`
+- Build a quick UI for an in-house protocol with the *Custom device* page (no JS required)
+
+Not what it's for: long-running data acquisition, plant monitoring, anything you'd actually call SCADA.
+
+## Built-in devices
+
+| Device | Transport | Default | Notes |
+|--------|-----------|---------|-------|
+| AOMaster | Serial | 115200 8N1 | 4-20 mA / 0-10 V signal source, 6 waveforms |
+| Modbus RTU | Serial | 9600 8N1 | Read / write holding & input registers |
+| HART | Serial | 1200 8O1 | Device search, universal commands, PV/SV/TV/QV |
+| WebSocket | WebSocket | — | JSON / HEX / Modbus message debug |
+| MQTT | MQTT over WS | — | Pub / sub, QoS, retain, message stats |
+| Custom | any | — | Template + parser, no code |
+
+Switching device also switches the transport and its defaults.
+
+## Quick start
+
+Serve the repo as static files:
 
 ```powershell
 python -m http.server 4173
 ```
 
-Open `http://localhost:4173` in Chrome/Edge.
+Open `http://localhost:4173` in Chrome or Edge. That's it — no install, no build.
 
-### Production Build
+To produce a deployable build:
 
 ```powershell
-npm ci
+npm install
 npm run build
 npm run preview
 ```
 
-Build output goes to `_site/`. Chunks optimized — first paint in ~2-3 requests.
+The build script is `scripts/build.mjs` (esbuild). Output goes to `_site/`.
 
-### Browser Support
+## Browser support
 
-| Feature | Required | Browsers |
-|---------|----------|----------|
-| **Serial** | ✅ | Chrome 89+ / Edge 89+ (HTTPS or localhost) |
-| **WebSocket** | ✅ | All modern browsers |
-| **MQTT over WS** | ✅ | All modern browsers |
+| Feature | Browsers |
+|---------|----------|
+| Serial (Web Serial API) | Chrome / Edge 89+, HTTPS or localhost |
+| WebSocket | any modern browser |
+| MQTT over WebSocket | any modern browser |
 
----
+Firefox and Safari don't ship Web Serial, so serial devices won't work there. Everything else works.
 
-## 🏗️ Project Architecture
+## Architecture
 
 ```
-index.html              →  App shell (topbar, sidebar, mount points)
+index.html              app shell (topbar, sidebar, mount points)
 pages/
-  home.html             →  Home overview + device grid
-  request.html          →  New device request form
-  devices/
-    aomaster.html       →  AOMaster control panel
-    modbus.html         →  Modbus RTU register I/O
-    hart.html           →  HART search & commands
-    websocket.html      →  WebSocket message debug
-    mqtt.html           →  MQTT publish/subscribe
-    custom.html         →  Custom device builder
-  shared/
-    workbench.html      →  Log console + live charts
+  home.html             home and device grid
+  request.html          new-device request form
+  devices/              one HTML page per device
+  shared/workbench.html shared log + chart panel
 src/
-  app.js                →  State, routing, events, device orchestration
-  protocols.js          →  Device registry, command/telemetry dispatch
-  page-loader.js        →  Async HTML fragment loader
-  chart.js              →  Canvas 2D real-time chart engine
-  echarts-charts.js     →  ECharts-based waveform preview
-  config.js             →  App metadata, URLs, license
-  transports/
-    transport.js        →  BaseTransport interface (EventTarget)
-    serial.js           →  Web Serial session
-    websocket.js        →  WebSocket session
-    mqtt.js             →  MQTT over WebSocket session
-    registry.js         →  Transport descriptor registry
-  devices/
-    aomaster.js         →  AOMaster Modbus RTU driver
-    modbus-device.js    →  Generic Modbus RTU driver
-    hart-device.js      →  HART protocol driver
-    websocket-device.js →  WebSocket debug driver
-    mqtt-device.js      →  MQTT debug driver
-    custom-device.js    →  Custom device template driver
-  modbus/modbus.js      →  Modbus RTU frame assembler/disassembler
-  hart/hart.js          →  HART frame encoder/decoder
+  app.js                state, routing, events, device orchestration
+  protocols.js          command / telemetry dispatch
+  device-registry.js    device registry
+  page-loader.js        async HTML fragment loader
+  chart.js              Canvas 2D real-time chart
+  echarts-charts.js     ECharts waveform preview
+  config.js             app metadata
+  transports/           serial / websocket / mqtt sessions
+  devices/              per-device drivers
+  modbus/modbus.js      Modbus RTU framing
+  hart/hart.js          HART framing
+  framing/              generic frame parsing (lines, header/tail, CRC16)
 ```
 
----
+Devices and transports are kept separate. Adding a new device is usually: a driver file in `src/devices/`, an entry in `device-registry.js`, and a page in `pages/devices/`. See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for details (the contributing guide is in Chinese).
 
-## 📊 AOMaster Modbus Register Map
+## AOMaster register map
 
-| Addr | R/W | Description |
-|------|-----|-------------|
-| 0x0000 | R/W | Signal type (current/voltage) |
-| 0x0001 | R/W | Waveform: 0=const, 1=step, 2=ramp, 3=square, 4=triangle, 5=sine |
+| Addr | R/W | Meaning |
+|------|-----|---------|
+| 0x0000 | R/W | Signal type (current / voltage) |
+| 0x0001 | R/W | Waveform: 0=const 1=step 2=ramp 3=square 4=triangle 5=sine |
 | 0x0002 | R/W | Setpoint / low value |
 | 0x0003 | R/W | High value / step hold time |
-| 0x0004 | R/W | Period (ms) or cycle count |
+| 0x0004 | R/W | Period (ms) / cycle count |
 | 0x0005 | R/W | Duty cycle × 10 |
-| 0x0006 | R | Actual output (readback) |
+| 0x0006 | R   | Actual output (readback) |
 | 0x0007+ | R/W | Step sequence values |
 
-Poll interval: 50 ms. Step mode writes header first, then sequence values.
+Default poll interval is 50 ms. In step mode the header is written first, then the sequence values.
+
+## Custom device
+
+If your device isn't built in, the *Custom* page lets you describe it without writing JS:
+
+- Output range, unit, step
+- Send template with `{value}`, `{value:2}`, `{unit}` placeholders
+- Parser: regex, JSON path, HEX offset, Modbus payload
+- Scaling: `parsed × scale + offset`
+
+## Status
+
+modusignal is actively maintained. New devices and parsers land regularly — see [open issues](https://github.com/txp666/modusignal/issues) for what's being discussed and feel free to chime in. If you'd like a device supported but don't want to write the driver yourself, [open a request](https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82) with the protocol doc, sample frames, and default connection parameters.
+
+## Contributing
+
+PRs that add devices or improve existing drivers are welcome. Please read [`CONTRIBUTING.md`](./CONTRIBUTING.md) first (Chinese; English version coming).
+
+## License
+
+Apache License 2.0. See [`LICENSE.txt`](./LICENSE.txt).
+
+If modusignal saved you an afternoon of fighting with a vendor installer, a star helps other people find it.
 
 ---
 
-## 🤝 Contributing
+<a id="中文"></a>
 
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for guidelines.
+## modusignal · 中文说明
 
-Quick path to add a new device:
+浏览器里的设备调试台，纯静态前端，没有上位机要装、没有后端要起。打开网页、选设备、连上、看原始报文、手动发命令、看实时曲线，就这样。
 
-1. Create `src/devices/<id>.js` — profile, set-output command, telemetry parser
-2. Register in `src/protocols.js`
-3. Add device page in `pages/devices/`
-4. Wire transport defaults in `src/app.js`
+> 一个标签页，一根线，跟设备直接对话。
 
-Need a device we don't have? [Open a request](https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82).
+## 适用场景
 
----
+- 临时调一块 Modbus RTU 板子，不想装某厂家 200MB 的上位机
+- 进车间带个 USB 转 485，笔记本插上就是 HART 调试工具
+- 新设备走 WebSocket 或 MQTT，想边看流量边看曲线
+- 把链接发给同事，比发 `setup.exe` 省事
+- 内部协议没有现成工具，用 *自定义设备* 页面拼一个，不用写 JS
 
-## 📄 License
+不适合：长时间数据采集、生产监控、SCADA。这是个调试工具。
 
-[Apache License 2.0](./LICENSE.txt)
+## 内置设备
 
----
+| 设备 | 传输 | 默认参数 | 说明 |
+|------|------|----------|------|
+| AOMaster | 串口 | 115200 8N1 | 4-20mA / 0-10V 信号源，6 种波形 |
+| Modbus RTU | 串口 | 9600 8N1 | 读写保持 / 输入寄存器 |
+| HART | 串口 | 1200 8O1 | 设备搜索、通用命令、PV/SV/TV/QV |
+| WebSocket | WebSocket | — | JSON / HEX / Modbus 报文调试 |
+| MQTT | MQTT over WS | — | 发布订阅、QoS、保留消息、统计 |
+| 自定义设备 | 任意 | — | 模板 + 解析规则，无需写代码 |
 
-## 🌟 Star History
+切设备时通讯方式和参数会跟着自动切换。
 
-If modusignal saves you time debugging devices, give it a ⭐ — it helps others find it too!
+## 跑起来
 
----
-
-<br />
-
----
-
-<p align="center">
-  <img src="./images/modusignal-logo.svg" alt="modusignal" width="200" />
-</p>
-
-<h1 align="center">modusignal 在线设备调试平台</h1>
-
-<p align="center">
-  浏览器端在线设备/信号调试工具<br />
-  串口 · WebSocket · MQTT · Modbus RTU · HART · 自定义协议<br />
-  <strong>零安装 · 纯前端 · 跨平台</strong>
-</p>
-
----
-
-## 🔥 为什么选择 modusignal？
-
-> **无需安装、无需后端、打开浏览器就能调试设备。**
-
-| 传统方式 | modusignal |
-|---------|-----------|
-| ❌ 每种设备装一个上位机软件 | ✅ 打开网页即可 |
-| ❌ 仅限 Windows | ✅ 跨平台（Chrome / Edge / 全平台） |
-| ❌ 一种协议一个工具 | ✅ 统一：串口、WebSocket、MQTT |
-| ❌ 远端调试困难 | ✅ 分享链接立即用 |
-| ❌ 自定协议需要写代码 | ✅ 自定义模板 2 分钟搞定 |
-
----
-
-## ✨ 功能亮点
-
-### 🚀 零安装 · 开箱即用
-部署到 GitHub Pages 等任何静态托管，打开 URL 即可使用。**纯静态**，无后端、无数据库。利用浏览器原生 **Web Serial**、原生 **WebSocket**、**MQTT over WebSocket** 能力。
-
-### 🔌 六大内置设备驱动
-| 设备 | 传输 | 说明 |
-|------|------|------|
-| **AOMaster** | 串口 115200 8N1 | 4-20mA / 0-10V 信号发生器，6 种波形 |
-| **Modbus RTU** | 串口 9600 8N1 | 读/写保持寄存器与输入寄存器 |
-| **HART** | 串口 1200 8O1 | 设备搜索、通用命令、PV/SV/TV/QV 多变量 |
-| **WebSocket 调试** | WebSocket | JSON/HEX/Modbus 消息调试与曲线 |
-| **MQTT 调试** | MQTT over WS | 发布/订阅、QoS、保留消息、消息统计 |
-| **自定义设备** | 任意 | 用户定义模板、正则解析、JSON 路径 |
-
-切换设备时，**通讯方式和参数自动切换**。
-
-### 📈 实时曲线 · 零依赖
-基于 **Canvas 2D** 自绘曲线引擎，不依赖任何第三方图表库。3000 点缓冲区，可配置视口，多曲线同屏。
-
-### 🧩 传输层与设备层正交设计
-```
-UI (app.js)
- ├── 设备层  →  构造命令、解析回包
- └── 传输层 →  连接、收发（串口 / WS / MQTT）
-```
-添加新设备只需写 2 个函数，添加新传输只需继承 `BaseTransport`。**互不污染**。
-
-### 📝 四色收发日志
-**TX（发送·蓝）· RX（接收·绿）· 系统（灰）· 错误（红）**，MQTT 日志带主题前缀。
-
-### 🎮 手动发送：ASCII · JSON · HEX
-多行输入、行尾选择、JSON 语法校验、HEX 灵活分隔符。
-
-### 🔄 自动轮询
-读模式设备支持自动轮询（50ms ~ 10s 可配），曲线实时刷新。
-
-### 🛠 自定义设备构建器
-无需写代码，2 分钟配出一个设备驱动：
-- 输出范围、单位、步长
-- 发送模板（占位符 `{value}`、`{value:2}`、`{unit}`）
-- 解析规则（正则、JSON 路径、HEX 偏移、Modbus 载荷）
-- 数值换算（`解析值 × 比例 + 偏移`）
-
-### 🧪 统一曲线配置
-- **JSON 路径** — 从 JSON 回包提取数值
-- **HEX 偏移** — 按偏移量解析字节
-- **Modbus 载荷** — 解码 Modbus RTU 帧
-- **帧界定** — 换行分隔 / 帧头帧尾 / CRC16 校验
-- **测试样例** — 配置后立即验证解析效果
-
----
-
-## 🖥️ 快速开始
-
-### 开发模式（无需构建）
+开发模式不用构建，起一个静态服务即可：
 
 ```powershell
 python -m http.server 4173
 ```
 
-浏览器打开 `http://localhost:4173`，推荐 Chrome 或 Edge。
+用 Chrome / Edge 打开 `http://localhost:4173`。
 
-### 生产构建
+要发布的话：
 
 ```powershell
-npm ci
+npm install
 npm run build
 npm run preview
 ```
 
-构建产物在 `_site/`，首屏仅 2~3 个请求。
+构建脚本是 `scripts/build.mjs`（基于 esbuild），产物在 `_site/`。
 
-### 浏览器兼容
+## 浏览器要求
 
-| 功能 | 要求 | 支持浏览器 |
-|------|------|-----------|
-| **串口** | ✅ | Chrome 89+ / Edge 89+（HTTPS 或 localhost） |
-| **WebSocket** | ✅ | 所有现代浏览器 |
-| **MQTT over WS** | ✅ | 所有现代浏览器 |
+| 功能 | 浏览器 |
+|------|--------|
+| 串口（Web Serial） | Chrome / Edge 89+，需要 HTTPS 或 localhost |
+| WebSocket | 现代浏览器都行 |
+| MQTT over WebSocket | 现代浏览器都行 |
 
----
+Firefox 和 Safari 没有 Web Serial，串口设备用不了，其它功能正常。
 
-## 📄 许可证
+## 项目结构
 
-[Apache License 2.0](./LICENSE.txt)
+英文版的 `Architecture` 表已经列得很清楚了，这里不重复。简单说就是：设备层和传输层分开，加新设备 = 写一个驱动 + 注册 + 加一个页面，详见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
 
----
+## AOMaster 寄存器表
 
-## 🌟 Star 历史
+| 地址 | 读写 | 含义 |
+|------|------|------|
+| 0x0000 | R/W | 信号类型（电流 / 电压） |
+| 0x0001 | R/W | 波形：0=恒定 1=阶跃 2=斜坡 3=方波 4=三角 5=正弦 |
+| 0x0002 | R/W | 设定值 / 低值 |
+| 0x0003 | R/W | 高值 / 阶跃保持时间 |
+| 0x0004 | R/W | 周期（ms）/ 循环次数 |
+| 0x0005 | R/W | 占空比 × 10 |
+| 0x0006 | R | 实际输出（回读） |
+| 0x0007+ | R/W | 步进序列值 |
 
-如果 modusignal 帮你节省了设备调试时间，不妨点个 ⭐，帮助更多人发现它！
+默认轮询周期 50ms，步进模式先写头部再写序列值。
+
+## 自定义设备
+
+不想写 JS 也能配一个驱动出来：
+
+- 输出范围、单位、步长
+- 发送模板，支持 `{value}`、`{value:2}`、`{unit}` 占位符
+- 解析规则：正则、JSON 路径、HEX 偏移、Modbus 载荷
+- 数值换算：`解析值 × 比例 + 偏移`
+
+## 项目状态
+
+仍在持续迭代。新设备和解析能力会陆续加进来，欢迎在 [issues](https://github.com/txp666/modusignal/issues) 里讨论你想要的功能。需要新设备但不方便自己写驱动的，[提一个 issue](https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82) 附上协议文档、报文样例和默认连接参数即可。
+
+## 贡献
+
+欢迎 PR 增加设备或修复驱动，提交前请看 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
+
+## 许可证
+
+[Apache License 2.0](./LICENSE.txt)。
+
+如果 modusignal 帮你省下了一个下午跟厂家上位机较劲的时间，点个 star 能让更多人看到它。
 
 ---
 
 <p align="center">
-  <i>Made by <a href="https://space.bilibili.com/509795217">飞起小鹏</a> · Powered by Web Serial · WebSocket · MQTT</i>
+  <sub>by <a href="https://space.bilibili.com/509795217">飞起小鹏</a> · <a href="https://modusignal.cn/">modusignal.cn</a></sub>
 </p>
