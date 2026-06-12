@@ -104,6 +104,33 @@ npm run preview
 
 The build script is `scripts/build.mjs` (esbuild). Output goes to `_site/`.
 
+## Offline package
+
+Use this when you want a self-contained copy on a laptop or a plant PC without cloning the repo.
+
+**Download**
+
+- Push to `main`: open [Actions → Offline package](https://github.com/txp666/modusignal/actions/workflows/offline-package.yml), pick the latest run, download the artifact `modusignal-offline-<version>.zip`.
+- Tagged release (`v*`): download `modusignal-offline-<tag>.zip` from [Releases](https://github.com/txp666/modusignal/releases).
+
+**Run locally**
+
+```powershell
+# unzip, then in the extracted folder:
+python -m http.server 4173
+```
+
+Open `http://localhost:4173` in Chrome or Edge. Web Serial needs `localhost` or HTTPS.
+
+**Build the zip yourself**
+
+```powershell
+npm install
+npm run build:offline
+```
+
+Output: `_release/modusignal-offline-<version>.zip` (or `.tar.gz` if `zip` is not installed).
+
 ## Browser support
 
 | Feature | Browsers |
@@ -230,6 +257,33 @@ npm run preview
 ```
 
 构建脚本是 `scripts/build.mjs`（基于 esbuild），产物在 `_site/`。
+
+## 离线使用
+
+适合在笔记本、工控机或现场环境拷贝一份，无需联网拉代码。
+
+**获取离线包**
+
+- 每次推送到 `main`：打开 [Actions → Offline package](https://github.com/txp666/modusignal/actions/workflows/offline-package.yml)，在最新一次运行里下载 Artifact `modusignal-offline-<版本>.zip`。
+- 打 `v*` 标签发布：在 [Releases](https://github.com/txp666/modusignal/releases) 下载 `modusignal-offline-<标签>.zip`。
+
+**本地运行**
+
+```powershell
+# 解压后，在解压目录执行：
+python -m http.server 4173
+```
+
+用 Chrome / Edge 打开 `http://localhost:4173`。串口功能需在 `localhost` 或 HTTPS 下使用。
+
+**自己打包**
+
+```powershell
+npm install
+npm run build:offline
+```
+
+产物在 `_release/modusignal-offline-<版本>.zip`（系统无 `zip` 命令时为 `.tar.gz`）。解压目录内的 `OFFLINE.txt` 有简要说明。
 
 ## 浏览器要求
 

@@ -1,0 +1,67 @@
+name: Offline package
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - v*
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: offline-package-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Resolve asset version
+        id: version
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "value=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          else
+            echo "value=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build static site
+        run: npm run build
+        env:
+          ASSET_VERSION: ${{ steps.version.outputs.value }}
+
+      - name: Package offline artifact
+        run: npm run package
+        env:
+          ASSET_VERSION: ${{ steps.version.outputs.value }}
+
+      - name: Upload offline package
+        uses: actions/upload-artifact@v4
+        with:
+          name: modusignal-offline-${{ steps.version.outputs.value }}
+          path: _release/*
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish release asset
+        if: github.ref_type == 'tag'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: _release/*
+          generate_release_notes: true

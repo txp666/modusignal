@@ -5,6 +5,7 @@ node_modules/
 dist/
 build/
 _site/
+_release/
 
 # Local environment
 .env
