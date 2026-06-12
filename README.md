@@ -23,27 +23,29 @@
   <a href="https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82">Request a device</a>
 </p>
 
+<p align="center">
+  <img src="./images/show.gif" alt="modusignal demo" width="880" />
+</p>
+
 ---
 
 <table>
   <tr>
-    <td width="50%" align="center">
-      <img src="./images/AOMaster.png" alt="AOMaster" /><br/>
-      <sub><b>AOMaster</b> · 4-20 mA / 0-10 V signal source, 6 waveforms</sub>
+    <td width="25%" align="center">
+      <img src="./images/AOMaster.png" alt="AOMaster" width="210" /><br/>
+      <sub><b>AOMaster</b><br/>4-20 mA / 0-10 V<br/>6 waveforms</sub>
     </td>
-    <td width="50%" align="center">
-      <img src="./images/hart.png" alt="HART" /><br/>
-      <sub><b>HART</b> · vendor-agnostic field debug, PV/SV/TV/QV</sub>
+    <td width="25%" align="center">
+      <img src="./images/hart.png" alt="HART" width="210" /><br/>
+      <sub><b>HART</b><br/>vendor-agnostic<br/>PV / SV / TV / QV</sub>
     </td>
-  </tr>
-  <tr>
-    <td width="50%" align="center">
-      <img src="./images/websocket.png" alt="WebSocket" /><br/>
-      <sub><b>WebSocket</b> · JSON / HEX / Modbus message debug + live chart</sub>
+    <td width="25%" align="center">
+      <img src="./images/websocket.png" alt="WebSocket" width="210" /><br/>
+      <sub><b>WebSocket</b><br/>JSON / HEX / Modbus<br/>+ live chart</sub>
     </td>
-    <td width="50%" align="center">
-      <img src="./images/mqtt.png" alt="MQTT" /><br/>
-      <sub><b>MQTT</b> · pub / sub, QoS, retain, real-time curve</sub>
+    <td width="25%" align="center">
+      <img src="./images/mqtt.png" alt="MQTT" width="210" /><br/>
+      <sub><b>MQTT</b><br/>pub / sub · QoS<br/>retain · stats</sub>
     </td>
   </tr>
 </table>
