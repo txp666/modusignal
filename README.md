@@ -115,8 +115,11 @@ Use this when you want a self-contained copy on a laptop or a plant PC without c
 
 **Run locally**
 
+Double-click `start-modusignal.bat` (Windows) or run `start-modusignal.sh` (macOS/Linux). It starts a local server and opens the browser.
+
+Or manually:
+
 ```powershell
-# unzip, then in the extracted folder:
 python -m http.server 4173
 ```
 
@@ -269,8 +272,11 @@ npm run preview
 
 **本地运行**
 
+解压后双击 `start-modusignal.bat`（Windows）或运行 `start-modusignal.sh`（macOS/Linux），会自动起服务并打开浏览器。
+
+也可手动执行：
+
 ```powershell
-# 解压后，在解压目录执行：
 python -m http.server 4173
 ```
 

@@ -1,11 +1,12 @@
 import { execSync } from "node:child_process";
-import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const siteRoot = join(projectRoot, "_site");
 const releaseDir = join(projectRoot, "_release");
+const offlineScriptsDir = join(projectRoot, "offline");
 
 function resolveVersion() {
   if (process.env.ASSET_VERSION?.trim()) {
@@ -33,8 +34,8 @@ function writeOfflineGuide() {
       "modusignal offline package",
       "",
       "1. Unzip to any folder.",
-      "2. Start a static server in this folder, for example:",
-      "   python -m http.server 4173",
+      "2. Double-click start-modusignal.bat (Windows) or run start-modusignal.sh.",
+      "   Or manually: python -m http.server 4173",
       "3. Open http://localhost:4173 in Chrome or Edge.",
       "",
       "Web Serial requires Chrome/Edge and localhost or HTTPS.",
@@ -42,8 +43,8 @@ function writeOfflineGuide() {
       "modusignal 离线包",
       "",
       "1. 解压到任意目录。",
-      "2. 在本目录启动静态服务，例如：",
-      "   python -m http.server 4173",
+      "2. 双击 start-modusignal.bat（Windows）或运行 start-modusignal.sh。",
+      "   也可手动执行：python -m http.server 4173",
       "3. 用 Chrome / Edge 打开 http://localhost:4173。",
       "",
       "串口功能需要 Chrome/Edge，且需在 localhost 或 HTTPS 下使用。",
@@ -53,6 +54,29 @@ function writeOfflineGuide() {
   );
 
   return guidePath;
+}
+
+function copyOfflineLaunchers() {
+  if (!existsSync(offlineScriptsDir)) {
+    return [];
+  }
+
+  const copiedPaths = [];
+
+  for (const name of readdirSync(offlineScriptsDir)) {
+    const sourcePath = join(offlineScriptsDir, name);
+    const targetPath = join(siteRoot, name);
+    cpSync(sourcePath, targetPath);
+    copiedPaths.push(targetPath);
+  }
+
+  return copiedPaths;
+}
+
+function cleanupOfflineExtras(paths) {
+  for (const path of paths) {
+    rmSync(path, { force: true });
+  }
 }
 
 function createZipArchive(archivePath) {
@@ -76,6 +100,8 @@ function main() {
   mkdirSync(releaseDir, { recursive: true });
 
   const guidePath = writeOfflineGuide();
+  const launcherPaths = copyOfflineLaunchers();
+  const cleanupPaths = [guidePath, ...launcherPaths];
 
   let archivePath = join(releaseDir, `${baseName}.zip`);
 
@@ -87,7 +113,7 @@ function main() {
     createTarArchive(archivePath);
   }
 
-  rmSync(guidePath, { force: true });
+  cleanupOfflineExtras(cleanupPaths);
 
   console.log(`Offline package created at ${archivePath}`);
 }
