@@ -767,6 +767,37 @@ button:focus-visible {
   color: var(--text);
 }
 
+.hart-command-helper {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.hart-command-helper .hart-frame-meta {
+  margin-bottom: 0;
+}
+
+.hart-helper-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.hart-helper-actions button {
+  min-height: 2.35rem;
+  border-radius: 0.45rem;
+  padding: 0 0.85rem;
+  font-weight: 800;
+}
+
+.hart-helper-actions button:not(.ghost-button) {
+  background: var(--accent);
+  color: #fff;
+}
+
+.hart-helper-actions button:not(.ghost-button):hover {
+  background: var(--accent-strong);
+}
+
 .hart-chart-series {
   display: flex;
   flex-wrap: wrap;

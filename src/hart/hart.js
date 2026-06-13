@@ -27,6 +27,65 @@ const HART_UNIT_CODES = {
   250: "",
 };
 
+const HART_DEVICE_STATUS_BITS = [
+  { mask: 0x80, key: "hart.status.deviceMalfunction" },
+  { mask: 0x40, key: "hart.status.configChanged" },
+  { mask: 0x20, key: "hart.status.coldStart" },
+  { mask: 0x10, key: "hart.status.moreStatus" },
+  { mask: 0x08, key: "hart.status.loopFixed" },
+  { mask: 0x04, key: "hart.status.loopSaturated" },
+  { mask: 0x02, key: "hart.status.nonPvOutOfLimits" },
+  { mask: 0x01, key: "hart.status.pvOutOfLimits" },
+];
+
+const HART_COMMUNICATION_STATUS_BITS = [
+  { mask: 0x40, key: "hart.commStatus.verticalParity" },
+  { mask: 0x20, key: "hart.commStatus.overrun" },
+  { mask: 0x10, key: "hart.commStatus.framing" },
+  { mask: 0x08, key: "hart.commStatus.checksum" },
+  { mask: 0x04, key: "hart.commStatus.communicationFailure" },
+  { mask: 0x02, key: "hart.commStatus.bufferOverflow" },
+];
+
+const HART_RESPONSE_CODE_KEYS = {
+  0: "hart.response.success",
+  5: "hart.response.tooFewBytes",
+  6: "hart.response.deviceSpecificError",
+  7: "hart.response.writeProtect",
+  8: "hart.response.warning",
+  16: "hart.response.accessRestricted",
+  32: "hart.response.busy",
+};
+
+const HART_COMMAND_RESPONSE_CODE_KEYS = {
+  6: {
+    2: "hart.response.invalidPollAddress",
+  },
+  9: {
+    2: "hart.response.invalidSelection",
+  },
+  18: {
+    9: "hart.response.invalidDate",
+  },
+  21: {
+    16: "hart.response.tagMismatch",
+  },
+  38: {
+    8: "hart.response.configCounterMismatch",
+  },
+  48: {
+    8: "hart.response.updateInProgress",
+    14: "hart.response.statusBytesMismatch",
+  },
+};
+
+const HART_DYNAMIC_VARIABLE_CODE_MAP = {
+  0: "pv",
+  1: "sv",
+  2: "tv",
+  3: "qv",
+};
+
 export function getHartUnitString(unitCode) {
   return HART_UNIT_CODES[unitCode] ?? "";
 }
@@ -57,10 +116,12 @@ export function buildHartFrame({
   if (command === 0) {
     parts.push(TX_ADDR_SHORT, shortAddress | masterBit);
   } else if (device?.discovered) {
+    const addressManufacturer = device.addressManufacturer ?? device.manufacturer;
+    const addressDeviceType = device.addressDeviceType ?? device.deviceType;
     parts.push(
       TX_ADDR_LONG,
-      (device.manufacturer & 0xff) | masterBit,
-      device.deviceType & 0xff,
+      (addressManufacturer & 0xff) | masterBit,
+      addressDeviceType & 0xff,
       (device.deviceId >> 16) & 0xff,
       (device.deviceId >> 8) & 0xff,
       device.deviceId & 0xff,
@@ -235,16 +296,25 @@ export function parseCommand0Device(parsedFrame) {
 
   return {
     discovered: true,
-    manufacturer: data[1],
+    addressManufacturer: data[1],
+    addressDeviceType: data[2],
+    manufacturer: data.length >= 19 ? (data[17] << 8) | data[18] : data[1],
     deviceType: data[2],
+    expandedDeviceType: (data[1] << 8) | data[2],
     minPreambleCount: data[3],
     hartRevision: data[4],
-    profile: data[5],
+    deviceRevision: data[5],
+    profile: data.length >= 22 ? data[21] : data[5],
     softwareVersion: data[6],
     hardwareVersion: data[7] >> 3,
     physicalSignalType: data[7] & 0x07,
     deviceFlag: data[8],
     deviceId: (data[9] << 16) | (data[10] << 8) | data[11],
+    responsePreambleCount: data.length >= 13 ? data[12] : null,
+    lastDeviceVariableCode: data.length >= 14 ? data[13] : null,
+    configChangeCounter: data.length >= 16 ? (data[14] << 8) | data[15] : null,
+    extendedDeviceStatus: data.length >= 17 ? data[16] : null,
+    privateLabelDistributor: data.length >= 21 ? (data[19] << 8) | data[20] : null,
   };
 }
 
@@ -253,10 +323,13 @@ export function formatHartDeviceSummary(device) {
     return i18n("hart.deviceNotFound");
   }
 
-  return `Mfr 0x${device.manufacturer.toString(16).padStart(2, "0").toUpperCase()} · Type 0x${device.deviceType
-    .toString(16)
-    .padStart(2, "0")
-    .toUpperCase()} · ID 0x${device.deviceId.toString(16).padStart(6, "0").toUpperCase()} · HART${device.hartRevision}`;
+  const manufacturerWidth = device.manufacturer > 0xff ? 4 : 2;
+  const deviceType = device.expandedDeviceType ?? device.deviceType;
+  const deviceTypeWidth = deviceType > 0xff ? 4 : 2;
+  return `Mfr 0x${formatHexNumber(device.manufacturer, manufacturerWidth)} · Type 0x${formatHexNumber(
+    deviceType,
+    deviceTypeWidth,
+  )} · ID 0x${formatHexNumber(device.deviceId, 6)} · HART${device.hartRevision}`;
 }
 
 export function parseHartTelemetryValue(parsedFrame, preferredCommand) {
@@ -327,6 +400,7 @@ export const HART_COMMAND_LABELS = {
   16: "hart.cmd.16",
   17: "hart.cmd.17",
   18: "hart.cmd.18",
+  19: "hart.cmd.19",
   20: "hart.cmd.20",
   21: "hart.cmd.21",
   22: "hart.cmd.22",
@@ -359,21 +433,130 @@ export function decodeHartPackedAscii(bytes, offset = 0, length = bytes?.length 
   }
 
   let text = "";
-  for (let index = 0; index < length; index += 1) {
-    const code = bytes[offset + index];
-    if (code === 0 || code === 0xfd) {
-      break;
+  const end = Math.min(bytes.length, offset + length);
+  for (let index = offset; index + 2 < end; index += 3) {
+    const packed = (bytes[index] << 16) | (bytes[index + 1] << 8) | bytes[index + 2];
+    const values = [(packed >> 18) & 0x3f, (packed >> 12) & 0x3f, (packed >> 6) & 0x3f, packed & 0x3f];
+    for (const value of values) {
+      const charCode = value & 0x20 ? value : value | 0x40;
+      text += String.fromCharCode(charCode);
     }
-
-    const char = code & 0x7f;
-    if (char < 0x20) {
-      continue;
-    }
-
-    text += String.fromCharCode(char);
   }
 
-  return text.trim();
+  return text.trimEnd();
+}
+
+export function encodeHartPackedAscii(text = "", charCount = 4) {
+  const safeCharCount = Math.max(4, Math.ceil(charCount / 4) * 4);
+  const normalized = String(text).toUpperCase().padEnd(safeCharCount, " ").slice(0, safeCharCount);
+  const bytes = new Uint8Array((safeCharCount / 4) * 3);
+
+  for (let charIndex = 0, byteIndex = 0; charIndex < safeCharCount; charIndex += 4, byteIndex += 3) {
+    const values = [0, 1, 2, 3].map((offsetIndex) => normalized.charCodeAt(charIndex + offsetIndex) & 0x3f);
+    const packed = (values[0] << 18) | (values[1] << 12) | (values[2] << 6) | values[3];
+    bytes[byteIndex] = (packed >> 16) & 0xff;
+    bytes[byteIndex + 1] = (packed >> 8) & 0xff;
+    bytes[byteIndex + 2] = packed & 0xff;
+  }
+
+  return bytes;
+}
+
+export function decodeHartLatin1(bytes, offset = 0, length = bytes?.length ?? 0) {
+  if (!bytes || length <= 0) {
+    return "";
+  }
+
+  let text = "";
+  const end = Math.min(bytes.length, offset + length);
+  for (let index = offset; index < end; index += 1) {
+    const byte = bytes[index];
+    if (byte === 0) {
+      break;
+    }
+    text += String.fromCharCode(byte);
+  }
+  return text.trimEnd();
+}
+
+export function encodeHartLatin1(text = "", byteLength = 1) {
+  const bytes = new Uint8Array(Math.max(0, byteLength));
+  bytes.fill(0x20);
+  const normalized = String(text).slice(0, byteLength);
+  for (let index = 0; index < normalized.length; index += 1) {
+    bytes[index] = normalized.charCodeAt(index) & 0xff;
+  }
+  return bytes;
+}
+
+export function formatHartDateBytes(data, offset = 0) {
+  if (!data || data.length < offset + 3) {
+    return "";
+  }
+
+  const day = data[offset];
+  const month = data[offset + 1];
+  const year = 1900 + data[offset + 2];
+  if (day === 0 || month === 0) {
+    return "";
+  }
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+export function encodeHartDateBytes(dateValue = "") {
+  const date = dateValue ? new Date(`${dateValue}T00:00:00`) : new Date();
+  const year = Number.isFinite(date.getFullYear()) ? date.getFullYear() : new Date().getFullYear();
+  return Uint8Array.from([
+    date.getDate(),
+    date.getMonth() + 1,
+    clamp(Math.trunc(year - 1900), 0, 255),
+  ]);
+}
+
+export function decodeHartDeviceStatus(status) {
+  return HART_DEVICE_STATUS_BITS.filter((entry) => (status & entry.mask) !== 0).map((entry) => i18n(entry.key));
+}
+
+export function decodeHartCommunicationStatus(responseCode) {
+  if ((responseCode & 0x80) === 0) {
+    return [];
+  }
+  return HART_COMMUNICATION_STATUS_BITS.filter((entry) => (responseCode & entry.mask) !== 0).map((entry) =>
+    i18n(entry.key),
+  );
+}
+
+export function describeHartResponseCode(command, responseCode) {
+  if ((responseCode & 0x80) !== 0) {
+    const status = decodeHartCommunicationStatus(responseCode);
+    return status.length ? status.join(" / ") : i18n("hart.response.communicationError");
+  }
+
+  const key = HART_COMMAND_RESPONSE_CODE_KEYS[command]?.[responseCode] ?? HART_RESPONSE_CODE_KEYS[responseCode];
+  return key ? i18n(key) : i18n("hart.response.undefined");
+}
+
+export function formatHartFrameStatusLines(parsedFrame) {
+  if (!parsedFrame) {
+    return [];
+  }
+
+  const lines = [];
+  if (parsedFrame.responseCode !== 0) {
+    lines.push(
+      `${i18n("hart.responseCode")} 0x${formatHexNumber(parsedFrame.responseCode, 2)} ${describeHartResponseCode(
+        parsedFrame.command,
+        parsedFrame.responseCode,
+      )}`,
+    );
+  }
+
+  const deviceStatus = decodeHartDeviceStatus(parsedFrame.status);
+  if (deviceStatus.length) {
+    lines.push(`${i18n("hart.deviceStatus")} 0x${formatHexNumber(parsedFrame.status, 2)} ${deviceStatus.join(" / ")}`);
+  }
+
+  return lines;
 }
 
 function formatHexBytes(bytes) {
@@ -381,7 +564,11 @@ function formatHexBytes(bytes) {
     return "";
   }
 
-  return [...bytes].map((byte) => byte.toString(16).padStart(2, "0").toUpperCase()).join(" ");
+  return [...bytes].map((byte) => formatHexNumber(byte, 2)).join(" ");
+}
+
+function formatHexNumber(value, width = 2) {
+  return Math.trunc(Number(value) || 0).toString(16).padStart(width, "0").toUpperCase();
 }
 
 function formatHartFloat(value, unit = "") {
@@ -447,6 +634,101 @@ export function parseHartCommand3Variables(data) {
   };
 }
 
+export function parseHartCommand9Variables(data) {
+  if (!data || data.length < 13) {
+    return null;
+  }
+
+  const slotCount = clamp(Math.floor((data.length - 5) / 8), 1, 8);
+  const slots = [];
+  const variables = {};
+
+  for (let slot = 0; slot < slotCount; slot += 1) {
+    const offset = 1 + slot * 8;
+    if (data.length < offset + 8) {
+      break;
+    }
+
+    const code = data[offset];
+    const classification = data[offset + 1];
+    const unit = getHartUnitString(data[offset + 2]);
+    const value = byteArrayToFloat(data, offset + 3);
+    const status = data[offset + 7];
+    const entry = {
+      slot,
+      code,
+      classification,
+      unit,
+      value,
+      status,
+    };
+    slots.push(entry);
+
+    const dynamicKey = HART_DYNAMIC_VARIABLE_CODE_MAP[code];
+    if (dynamicKey && Number.isFinite(value)) {
+      variables[dynamicKey] = {
+        value,
+        unit,
+        code,
+        classification,
+        status,
+      };
+    }
+  }
+
+  const timestampOffset = 1 + slotCount * 8;
+  const timestamp =
+    data.length >= timestampOffset + 4
+      ? ((data[timestampOffset] << 24) | (data[timestampOffset + 1] << 16) | (data[timestampOffset + 2] << 8) | data[timestampOffset + 3]) >>> 0
+      : null;
+
+  return {
+    extendedDeviceStatus: data[0],
+    slots,
+    variables,
+    timestamp,
+  };
+}
+
+export function parseHartCommand33Variables(data) {
+  if (!data || data.length < 6) {
+    return null;
+  }
+
+  const slotCount = clamp(Math.floor(data.length / 6), 1, 4);
+  const slots = [];
+  const variables = {};
+
+  for (let slot = 0; slot < slotCount; slot += 1) {
+    const offset = slot * 6;
+    if (data.length < offset + 6) {
+      break;
+    }
+
+    const code = data[offset];
+    const unit = getHartUnitString(data[offset + 1]);
+    const value = byteArrayToFloat(data, offset + 2);
+    const entry = {
+      slot,
+      code,
+      unit,
+      value,
+    };
+    slots.push(entry);
+
+    const dynamicKey = HART_DYNAMIC_VARIABLE_CODE_MAP[code];
+    if (dynamicKey && Number.isFinite(value)) {
+      variables[dynamicKey] = {
+        value,
+        unit,
+        code,
+      };
+    }
+  }
+
+  return { slots, variables };
+}
+
 export function parseHartUniversalResponse(parsedFrame) {
   if (!parsedFrame) {
     return null;
@@ -472,11 +754,20 @@ export function parseHartUniversalResponse(parsedFrame) {
       commandLabel: getHartCommandLabel(command),
       summary: `${formatHartDeviceSummary(device)}${statusSuffix}`,
       lines: [
-        `${i18n("hart.manufacturer")} 0x${device.manufacturer.toString(16).toUpperCase().padStart(2, "0")}`,
-        `${i18n("hart.deviceType")} 0x${device.deviceType.toString(16).toUpperCase().padStart(2, "0")}`,
-        `${i18n("hart.deviceId")} 0x${device.deviceId.toString(16).padStart(6, "0").toUpperCase()}`,
+        `${i18n("hart.manufacturer")} 0x${formatHexNumber(device.manufacturer, device.manufacturer > 0xff ? 4 : 2)}`,
+        `${i18n("hart.deviceType")} 0x${formatHexNumber(device.expandedDeviceType ?? device.deviceType, (device.expandedDeviceType ?? device.deviceType) > 0xff ? 4 : 2)}`,
+        `${i18n("hart.deviceId")} 0x${formatHexNumber(device.deviceId, 6)}`,
         `${i18n("hart.hartRevision")} ${device.hartRevision} · ${i18n("hart.preambleLen")} ${device.minPreambleCount}`,
-      ],
+        Number.isFinite(device.configChangeCounter)
+          ? `${i18n("hart.configChangeCounter")} ${device.configChangeCounter}`
+          : null,
+        Number.isFinite(device.extendedDeviceStatus)
+          ? `${i18n("hart.extendedStatus")} 0x${formatHexNumber(device.extendedDeviceStatus, 2)}`
+          : null,
+        Number.isFinite(device.lastDeviceVariableCode)
+          ? `${i18n("hart.lastDeviceVariable")} ${device.lastDeviceVariableCode}`
+          : null,
+      ].filter(Boolean),
       device,
     };
   }
@@ -555,8 +846,8 @@ export function parseHartUniversalResponse(parsedFrame) {
     return {
       command,
       commandLabel: getHartCommandLabel(command),
-      summary: `${i18n("hart.pollAddress")} ${pollingAddress} · ${i18n("hart.loopCurrent")} ${i18n("hart.mode.deviceId", "模式")} ${loopMode}${statusSuffix}`,
-      lines: [`${i18n("hart.pollAddress")} ${pollingAddress}`, `${i18n("hart.loopCurrent")} ${i18n("hart.mode.deviceId", "模式")} ${loopMode}`],
+      summary: `${i18n("hart.pollAddress")} ${pollingAddress} · ${i18n("hart.loopMode")} 0x${formatHexNumber(loopMode, 2)}${statusSuffix}`,
+      lines: [`${i18n("hart.pollAddress")} ${pollingAddress}`, `${i18n("hart.loopMode")} 0x${formatHexNumber(loopMode, 2)}`],
     };
   }
 
@@ -564,8 +855,8 @@ export function parseHartUniversalResponse(parsedFrame) {
     return {
       command,
       commandLabel: getHartCommandLabel(command),
-      summary: `${i18n("hart.loopCurrent")} ${i18n("hart.mode.deviceId", "模式")} ${data[0]} · ${i18n("hart.preambleLen", "请求前导码")} ${data[1]}${statusSuffix}`,
-      lines: [`${i18n("hart.loopCurrent")} ${i18n("hart.mode.deviceId", "模式")} ${data[0]}`, `${i18n("hart.preambleLen", "请求前导码")} ${data[1]}`],
+      summary: `${i18n("hart.pollAddress")} ${data[0] & 0x0f} · ${i18n("hart.loopMode")} 0x${formatHexNumber(data[1], 2)}${statusSuffix}`,
+      lines: [`${i18n("hart.pollAddress")} ${data[0] & 0x0f}`, `${i18n("hart.loopMode")} 0x${formatHexNumber(data[1], 2)}`],
     };
   }
 
@@ -580,7 +871,7 @@ export function parseHartUniversalResponse(parsedFrame) {
     };
   }
 
-  if (command === 12 && data.length > 0) {
+  if ((command === 12 || command === 17) && data.length > 0) {
     const message = decodeHartPackedAscii(data, 0, Math.min(24, data.length));
     const emptyMsg = i18n("hart.emptyMsg");
     return {
@@ -591,13 +882,10 @@ export function parseHartUniversalResponse(parsedFrame) {
     };
   }
 
-  if ((command === 11 || command === 13) && data.length >= 21) {
+  if ((command === 11 || command === 13 || command === 18) && data.length >= 21) {
     const tag = decodeHartPackedAscii(data, 0, 6);
     const descriptor = decodeHartPackedAscii(data, 6, 12);
-    const date =
-      data.length >= 21
-        ? `${2000 + (data[20] & 0x7f)}/${data[19]}/${data[18]}`
-        : "";
+    const date = formatHartDateBytes(data, 18);
     const lines = [`${i18n("hart.tag")} ${tag || "--"}`, `${i18n("hart.descriptor")} ${descriptor || "--"}`, date ? `${i18n("hart.date")} ${date}` : null].filter(Boolean);
     return {
       command,
@@ -653,8 +941,8 @@ export function parseHartUniversalResponse(parsedFrame) {
     };
   }
 
-  if (command === 20 && data.length > 0) {
-    const longTag = decodeHartPackedAscii(data, 0, Math.min(32, data.length));
+  if ((command === 20 || command === 22) && data.length > 0) {
+    const longTag = decodeHartLatin1(data, 0, Math.min(32, data.length));
     const emptyLongTag = i18n("hart.emptyLongTag");
     return {
       command,
@@ -664,12 +952,81 @@ export function parseHartUniversalResponse(parsedFrame) {
     };
   }
 
+  if (command === 9) {
+    const variables = parseHartCommand9Variables(data);
+    if (!variables) {
+      return null;
+    }
+
+    const lines = variables.slots.map((slot) => {
+      const dynamicLabel = HART_DYNAMIC_VARIABLE_CODE_MAP[slot.code]?.toUpperCase() ?? `${i18n("hart.deviceVariable")} ${slot.code}`;
+      const statusText = slot.status != null ? ` · ${i18n("hart.variableStatus")} 0x${formatHexNumber(slot.status, 2)}` : "";
+      return `${dynamicLabel} ${formatHartFloat(slot.value, slot.unit)} · ${i18n("hart.classification")} ${slot.classification}${statusText}`;
+    });
+    lines.unshift(`${i18n("hart.extendedStatus")} 0x${formatHexNumber(variables.extendedDeviceStatus, 2)}`);
+    if (Number.isFinite(variables.timestamp)) {
+      lines.push(`${i18n("hart.timestamp")} ${(variables.timestamp / 32000).toFixed(3)} s`);
+    }
+
+    return {
+      command,
+      commandLabel: getHartCommandLabel(command),
+      summary: `${lines.slice(0, 4).join(" · ")}${statusSuffix}`,
+      lines,
+      variables: variables.variables,
+      fields: variables,
+    };
+  }
+
+  if (command === 33) {
+    const variables = parseHartCommand33Variables(data);
+    if (!variables) {
+      return null;
+    }
+
+    const lines = variables.slots.map((slot) => {
+      const dynamicLabel = HART_DYNAMIC_VARIABLE_CODE_MAP[slot.code]?.toUpperCase() ?? `${i18n("hart.deviceVariable")} ${slot.code}`;
+      return `${dynamicLabel} ${formatHartFloat(slot.value, slot.unit)}`;
+    });
+
+    return {
+      command,
+      commandLabel: getHartCommandLabel(command),
+      summary: `${lines.join(" · ")}${statusSuffix}`,
+      lines,
+      variables: variables.variables,
+      fields: variables,
+    };
+  }
+
+  if (command === 38 && data.length >= 2) {
+    const counter = (data[0] << 8) | data[1];
+    return {
+      command,
+      commandLabel: getHartCommandLabel(command),
+      summary: `${i18n("hart.configChangeCounter")} ${counter}${statusSuffix}`,
+      lines: [`${i18n("hart.configChangeCounter")} ${counter}`],
+      fields: { configChangeCounter: counter },
+    };
+  }
+
   if (command === 48 && data.length > 0) {
+    const lines = [
+      `${i18n("hart.additionalStatus")} ${formatHexBytes(data)}`,
+      data.length >= 7 ? `${i18n("hart.extendedStatus")} 0x${formatHexNumber(data[6], 2)}` : null,
+      data.length >= 8 ? `${i18n("hart.operatingMode")} 0x${formatHexNumber(data[7], 2)}` : null,
+      data.length >= 9 ? `${i18n("hart.standardizedStatus0")} 0x${formatHexNumber(data[8], 2)}` : null,
+      data.length >= 10 ? `${i18n("hart.standardizedStatus1")} 0x${formatHexNumber(data[9], 2)}` : null,
+      data.length >= 11 ? `${i18n("hart.analogChannelSaturated")} 0x${formatHexNumber(data[10], 2)}` : null,
+      data.length >= 12 ? `${i18n("hart.standardizedStatus2")} 0x${formatHexNumber(data[11], 2)}` : null,
+      data.length >= 13 ? `${i18n("hart.standardizedStatus3")} 0x${formatHexNumber(data[12], 2)}` : null,
+      data.length >= 14 ? `${i18n("hart.analogChannelFixed")} 0x${formatHexNumber(data[13], 2)}` : null,
+    ].filter(Boolean);
     return {
       command,
       commandLabel: getHartCommandLabel(command),
       summary: `${i18n("hart.additionalStatus")} ${formatHexBytes(data)}${statusSuffix}`,
-      lines: [`${i18n("hart.additionalStatus")} ${formatHexBytes(data)}`],
+      lines,
     };
   }
 
@@ -677,16 +1034,16 @@ export function parseHartUniversalResponse(parsedFrame) {
     return {
       command,
       commandLabel: getHartCommandLabel(command),
-      summary: `${i18n("har.cmd", "命令")} ${command} · ${i18n("hart.noData", "无数据")}${statusSuffix}`,
-      lines: [`${i18n("har.cmd", "命令")} ${command} · ${i18n("hart.noData", "无数据")}`],
+      summary: `${i18n("hart.command", "命令")} ${command} · ${i18n("hart.noData", "无数据")}${statusSuffix}`,
+      lines: [`${i18n("hart.command", "命令")} ${command} · ${i18n("hart.noData", "无数据")}`],
     };
   }
 
   return {
     command,
     commandLabel: getHartCommandLabel(command),
-    summary: `${i18n("har.cmd", "命令")} ${command} · ${byteCount} ${i18n("hart.bytes", "字节")} · ${formatHexBytes(data)}${statusSuffix}`,
-    lines: [`${i18n("har.cmd", "命令")} ${command} · ${byteCount} ${i18n("hart.bytes", "字节")}`, formatHexBytes(data)],
+    summary: `${i18n("hart.command", "命令")} ${command} · ${byteCount} ${i18n("hart.bytes", "字节")} · ${formatHexBytes(data)}${statusSuffix}`,
+    lines: [`${i18n("hart.command", "命令")} ${command} · ${byteCount} ${i18n("hart.bytes", "字节")}`, formatHexBytes(data)],
   };
 }
 

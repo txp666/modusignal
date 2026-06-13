@@ -52,7 +52,13 @@ import {
   resetHartDeviceState,
   resetHartRxBuffer,
 } from "./devices/hart-device.js";
-import { formatHartDeviceSummary } from "./hart/hart.js";
+import {
+  encodeHartDateBytes,
+  encodeHartLatin1,
+  encodeHartPackedAscii,
+  formatHartDeviceSummary,
+  getHartCommandLabel,
+} from "./hart/hart.js";
 import {
   buildMqttMessage,
   describeMqttSummary,
@@ -260,7 +266,16 @@ function cacheElements() {
     hartFrameChecksum: document.querySelector("#hartFrameChecksum"),
     hartDeviceInfo: document.querySelector("#hartDeviceInfo"),
     hartSearchDevice: document.querySelector("#hartSearchDevice"),
+    hartScanAddresses: document.querySelector("#hartScanAddresses"),
     hartCommandResponse: document.querySelector("#hartCommandResponse"),
+    hartDataTemplate: document.querySelector("#hartDataTemplate"),
+    hartTemplateText: document.querySelector("#hartTemplateText"),
+    hartTemplateDescriptor: document.querySelector("#hartTemplateDescriptor"),
+    hartTemplateDate: document.querySelector("#hartTemplateDate"),
+    hartTemplateLoopMode: document.querySelector("#hartTemplateLoopMode"),
+    hartApplyDataTemplate: document.querySelector("#hartApplyDataTemplate"),
+    hartClearCommandData: document.querySelector("#hartClearCommandData"),
+    hartTemplatePreview: document.querySelector("#hartTemplatePreview"),
     hartChartSeriesBlock: document.querySelector("#hartChartSeriesBlock"),
     hartChartSeriesInputs: [...document.querySelectorAll("[data-hart-series]")],
     saveHartConfig: document.querySelector("#saveHartConfig"),
@@ -407,6 +422,7 @@ let chartConfig = loadChartConfig();
 let session = null;
 let modbusPollTimer = null;
 let hartPollTimer = null;
+let hartAddressScanActive = false;
 let aomasterPollTimer = null;
 let websocketPollTimer = null;
 let mqttPollTimer = null;
@@ -417,6 +433,17 @@ let deviceLibrarySearchQuery = "";
 let transportOptions = {};
 const RX_LOG_IDLE_MS = 45;
 const CHART_CSV_FORMAT = "modusignal-chart-csv/v1";
+const HART_SCAN_ADDRESS_DELAY_MS = 650;
+const HART_COMMAND_DATA_TEMPLATES = [
+  { id: "cmd9-dynamic-status", command: 9, labelKey: "hart.template.cmd9" },
+  { id: "cmd33-dynamic", command: 33, labelKey: "hart.template.cmd33" },
+  { id: "cmd6-poll-address", command: 6, labelKey: "hart.template.cmd6" },
+  { id: "cmd17-message", command: 17, labelKey: "hart.template.cmd17" },
+  { id: "cmd18-tag", command: 18, labelKey: "hart.template.cmd18" },
+  { id: "cmd21-long-tag", command: 21, labelKey: "hart.template.cmd21" },
+  { id: "cmd22-long-tag", command: 22, labelKey: "hart.template.cmd22" },
+  { id: "cmd38-config-flag", command: 38, labelKey: "hart.template.cmd38" },
+];
 let rxLogFlushTimer = null;
 /** @type {Uint8Array | string | null} */
 let rxLogBuffer = null;
@@ -1783,6 +1810,29 @@ function bindEvents() {
   on(elements.hartSearchDevice, "click", () => {
     sendHartSearchCommand().catch((error) => appendLog("error", "HART", error.message));
   });
+  on(elements.hartScanAddresses, "click", () => {
+    scanHartAddresses().catch((error) => appendLog("error", "HART", error.message));
+  });
+  on(elements.hartApplyDataTemplate, "click", () => {
+    try {
+      applyHartDataTemplate();
+    } catch (error) {
+      appendLog("error", "HART", error.message);
+    }
+  });
+  on(elements.hartClearCommandData, "click", clearHartCommandData);
+  [
+    elements.hartDataTemplate,
+    elements.hartTemplateText,
+    elements.hartTemplateDescriptor,
+    elements.hartTemplateDate,
+    elements.hartTemplateLoopMode,
+  ]
+    .filter(Boolean)
+    .forEach((control) => {
+      control.addEventListener("input", updateHartCommandTemplateUi);
+      control.addEventListener("change", updateHartCommandTemplateUi);
+    });
 
   elements.hartChartSeriesInputs.forEach((input) => {
     input.addEventListener("change", handleHartChartSeriesChange);
@@ -1937,6 +1987,7 @@ function bindSessionEvents(target) {
     if (telemetry) {
       if (state.deviceId === HART_DEVICE_ID && telemetry.isDiscovery) {
         hartConfig = mergeHartDiscovery(hartConfig, telemetry);
+        populateHartConfigForm(hartConfig);
         updateHartDeviceInfo();
         appendLog("info", "HART", formatHartDeviceSummary(hartConfig.device));
         updateDeviceUi();
@@ -2800,7 +2851,11 @@ function updateSetpointUi() {
       sendDriverCommand.textContent = i18n("driver.sendCommand");
     }
     if (elements.hartSearchDevice) {
-      elements.hartSearchDevice.disabled = !session?.connected;
+      elements.hartSearchDevice.disabled = !session?.connected || hartAddressScanActive;
+    }
+    if (elements.hartScanAddresses) {
+      elements.hartScanAddresses.disabled = !session?.connected || hartAddressScanActive;
+      elements.hartScanAddresses.textContent = hartAddressScanActive ? i18n("hart.scanning") : i18n("hart.scanAddresses");
     }
     if (driverState) {
       driverState.textContent = normalizeHartConfig(hartConfig).device.discovered ? i18n("driver.hartIdentified") : i18n("driver.hartNotSearched");
@@ -4231,6 +4286,7 @@ async function sendHartPollCommand() {
 
 function updateHartDraftConfig() {
   hartConfig = readHartConfigForm();
+  updateHartCommandTemplateUi();
 
   if (state.deviceId === HART_DEVICE_ID) {
     const normalized = normalizeHartConfig(hartConfig);
@@ -4281,6 +4337,113 @@ function loadHartConfig() {
   }
 }
 
+function wait(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+function populateHartDataTemplateSelect() {
+  if (!elements.hartDataTemplate) {
+    return;
+  }
+
+  const selected = elements.hartDataTemplate.value || HART_COMMAND_DATA_TEMPLATES[0]?.id;
+  elements.hartDataTemplate.innerHTML = "";
+  HART_COMMAND_DATA_TEMPLATES.forEach((template) => {
+    const option = document.createElement("option");
+    option.value = template.id;
+    option.textContent = i18n(template.labelKey);
+    elements.hartDataTemplate.append(option);
+  });
+  if (HART_COMMAND_DATA_TEMPLATES.some((template) => template.id === selected)) {
+    elements.hartDataTemplate.value = selected;
+  }
+}
+
+function updateHartCommandTemplateUi() {
+  if (!elements.hartTemplatePreview) {
+    return;
+  }
+
+  try {
+    const payload = buildHartTemplatePayload(elements.hartDataTemplate?.value);
+    elements.hartTemplatePreview.textContent = `${getHartCommandLabelForTemplate(payload.command)} · ${bytesToHex(payload.data) || i18n("hart.noData")}`;
+    elements.hartTemplatePreview.classList.remove("error");
+  } catch (error) {
+    elements.hartTemplatePreview.textContent = error.message;
+    elements.hartTemplatePreview.classList.add("error");
+  }
+}
+
+function getHartCommandLabelForTemplate(command) {
+  return getHartCommandLabel(command);
+}
+
+function buildHartTemplatePayload(templateId) {
+  const normalized = normalizeHartConfig(readHartConfigForm());
+  const text = elements.hartTemplateText?.value || "TAG001";
+  const descriptor = elements.hartTemplateDescriptor?.value || "FIELD DEVICE";
+  const loopMode = clampInteger(elements.hartTemplateLoopMode?.value, 0, 255, 0);
+  const configCounter = Number.isFinite(normalized.device.configChangeCounter)
+    ? normalized.device.configChangeCounter
+    : 0;
+
+  switch (templateId) {
+    case "cmd33-dynamic":
+      return { command: 33, data: Uint8Array.from([0x00, 0x01, 0x02, 0x03]) };
+    case "cmd6-poll-address":
+      return { command: 6, data: Uint8Array.from([normalized.pollAddress & 0x0f, loopMode]) };
+    case "cmd17-message":
+      return { command: 17, data: encodeHartPackedAscii(text, 32) };
+    case "cmd18-tag": {
+      const data = new Uint8Array(21);
+      data.set(encodeHartPackedAscii(text, 8), 0);
+      data.set(encodeHartPackedAscii(descriptor, 16), 6);
+      data.set(encodeHartDateBytes(elements.hartTemplateDate?.value), 18);
+      return { command: 18, data };
+    }
+    case "cmd21-long-tag":
+      return { command: 21, data: encodeHartLatin1(text, 32) };
+    case "cmd22-long-tag":
+      return { command: 22, data: encodeHartLatin1(text, 32) };
+    case "cmd38-config-flag":
+      return { command: 38, data: Uint8Array.from([(configCounter >> 8) & 0xff, configCounter & 0xff]) };
+    case "cmd9-dynamic-status":
+    default:
+      return { command: 9, data: Uint8Array.from([0x00, 0x01, 0x02, 0x03]) };
+  }
+}
+
+function applyHartDataTemplate() {
+  const payload = buildHartTemplatePayload(elements.hartDataTemplate?.value);
+  hartConfig = normalizeHartConfig({
+    ...readHartConfigForm(),
+    commandMode: "preset",
+    command: payload.command,
+    customCommandData: bytesToHex(payload.data),
+  });
+  populateHartConfigForm(hartConfig);
+  updateDeviceUi();
+}
+
+function clearHartCommandData() {
+  hartConfig = normalizeHartConfig({
+    ...readHartConfigForm(),
+    customCommandData: "",
+  });
+  populateHartConfigForm(hartConfig);
+  updateDeviceUi();
+}
+
+function clampInteger(value, min, max, fallback) {
+  const number = Math.trunc(Number(value));
+  if (!Number.isFinite(number)) {
+    return fallback;
+  }
+  return Math.min(max, Math.max(min, number));
+}
+
 function syncHartCommandModeUi() {
   const normalized = normalizeHartConfig(hartConfig);
   const isCustom = normalized.commandMode === "custom";
@@ -4319,7 +4482,7 @@ function populateHartCommandSelect(selectedCommand = hartConfig.command) {
 
     const option = document.createElement("option");
     option.value = String(entry.value);
-    option.textContent = entry.label;
+    option.textContent = getHartCommandLabel(entry.value);
     if (entry.value === normalized.command) {
       option.selected = true;
     }
@@ -4369,6 +4532,7 @@ function populateHartConfigForm(config) {
 
   const normalized = normalizeHartConfig(config);
   populateHartCommandSelect(normalized.command);
+  populateHartDataTemplateSelect();
   syncHartCommandModeUi();
   elements.hartPollAddress.value = String(normalized.pollAddress);
   if (elements.hartMasterType) {
@@ -4387,7 +4551,11 @@ function populateHartConfigForm(config) {
   elements.hartFieldName.value = normalized.fieldName;
   elements.hartUnit.value = normalized.unit;
   elements.hartPollIntervalMs.value = String(normalized.pollIntervalMs);
+  if (elements.hartTemplateDate && !elements.hartTemplateDate.value) {
+    elements.hartTemplateDate.value = new Date().toISOString().slice(0, 10);
+  }
   updateHartDeviceInfo();
+  updateHartCommandTemplateUi();
 }
 
 function updateHartDeviceInfo() {
@@ -4398,15 +4566,65 @@ function updateHartDeviceInfo() {
   elements.hartDeviceInfo.textContent = `${i18n("hart.devicePrefix")}${formatHartDeviceSummary(normalizeHartConfig(hartConfig).device)}`;
 }
 
-async function sendHartSearchCommand() {
+async function sendHartSearchCommand(pollAddress = normalizeHartConfig(hartConfig).pollAddress) {
   if (!session?.connected) {
     return;
   }
 
   resetHartRxBuffer();
-  const searchConfig = normalizeHartConfig({ ...hartConfig, command: 0 });
+  const searchConfig = normalizeHartConfig({ ...hartConfig, pollAddress, command: 0 });
   const command = createHartSearchCommand(searchConfig, { bytesToHex });
   await session.write(command.bytes);
+}
+
+async function scanHartAddresses() {
+  if (!session?.connected || hartAddressScanActive) {
+    return;
+  }
+
+  const originalConfig = normalizeHartConfig(hartConfig);
+  hartAddressScanActive = true;
+  resetHartRxBuffer();
+  updateDeviceUi();
+  appendLog("info", "HART", i18n("hart.scanStarted"));
+
+  try {
+    for (let address = 0; address <= 15; address += 1) {
+      if (!hartAddressScanActive || !session?.connected) {
+        break;
+      }
+
+      hartConfig = normalizeHartConfig({
+        ...hartConfig,
+        pollAddress: address,
+        device: { ...DEFAULT_HART_CONFIG.device },
+      });
+      populateHartConfigForm(hartConfig);
+      updateDeviceUi();
+      await sendHartSearchCommand(address);
+
+      const startedAt = Date.now();
+      while (Date.now() - startedAt < HART_SCAN_ADDRESS_DELAY_MS) {
+        if (!hartAddressScanActive || !session?.connected) {
+          break;
+        }
+        if (normalizeHartConfig(hartConfig).device.discovered) {
+          appendLog("info", "HART", i18n("hart.scanFound").replace("{address}", String(normalizeHartConfig(hartConfig).pollAddress)));
+          return;
+        }
+        await wait(50);
+      }
+    }
+
+    if (!normalizeHartConfig(hartConfig).device.discovered) {
+      hartConfig = originalConfig;
+      populateHartConfigForm(hartConfig);
+      appendLog("warning", "HART", i18n("hart.scanNotFound"));
+    }
+  } finally {
+    hartAddressScanActive = false;
+    updateDeviceUi();
+  }
 }
 
 function getHartConfigControls() {

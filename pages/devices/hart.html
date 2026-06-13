@@ -51,6 +51,7 @@
       </div>
       <div class="panel-actions">
         <button id="hartSearchDevice" type="button" disabled data-i18n="hart.searchDevice">搜索设备</button>
+        <button id="hartScanAddresses" class="ghost-button" type="button" disabled data-i18n="hart.scanAddresses">扫描 0-15</button>
         <button data-field="sendDriverCommand" type="button" disabled data-i18n="hart.sendCommand">发送命令</button>
       </div>
     </div>
@@ -117,6 +118,44 @@
         <input id="hartCustomCommandData" type="text" data-i18n-placeholder="hart.cmdDataPlaceholder" placeholder="可选；写命令或带参数读命令时填入，校验自动计算" />
       </label>
     </div>
+    <section class="hart-command-helper">
+      <div class="subsection-heading">
+        <div>
+          <h3 data-i18n="hart.dataHelper">命令数据助手</h3>
+          <p data-i18n="hart.dataHelperDesc">按现场常用场景生成请求数据，仍可在 HEX 输入框中手工修改。</p>
+        </div>
+      </div>
+      <div class="config-grid compact">
+        <label>
+          <span data-i18n="hart.helperTemplate">模板</span>
+          <select id="hartDataTemplate"></select>
+        </label>
+        <label>
+          <span data-i18n="hart.helperText">文本 / Tag</span>
+          <input id="hartTemplateText" type="text" maxlength="64" placeholder="TAG001" />
+        </label>
+        <label>
+          <span data-i18n="hart.helperDescriptor">描述符</span>
+          <input id="hartTemplateDescriptor" type="text" maxlength="32" placeholder="FIELD DEVICE" />
+        </label>
+        <label>
+          <span data-i18n="hart.helperDate">日期</span>
+          <input id="hartTemplateDate" type="date" />
+        </label>
+        <label>
+          <span data-i18n="hart.helperLoopMode">Loop Mode Byte</span>
+          <input id="hartTemplateLoopMode" type="number" min="0" max="255" step="1" value="0" />
+        </label>
+      </div>
+      <div class="hart-helper-actions">
+        <button id="hartApplyDataTemplate" type="button" data-i18n="hart.applyTemplate">生成命令数据</button>
+        <button id="hartClearCommandData" class="ghost-button" type="button" data-i18n="hart.clearCommandData">清空数据</button>
+      </div>
+      <p class="hart-frame-meta">
+        <span data-i18n="hart.templatePreview">模板预览</span>
+        <code id="hartTemplatePreview">--</code>
+      </p>
+    </section>
     <p class="hart-frame-meta">
       <span data-i18n="hart.frameChecksum">帧校验 (XOR)</span>
       <code id="hartFrameChecksum">--</code>

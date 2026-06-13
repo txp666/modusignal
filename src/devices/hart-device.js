@@ -3,10 +3,13 @@ import {
   RX_ADDR_SHORT,
   buildHartFrame,
   extractHartFrames,
+  formatHartFrameStatusLines,
   formatHartDeviceSummary,
   getHartCommandLabel,
   parseCommand0Device,
   parseHartCommand1Variables,
+  parseHartCommand9Variables,
+  parseHartCommand33Variables,
   parseHartCommand3Variables,
   parseHartTelemetryValue,
   parseHartUniversalResponse,
@@ -28,16 +31,25 @@ export const HART_TRANSPORT_DEFAULTS = {
 
 export const DEFAULT_HART_DEVICE = {
   discovered: false,
+  addressManufacturer: 0,
+  addressDeviceType: 0,
   manufacturer: 0,
   deviceType: 0,
+  expandedDeviceType: 0,
   deviceId: 0,
   minPreambleCount: 5,
   hartRevision: 0,
+  deviceRevision: 0,
   profile: 0,
   softwareVersion: 0,
   hardwareVersion: 0,
   physicalSignalType: 0,
   deviceFlag: 0,
+  responsePreambleCount: null,
+  lastDeviceVariableCode: null,
+  configChangeCounter: null,
+  extendedDeviceStatus: null,
+  privateLabelDistributor: null,
 };
 
 export const DEFAULT_HART_CONFIG = {
@@ -79,7 +91,6 @@ const HART_UNIVERSAL_COMMAND_ENTRIES = [
   { value: 1, kind: "read" },
   { value: 2, kind: "read" },
   { value: 3, kind: "read" },
-  { value: 6, kind: "read" },
   { value: 7, kind: "read" },
   { value: 8, kind: "read" },
   { value: 9, kind: "read" },
@@ -90,15 +101,28 @@ const HART_UNIVERSAL_COMMAND_ENTRIES = [
   { value: 15, kind: "read" },
   { value: 16, kind: "read" },
   { value: 20, kind: "read" },
+  { value: 21, kind: "read" },
+  { value: 33, kind: "read" },
   { value: 48, kind: "read" },
+  { value: 6, kind: "write" },
   { value: 17, kind: "write" },
   { value: 18, kind: "write" },
+  { value: 19, kind: "write" },
   { value: 22, kind: "write" },
   { value: 34, kind: "write" },
   { value: 35, kind: "write" },
+  { value: 36, kind: "write" },
+  { value: 37, kind: "write" },
+  { value: 38, kind: "write" },
+  { value: 39, kind: "write" },
+  { value: 40, kind: "write" },
   { value: 41, kind: "write" },
+  { value: 43, kind: "write" },
   { value: 44, kind: "write" },
   { value: 45, kind: "write" },
+  { value: 46, kind: "write" },
+  { value: 47, kind: "write" },
+  { value: 49, kind: "write" },
 ];
 
 export const HART_UNIVERSAL_COMMANDS = HART_UNIVERSAL_COMMAND_ENTRIES.map((entry) => ({
@@ -225,6 +249,10 @@ export function getHartMode(command) {
     return "readDynamic";
   }
 
+  if (command === 9 || command === 33) {
+    return "readDynamic";
+  }
+
   return "readPv";
 }
 
@@ -316,6 +344,7 @@ export function parseHartTelemetry(bytes, config) {
           value: device.deviceId,
           rawValue: device.deviceId,
           device,
+          pollAddress: parsed.pollAddress,
           isDiscovery: true,
         };
       }
@@ -326,44 +355,44 @@ export function parseHartTelemetry(bytes, config) {
       continue;
     }
 
+    if (parsed.command === normalized.activeCommand) {
+      const universal = parseHartUniversalResponse(parsed);
+      if (universal) {
+        return buildHartUniversalTelemetry(normalized, universal, parsed);
+      }
+
+      const telemetry = parseHartTelemetryValue(parsed, normalized.activeCommand);
+      if (!telemetry) {
+        continue;
+      }
+
+      return attachHartFrameStatus(
+        {
+          fieldName: normalized.fieldName || telemetry.fieldName,
+          unit: normalized.unit || telemetry.unit,
+          value: telemetry.value * normalized.scale + normalized.offset,
+          rawValue: telemetry.rawValue,
+          extra: telemetry.extra,
+        },
+        parsed,
+      );
+    }
+
     const multi = parseHartMultiVariables(parsed, normalized);
     if (multi) {
       return attachHartFrameStatus(multi, parsed);
     }
-
-    if (parsed.command !== normalized.activeCommand) {
-      continue;
-    }
-
-    const universal = parseHartUniversalResponse(parsed);
-    if (universal) {
-      return buildHartUniversalTelemetry(normalized, universal, parsed);
-    }
-
-    const telemetry = parseHartTelemetryValue(parsed, normalized.activeCommand);
-    if (!telemetry) {
-      continue;
-    }
-
-    return attachHartFrameStatus(
-      {
-        fieldName: normalized.fieldName || telemetry.fieldName,
-        unit: normalized.unit || telemetry.unit,
-        value: telemetry.value * normalized.scale + normalized.offset,
-        rawValue: telemetry.rawValue,
-        extra: telemetry.extra,
-      },
-      parsed,
-    );
   }
 
   return null;
 }
 
 function buildHartUniversalTelemetry(config, universal, parsed) {
+  const commandLines = [...(universal.lines ?? [])];
+
   const payload = {
     commandSummary: universal.summary,
-    commandLines: universal.lines,
+    commandLines,
     commandLabel: universal.commandLabel,
     command: universal.command,
     fieldName: universal.commandLabel,
@@ -426,8 +455,14 @@ function attachHartFrameStatus(telemetry, parsed) {
     return telemetry;
   }
 
+  const statusLines = formatHartFrameStatusLines(parsed);
+  const commandLines = statusLines.length
+    ? [...(telemetry.commandLines ?? []), ...statusLines]
+    : telemetry.commandLines;
+
   return {
     ...telemetry,
+    commandLines,
     hartResponseCode: parsed.responseCode,
     hartDeviceStatus: parsed.status,
   };
@@ -457,6 +492,40 @@ function parseHartMultiVariables(parsed, config) {
       tv: variables.tv,
       qv: variables.qv,
     });
+  }
+
+  if (parsed.command === 9) {
+    const variables = parseHartCommand9Variables(parsed.data);
+    if (!variables) {
+      return null;
+    }
+
+    return buildHartMultiTelemetry(
+      config,
+      Object.fromEntries(
+        Object.entries(variables.variables).map(([key, entry]) => [
+          key,
+          key === "pv" ? applyHartVariableScale(entry, config) : entry,
+        ]),
+      ),
+    );
+  }
+
+  if (parsed.command === 33) {
+    const variables = parseHartCommand33Variables(parsed.data);
+    if (!variables) {
+      return null;
+    }
+
+    return buildHartMultiTelemetry(
+      config,
+      Object.fromEntries(
+        Object.entries(variables.variables).map(([key, entry]) => [
+          key,
+          key === "pv" ? applyHartVariableScale(entry, config) : entry,
+        ]),
+      ),
+    );
   }
 
   return null;
@@ -530,6 +599,7 @@ export function mergeHartDiscovery(config, discovery) {
 
   return normalizeHartConfig({
     ...config,
+    pollAddress: discovery.pollAddress ?? config.pollAddress,
     device: {
       ...config.device,
       ...discovery.device,
@@ -540,17 +610,40 @@ export function mergeHartDiscovery(config, discovery) {
 function normalizeHartDevice(device = {}) {
   return {
     discovered: Boolean(device.discovered),
+    addressManufacturer: clamp(Math.trunc(toFiniteNumber(device.addressManufacturer, device.manufacturer ?? 0)), 0, 255),
+    addressDeviceType: clamp(Math.trunc(toFiniteNumber(device.addressDeviceType, device.deviceType ?? 0)), 0, 255),
     manufacturer: clamp(Math.trunc(toFiniteNumber(device.manufacturer, 0)), 0, 65535),
     deviceType: clamp(Math.trunc(toFiniteNumber(device.deviceType, 0)), 0, 65535),
+    expandedDeviceType: clamp(Math.trunc(toFiniteNumber(device.expandedDeviceType, device.deviceType ?? 0)), 0, 65535),
     deviceId: clamp(Math.trunc(toFiniteNumber(device.deviceId, 0)), 0, 0xffffff),
     minPreambleCount: clamp(Math.trunc(toFiniteNumber(device.minPreambleCount, 5)), 2, 20),
     hartRevision: clamp(Math.trunc(toFiniteNumber(device.hartRevision, 0)), 0, 255),
+    deviceRevision: clamp(Math.trunc(toFiniteNumber(device.deviceRevision, device.profile ?? 0)), 0, 255),
     profile: clamp(Math.trunc(toFiniteNumber(device.profile, 0)), 0, 255),
     softwareVersion: clamp(Math.trunc(toFiniteNumber(device.softwareVersion, 0)), 0, 255),
     hardwareVersion: clamp(Math.trunc(toFiniteNumber(device.hardwareVersion, 0)), 0, 255),
     physicalSignalType: clamp(Math.trunc(toFiniteNumber(device.physicalSignalType, 0)), 0, 255),
     deviceFlag: clamp(Math.trunc(toFiniteNumber(device.deviceFlag, 0)), 0, 255),
+    responsePreambleCount: nullableByte(device.responsePreambleCount),
+    lastDeviceVariableCode: nullableByte(device.lastDeviceVariableCode),
+    configChangeCounter: nullableWord(device.configChangeCounter),
+    extendedDeviceStatus: nullableByte(device.extendedDeviceStatus),
+    privateLabelDistributor: nullableWord(device.privateLabelDistributor),
   };
+}
+
+function nullableByte(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  return clamp(Math.trunc(toFiniteNumber(value, 0)), 0, 255);
+}
+
+function nullableWord(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  return clamp(Math.trunc(toFiniteNumber(value, 0)), 0, 65535);
 }
 
 function normalizeCommand(value) {
