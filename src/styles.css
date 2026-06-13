@@ -1925,6 +1925,32 @@ code {
     width: 100%;
   }
 
+  .serial-log {
+    height: 17rem;
+    padding: 0.7rem;
+    font-size: 0.78rem;
+  }
+
+  .log-line {
+    grid-template-columns: 4.25rem minmax(0, 1fr);
+    gap: 0.35rem 0.5rem;
+    padding: 0.38rem 0;
+  }
+
+  .log-line .dir {
+    grid-column: 2;
+  }
+
+  .log-line .payload {
+    grid-column: 2;
+  }
+
+  .send-command textarea {
+    overflow-x: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
   .chart-settings {
     grid-template-columns: 1fr;
   }
@@ -1960,7 +1986,22 @@ code {
     grid-column: auto;
   }
 
-  .panel-actions,
+  .panel-heading.split {
+    flex-wrap: wrap;
+  }
+
+  .panel-actions {
+    align-items: center;
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+
+  .panel-actions button,
+  .panel-actions .action-link {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+
   .subsection-heading {
     align-items: stretch;
     flex-direction: column;
