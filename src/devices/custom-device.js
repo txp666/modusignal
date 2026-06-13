@@ -40,8 +40,8 @@ export const CUSTOM_TRANSPORT_DEFAULTS = {
 };
 
 export const DEFAULT_CUSTOM_CONFIG = {
-  name: "自定义串口设备",
-  type: "自定义串口设备",
+  name: "",
+  type: "",
   channelLabel: "设定值",
   unit: "",
   min: 0,
@@ -118,8 +118,8 @@ export function createCustomProfile(config) {
 
   return {
     id: CUSTOM_DEVICE_ID,
-    name: normalized.name,
-    type: normalized.type,
+    name: normalized.name || i18n("custom.customProfile.name"),
+    type: normalized.type || i18n("custom.profile.type"),
     protocolStatus: "custom",
     defaultTransportId: "serial",
     modes: {

@@ -3039,8 +3039,8 @@ function readCustomConfigForm() {
 
 function populateCustomConfigForm(config) {
   const normalized = normalizeCustomConfig(config);
-  elements.customDeviceName.value = normalized.name;
-  elements.customDeviceType.value = normalized.type;
+  elements.customDeviceName.value = normalized.name || i18n("custom.customProfile.name");
+  elements.customDeviceType.value = normalized.type || i18n("custom.profile.type");
   elements.customChannelLabel.value = normalized.channelLabel;
   elements.customUnit.value = normalized.unit;
   elements.customMin.value = String(normalized.min);
