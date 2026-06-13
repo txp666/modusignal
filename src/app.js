@@ -2221,6 +2221,8 @@ function selectDevice(deviceId) {
   updateDeviceUi();
   updateActivePolling();
   updatePollingUi();
+  applySidebarPanelLayout();
+  resetViewportScroll();
   appendLog("info", i18n("log.device"), `${i18n("log.switchedTo")} ${getDeviceProfile(state.deviceId, customConfig, modbusConfig).name}`);
 }
 
@@ -2240,6 +2242,12 @@ function navigateToPage(pageId) {
   state.pageId = pageId === "request" ? "request" : "home";
   updatePageUi();
   updateDeviceUi();
+  applySidebarPanelLayout();
+  resetViewportScroll();
+}
+
+function resetViewportScroll() {
+  window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 }
 
 function updateSecureState() {

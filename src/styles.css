@@ -381,6 +381,7 @@ label {
 }
 
 .workspace {
+  min-width: 0;
   padding: 1rem;
 }
 
@@ -399,6 +400,7 @@ label {
 }
 
 .panel {
+  min-width: 0;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 0.5rem;
@@ -1780,6 +1782,8 @@ code {
 
   .device-shell.active {
     flex-direction: column;
+    align-items: stretch;
+    width: 100%;
   }
 
   .arch-columns {
@@ -1825,6 +1829,45 @@ code {
 
   .brand-block p {
     display: none;
+  }
+
+  .sidebar {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.42rem;
+    padding: 0.48rem 0.55rem;
+  }
+
+  .sidebar .panel {
+    min-width: 0;
+    padding: 0.45rem;
+    box-shadow: none;
+  }
+
+  .sidebar-panel:not(.collapsed) {
+    grid-column: 1 / -1;
+  }
+
+  .sidebar-panel-heading {
+    gap: 0.3rem;
+    min-width: 0;
+    margin-bottom: 0.4rem;
+  }
+
+  .sidebar-panel-heading h2 {
+    overflow: hidden;
+    font-size: 0.86rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sidebar-panel.collapsed .status-dot {
+    display: none;
+  }
+
+  .sidebar-collapse-toggle {
+    width: 1.8rem;
+    min-width: 1.8rem;
+    height: 1.8rem;
   }
 
   .home-grid {
