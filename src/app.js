@@ -2259,14 +2259,14 @@ function updateSecureState() {
   const descriptor = getTransportDescriptor(state.transportId);
 
   if (descriptor.requiresSecureContext && !window.isSecureContext) {
-    elements.secureState.textContent = i18n("env.needHttps");
+    setSecureStateText(i18n("env.needHttps"));
     elements.secureState.classList.add("warning");
     elements.connectButton.disabled = true;
     return;
   }
 
   if (!descriptor.isSupported()) {
-    elements.secureState.textContent = i18n("env.notSupported") + i18n(descriptor.label);
+    setSecureStateText(i18n("env.notSupported") + i18n(descriptor.label));
     elements.secureState.classList.add("warning");
     elements.connectButton.disabled = true;
     return;
@@ -2275,7 +2275,7 @@ function updateSecureState() {
   if (state.transportId === WEBSOCKET_TRANSPORT_ID) {
     const wsWarning = describeWebSocketUrlWarning(readTransportOptions().url);
     if (wsWarning) {
-      elements.secureState.textContent = wsWarning;
+      setSecureStateText(wsWarning);
       elements.secureState.classList.add("warning");
       return;
     }
@@ -2284,14 +2284,23 @@ function updateSecureState() {
   if (state.transportId === MQTT_TRANSPORT_ID) {
     const mqttWarning = describeMqttUrlWarning(readTransportOptions().brokerUrl);
     if (mqttWarning) {
-      elements.secureState.textContent = mqttWarning;
+      setSecureStateText(mqttWarning);
       elements.secureState.classList.add("warning");
       return;
     }
   }
 
-  elements.secureState.textContent = i18n(descriptor.label) + i18n("env.available");
+  setSecureStateText(i18n(descriptor.label) + i18n("env.available"));
   elements.secureState.classList.remove("warning");
+}
+
+function setSecureStateText(text) {
+  if (!elements.secureState) {
+    return;
+  }
+
+  elements.secureState.textContent = text;
+  elements.secureState.dataset.marquee = text;
 }
 
 function updateWebSocketTransportDraft() {
@@ -2875,7 +2884,7 @@ function syncSecureState(connected) {
   }
 
   if (connected) {
-    elements.secureState.textContent = describeConnectionSummary();
+    setSecureStateText(describeConnectionSummary());
     elements.secureState.classList.remove("warning");
     elements.secureState.classList.add("connected");
     return;

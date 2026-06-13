@@ -117,6 +117,14 @@ button:disabled {
   min-width: 0;
 }
 
+.brand-home-button {
+  display: block;
+  flex: 0 0 auto;
+  padding: 0;
+  background: transparent;
+  line-height: 0;
+}
+
 .brand-logo {
   display: block;
   flex: 0 0 auto;
@@ -1757,6 +1765,7 @@ code {
 @media (max-width: 1050px) {
   .app-shell {
     grid-template-columns: 1fr;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
   }
 
   .brand-block {
@@ -1897,6 +1906,36 @@ code {
     text-overflow: ellipsis;
   }
 
+  .topbar-actions #secureState {
+    --state-marquee-color: var(--accent-strong);
+    position: relative;
+    min-width: 3.2rem;
+    color: transparent;
+    text-overflow: clip;
+  }
+
+  .topbar-actions #secureState.warning {
+    --state-marquee-color: var(--amber);
+  }
+
+  .topbar-actions #secureState.connected {
+    --state-marquee-color: var(--green);
+  }
+
+  .topbar-actions #secureState::before {
+    content: attr(data-marquee) "   " attr(data-marquee);
+    position: absolute;
+    top: 50%;
+    left: 0.5rem;
+    color: var(--state-marquee-color);
+    font-size: 0.72rem;
+    font-weight: 750;
+    line-height: 1;
+    white-space: nowrap;
+    transform: translate3d(0, -50%, 0);
+    animation: secure-state-marquee 8s linear infinite;
+  }
+
   .topbar-actions .lang-switch {
     min-width: 2.4rem;
     padding: 0 0.4rem;
@@ -1974,6 +2013,35 @@ code {
     grid-template-columns: 1fr;
   }
 
+  .request-panel .panel-heading.split {
+    gap: 0.55rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .request-panel .action-link {
+    width: 100%;
+  }
+
+  .request-template {
+    gap: 0.55rem;
+  }
+
+  .request-template label {
+    margin: 0;
+  }
+
+  .request-template textarea {
+    min-height: 13rem;
+    max-height: 45vh;
+    overflow-x: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .request-template button {
+    width: 100%;
+  }
+
   .curve-config-row label,
   .curve-config-row .curve-row-actions {
     flex: 1 1 100%;
@@ -2040,7 +2108,35 @@ code {
 }
 
 @media (max-width: 360px) {
-  .topbar-actions .state-pill {
+  .topbar {
+    gap: 0.35rem;
+  }
+
+  .brand-logo {
+    height: 1.35rem;
+    max-width: 6.2rem;
+  }
+
+  .topbar-actions #secureState {
+    max-width: 2rem;
+    min-width: 2rem;
+  }
+
+  .topbar-actions .primary-button {
+    padding: 0 0.34rem;
+  }
+
+  .topbar-actions .primary-button span[aria-hidden="true"] {
     display: none;
+  }
+}
+
+@keyframes secure-state-marquee {
+  from {
+    transform: translate3d(0, -50%, 0);
+  }
+
+  to {
+    transform: translate3d(-50%, -50%, 0);
   }
 }
