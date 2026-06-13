@@ -1804,13 +1804,27 @@ code {
 }
 
 @media (max-width: 700px) {
-  .brand-logo {
-    height: 2.5rem;
+  .topbar {
+    align-items: center;
+    flex-direction: row;
+    gap: 0.5rem;
+    padding: 0.42rem 0.65rem;
   }
 
-  .topbar {
-    align-items: flex-start;
-    flex-direction: column;
+  .brand-block {
+    flex: 1 1 auto;
+    flex-direction: row;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .brand-logo {
+    height: 1.75rem;
+    max-width: 8.75rem;
+  }
+
+  .brand-block p {
+    display: none;
   }
 
   .home-grid {
@@ -1818,13 +1832,42 @@ code {
   }
 
   .topbar-actions {
-    width: 100%;
-    justify-content: stretch;
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+    width: auto;
+    justify-content: flex-end;
+  }
+
+  .lang-switch,
+  .topbar-actions .state-pill,
+  .topbar-actions .primary-button,
+  .topbar-actions .icon-button {
+    min-height: 2rem;
+  }
+
+  .topbar-actions .state-pill {
+    max-width: 6.8rem;
+    padding: 0 0.5rem;
+    overflow: hidden;
+    font-size: 0.72rem;
+    text-overflow: ellipsis;
+  }
+
+  .topbar-actions .lang-switch {
+    min-width: 2.4rem;
+    padding: 0 0.4rem;
   }
 
   .topbar-actions .primary-button {
-    flex: 1;
+    flex: 0 0 auto;
     justify-content: center;
+    padding: 0 0.58rem;
+    white-space: nowrap;
+  }
+
+  .topbar-actions .icon-button {
+    min-width: 2rem;
   }
 
   .send-grid {
@@ -1886,5 +1929,34 @@ code {
   .chart-meta {
     align-items: stretch;
     flex-direction: column;
+  }
+}
+
+@media (max-width: 430px) {
+  .topbar {
+    padding-inline: 0.55rem;
+  }
+
+  .brand-logo {
+    height: 1.55rem;
+    max-width: 7.15rem;
+  }
+
+  .topbar-actions {
+    gap: 0.28rem;
+  }
+
+  .topbar-actions .state-pill {
+    max-width: 4.8rem;
+  }
+
+  .topbar-actions .primary-button {
+    padding: 0 0.48rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .topbar-actions .state-pill {
+    display: none;
   }
 }
