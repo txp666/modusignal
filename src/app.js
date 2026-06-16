@@ -4904,8 +4904,9 @@ function applyAomasterModeDefaults() {
 }
 
 function populateAomasterWaveformForm() {
-  const config = getModeConfig(state.mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
   const waveState = normalizeAomasterWaveState(state, state.mode);
+  state.mode = waveState.mode;
+  const config = getModeConfig(state.mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
   state.setpoint = waveState.setpoint;
   state.waveLow = waveState.waveLow;
   state.waveHigh = waveState.waveHigh;

@@ -24,9 +24,6 @@ const AOMASTER_PREVIEW_CYCLES = 10;
 export const AOMASTER_MODES = {
   current: 0,
   voltage: 1,
-  current020: 2,
-  voltage05: 3,
-  current024: 4,
 };
 
 export const AOMASTER_WAVEFORMS = {
@@ -88,7 +85,7 @@ export function getAomasterProfile() {
     defaultTransportId: "serial",
     modes: {
       current: {
-        label: i18n("aomaster.mode.current420"),
+        label: i18n("aomaster.mode.current"),
         unit: "mA",
         min: 4,
         max: 20,
@@ -96,36 +93,12 @@ export function getAomasterProfile() {
         presets: { min: 4, mid: 12, max: 20 },
       },
       voltage: {
-        label: i18n("aomaster.mode.voltage010"),
+        label: i18n("aomaster.mode.voltage"),
         unit: "V",
         min: 0,
         max: 10,
         step: 0.001,
         presets: { min: 0, mid: 5, max: 10 },
-      },
-      current020: {
-        label: i18n("aomaster.mode.current020"),
-        unit: "mA",
-        min: 0,
-        max: 20,
-        step: 0.001,
-        presets: { min: 0, mid: 10, max: 20 },
-      },
-      voltage05: {
-        label: i18n("aomaster.mode.voltage05"),
-        unit: "V",
-        min: 0,
-        max: 5,
-        step: 0.001,
-        presets: { min: 0, mid: 2.5, max: 5 },
-      },
-      current024: {
-        label: i18n("aomaster.mode.current024"),
-        unit: "mA",
-        min: 0,
-        max: 24,
-        step: 0.001,
-        presets: { min: 0, mid: 12, max: 24 },
       },
     },
   };
@@ -148,23 +121,25 @@ export function normalizeAomasterConfig(config = {}) {
 }
 
 export function normalizeAomasterWaveState(state = {}, mode = "current") {
-  const modeConfig = getAomasterModeConfig(mode);
+  const profile = getAomasterProfile();
+  const normalizedMode = profile.modes[mode] ? mode : "current";
+  const modeConfig = profile.modes[normalizedMode] ?? profile.modes.current;
   const merged = {
     ...DEFAULT_AOMASTER_WAVE_STATE,
     ...state,
-    mode,
+    mode: normalizedMode,
   };
   const waveform = AOMASTER_WAVEFORM_OPTIONS.some((item) => item.id === merged.waveform)
     ? merged.waveform
     : "constant";
-  const stepSequence = normalizeStepSequence(merged.stepSequence, mode);
+  const stepSequence = normalizeStepSequence(merged.stepSequence, normalizedMode);
 
   return {
-    mode,
+    mode: normalizedMode,
     waveform,
-    setpoint: clampWaveValue(mode, merged.setpoint, modeConfig.presets.mid),
-    waveLow: clampWaveValue(mode, merged.waveLow, modeConfig.min),
-    waveHigh: clampWaveValue(mode, merged.waveHigh, modeConfig.max),
+    setpoint: clampWaveValue(normalizedMode, merged.setpoint, modeConfig.presets.mid),
+    waveLow: clampWaveValue(normalizedMode, merged.waveLow, modeConfig.min),
+    waveHigh: clampWaveValue(normalizedMode, merged.waveHigh, modeConfig.max),
     wavePeriodMs: clamp(Math.trunc(toFiniteNumber(merged.wavePeriodMs, DEFAULT_AOMASTER_WAVE_STATE.wavePeriodMs)), 1, 65535),
     waveDuty: clamp(toFiniteNumber(merged.waveDuty, DEFAULT_AOMASTER_WAVE_STATE.waveDuty), 1, 99),
     stepSequence,

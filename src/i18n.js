@@ -247,11 +247,8 @@ const TRANSLATIONS = {
   "aomaster.pollInterval": { zh: "回读轮询 (ms)", en: "Readback Poll (ms)" },
   "aomaster.pollIntervalTitle": { zh: "大于 0 时可在监测面板手动开始轮询，默认 50", en: "When > 0, polling can be manually started in the monitor panel; default 50" },
   "aomaster.profile.type": { zh: "模拟量信号发生器", en: "Analog Signal Generator" },
-  "aomaster.mode.current420": { zh: "4-20mA 电流", en: "4-20mA Current" },
-  "aomaster.mode.voltage010": { zh: "0-10V 电压", en: "0-10V Voltage" },
-  "aomaster.mode.current020": { zh: "0-20mA 电流", en: "0-20mA Current" },
-  "aomaster.mode.voltage05": { zh: "0-5V 电压", en: "0-5V Voltage" },
-  "aomaster.mode.current024": { zh: "0-24mA 电流", en: "0-24mA Current" },
+  "aomaster.mode.current": { zh: "电流", en: "Current" },
+  "aomaster.mode.voltage": { zh: "电压", en: "Voltage" },
 
   // AOMaster 自定义仪表
   "aomaster.actualOutput": { zh: "实际输出", en: "Actual Output" },
