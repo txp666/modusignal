@@ -6,6 +6,33 @@ const textEncoder = new TextEncoder();
 
 export const SERIAL_TRANSPORT_ID = "serial";
 
+function toUint8Array(data) {
+  if (typeof data === "string") {
+    return textEncoder.encode(data);
+  }
+  if (data instanceof Uint8Array) {
+    return data;
+  }
+  if (ArrayBuffer.isView(data)) {
+    return new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+  }
+  if (data instanceof ArrayBuffer) {
+    return new Uint8Array(data);
+  }
+  return new Uint8Array(data);
+}
+
+function wrapSerialWriteError(error) {
+  const message = error?.message || String(error || "");
+  const hint = i18n(
+    "transport.serial.writeFailed",
+    "Serial write failed. Disconnect and reconnect, then check that the port is not occupied.",
+  );
+  const wrapped = new Error(message ? `${hint} (${message})` : hint);
+  wrapped.cause = error;
+  return wrapped;
+}
+
 export class SerialTransport extends BaseTransport {
   constructor() {
     super();
@@ -31,6 +58,9 @@ export class SerialTransport extends BaseTransport {
 
     this.port = await navigator.serial.requestPort();
     await this.port.open(options);
+    if (typeof this.port.setSignals === "function") {
+      await this.port.setSignals({ dataTerminalReady: true, requestToSend: true }).catch(() => {});
+    }
     this.reader = this.port.readable.getReader();
     this.writer = this.port.writable.getWriter();
     this.reading = true;
@@ -83,8 +113,12 @@ export class SerialTransport extends BaseTransport {
       throw new Error(i18n("transport.serial.notConnected"));
     }
 
-    const bytes = typeof data === "string" ? textEncoder.encode(data) : data;
-    await this.writer.write(bytes);
+    const bytes = toUint8Array(data);
+    try {
+      await this.writer.write(bytes);
+    } catch (error) {
+      throw wrapSerialWriteError(error);
+    }
     this.emit("tx", {
       bytes,
       text: typeof data === "string" ? data : undefined,

@@ -174,6 +174,7 @@ const CHART_CONFIG_STORAGE_KEY = "modusignal.chart.v1";
 const AOMASTER_VALUE_DISPLAY_STORAGE_KEY = "modusignal.aomasterValueDisplayMode.v1";
 const SIDEBAR_PANELS_STORAGE_KEY = "modusignal.sidebarPanels.v1";
 const MOBILE_LAYOUT_QUERY = "(max-width: 1050px)";
+const AOMASTER_INTERFRAME_DELAY_MS = 20;
 
 /** @type {Record<string, HTMLElement | HTMLElement[] | null>} */
 const elements = {};
@@ -3039,15 +3040,15 @@ async function disconnect() {
 async function sendDeviceCommand() {
   try {
     const command = createDeviceSetOutputCommand(
-    state.deviceId,
-    state,
-    customConfig,
-    modbusConfig,
-    aomasterConfig,
-    hartConfig,
-    websocketConfig,
-    mqttConfig,
-  );
+      state.deviceId,
+      state,
+      customConfig,
+      modbusConfig,
+      aomasterConfig,
+      hartConfig,
+      websocketConfig,
+      mqttConfig,
+    );
     const frames = command.frames ?? (command.bytes ? [command.bytes] : []);
     if (!command.supported || frames.length === 0) {
       appendLog("error", i18n("log.send"), command.preview || i18n("common.noDriverCmd"));
@@ -3055,8 +3056,13 @@ async function sendDeviceCommand() {
     }
 
     const writeOptions = state.deviceId === MQTT_DEVICE_ID ? readMqttWriteOptions() : undefined;
-    for (const frame of frames) {
+    const interframeDelayMs = state.deviceId === AOMASTER_DEVICE_ID ? AOMASTER_INTERFRAME_DELAY_MS : 0;
+    for (let index = 0; index < frames.length; index++) {
+      const frame = frames[index];
       await session.write(frame, writeOptions);
+      if (interframeDelayMs > 0 && index + 1 < frames.length) {
+        await wait(interframeDelayMs);
+      }
     }
   } catch (error) {
     appendLog("error", i18n("log.send"), error.message);

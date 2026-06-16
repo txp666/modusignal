@@ -308,12 +308,12 @@ export function buildAomasterWriteFrames(state, slaveId) {
   }
 
   return [
-    header,
     buildWriteMultipleRegistersRequest(
       slaveId,
       AOMASTER_REGISTERS.STEP_SEQUENCE_START,
       sequenceValues,
     ),
+    header,
   ];
 }
 

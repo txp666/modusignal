@@ -183,7 +183,7 @@ Devices and transports are kept separate. Adding a new device is usually: a driv
 | 0x0006 | R   | Actual output (readback) |
 | 0x0007+ | R/W | Step sequence values |
 
-Default poll interval is 50 ms. In step mode the header is written first, then the sequence values.
+Default poll interval is 50 ms. In step mode the step sequence is written first, then the header.
 
 ## Custom device
 
