@@ -172,18 +172,24 @@ Devices and transports are kept separate. Adding a new device is usually: a driv
 
 ## AOMaster register map
 
-| Addr | R/W | Meaning |
-|------|-----|---------|
-| 0x0000 | R/W | Signal type (current / voltage) |
-| 0x0001 | R/W | Waveform: 0=const 1=step 2=ramp 3=square 4=triangle 5=sine |
-| 0x0002 | R/W | Setpoint / low value |
-| 0x0003 | R/W | High value / step hold time |
-| 0x0004 | R/W | Period (ms) / cycle count |
-| 0x0005 | R/W | Duty cycle × 10 |
-| 0x0006 | R   | Actual output (readback) |
-| 0x0007+ | R/W | Step sequence values |
+| Addr | R/W | Meaning | Raw unit |
+|------|-----|---------|----------|
+| 0x0000 | R/W | Signal type: 0=current, 1=voltage | enum |
+| 0x0001 | R/W | Waveform: 0=const 1=step 2=ramp 3=square 4=triangle 5=sine | enum |
+| 0x0002 | R/W | Setpoint / low value; step count in step mode | mV or uA |
+| 0x0003 | R/W | High value; step dwell in step mode | mV/uA or ms |
+| 0x0004 | R/W | Period (ms); loop count in step mode | ms / count |
+| 0x0005 | R/W | Duty cycle | permille |
+| 0x0006 | R   | Actual output (readback) | mV or uA |
+| 0x0007..0x0016 | R/W | Step sequence values, max 16 points | mV or uA |
 
-Default poll interval is 50 ms. In step mode the step sequence is written first, then the header.
+Raw analog values are scaled by 1000: voltage uses mV (`10600` = `10.600 V`), current uses uA (`10600` = `10.600 mA`). The web UI polls registers `0x0000..0x0006` in one Modbus RTU read so the response contains both signal type and actual output:
+
+```text
+01 03 00 00 00 07 04 08
+```
+
+The response must include all seven registers. Register `0x0000` selects the engineering unit (`0=current`, `1=voltage`), and register `0x0006` is plotted as the actual output. The actual-output chart Y axis follows the response type: `4..20 mA` for current and `0..10 V` for voltage. Default poll interval is 50 ms. In step mode the step sequence is written first, then the header.
 
 ## Custom device
 
@@ -318,7 +324,9 @@ Firefox 和 Safari 没有 Web Serial，串口设备用不了，其它功能正�
 | 0x0006 | R | 实际输出（回读） |
 | 0x0007+ | R/W | 步进序列值 |
 
-默认轮询周期 50ms，步进模式先写头部再写序列值。
+Host polling note: the AOMaster web host reads `0x0000..0x0006` with `01 03 00 00 00 07 04 08`. The response must include all seven registers; `0x0000` selects current/voltage units and `0x0006` is the actual output. Raw analog values are scaled by 1000: raw `10600` means `10.600 V` in voltage mode or `10.600 mA` in current mode. The actual-output chart Y axis follows the response type: `0..10 V` or `4..20 mA`.
+
+默认轮询周期 50ms，阶跃模式先写 `0x0007+` 序列值，再写头部寄存器。
 
 ## 自定义设备
 

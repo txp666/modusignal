@@ -242,7 +242,7 @@ const TRANSLATIONS = {
   "aomaster.driverCmdPreview": { zh: "驱动命令预览", en: "Driver Command Preview" },
   "aomaster.sendSetting": { zh: "发送设定", en: "Send Setting" },
   "aomaster.commParams": { zh: "通讯参数", en: "Communication Params" },
-  "aomaster.commDesc": { zh: "寄存器：0x0000~0x0001 类型/波形；阶跃时 0x0002 点数、0x0003 保持(ms)、0x0004 循环、0x0007+ 序列值；0x0006 实际输出。", en: "Registers: 0x0000~0x0001 type/waveform; step: 0x0002 count, 0x0003 dwell(ms), 0x0004 loops, 0x0007+ sequence; 0x0006 actual output." },
+  "aomaster.commDesc": { zh: "寄存器：0x0000 类型（0=电流，1=电压），0x0001 波形，0x0006 只读 ACTUAL；轮询读取 0x0000~0x0006 共 7 个寄存器，根据类型判断单位。阶跃时 0x0002 点数、0x0003 保持(ms)、0x0004 循环、0x0007+ 序列值。", en: "Registers: 0x0000 type (0=current, 1=voltage), 0x0001 waveform, 0x0006 read-only ACTUAL; polling reads 0x0000~0x0006 (7 registers) and uses type to select units. Step: 0x0002 count, 0x0003 dwell(ms), 0x0004 loops, 0x0007+ sequence." },
   "aomaster.slaveId": { zh: "从站地址", en: "Slave ID" },
   "aomaster.pollInterval": { zh: "回读轮询 (ms)", en: "Readback Poll (ms)" },
   "aomaster.pollIntervalTitle": { zh: "大于 0 时可在监测面板手动开始轮询，默认 50", en: "When > 0, polling can be manually started in the monitor panel; default 50" },
@@ -772,7 +772,7 @@ const TRANSLATIONS = {
         </article>
         <article class="protocol-example-card">
           <h3>实时输出</h3>
-          <p>轮询读取寄存器 <code>0x0006</code> 的实际输出值；百分比/工程值显示模式可在设备页切换。</p>
+          <p>轮询读取寄存器 <code>0x0000~0x0006</code> 共 7 个寄存器，用 <code>0x0000</code> 的类型判断电流/电压，再取 <code>0x0006</code> 的实际输出值；原始值按 1000 缩放，实际输出曲线的 Y 轴按回包类型切换为 4~20 mA 或 0~10 V。</p>
         </article>
       </div>
       <div class="protocol-note">
@@ -787,7 +787,7 @@ const TRANSLATIONS = {
         </article>
         <article class="protocol-example-card">
           <h3>Real-time Output</h3>
-          <p>Polls register <code>0x0006</code> for the actual output value; percentage/engineering value display mode can be switched on the device page.</p>
+          <p>Polls registers <code>0x0000~0x0006</code> (7 registers), uses <code>0x0000</code> to select current/voltage units, then plots the actual output from <code>0x0006</code>. Raw values are scaled by 1000. The actual-output Y axis follows the response type: 4~20 mA or 0~10 V.</p>
         </article>
       </div>
       <div class="protocol-note">

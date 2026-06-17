@@ -18,6 +18,7 @@ export const AOMASTER_REGISTERS = {
   STEP_SEQUENCE_START: 7,
 };
 
+export const AOMASTER_POLL_REGISTER_COUNT = AOMASTER_REGISTERS.ACTUAL - AOMASTER_REGISTERS.SIGNAL_TYPE + 1;
 export const AOMASTER_MAX_STEP_SEQUENCE = 16;
 const AOMASTER_PREVIEW_CYCLES = 10;
 
@@ -182,6 +183,19 @@ export function getAomasterModeCode(mode) {
   return AOMASTER_MODES[mode] ?? AOMASTER_MODES.current;
 }
 
+export function getAomasterModeFromCode(code) {
+  if (code === null || code === undefined || code === "") {
+    return null;
+  }
+
+  const normalized = Number(code);
+  if (!Number.isFinite(normalized)) {
+    return null;
+  }
+
+  return Object.entries(AOMASTER_MODES).find(([, value]) => value === normalized)?.[0] ?? null;
+}
+
 export function getAomasterWaveformCode(waveform) {
   return AOMASTER_WAVEFORMS[waveform] ?? AOMASTER_WAVEFORMS.constant;
 }
@@ -308,16 +322,20 @@ export function createAOMasterSetOutputCommand(state, config, helpers) {
 
 export function createAOMasterReadCommand(config) {
   const normalized = normalizeAomasterConfig(config);
-  return buildReadRegistersRequest(normalized.slaveId, 3, AOMASTER_REGISTERS.ACTUAL, 1);
+  return buildReadRegistersRequest(
+    normalized.slaveId,
+    3,
+    AOMASTER_REGISTERS.SIGNAL_TYPE,
+    AOMASTER_POLL_REGISTER_COUNT,
+  );
 }
 
-export function parseAOMasterTelemetry(bytes, config, mode = "current") {
+export function parseAOMasterTelemetry(bytes, config) {
   if (!bytes || bytes.length === 0) {
     return null;
   }
 
   const normalized = normalizeAomasterConfig(config);
-  const modeConfig = getAomasterModeConfig(mode);
   rxBuffer = concatBytes(rxBuffer, bytes);
   const { frames, remaining } = extractRtuFrames(rxBuffer);
   rxBuffer = remaining;
@@ -327,16 +345,26 @@ export function parseAOMasterTelemetry(bytes, config, mode = "current") {
       continue;
     }
 
-    if (frame.length < 7 || frame[2] !== 2) {
+    const byteCount = frame[2];
+    if (frame.length < 5 + byteCount || byteCount !== AOMASTER_POLL_REGISTER_COUNT * 2) {
       continue;
     }
 
-    const rawValue = (frame[3] << 8) | frame[4];
-    const value = decodeAomasterValue(mode, rawValue);
+    const rawMode = readFrameRegister(frame, AOMASTER_REGISTERS.SIGNAL_TYPE);
+    const readbackMode = getAomasterModeFromCode(rawMode);
+    if (!readbackMode) {
+      continue;
+    }
+
+    const modeConfig = getAomasterModeConfig(readbackMode);
+    const rawValue = readFrameRegister(frame, AOMASTER_REGISTERS.ACTUAL);
+    const value = decodeAomasterValue(readbackMode, rawValue);
 
     return {
-      fieldName: i18n("aomaster.actualOutput"),
+      fieldName: `${modeConfig.label} ${i18n("aomaster.actualOutput")}`,
       unit: modeConfig.unit,
+      mode: readbackMode,
+      modeCode: rawMode,
       value,
       rawValue,
     };
@@ -433,6 +461,11 @@ function concatBytes(left, right) {
   merged.set(left);
   merged.set(right, left.length);
   return merged;
+}
+
+function readFrameRegister(frame, registerIndex) {
+  const offset = 3 + registerIndex * 2;
+  return (frame[offset] << 8) | frame[offset + 1];
 }
 
 function toFiniteNumber(value, fallback) {

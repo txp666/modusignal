@@ -77,6 +77,7 @@ src/device-registry.js
 
 src/devices/aomaster.js
   AOMaster profile、Modbus RTU 命令构造、实际输出回读解析
+  Fixed protocol contract: FC03 polls 0x0000..0x0006 (7 holding registers); 0x0000 is type (0=current, 1=voltage), 0x0006 is read-only ACTUAL, raw analog values are divided by 1000, and the actual-output chart Y axis follows the response type (4..20 mA or 0..10 V). Step mode writes 0x0007+ sequence values before the header registers.
 
 src/devices/modbus-device.js
   通用 Modbus RTU profile、读写命令与回包解析

@@ -429,6 +429,7 @@ let websocketPollTimer = null;
 let mqttPollTimer = null;
 let websocketMessageStats = { rx: 0, tx: 0 };
 let mqttMessageStats = { rx: 0, tx: 0 };
+let aomasterActualMode = null;
 let deviceLibrarySearchQuery = "";
 /** @type {Record<string, string | number>} */
 let transportOptions = {};
@@ -1193,7 +1194,7 @@ function resolveCurrentChartCsvTarget() {
       },
       series: [
         { key: "setpoint", name: i18n("chart.setpointPreview"), unit: getAomasterDisplayUnit() },
-        { key: "actual", name: i18n("chart.realTimeOutput"), unit: getAomasterDisplayUnit() },
+        { key: "actual", name: i18n("chart.realTimeOutput"), unit: getAomasterDisplayUnit(getAomasterActualMode()) },
       ],
     };
   }
@@ -1996,8 +1997,12 @@ function bindSessionEvents(target) {
       }
 
       if (state.deviceId === DEFAULT_DEVICE_ID) {
-        actualChart?.add(getAomasterDisplayNumber(telemetry.value));
-        const formatted = formatAomasterDisplayValue(telemetry.value);
+        const readbackMode = telemetry.mode || state.mode;
+        aomasterActualMode = readbackMode;
+        actualChart?.setMeta({ unit: getAomasterDisplayUnit(readbackMode) });
+        syncAomasterActualChartRange(readbackMode);
+        actualChart?.add(getAomasterDisplayNumber(telemetry.value, readbackMode));
+        const formatted = formatAomasterDisplayValue(telemetry.value, readbackMode);
         elements.actualChartValue.textContent = `${telemetry.fieldName} ${formatted}`;
       } else if (state.deviceId === HART_DEVICE_ID) {
         handleHartTelemetry(telemetry);
@@ -2697,6 +2702,10 @@ function isAomasterPercentMode() {
   return state.deviceId === DEFAULT_DEVICE_ID && state.aomasterValueDisplayMode === "percent";
 }
 
+function getAomasterActualMode() {
+  return aomasterActualMode || state.mode;
+}
+
 function getAomasterPercentValue(value, mode = state.mode) {
   const config = getModeConfig(mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
   const span = config.max - config.min;
@@ -2745,8 +2754,8 @@ function formatAomasterDisplaySequence(sequence, mode = state.mode) {
   return sequence.map((value) => formatAomasterDisplayNumber(value, mode)).join(" → ");
 }
 
-function getAomasterDisplayUnit() {
-  return isAomasterPercentMode() ? "%" : getModeConfig(state.mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig).unit;
+function getAomasterDisplayUnit(mode = state.mode) {
+  return isAomasterPercentMode() ? "%" : getModeConfig(mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig).unit;
 }
 
 function updateSetpoint(value) {
@@ -4738,6 +4747,7 @@ function setAomasterValueDisplayMode(mode) {
   syncAomasterValueDisplayControls();
   populateAomasterWaveformForm();
   renderStepSequenceList();
+  aomasterActualMode = null;
   actualChart?.clear();
   if (elements.actualChartValue) {
     elements.actualChartValue.textContent = i18n("chart.noData");
@@ -5123,7 +5133,7 @@ function refreshAomasterPreviewChart() {
   }
 
   if (actualChart) {
-    actualChart.setMeta({ unit: getAomasterDisplayUnit() });
+    actualChart.setMeta({ unit: getAomasterDisplayUnit(getAomasterActualMode()) });
   }
 
   requestChartResize();
@@ -5202,7 +5212,7 @@ function syncAomasterChartRanges() {
 
   if (isAomasterPercentMode()) {
     setpointChart.setRange(0, 100);
-    actualChart.setRange(0, 100);
+    syncAomasterActualChartRange();
     return;
   }
 
@@ -5220,10 +5230,25 @@ function syncAomasterChartRanges() {
         ? config.max
         : Math.max(state.waveLow, state.waveHigh);
   setpointChart.setRange(min, max);
-  actualChart.setRange(min, max);
+  syncAomasterActualChartRange();
+}
+
+function syncAomasterActualChartRange(mode = getAomasterActualMode()) {
+  if (!actualChart) {
+    return;
+  }
+
+  if (isAomasterPercentMode()) {
+    actualChart.setRange(0, 100);
+    return;
+  }
+
+  const config = getModeConfig(mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
+  actualChart.setRange(config.min, config.max);
 }
 
 function clearAomasterCharts() {
+  aomasterActualMode = null;
   setpointChart?.clear();
   actualChart?.clear();
   elements.setpointChartValue.textContent = i18n("workbench.noSetpoint");

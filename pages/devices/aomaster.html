@@ -133,7 +133,7 @@
     <div class="panel-heading split">
       <div>
         <h2 data-i18n="aomaster.commParams">通讯参数</h2>
-        <p data-i18n="aomaster.commDesc">寄存器：0x0000~0x0001 类型/波形；阶跃时 0x0002 点数、0x0003 保持(ms)、0x0004 循环、0x0007+ 序列值；0x0006 实际输出。</p>
+        <p data-i18n="aomaster.commDesc">寄存器：0x0000 类型（0=电流，1=电压），0x0001 波形，0x0006 只读 ACTUAL；轮询读取 0x0000~0x0006 共 7 个寄存器。</p>
       </div>
       <div class="panel-actions">
         <button id="resetAomasterConfig" class="ghost-button" type="button" data-i18n="common.resetDefault">恢复默认</button>
