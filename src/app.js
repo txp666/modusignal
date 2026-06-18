@@ -192,6 +192,9 @@ function cacheElements() {
     pages: [...document.querySelectorAll("[data-page-id]")],
     customDeviceNavName: document.querySelector("#customDeviceNavName"),
     githubLink: document.querySelector("#githubLink"),
+    openAomasterProductDialog: document.querySelector("#openAomasterProductDialog"),
+    aomasterProductDialog: document.querySelector("#aomasterProductDialog"),
+    closeAomasterProductDialog: document.querySelector("#closeAomasterProductDialog"),
     newDeviceRequestLink: document.querySelector("#newDeviceRequestLink"),
     deviceRequestTemplate: document.querySelector("#deviceRequestTemplate"),
     copyRequestTemplate: document.querySelector("#copyRequestTemplate"),
@@ -569,6 +572,32 @@ function refreshAllDynamicUi() {
 function on(element, eventName, handler) {
   if (element) {
     element.addEventListener(eventName, handler);
+  }
+}
+
+function openAomasterProductDialog() {
+  const dialog = elements.aomasterProductDialog;
+  if (!dialog) {
+    return;
+  }
+
+  if (typeof dialog.showModal === "function") {
+    dialog.showModal();
+  } else {
+    dialog.setAttribute("open", "");
+  }
+}
+
+function closeAomasterProductDialog() {
+  const dialog = elements.aomasterProductDialog;
+  if (!dialog) {
+    return;
+  }
+
+  if (typeof dialog.close === "function") {
+    dialog.close();
+  } else {
+    dialog.removeAttribute("open");
   }
 }
 
@@ -1680,6 +1709,13 @@ function bindEvents() {
   });
   on(elements.sendManual, "click", sendManualCommand);
   on(elements.copyRequestTemplate, "click", copyRequestTemplate);
+  on(elements.openAomasterProductDialog, "click", openAomasterProductDialog);
+  on(elements.closeAomasterProductDialog, "click", closeAomasterProductDialog);
+  on(elements.aomasterProductDialog, "click", (event) => {
+    if (event.target === elements.aomasterProductDialog || event.target.closest("[data-page-target]")) {
+      closeAomasterProductDialog();
+    }
+  });
   on(elements.clearLog, "click", () => {
     resetRxLogCoalesce();
     elements.serialLog.innerHTML = "";

@@ -883,6 +883,170 @@ button:focus-visible {
   font-size: 0.88rem;
 }
 
+.aomaster-product-card {
+  display: grid;
+  grid-template-columns: minmax(14rem, 0.42fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+}
+
+.aomaster-product-media,
+.aomaster-dialog-visual {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: var(--surface-muted);
+}
+
+.aomaster-product-media {
+  min-height: 15rem;
+}
+
+.aomaster-product-media img,
+.aomaster-dialog-visual img {
+  display: block;
+  width: min(100%, 22rem);
+  max-height: 18rem;
+  object-fit: contain;
+}
+
+.aomaster-product-content,
+.aomaster-dialog-copy {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.aomaster-product-kicker {
+  color: var(--accent-strong);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.aomaster-product-content h2,
+.aomaster-dialog-header h2 {
+  font-size: 1.25rem;
+}
+
+.aomaster-product-content p,
+.aomaster-dialog-copy p,
+.aomaster-dialog-note span {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.aomaster-product-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.aomaster-product-highlights span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.8rem;
+  border: 1px solid var(--line);
+  border-radius: 99rem;
+  padding: 0 0.65rem;
+  background: #fff;
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.aomaster-product-dialog {
+  width: min(58rem, calc(100vw - 2rem));
+  max-height: calc(100vh - 2rem);
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.aomaster-product-dialog::backdrop {
+  background: rgba(16, 24, 32, 0.45);
+}
+
+.aomaster-dialog-shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: calc(100vh - 2rem);
+}
+
+.aomaster-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.aomaster-dialog-content {
+  display: grid;
+  gap: 0.9rem;
+  overflow: auto;
+  padding: 1rem;
+}
+
+.aomaster-dialog-main {
+  display: grid;
+  grid-template-columns: minmax(14rem, 0.42fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.aomaster-dialog-visual {
+  min-height: 17rem;
+}
+
+.aomaster-dialog-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.aomaster-dialog-feature-grid article {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: #fbfcfd;
+}
+
+.aomaster-dialog-feature-grid strong {
+  font-size: 0.9rem;
+}
+
+.aomaster-dialog-feature-grid span {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.aomaster-dialog-note {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  padding: 0.75rem 0.8rem;
+  border: 1px dashed #b8c2ce;
+  border-radius: 0.5rem;
+  background: #fbfcfd;
+}
+
+.aomaster-dialog-note strong {
+  flex-shrink: 0;
+  font-size: 0.84rem;
+}
+
+.aomaster-dialog-actions {
+  justify-content: flex-end;
+}
+
 .arch-diagram {
   display: grid;
   justify-items: center;
@@ -1842,6 +2006,11 @@ code {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .aomaster-product-card,
+  .aomaster-dialog-main {
+    grid-template-columns: 1fr;
+  }
+
   .arch-split {
     gap: 4rem;
   }
@@ -1912,6 +2081,37 @@ code {
 
   .home-grid {
     grid-template-columns: 1fr;
+  }
+
+  .aomaster-product-card {
+    gap: 0.8rem;
+  }
+
+  .aomaster-product-media,
+  .aomaster-dialog-visual {
+    min-height: 12rem;
+  }
+
+  .aomaster-product-content h2,
+  .aomaster-dialog-header h2 {
+    font-size: 1.05rem;
+  }
+
+  .aomaster-dialog-header {
+    padding: 0.8rem;
+  }
+
+  .aomaster-dialog-content {
+    padding: 0.8rem;
+  }
+
+  .aomaster-dialog-feature-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .aomaster-dialog-note {
+    flex-direction: column;
+    gap: 0.35rem;
   }
 
   .topbar-actions {

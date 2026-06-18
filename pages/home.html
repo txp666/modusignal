@@ -13,6 +13,93 @@
     <div id="homeDeviceGrid" class="home-grid"></div>
   </div>
 
+  <section class="panel aomaster-product-card" aria-labelledby="aomasterProductTitle">
+    <div class="aomaster-product-media">
+      <img
+        src="./images/AOMaster.png?v=__ASSET_VERSION__"
+        alt=""
+        aria-hidden="true"
+      />
+    </div>
+    <div class="aomaster-product-content">
+      <span class="aomaster-product-kicker" data-i18n="home.aomasterKicker">AOMaster 产品</span>
+      <h2 id="aomasterProductTitle" data-i18n="home.aomasterProductTitle">AOMaster 便携式模拟量输出控制器</h2>
+      <p data-i18n="home.aomasterProductDesc">基于 CH32V003F4U6 + GP8630 的掌心级模拟量输出设备，支持 OLED 本地调节、0-10 V / 4-20 mA 输出、波形输出与 USART1 Modbus RTU 上位机控制。</p>
+      <div class="aomaster-product-highlights" aria-label="AOMaster highlights">
+        <span>0-10 V</span>
+        <span>4-20 mA</span>
+        <span>Modbus RTU</span>
+        <span data-i18n="home.aomasterLocalControl">OLED 本地调节</span>
+      </div>
+      <div class="panel-actions">
+        <button id="openAomasterProductDialog" type="button" data-i18n="home.aomasterMore">查看产品介绍</button>
+        <button class="ghost-button" type="button" data-page-target="aomaster" data-device-id="aomaster" data-i18n="home.aomasterDebug">打开调试页</button>
+      </div>
+    </div>
+  </section>
+
+  <dialog id="aomasterProductDialog" class="aomaster-product-dialog" aria-labelledby="aomasterProductDialogTitle">
+    <div class="aomaster-dialog-shell">
+      <header class="aomaster-dialog-header">
+        <div>
+          <span class="aomaster-product-kicker" data-i18n="home.aomasterKicker">AOMaster 产品</span>
+          <h2 id="aomasterProductDialogTitle" data-i18n="home.aomasterProductTitle">AOMaster 便携式模拟量输出控制器</h2>
+        </div>
+        <button
+          id="closeAomasterProductDialog"
+          class="icon-button"
+          type="button"
+          data-i18n-aria-label="home.aomasterClose"
+          data-i18n-title="home.aomasterClose"
+          aria-label="关闭产品介绍"
+          title="关闭产品介绍"
+        >
+          &#215;
+        </button>
+      </header>
+      <div class="aomaster-dialog-content">
+        <div class="aomaster-dialog-main">
+          <div class="aomaster-dialog-visual">
+            <img
+              src="./images/AOMaster.png?v=__ASSET_VERSION__"
+              alt=""
+              aria-hidden="true"
+            />
+          </div>
+          <div class="aomaster-dialog-copy">
+            <p data-i18n="home.aomasterIntro">AOMaster 面向传感器、仪表和采集模块调试，可在现场直接旋钮设定输出，也可以通过 modusignal 在浏览器里下发恒定值、阶跃、斜坡、方波、三角波和正弦波，并轮询回读实际输出曲线。</p>
+            <div class="aomaster-dialog-feature-grid">
+              <article>
+                <strong data-i18n="home.aomasterFeatureOutput">模拟量输出</strong>
+                <span data-i18n="home.aomasterFeatureOutputDesc">覆盖 0-10 V 电压与 4-20 mA 电流，适合 PLC、采集卡、变送器输入端调试。</span>
+              </article>
+              <article>
+                <strong data-i18n="home.aomasterFeatureWave">波形发生</strong>
+                <span data-i18n="home.aomasterFeatureWaveDesc">支持恒定、阶跃、斜坡、方波、三角波、正弦波；阶跃序列最多 16 点。</span>
+              </article>
+              <article>
+                <strong data-i18n="home.aomasterFeatureLocal">本地操作</strong>
+                <span data-i18n="home.aomasterFeatureLocalDesc">OLED 显示当前模式和输出值，编码器可切换步进、调整输出并进入菜单。</span>
+              </article>
+              <article>
+                <strong data-i18n="home.aomasterFeatureHost">网页上位机</strong>
+                <span data-i18n="home.aomasterFeatureHostDesc">USB-C 接入后以 115200 8N1 使用 Modbus RTU，支持设定写入与 50 ms 轮询回读。</span>
+              </article>
+            </div>
+          </div>
+        </div>
+        <div class="aomaster-dialog-note">
+          <strong data-i18n="home.aomasterUsageTitle">典型用法</strong>
+          <span data-i18n="home.aomasterUsageDesc">给设备供电后，将输出端接入被测设备或仪表输入端；网页中选择 AOMaster 与 Serial，保持默认串口参数即可开始控制与监测。</span>
+        </div>
+        <div class="panel-actions aomaster-dialog-actions">
+          <button type="button" data-page-target="aomaster" data-device-id="aomaster" data-i18n="home.aomasterDebug">打开调试页</button>
+          <a class="action-link" href="https://oshwhub.com/txp666/project_dvokplei" target="_blank" rel="noreferrer" data-i18n="home.aomasterHardware">硬件资料</a>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
   <div class="panel architecture-card">
     <h2 data-i18n="home.architecture">当前架构</h2>
     <div class="arch-diagram" role="img" data-i18n-aria-label="home.archAriaLabel" aria-label="modusignal 架构框图：页面 UI 经 app.js 调度，分为正交的设备层与传输层，数据汇入曲线与日志">
