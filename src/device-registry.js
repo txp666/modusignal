@@ -35,6 +35,10 @@ import {
   WEBSOCKET_DEVICE_ID,
   parseWebSocketTelemetry,
 } from "./devices/websocket-device.js";
+import {
+  getMicroScopePowerProfile,
+  MICROSCOPE_POWER_DEVICE_ID,
+} from "./devices/microscope-power.js";
 
 /**
  * 设备注册表：新增设备时在此追加一条 entry，并补充 pagePath。
@@ -86,6 +90,12 @@ export const DEVICE_REGISTRY = [
     parseTelemetry: (text, bytes, ctx, helpers) =>
       parseWebSocketTelemetry(text, bytes, ctx.websocketConfig, helpers.parseNumericTelemetry, helpers),
   },
+  {
+    id: MICROSCOPE_POWER_DEVICE_ID,
+    pagePath: "pages/devices/microscope-power.html",
+    standalone: true,
+    getProfile: () => getMicroScopePowerProfile(),
+  },
 ];
 
 export const DEVICE_REGISTRY_BY_ID = Object.fromEntries(DEVICE_REGISTRY.map((entry) => [entry.id, entry]));
@@ -98,6 +108,10 @@ export const DEVICE_PROFILES = Object.fromEntries(
 
 export function getDeviceRegistryEntry(deviceId) {
   return DEVICE_REGISTRY_BY_ID[deviceId] ?? null;
+}
+
+export function isStandaloneDevice(deviceId) {
+  return Boolean(getDeviceRegistryEntry(deviceId)?.standalone);
 }
 
 export function listRegisteredDevicePagePaths() {

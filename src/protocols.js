@@ -72,7 +72,12 @@ export {
   DEVICE_PROFILES,
   DEVICE_REGISTRY,
   getDeviceRegistryEntry,
+  isStandaloneDevice,
 } from "./device-registry.js";
+
+export {
+  MICROSCOPE_POWER_DEVICE_ID,
+} from "./devices/microscope-power.js";
 
 export const DEFAULT_DEVICE_ID = AOMASTER_DEVICE_ID;
 

@@ -348,6 +348,21 @@ label {
   min-height: calc(100vh - 9.5rem);
 }
 
+.app-shell.standalone-device #secureState,
+.app-shell.standalone-device #connectButton,
+.app-shell.standalone-device #disconnectButton,
+.app-shell.standalone-device [data-sidebar-panel="transport"] {
+  display: none;
+}
+
+.app-shell.standalone-device #connectionState {
+  display: none;
+}
+
+.device-shell.standalone {
+  display: block;
+}
+
 .device-shell .device-page {
   display: none;
 }
@@ -362,6 +377,33 @@ label {
   flex-direction: column;
   gap: 1rem;
   box-sizing: border-box;
+}
+
+.device-shell.standalone .device-page.active {
+  display: block;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+
+.device-shell.standalone .workbench-mount {
+  display: none;
+}
+
+.microscope-power-host {
+  display: grid;
+  grid-template-rows: auto minmax(34rem, 1fr);
+  min-height: calc(100vh - 10.5rem);
+}
+
+.microscope-power-frame {
+  display: block;
+  width: 100%;
+  min-height: 34rem;
+  height: calc(100vh - 15rem);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  background: #fff;
 }
 
 .device-shell.active .control-panel,

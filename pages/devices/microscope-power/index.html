@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Pico 电流波形采集上位机</title>
+    <link rel="icon" href="data:,">
+    <link rel="stylesheet" href="./style.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <span class="brand-kicker">RP2040 WebUSB Scope</span>
+          <h1>Pico 电流波形采集上位机</h1>
+        </div>
+        <div class="topbar-actions">
+          <span id="connectionLabel" class="connection-chip">未连接</span>
+          <button id="connectBtn" type="button" class="primary-action">连接设备</button>
+          <button id="disconnectBtn" type="button" class="secondary-action" disabled>断开</button>
+        </div>
+      </header>
+
+      <section class="control-grid" aria-label="采集控制">
+        <div class="panel control-panel capture-card">
+          <div class="panel-title">
+            <h2>采集</h2>
+            <span>Acquisition</span>
+          </div>
+          <div class="control-row">
+            <label for="sampleRateSelect">采样率</label>
+            <select id="sampleRateSelect">
+              <option value="10000">10 kSPS</option>
+              <option value="20000">20 kSPS</option>
+              <option value="50000" selected>50 kSPS</option>
+              <option value="100000">100 kSPS</option>
+            </select>
+          </div>
+
+          <div class="control-row">
+            <label for="modeSelect">信号源</label>
+            <select id="modeSelect">
+              <option value="FAKE_RAMP" selected>递增计数</option>
+              <option value="FAKE_SINE">正弦波</option>
+              <option value="FAKE_SQUARE">方波</option>
+              <option value="FAKE_PULSE">阶跃脉冲</option>
+              <option value="FAKE_NOISE">随机噪声</option>
+              <option value="ADC">ADS8866 ADC</option>
+            </select>
+          </div>
+
+          <div class="button-row capture-actions">
+            <button id="startBtn" type="button" class="run-action" disabled>开始采集</button>
+            <button id="stopBtn" type="button" class="stop-action" disabled>停止</button>
+          </div>
+        </div>
+
+        <div class="panel control-panel curve-card">
+          <div class="panel-title">
+            <h2>曲线</h2>
+            <span>View</span>
+          </div>
+          <div class="control-row">
+            <label for="timeWindowSelect">时间窗口</label>
+            <select id="timeWindowSelect">
+              <option value="0.05">50 ms</option>
+              <option value="0.1">100 ms</option>
+              <option value="0.2">200 ms</option>
+              <option value="0.5">500 ms</option>
+              <option value="1">1 s</option>
+              <option value="2" selected>2 s</option>
+              <option value="5">5 s</option>
+              <option value="10">10 s</option>
+            </select>
+          </div>
+          <div class="segmented-actions" aria-label="曲线视图操作">
+            <button id="zoomInBtn" type="button">放大</button>
+            <button id="zoomOutBtn" type="button">缩小</button>
+            <button id="panLeftBtn" type="button">左移</button>
+            <button id="panRightBtn" type="button">右移</button>
+            <button id="latestBtn" type="button">最新</button>
+          </div>
+        </div>
+
+        <div class="panel control-panel range-card">
+          <div class="panel-title">
+            <h2>量程</h2>
+            <span>Scale</span>
+          </div>
+          <div class="toggle-grid">
+            <label>
+              <input id="autoScaleToggle" type="checkbox" checked>
+              自动量程
+            </label>
+            <label>
+              <input id="gridToggle" type="checkbox" checked>
+              显示网格
+            </label>
+            <label>
+              <input id="cursorToggle" type="checkbox">
+              游标测量
+            </label>
+          </div>
+          <div class="range-grid">
+            <div class="control-row">
+              <label for="yMinInput">Y 最小值</label>
+              <input id="yMinInput" type="number" min="0" max="65535" step="1" value="0" disabled>
+            </div>
+            <div class="control-row">
+              <label for="yMaxInput">Y 最大值</label>
+              <input id="yMaxInput" type="number" min="0" max="65535" step="1" value="65535" disabled>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel control-panel export-card">
+          <div class="panel-title">
+            <h2>校准与导出</h2>
+            <span>Cal / Export</span>
+          </div>
+          <div class="range-grid">
+            <div class="control-row">
+              <label for="zeroCodeInput">零点 code</label>
+              <input id="zeroCodeInput" type="number" min="0" max="65535" step="1" value="0">
+            </div>
+            <div class="control-row">
+              <label for="gainInput">nA/code</label>
+              <input id="gainInput" type="number" min="1" step="1" value="763">
+            </div>
+          </div>
+          <div class="utility-actions">
+            <button id="zeroNowBtn" type="button" disabled>当前归零</button>
+            <button id="applyCalBtn" type="button" disabled>应用校准</button>
+            <button id="pauseViewBtn" type="button">暂停显示</button>
+            <button id="clearBtn" type="button">清屏</button>
+            <button id="exportCsvBtn" type="button">导出 CSV</button>
+            <button id="exportPngBtn" type="button">保存图片</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="scope-layout">
+        <div class="plot-panel">
+          <div class="plot-toolbar">
+            <div>
+              <strong>波形视图</strong>
+              <span id="viewLabel">窗口 2.000 s，跟随最新</span>
+            </div>
+            <span id="cursorLabel" class="cursor-chip">游标未启用</span>
+          </div>
+          <canvas id="waveCanvas"></canvas>
+        </div>
+
+        <aside class="stats-panel" aria-label="统计信息">
+          <section class="stats-section">
+            <h2>状态</h2>
+            <div class="stat"><span>运行状态</span><strong id="stateValue">空闲</strong></div>
+            <div class="stat"><span>采样率</span><strong id="sampleRateValue">50000</strong></div>
+            <div class="stat"><span>信号源</span><strong id="modeValue">递增计数</strong></div>
+            <div class="stat"><span>帧序号</span><strong id="seqValue">-</strong></div>
+            <div class="stat"><span>丢帧</span><strong id="droppedValue">0</strong></div>
+            <div class="stat"><span>USB 速率</span><strong id="usbRateValue">0 kB/s</strong></div>
+          </section>
+
+          <section class="stats-section">
+            <h2>数据</h2>
+            <div class="stat highlight"><span>当前 code</span><strong id="codeValue">0</strong></div>
+            <div class="stat"><span>平均 code</span><strong id="avgValue">0</strong></div>
+            <div class="stat"><span>最小 / 最大</span><strong id="minMaxValue">0 / 0</strong></div>
+            <div class="stat"><span>峰峰值</span><strong id="ppValue">0</strong></div>
+            <div class="stat highlight"><span>平均电流</span><strong id="iavgValue">0.000 uA</strong></div>
+            <div class="stat"><span>最小 / 最大电流</span><strong id="iminMaxValue">0.000 / 0.000 uA</strong></div>
+            <div class="stat"><span>电流峰峰值</span><strong id="ippValue">0.000 uA</strong></div>
+          </section>
+
+          <section class="stats-section">
+            <h2>游标</h2>
+            <div class="stat"><span>光标 A</span><strong id="cursorAValue">-</strong></div>
+            <div class="stat"><span>光标 B</span><strong id="cursorBValue">-</strong></div>
+            <div class="stat"><span>ΔT / 频率</span><strong id="cursorTimeValue">-</strong></div>
+            <div class="stat"><span>ΔCode / ΔI</span><strong id="cursorDeltaValue">-</strong></div>
+          </section>
+        </aside>
+      </section>
+
+      <section class="panel log-panel">
+        <div class="log-header">
+          <h2>通信日志</h2>
+          <button id="clearLogBtn" type="button">清日志</button>
+        </div>
+        <pre id="logOutput"></pre>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

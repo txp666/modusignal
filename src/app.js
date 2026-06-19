@@ -110,6 +110,7 @@ import {
   DEVICE_PAGE_IDS,
   getDeviceProfile,
   getDeviceDefaultTransportId,
+  isStandaloneDevice,
   getModeConfig,
   listDeviceLibrary,
   MODBUS_DEVICE_ID,
@@ -2280,6 +2281,7 @@ function applyDeviceTransportDefaults(deviceId = state.deviceId) {
 }
 
 function selectDevice(deviceId) {
+  const standalone = isStandaloneDevice(deviceId);
   state.pollingActive = false;
   stopAllPolling();
   resetModbusRxBuffer();
@@ -2287,6 +2289,10 @@ function selectDevice(deviceId) {
   resetAomasterRxBuffer();
   state.deviceId = deviceId;
   state.pageId = deviceId;
+
+  if (standalone && session?.connected) {
+    void disconnect().catch((error) => appendLog("error", i18n("log.connect"), error.message));
+  }
 
   if (deviceId === CUSTOM_DEVICE_ID) {
     state.mode = "custom";
@@ -2301,15 +2307,19 @@ function selectDevice(deviceId) {
     state.mode = getHartMode(normalized.activeCommand);
     const config = getModeConfig(state.mode, deviceId, customConfig, modbusConfig);
     state.setpoint = config.presets.mid;
-  } else if (deviceId !== WEBSOCKET_DEVICE_ID && deviceId !== MQTT_DEVICE_ID) {
+  } else if (!standalone && deviceId !== WEBSOCKET_DEVICE_ID && deviceId !== MQTT_DEVICE_ID) {
     state.mode = elements.outputModeSelect?.value || "current";
     applyAomasterModeDefaults();
   }
 
-  applyDeviceDefaultTransport(deviceId);
+  if (!standalone) {
+    applyDeviceDefaultTransport(deviceId);
+  }
 
   clearAllCharts();
-  syncAomasterChartRanges();
+  if (!standalone) {
+    syncAomasterChartRanges();
+  }
   updatePageUi();
   updateDeviceUi();
   updateActivePolling();
@@ -2320,14 +2330,7 @@ function selectDevice(deviceId) {
 }
 
 function navigateToPage(pageId) {
-  if (
-    pageId === DEFAULT_DEVICE_ID ||
-    pageId === CUSTOM_DEVICE_ID ||
-    pageId === MODBUS_DEVICE_ID ||
-    pageId === HART_DEVICE_ID ||
-    pageId === WEBSOCKET_DEVICE_ID ||
-    pageId === MQTT_DEVICE_ID
-  ) {
+  if (DEVICE_PAGE_IDS.includes(pageId)) {
     selectDevice(pageId);
     return;
   }
@@ -2407,6 +2410,10 @@ function updateMqttTransportDraft() {
 }
 
 function transportReady() {
+  if (isStandaloneDevice(state.deviceId)) {
+    return false;
+  }
+
   const descriptor = getTransportDescriptor(state.transportId);
   return descriptor.isSupported() && (!descriptor.requiresSecureContext || window.isSecureContext);
 }
@@ -2423,6 +2430,7 @@ function updateDeviceUi() {
   const isMqtt = state.deviceId === MQTT_DEVICE_ID;
   const isMessageDebug = isWebsocket || isMqtt;
   const isAomaster = state.deviceId === DEFAULT_DEVICE_ID;
+  const isStandalone = isStandaloneDevice(state.deviceId);
   const normalizedModbus = normalizeModbusConfig(modbusConfig);
   const modbusIsRead = isModbus && isReadFunctionCode(normalizedModbus.functionCode);
 
@@ -2433,40 +2441,42 @@ function updateDeviceUi() {
   const setpointRow = queryDeviceField("setpointRow");
   const presetRow = queryDeviceField("presetRow");
   if (setpointRow) {
-    setpointRow.hidden = modbusIsRead || isHart || isMessageDebug;
+    setpointRow.hidden = isStandalone || modbusIsRead || isHart || isMessageDebug;
   }
   if (presetRow) {
-    presetRow.hidden = modbusIsRead || isHart || isMessageDebug;
+    presetRow.hidden = isStandalone || modbusIsRead || isHart || isMessageDebug;
   }
 
-  if (elements.singleChartBlock) {
-    elements.singleChartBlock.hidden = isAomaster;
-  }
-  if (elements.dualChartBlock) {
-    elements.dualChartBlock.hidden = !isAomaster;
-  }
-  syncChartCurvePanelUi();
-  if (isHart) {
-    syncHartCommandModeUi();
-    ensureHartTelemetryChart();
-    syncHartChartSeriesControls();
-    updateHartVariableCards();
-  } else if (
-    (isMqtt && shouldUseMqttMultiChart()) ||
-    (isWebsocket && shouldUseWebsocketMultiChart()) ||
-    (isCustom && shouldUseCustomMultiChart()) ||
-    (isModbus && shouldUseModbusMultiChart())
-  ) {
-    ensureJsonMultiTelemetryChart();
-  } else {
-    ensureSingleTelemetryChart();
-  }
-  if (elements.chartPanelSummary) {
-    const chartPointSettings = getChartPointSettings();
-    elements.chartPanelSummary.textContent = describeChartPanelSummary(
-      chartPointSettings.totalPointCount,
-      chartPointSettings.visiblePointCount,
-    );
+  if (!isStandalone) {
+    if (elements.singleChartBlock) {
+      elements.singleChartBlock.hidden = isAomaster;
+    }
+    if (elements.dualChartBlock) {
+      elements.dualChartBlock.hidden = !isAomaster;
+    }
+    syncChartCurvePanelUi();
+    if (isHart) {
+      syncHartCommandModeUi();
+      ensureHartTelemetryChart();
+      syncHartChartSeriesControls();
+      updateHartVariableCards();
+    } else if (
+      (isMqtt && shouldUseMqttMultiChart()) ||
+      (isWebsocket && shouldUseWebsocketMultiChart()) ||
+      (isCustom && shouldUseCustomMultiChart()) ||
+      (isModbus && shouldUseModbusMultiChart())
+    ) {
+      ensureJsonMultiTelemetryChart();
+    } else {
+      ensureSingleTelemetryChart();
+    }
+    if (elements.chartPanelSummary) {
+      const chartPointSettings = getChartPointSettings();
+      elements.chartPanelSummary.textContent = describeChartPanelSummary(
+        chartPointSettings.totalPointCount,
+        chartPointSettings.visiblePointCount,
+      );
+    }
   }
 
   const summary = queryDeviceField("deviceSummary");
@@ -2491,6 +2501,12 @@ function updateDeviceUi() {
   document.querySelectorAll("[data-device-id]").forEach((button) => {
     button.classList.toggle("active", button.dataset.deviceId === state.deviceId && isDevicePageActive());
   });
+
+  if (isStandalone) {
+    requestChartResize();
+    updatePollingUi();
+    return;
+  }
 
   if (isAomaster) {
     syncAomasterValueDisplayControls();
@@ -2547,9 +2563,12 @@ function updateDeviceUi() {
 
 function updatePageUi() {
   const isDevice = isDevicePageActive();
+  const isStandalone = isDevice && isStandaloneDevice(state.deviceId);
 
   elements.pages = [...document.querySelectorAll("[data-page-id]")];
+  elements.appShell?.classList.toggle("standalone-device", isStandalone);
   elements.deviceShell.classList.toggle("active", isDevice);
+  elements.deviceShell.classList.toggle("standalone", isStandalone);
 
   elements.pages.forEach((page) => {
     if (page.classList.contains("device-page")) {
@@ -2688,6 +2707,8 @@ function renderHomeDeviceCards() {
       summary.textContent = i18n("home.card.websocket");
     } else if (entry.deviceId === MQTT_DEVICE_ID) {
       summary.textContent = i18n("home.mqttCardDesc");
+    } else if (isStandaloneDevice(entry.deviceId)) {
+      summary.textContent = i18n("home.microscopePowerCardDesc");
     } else {
       summary.textContent = i18n("home.customCardDesc");
     }
@@ -2996,10 +3017,11 @@ function syncSecureState(connected) {
 }
 
 function updateConnectionUi(connected) {
-  elements.connectButton.disabled = connected || !transportReady();
+  const standalone = isStandaloneDevice(state.deviceId);
+  elements.connectButton.disabled = standalone || connected || !transportReady();
   elements.disconnectButton.disabled = !connected;
   elements.sendManual.disabled = !connected;
-  elements.transportSelect.disabled = connected;
+  elements.transportSelect.disabled = standalone || connected;
   elements.connectionState.textContent = connected ? i18n("nav.connected") : i18n("nav.notConnected");
   elements.connectionState.classList.toggle("connected", connected);
   if (connected) {
@@ -3304,6 +3326,18 @@ function updateActivePolling() {
 
 function updatePollingUi() {
   if (!elements.togglePolling) {
+    return;
+  }
+
+  if (isStandaloneDevice(state.deviceId)) {
+    state.pollingActive = false;
+    stopAllPolling();
+    if (elements.pollState) {
+      elements.pollState.classList.remove("connected");
+      elements.pollState.textContent = i18n("workbench.pollNotSupported");
+    }
+    elements.togglePolling.disabled = true;
+    elements.togglePolling.textContent = i18n("workbench.startPolling");
     return;
   }
 

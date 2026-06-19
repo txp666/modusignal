@@ -665,6 +665,13 @@ const TRANSLATIONS = {
   "home.card.websocket": { zh: "WebSocket 连接调试，快捷 JSON/文本发送与回包解析。", en: "WebSocket connection debug, quick JSON/text send and response parsing." },
   "home.card.mqtt": { zh: "MQTT Broker 连接调试，发布/订阅消息与 JSON 回包解析。", en: "MQTT Broker connection debug, publish/subscribe messages and JSON response parsing." },
   "home.card.custom": { zh: "模板发送 / JSON·HEX·Modbus 解析", en: "Template send / JSON·HEX·Modbus parsing" },
+  "home.microscopePowerCardDesc": { zh: "RP2040 WebUSB 小电流波形采集上位机，支持高速曲线、游标、校准与 CSV/PNG 导出。", en: "RP2040 WebUSB small-current waveform host with high-speed charts, cursors, calibration and CSV/PNG export." },
+
+  // MicroScope Power
+  "microscopePower.title": { zh: "MicroScope Power 上位机", en: "MicroScope Power Host" },
+  "microscopePower.desc": { zh: "RP2040 WebUSB 电流波形采集、曲线查看、游标测量、校准与导出。", en: "RP2040 WebUSB current waveform acquisition, chart view, cursor measurement, calibration and export." },
+  "microscopePower.openStandalone": { zh: "独立打开", en: "Open Standalone" },
+  "microscopePower.profile.type": { zh: "WebUSB 电流波形采集", en: "WebUSB Current Waveform Capture" },
 
   // 日志曲线格式
   "log.curveLoaded": { zh: "{name} 已加载：{series} 条曲线，共 {points} 点", en: "{name} loaded: {series} curves, {points} points total" },
