@@ -1881,12 +1881,14 @@ code {
 
 .chart-settings {
   display: grid;
-  grid-template-columns: minmax(6.5rem, 1fr) minmax(6.5rem, 1fr) minmax(0, 1fr);
-  gap: 0.65rem;
+  grid-template-columns: minmax(7rem, 9.5rem) minmax(7rem, 9.5rem) minmax(17rem, 1fr);
+  gap: 0.55rem;
   align-items: end;
-  margin-top: 0.85rem;
-  padding-top: 0.85rem;
-  border-top: 1px solid #dbe4ea;
+  margin: 0;
+  padding: 0.65rem;
+  border: 1px solid #dbe4ea;
+  border-radius: 0.5rem;
+  background: #fff;
 }
 
 .chart-settings-field {
@@ -1895,9 +1897,16 @@ code {
 
 .chart-settings-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
-  gap: 0.65rem;
+  gap: 0.45rem;
+  min-width: 0;
+}
+
+.chart-settings-actions button {
+  min-height: 2.25rem;
+  padding: 0 0.65rem;
+  white-space: nowrap;
 }
 
 .chart-settings-actions > button:not(.ghost-button) {
@@ -2269,6 +2278,7 @@ code {
 
   .chart-settings-actions {
     justify-content: stretch;
+    flex-wrap: wrap;
   }
 
   .chart-settings-actions button {
