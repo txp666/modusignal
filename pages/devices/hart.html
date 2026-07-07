@@ -1,11 +1,15 @@
-<section id="hartPage" class="device-page" data-page-id="hart">
-  <section class="panel control-panel">
-    <div class="panel-heading split">
+<section id="hartPage" class="device-page hart-page" data-page-id="hart">
+  <section class="panel control-panel hart-control-panel">
+    <div class="panel-heading split hart-panel-heading">
       <div>
         <h2 data-i18n="hart.variableRead">变量读取</h2>
         <p data-field="deviceSummary">Address 0 · poll PV (Cmd 1) · 1000 ms · device not found</p>
       </div>
-      <span data-field="driverState" class="state-pill">HART</span>
+      <div class="panel-actions">
+        <span data-field="driverState" class="state-pill">HART</span>
+        <button id="resetHartConfig" class="ghost-button" type="button" data-i18n="common.resetDefault">恢复默认</button>
+        <button id="saveHartConfig" type="button" data-i18n="common.save">保存</button>
+      </div>
     </div>
 
     <div class="hart-device-info">
@@ -44,9 +48,54 @@
       <code id="hartCommandResponse" data-i18n="hart.noResponse">尚未收到应答</code>
     </div>
 
-    <div class="command-preview">
+    <div class="hart-quick-config">
+      <div class="config-grid hart-essential-grid">
+        <label>
+          <span data-i18n="hart.pollAddress">轮询地址</span>
+          <input id="hartPollAddress" type="number" min="0" max="15" step="1" value="0" />
+        </label>
+        <label>
+          <span data-i18n="hart.pollMode">轮询方式</span>
+          <select id="hartPollMode">
+            <option value="pv" selected data-i18n="hart.pollPv">轮询 PV (Cmd 1)</option>
+            <option value="dynamic" data-i18n="hart.pollDynamic">轮询 PV/SV/TV/QV (Cmd 3)</option>
+          </select>
+        </label>
+        <label>
+          <span data-i18n="hart.pollInterval">轮询间隔 (ms)</span>
+          <input id="hartPollIntervalMs" type="number" min="0" step="100" value="1000" data-i18n-title="hart.pollIntervalTitle" title="大于 0 时可在监测面板手动开始轮询，默认 1000" />
+        </label>
+        <label>
+          <span data-i18n="hart.commandMode">命令方式</span>
+          <select id="hartCommandMode">
+            <option value="preset" selected data-i18n="hart.cmdPreset">预设通用命令</option>
+            <option value="custom" data-i18n="hart.cmdCustom">自定义命令</option>
+          </select>
+        </label>
+      </div>
+      <div class="config-grid hart-command-grid">
+        <label id="hartPresetCommandField">
+          <span data-i18n="hart.universalCmd">通用命令</span>
+          <select id="hartCommand"></select>
+        </label>
+        <label id="hartCustomCommandField" hidden>
+          <span data-i18n="hart.cmdNumber">命令号</span>
+          <input id="hartCustomCommand" type="number" min="0" max="255" step="1" value="1" data-i18n-title="hart.cmdNumberTitle" title="0–255，自动组帧并计算 XOR 校验" />
+        </label>
+        <label class="hart-data-field">
+          <span data-i18n="hart.cmdData">命令数据 (HEX)</span>
+          <input id="hartCustomCommandData" type="text" data-i18n-placeholder="hart.cmdDataPlaceholder" placeholder="可选；写命令或带参数读命令时填入，校验自动计算" />
+        </label>
+        <p class="hart-frame-meta hart-checksum-meta">
+          <span data-i18n="hart.frameChecksum">帧校验 (XOR)</span>
+          <code id="hartFrameChecksum">--</code>
+        </p>
+      </div>
+    </div>
+
+    <div class="command-preview hart-command-preview">
       <div>
-        <span data-i18n="aomaster.driverCmdPreview">驱动命令预览</span>
+        <span data-i18n="hart.commandPreview">命令预览</span>
         <code data-field="protocolPreview">FF FF FF FF FF 02 80 00 00 ...</code>
       </div>
       <div class="panel-actions">
@@ -55,137 +104,88 @@
         <button data-field="sendDriverCommand" type="button" disabled data-i18n="hart.sendCommand">发送命令</button>
       </div>
     </div>
-  </section>
 
-  <section class="panel custom-panel">
-    <div class="panel-heading split">
-      <div>
-        <h2 data-i18n="hart.commParams">通讯参数</h2>
-        <p data-i18n="hart.commDesc">支持预设通用命令或自定义命令号 + HEX 数据，帧 XOR 校验自动计算。</p>
-      </div>
-      <div class="panel-actions">
-        <button id="resetHartConfig" class="ghost-button" type="button" data-i18n="common.resetDefault">恢复默认</button>
-        <button id="saveHartConfig" type="button" data-i18n="common.save">保存</button>
-      </div>
-    </div>
-    <div class="config-grid compact">
-      <label>
-        <span data-i18n="hart.pollAddress">轮询地址</span>
-        <input id="hartPollAddress" type="number" min="0" max="15" step="1" value="0" />
-      </label>
-      <label>
-        <span data-i18n="hart.masterType">主站类型</span>
-        <select id="hartMasterType">
-          <option value="primary" selected>Primary (0x80)</option>
-          <option value="secondary">Secondary (0x00)</option>
-        </select>
-      </label>
-      <label>
-        <span data-i18n="hart.preambleLen">前导码</span>
-        <select id="hartPreambleLength">
-          <option value="5" selected>5</option>
-          <option value="8">8</option>
-          <option value="10">10</option>
-          <option value="15">15</option>
-          <option value="20">20</option>
-        </select>
-      </label>
-      <label>
-        <span data-i18n="hart.pollInterval">轮询间隔 (ms)</span>
-        <input id="hartPollIntervalMs" type="number" min="0" step="100" value="1000" data-i18n-title="hart.pollIntervalTitle" title="大于 0 时可在监测面板手动开始轮询，默认 1000" />
-      </label>
-    </div>
-    <div class="config-grid compact">
-      <label>
-        <span data-i18n="hart.commandMode">命令方式</span>
-        <select id="hartCommandMode">
-          <option value="preset" selected data-i18n="hart.cmdPreset">预设通用命令</option>
-          <option value="custom" data-i18n="hart.cmdCustom">自定义命令</option>
-        </select>
-      </label>
-    </div>
-    <div class="config-grid compact">
-      <label id="hartPresetCommandField">
-        <span data-i18n="hart.universalCmd">通用命令</span>
-        <select id="hartCommand"></select>
-      </label>
-      <label id="hartCustomCommandField" hidden>
-        <span data-i18n="hart.cmdNumber">命令号</span>
-        <input id="hartCustomCommand" type="number" min="0" max="255" step="1" value="1" data-i18n-title="hart.cmdNumberTitle" title="0–255，自动组帧并计算 XOR 校验" />
-      </label>
-      <label>
-        <span data-i18n="hart.cmdData">命令数据 (HEX)</span>
-        <input id="hartCustomCommandData" type="text" data-i18n-placeholder="hart.cmdDataPlaceholder" placeholder="可选；写命令或带参数读命令时填入，校验自动计算" />
-      </label>
-    </div>
-    <section class="hart-command-helper">
-      <div class="subsection-heading">
-        <div>
-          <h3 data-i18n="hart.dataHelper">命令数据助手</h3>
-          <p data-i18n="hart.dataHelperDesc">按现场常用场景生成请求数据，仍可在 HEX 输入框中手工修改。</p>
+    <details class="hart-advanced-section">
+      <summary>
+        <span data-i18n="hart.advancedSettings">高级设置</span>
+        <small data-i18n="hart.advancedSettingsDesc">主站/前导码、PV 显示缩放和命令数据助手</small>
+      </summary>
+      <div class="hart-advanced-body">
+        <div class="config-grid hart-advanced-grid">
+          <label>
+            <span data-i18n="hart.masterType">主站类型</span>
+            <select id="hartMasterType">
+              <option value="primary" selected>Primary (0x80)</option>
+              <option value="secondary">Secondary (0x00)</option>
+            </select>
+          </label>
+          <label>
+            <span data-i18n="hart.preambleLen">前导码</span>
+            <select id="hartPreambleLength">
+              <option value="5" selected>5</option>
+              <option value="8">8</option>
+              <option value="10">10</option>
+              <option value="15">15</option>
+              <option value="20">20</option>
+            </select>
+          </label>
+          <label>
+            <span data-i18n="hart.pvDisplayName">PV 显示名</span>
+            <input id="hartFieldName" type="text" value="PV" />
+          </label>
+          <label>
+            <span data-i18n="hart.pvUnitOverride">PV 单位覆盖</span>
+            <input id="hartUnit" type="text" data-i18n-placeholder="hart.pvUnitPlaceholder" placeholder="留空则使用 HART 单位码" />
+          </label>
+          <label>
+            <span data-i18n="hart.pvScale">PV 比例</span>
+            <input id="hartScale" type="number" step="0.000001" value="1" />
+          </label>
+          <label>
+            <span data-i18n="hart.pvOffset">PV 偏移</span>
+            <input id="hartOffset" type="number" step="0.000001" value="0" />
+          </label>
         </div>
+
+        <section class="hart-command-helper">
+          <div class="subsection-heading compact">
+            <div>
+              <h3 data-i18n="hart.dataHelper">命令数据助手</h3>
+              <p data-i18n="hart.dataHelperDesc">按现场常用场景生成请求数据，仍可在 HEX 输入框中手工修改。</p>
+            </div>
+          </div>
+          <div class="config-grid compact">
+            <label>
+              <span data-i18n="hart.helperTemplate">模板</span>
+              <select id="hartDataTemplate"></select>
+            </label>
+            <label>
+              <span data-i18n="hart.helperText">文本 / Tag</span>
+              <input id="hartTemplateText" type="text" maxlength="64" placeholder="TAG001" />
+            </label>
+            <label>
+              <span data-i18n="hart.helperDescriptor">描述符</span>
+              <input id="hartTemplateDescriptor" type="text" maxlength="32" placeholder="FIELD DEVICE" />
+            </label>
+            <label>
+              <span data-i18n="hart.helperDate">日期</span>
+              <input id="hartTemplateDate" type="date" />
+            </label>
+            <label>
+              <span data-i18n="hart.helperLoopMode">Loop Mode Byte</span>
+              <input id="hartTemplateLoopMode" type="number" min="0" max="255" step="1" value="0" />
+            </label>
+          </div>
+          <div class="hart-helper-actions">
+            <button id="hartApplyDataTemplate" type="button" data-i18n="hart.applyTemplate">生成命令数据</button>
+            <button id="hartClearCommandData" class="ghost-button" type="button" data-i18n="hart.clearCommandData">清空数据</button>
+          </div>
+          <p class="hart-frame-meta">
+            <span data-i18n="hart.templatePreview">模板预览</span>
+            <code id="hartTemplatePreview">--</code>
+          </p>
+        </section>
       </div>
-      <div class="config-grid compact">
-        <label>
-          <span data-i18n="hart.helperTemplate">模板</span>
-          <select id="hartDataTemplate"></select>
-        </label>
-        <label>
-          <span data-i18n="hart.helperText">文本 / Tag</span>
-          <input id="hartTemplateText" type="text" maxlength="64" placeholder="TAG001" />
-        </label>
-        <label>
-          <span data-i18n="hart.helperDescriptor">描述符</span>
-          <input id="hartTemplateDescriptor" type="text" maxlength="32" placeholder="FIELD DEVICE" />
-        </label>
-        <label>
-          <span data-i18n="hart.helperDate">日期</span>
-          <input id="hartTemplateDate" type="date" />
-        </label>
-        <label>
-          <span data-i18n="hart.helperLoopMode">Loop Mode Byte</span>
-          <input id="hartTemplateLoopMode" type="number" min="0" max="255" step="1" value="0" />
-        </label>
-      </div>
-      <div class="hart-helper-actions">
-        <button id="hartApplyDataTemplate" type="button" data-i18n="hart.applyTemplate">生成命令数据</button>
-        <button id="hartClearCommandData" class="ghost-button" type="button" data-i18n="hart.clearCommandData">清空数据</button>
-      </div>
-      <p class="hart-frame-meta">
-        <span data-i18n="hart.templatePreview">模板预览</span>
-        <code id="hartTemplatePreview">--</code>
-      </p>
-    </section>
-    <p class="hart-frame-meta">
-      <span data-i18n="hart.frameChecksum">帧校验 (XOR)</span>
-      <code id="hartFrameChecksum">--</code>
-    </p>
-    <div class="config-grid compact">
-      <label>
-        <span data-i18n="hart.pollMode">轮询方式</span>
-        <select id="hartPollMode">
-          <option value="pv" selected data-i18n="hart.pollPv">轮询 PV (Cmd 1)</option>
-          <option value="dynamic" data-i18n="hart.pollDynamic">轮询 PV/SV/TV/QV (Cmd 3)</option>
-        </select>
-      </label>
-    </div>
-    <div class="config-grid">
-      <label>
-        <span data-i18n="hart.pvDisplayName">PV 显示名</span>
-        <input id="hartFieldName" type="text" value="PV" />
-      </label>
-      <label>
-        <span data-i18n="hart.pvUnitOverride">PV 单位覆盖</span>
-        <input id="hartUnit" type="text" data-i18n-placeholder="hart.pvUnitPlaceholder" placeholder="留空则使用 HART 单位码" />
-      </label>
-      <label>
-        <span data-i18n="hart.pvScale">PV 比例</span>
-        <input id="hartScale" type="number" step="0.000001" value="1" />
-      </label>
-      <label>
-        <span data-i18n="hart.pvOffset">PV 偏移</span>
-        <input id="hartOffset" type="number" step="0.000001" value="0" />
-      </label>
-    </div>
+    </details>
   </section>
 </section>

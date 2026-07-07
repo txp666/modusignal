@@ -5,7 +5,7 @@
 <p align="center">
   <b>Talk to industrial devices from a browser tab.</b><br/>
   <b>在浏览器里直接调设备。</b><br/>
-  <sub>Serial · WebSocket · MQTT · Modbus RTU · HART · custom protocols</sub>
+  <sub>Serial · WebUSB · WebSocket · MQTT · Modbus RTU · HART · custom protocols</sub>
 </p>
 
 <p align="center">
@@ -56,7 +56,7 @@
 
 ## What it is
 
-A static web app for debugging serial / WebSocket / MQTT devices from a browser.
+A static web app for debugging serial / WebUSB / WebSocket / MQTT devices from a browser.
 No installer, no backend, no database. Open the page, pick a device, connect, and you get raw frames, manual send, parsed values, and a real-time chart.
 
 > Open a tab. Plug in a device. Talk to it.
@@ -66,6 +66,7 @@ No installer, no backend, no database. Open the page, pick a device, connect, an
 - Bench-test a Modbus RTU board without firing up a 200 MB vendor tool
 - Walk into a plant with a USB-to-485 dongle and a laptop, and you have a HART debugger
 - Bring up a new MQTT/WebSocket-speaking device and watch traffic on a live curve
+- Capture RP2040 WebUSB current waveforms without installing a desktop host
 - Hand a colleague a URL instead of a `setup.exe`
 - Build a quick UI for an in-house protocol with the *Custom device* page (no JS required)
 
@@ -80,9 +81,10 @@ Not what it's for: long-running data acquisition, plant monitoring, anything you
 | HART | Serial | 1200 8O1 | Device search, universal commands, PV/SV/TV/QV |
 | WebSocket | WebSocket | — | JSON / HEX / Modbus message debug |
 | MQTT | MQTT over WS | — | Pub / sub, QoS, retain, message stats |
+| MicroScope Power | WebUSB | VID `0xCAFE`, PID `0x4011` | RP2040 current waveform capture, cursors, calibration, CSV/PNG export |
 | Custom | any | — | Template + parser, no code |
 
-Switching device also switches the transport and its defaults.
+Switching regular devices also switches the transport and its defaults. Standalone WebUSB tools, such as MicroScope Power, keep their own connection and capture controls inside the device page.
 
 ## Quick start
 
@@ -123,7 +125,7 @@ Or manually:
 python -m http.server 4173
 ```
 
-Open `http://localhost:4173` in Chrome or Edge. Web Serial needs `localhost` or HTTPS.
+Open `http://localhost:4173` in Chrome or Edge. Web Serial and WebUSB need `localhost` or HTTPS.
 
 **Build the zip yourself**
 
@@ -139,10 +141,11 @@ Output: `_release/modusignal-offline-<version>.zip` (or `.tar.gz` if `zip` is no
 | Feature | Browsers |
 |---------|----------|
 | Serial (Web Serial API) | Chrome / Edge 89+, HTTPS or localhost |
+| WebUSB | Chrome / Edge, HTTPS or localhost |
 | WebSocket | any modern browser |
 | MQTT over WebSocket | any modern browser |
 
-Firefox and Safari don't ship Web Serial, so serial devices won't work there. Everything else works.
+Firefox and Safari don't ship Web Serial or WebUSB, so serial and WebUSB devices won't work there. Everything else works.
 
 ## Architecture
 
@@ -152,6 +155,8 @@ pages/
   home.html             home and device grid
   request.html          new-device request form
   devices/              one HTML page per device
+  devices/microscope-power/
+                         standalone MicroScope Power WebUSB host assets
   shared/workbench.html shared log + chart panel
 src/
   app.js                state, routing, events, device orchestration
@@ -168,7 +173,13 @@ src/
   framing/              generic frame parsing (lines, header/tail, CRC16)
 ```
 
-Devices and transports are kept separate. Adding a new device is usually: a driver file in `src/devices/`, an entry in `device-registry.js`, and a page in `pages/devices/`. See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for details (the contributing guide is in Chinese).
+Devices and transports are kept separate. Adding a new device is usually: a driver file in `src/devices/`, an entry in `device-registry.js`, and a page in `pages/devices/`. Dedicated browser-tool pages can be registered as `standalone` when they own their transport and UI, as MicroScope Power does. See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for details (the contributing guide is in Chinese).
+
+## MicroScope Power WebUSB host
+
+The MicroScope Power page embeds the browser host from `pages/devices/microscope-power/`. It talks directly to the RP2040 firmware over WebUSB (`VID 0xCAFE`, `PID 0x4011`) and keeps its own controls for sample rate, fake/ADC source mode, chart zoom/pan, cursors, calibration, and CSV/PNG export.
+
+Use Chrome or Edge from `localhost` or HTTPS, then choose **MicroScope Power** in the device library and click **Connect device** inside the embedded host. The Pico firmware, SDK, and build outputs from the source project are not bundled here; only the browser host files are integrated.
 
 ## AOMaster register map
 
@@ -229,6 +240,7 @@ If modusignal saved you an afternoon of fighting with a vendor installer, a star
 - 临时调一块 Modbus RTU 板子，不想装某厂家 200MB 的上位机
 - 进车间带个 USB 转 485，笔记本插上就是 HART 调试工具
 - 新设备走 WebSocket 或 MQTT，想边看流量边看曲线
+- 调 RP2040 WebUSB 小电流采集，不想单独装桌面上位机
 - 把链接发给同事，比发 `setup.exe` 省事
 - 内部协议没有现成工具，用 *自定义设备* 页面拼一个，不用写 JS
 
@@ -243,9 +255,10 @@ If modusignal saved you an afternoon of fighting with a vendor installer, a star
 | HART | 串口 | 1200 8O1 | 设备搜索、通用命令、PV/SV/TV/QV |
 | WebSocket | WebSocket | — | JSON / HEX / Modbus 报文调试 |
 | MQTT | MQTT over WS | — | 发布订阅、QoS、保留消息、统计 |
+| MicroScope Power | WebUSB | VID `0xCAFE`, PID `0x4011` | RP2040 小电流波形采集、游标、校准、CSV/PNG 导出 |
 | 自定义设备 | 任意 | — | 模板 + 解析规则，无需写代码 |
 
-切设备时通讯方式和参数会跟着自动切换。
+普通设备切换时通讯方式和参数会跟着自动切换。MicroScope Power 这类独立 WebUSB 工具会在设备页内部保留自己的连接和采集控制。
 
 ## 跑起来
 
@@ -286,7 +299,7 @@ npm run preview
 python -m http.server 4173
 ```
 
-用 Chrome / Edge 打开 `http://localhost:4173`。串口功能需在 `localhost` 或 HTTPS 下使用。
+用 Chrome / Edge 打开 `http://localhost:4173`。串口和 WebUSB 功能需在 `localhost` 或 HTTPS 下使用。
 
 **自己打包**
 
@@ -302,14 +315,21 @@ npm run build:offline
 | 功能 | 浏览器 |
 |------|--------|
 | 串口（Web Serial） | Chrome / Edge 89+，需要 HTTPS 或 localhost |
+| WebUSB | Chrome / Edge，需要 HTTPS 或 localhost |
 | WebSocket | 现代浏览器都行 |
 | MQTT over WebSocket | 现代浏览器都行 |
 
-Firefox 和 Safari 没有 Web Serial，串口设备用不了，其它功能正常。
+Firefox 和 Safari 没有 Web Serial / WebUSB，串口和 WebUSB 设备用不了，其它功能正常。
 
 ## 项目结构
 
-英文版的 `Architecture` 表已经列得很清楚了，这里不重复。简单说就是：设备层和传输层分开，加新设备 = 写一个驱动 + 注册 + 加一个页面，详见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
+英文版的 `Architecture` 表已经列得很清楚了，这里不重复。简单说就是：设备层和传输层分开，加新设备 = 写一个驱动 + 注册 + 加一个页面。像 MicroScope Power 这种自己管理 WebUSB 和曲线的专用上位机，可以在注册表里标记为 `standalone`，详见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
+
+## MicroScope Power WebUSB 上位机
+
+MicroScope Power 页面嵌入了 `pages/devices/microscope-power/` 下的浏览器上位机。它直接通过 WebUSB 连接 RP2040 固件（`VID 0xCAFE`、`PID 0x4011`），页面内自带采样率、假信号/ADC 模式、曲线缩放平移、游标、校准、CSV/PNG 导出。
+
+使用时通过 `localhost` 或 HTTPS 用 Chrome / Edge 打开站点，在设备库选择 **MicroScope Power**，再在内嵌上位机里点击 **连接设备**。这里没有打包原项目的 Pico 固件、SDK 和构建产物，只集成浏览器上位机源码。
 
 ## AOMaster 寄存器表
 

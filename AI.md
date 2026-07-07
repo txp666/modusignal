@@ -4,9 +4,9 @@
 
 ## 项目目标
 
-modusignal 是一个静态在线设备/信号调试平台。它通过浏览器连接使用者的设备，统一抽象多种传输方式（串口、WebSocket、MQTT 等），提供：
+modusignal 是一个静态在线设备/信号调试平台。它通过浏览器连接使用者的设备，统一抽象多种传输方式（串口、WebUSB、WebSocket、MQTT 等），提供：
 
-- 多传输连接、断开、收发日志（已实现串口、WebSocket、MQTT over WebSocket）
+- 多传输连接、断开、收发日志（已实现串口、WebSocket、MQTT over WebSocket；WebUSB 目前以独立上位机页面集成）
 - 设备专属页面 UI
 - 设备命令构造
 - 回包解析和曲线查看
@@ -20,6 +20,7 @@ modusignal 是一个静态在线设备/信号调试平台。它通过浏览器�
 - `hart`：HART 通用设备，支持搜索、通用命令与 PV/SV/TV/QV 轮询，默认串口
 - `websocket`：WebSocket 消息调试，快捷发送与 JSON 解析，默认 WebSocket，图标 `images/websocket.png`
 - `mqtt`：MQTT 消息调试，主题发布/订阅、QoS/retain 与 JSON 解析，默认 MQTT，图标 `images/mqtt.png`
+- `microscope-power`：MicroScope Power / RP2040 小电流波形采集上位机，独立 WebUSB 页面，`VID 0xCAFE`、`PID 0x4011`
 - `custom`：自定义设备，使用本地保存的模板和解析配置，默认串口
 
 各设备 profile 可声明：
@@ -28,6 +29,7 @@ modusignal 是一个静态在线设备/信号调试平台。它通过浏览器�
 - `image`：设备库与主页卡片图标路径（如 `./images/hart.png`）；有图标的设备在 `listDeviceLibrary()` 中优先排序
 - `*_TRANSPORT_DEFAULTS`：各传输下的默认连接参数，在 `src/app.js` 的 `DEVICE_TRANSPORT_DEFAULTS` 注册
 - `DEFAULT_*_CONFIG.pollIntervalMs`：轮询间隔
+- `standalone`（registry entry）：设备页自己管理连接、曲线和导出时使用；主应用会隐藏共享工作台和共享连接参数
 
 设备层与传输层正交：设备只产出/解析字节或文本，不关心数据怎么传；传输层负责建立连接与收发。
 
@@ -40,6 +42,8 @@ index.html
 pages/
   home.html / request.html
   devices/aomaster.html · modbus.html · hart.html · websocket.html · mqtt.html · custom.html
+  devices/microscope-power.html（嵌入 MicroScope Power 独立上位机）
+  devices/microscope-power/（WebUSB + Canvas 上位机静态源码）
   shared/workbench.html（监测面板 + 收发调试 + 曲线配置折叠区）
 
 src/page-loader.js
@@ -73,11 +77,14 @@ src/protocols.js
   设备注册表 lookup、getDeviceProfile、统一协议入口（buildManualPayload 等）
 
 src/device-registry.js
-  DEVICE_REGISTRY：设备 id、pagePath、profile、createCommand、parseTelemetry；新增设备主要改此文件
+  DEVICE_REGISTRY：设备 id、pagePath、profile、createCommand、parseTelemetry、standalone；新增设备主要改此文件
 
 src/devices/aomaster.js
   AOMaster profile、Modbus RTU 命令构造、实际输出回读解析
   Fixed protocol contract: FC03 polls 0x0000..0x0006 (7 holding registers); 0x0000 is type (0=current, 1=voltage), 0x0006 is read-only ACTUAL, raw analog values are divided by 1000, and the actual-output chart Y axis follows the response type (4..20 mA or 0..10 V). Step mode writes 0x0007+ sequence values before the header registers.
+
+src/devices/microscope-power.js
+  MicroScope Power profile。registry 中 `standalone: true`，不走共享传输 session、共享 workbench 或统一遥测解析。
 
 src/devices/modbus-device.js
   通用 Modbus RTU profile、读写命令与回包解析
@@ -138,10 +145,11 @@ src/config.js
 - `hart`：HART 通用设备专属页面
 - `websocket`：WebSocket 调试专属页面
 - `mqtt`：MQTT 调试专属页面
+- `microscope-power`：独立 MicroScope Power WebUSB 上位机页面，内嵌 `pages/devices/microscope-power/index.html`
 - `custom`：自定义设备专属页面
 - `request`：新增设备请求页面
 
-新增设备时，应新增页面入口和页面 UI，而不是把所有控件塞进一个通用面板。
+新增设备时，应新增页面入口和页面 UI，而不是把所有控件塞进一个通用面板。普通设备应复用共享 workbench；只有像 MicroScope Power 这种需要专用 WebUSB 权限、独立高频曲线和导出链路的页面，才使用 `standalone`。
 
 ## 设备驱动接口
 
@@ -186,6 +194,8 @@ export const MY_DEVICE_PROFILE = {
 在 `DEVICE_REGISTRY` 数组追加一条 entry（`id`、`pagePath`、`getProfile`、`createCommand`、`parseTelemetry`；有静态 profile 时一并填写 `profile` 供设备库列表使用）。`protocols.js` 会通过 lookup 自动分发，无需再改 switch。
 
 内置设备若 profile 不依赖运行时配置，可直接引用 `*_PROFILE`；自定义设备用 `getProfile: (ctx) => createCustomProfile(ctx.customConfig)`。
+
+独立上位机 entry 可设置 `standalone: true`，只提供 `id`、`pagePath`、`getProfile`。`src/app.js` 会通过 `isStandaloneDevice()` 跳过共享传输默认值、共享 workbench 曲线和轮询 UI，并在切换到该页时断开已有共享 session。MicroScope Power 就是这个模式。
 
 ### 在 `src/protocols.js` 导出
 
@@ -237,6 +247,7 @@ export const MY_DEVICE_MQTT_TRANSPORT_DEFAULTS = {
 | HART | serial | 1200 8O1 | 1000 |
 | WebSocket 调试 | websocket | ws://127.0.0.1:8080 | 0（可配置心跳轮询） |
 | MQTT 调试 | mqtt | wss://broker.emqx.io:8084/mqtt · modusignal/rx · modusignal/tx | 0（可配置心跳轮询） |
+| MicroScope Power | standalone WebUSB | VID 0xCAFE · PID 0x4011 | 页面内部控制 |
 
 ## 添加设备 UI
 
@@ -244,6 +255,12 @@ export const MY_DEVICE_MQTT_TRANSPORT_DEFAULTS = {
 2. 设备库与主页卡片通过 `listDeviceLibrary()` 自动收录 `DEVICE_REGISTRY` 中的设备；设置 `profile.image` 可显示 `images/` 下图标。
 3. 在 `src/app.js` 增加页面状态绑定、轮询与配置表单（`DEVICE_PAGE_IDS` 已由 registry 导出）。
 4. 保持连接、日志和曲线复用现有组件。
+
+独立上位机应额外注意：
+
+- `pages/devices/<id>.html` 通常只放外壳和 `<iframe>`，真正的应用资源放在 `pages/devices/<id>/`，构建脚本会复制整个 `pages/` 目录。
+- iframe 内部脚本不能依赖主应用的 `app.js` 状态；权限请求、设备连接、采集和导出都在 iframe 内完成。
+- 文档必须写清楚所需浏览器 API、默认 VID/PID、是否需要 localhost/HTTPS。
 
 ## 添加传输
 
@@ -258,8 +275,9 @@ export const MY_DEVICE_MQTT_TRANSPORT_DEFAULTS = {
 
 ### 浏览器能力与约束
 
-- 纯静态浏览器页面可用：Web Serial、WebSocket、MQTT over WebSocket。
+- 纯静态浏览器页面可用：Web Serial、WebUSB、WebSocket、MQTT over WebSocket。
 - Web Serial 需 HTTPS 或 localhost（`requiresSecureContext: true`）。
+- WebUSB 同样需 Chrome/Edge + HTTPS 或 localhost；MicroScope Power 在 iframe 内调用 `navigator.usb.requestDevice()`。
 - WebSocket / MQTT 远程 `ws://` 在 HTTPS 页面可能被浏览器拦截；UI 会提示，但不硬拦截；本地 `127.0.0.1` 通常可用。
 - 收发调试区 `buildManualPayload()` 支持 `ascii` / `json` / `hex`；JSON 校验后作为字符串发送。
 
