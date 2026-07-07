@@ -1143,15 +1143,6 @@ Offset 0 → 100, Offset 2 → 200</code></pre>
 
 let currentLang = null;
 
-function detectBrowserLang() {
-  try {
-    const navLang = (navigator.language || navigator.languages?.[0] || "zh").toLowerCase();
-    if (navLang.startsWith("zh")) return "zh";
-    if (navLang.startsWith("en")) return "en";
-  } catch {}
-  return "zh";
-}
-
 export function i18n(key, fallback) {
   const entry = TRANSLATIONS[key];
   if (!entry) {
@@ -1172,7 +1163,7 @@ i18n.current = function () {
     }
   } catch {}
 
-  currentLang = detectBrowserLang();
+  currentLang = "zh";
   return currentLang;
 };
 

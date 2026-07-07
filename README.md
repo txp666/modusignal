@@ -3,9 +3,9 @@
 </p>
 
 <p align="center">
-  <b>Talk to industrial devices from a browser tab.</b><br/>
   <b>在浏览器里直接调设备。</b><br/>
-  <sub>Serial · WebUSB · WebSocket · MQTT · Modbus RTU · HART · custom protocols</sub>
+  <b>Talk to industrial devices from a browser tab.</b><br/>
+  <sub>串口 · WebUSB · WebSocket · MQTT · Modbus RTU · HART · 自定义协议</sub>
 </p>
 
 <p align="center">
@@ -17,10 +17,10 @@
 </p>
 
 <p align="center">
-  <a href="#english"><b>English</b></a> ·
   <a href="#中文"><b>中文</b></a> ·
-  <a href="https://modusignal.cn/">Try it now →</a> ·
-  <a href="https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82">Request a device</a>
+  <a href="#english"><b>English</b></a> ·
+  <a href="https://modusignal.cn/">立即使用 →</a> ·
+  <a href="https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82">请求设备</a>
 </p>
 
 <p align="center">
@@ -33,22 +33,168 @@
   <tr>
     <td width="25%" align="center">
       <img src="./images/AOMaster.png" alt="AOMaster" width="210" /><br/>
-      <sub><b>AOMaster</b><br/>4-20 mA / 0-10 V<br/>6 waveforms</sub>
+      <sub><b>AOMaster</b><br/>4-20 mA / 0-10 V<br/>6 种波形</sub>
     </td>
     <td width="25%" align="center">
       <img src="./images/hart.png" alt="HART" width="210" /><br/>
-      <sub><b>HART</b><br/>vendor-agnostic<br/>PV / SV / TV / QV</sub>
+      <sub><b>HART</b><br/>通用仪表调试<br/>PV / SV / TV / QV</sub>
     </td>
     <td width="25%" align="center">
       <img src="./images/websocket.png" alt="WebSocket" width="210" /><br/>
-      <sub><b>WebSocket</b><br/>JSON / HEX / Modbus<br/>+ live chart</sub>
+      <sub><b>WebSocket</b><br/>JSON / HEX / Modbus<br/>实时曲线</sub>
     </td>
     <td width="25%" align="center">
       <img src="./images/mqtt.png" alt="MQTT" width="210" /><br/>
-      <sub><b>MQTT</b><br/>pub / sub · QoS<br/>retain · stats</sub>
+      <sub><b>MQTT</b><br/>发布 / 订阅 · QoS<br/>保留消息 · 统计</sub>
     </td>
   </tr>
 </table>
+
+---
+
+<a id="中文"></a>
+
+## modusignal · 中文说明
+
+浏览器里的设备调试台，纯静态前端，没有上位机要装、没有后端要起。打开网页、选设备、连上、看原始报文、手动发命令、看实时曲线，就这样。
+
+> 一个标签页，一根线，跟设备直接对话。
+
+## 适用场景
+
+- 临时调一块 Modbus RTU 板子，不想装某厂家 200MB 的上位机
+- 进车间带个 USB 转 485，笔记本插上就是 HART 调试工具
+- 新设备走 WebSocket 或 MQTT，想边看流量边看曲线
+- 调 RP2040 WebUSB 小电流采集，不想单独装桌面上位机
+- 把链接发给同事，比发 `setup.exe` 省事
+- 内部协议没有现成工具，用 *自定义设备* 页面拼一个，不用写 JS
+
+不适合：长时间数据采集、生产监控、SCADA。这是个调试工具。
+
+## 内置设备
+
+| 设备 | 传输 | 默认参数 | 说明 |
+|------|------|----------|------|
+| AOMaster | 串口 | 115200 8N1 | 4-20mA / 0-10V 信号源，6 种波形 |
+| Modbus RTU | 串口 | 9600 8N1 | 读写保持 / 输入寄存器 |
+| HART | 串口 | 1200 8O1 | 设备搜索、通用命令、PV/SV/TV/QV |
+| WebSocket | WebSocket | — | JSON / HEX / Modbus 报文调试 |
+| MQTT | MQTT over WS | — | 发布订阅、QoS、保留消息、统计 |
+| MicroScope Power | WebUSB | VID `0xCAFE`, PID `0x4011` | RP2040 小电流波形采集、游标、校准、CSV/PNG 导出 |
+| 自定义设备 | 任意 | — | 模板 + 解析规则，无需写代码 |
+
+普通设备切换时通讯方式和参数会跟着自动切换。MicroScope Power 这类独立 WebUSB 工具会在设备页内部保留自己的连接和采集控制。
+
+## 跑起来
+
+开发模式不用构建，起一个静态服务即可：
+
+```powershell
+python -m http.server 4173
+```
+
+用 Chrome / Edge 打开 `http://localhost:4173`。
+
+要发布的话：
+
+```powershell
+npm install
+npm run build
+npm run preview
+```
+
+构建脚本是 `scripts/build.mjs`（基于 esbuild），产物在 `_site/`。
+
+## 离线使用
+
+适合在笔记本、工控机或现场环境拷贝一份，无需联网拉代码。
+
+**获取离线包**
+
+- 每次推送到 `main`：打开 [Actions → Offline package](https://github.com/txp666/modusignal/actions/workflows/offline-package.yml)，在最新一次运行里下载 Artifact `modusignal-offline-<版本>.zip`。
+- 打 `v*` 标签发布：在 [Releases](https://github.com/txp666/modusignal/releases) 下载 `modusignal-offline-<标签>.zip`。
+
+**本地运行**
+
+解压后双击 `start-modusignal.bat`（Windows）或运行 `start-modusignal.sh`（macOS/Linux），会自动起服务并打开浏览器。
+
+也可手动执行：
+
+```powershell
+python -m http.server 4173
+```
+
+用 Chrome / Edge 打开 `http://localhost:4173`。串口和 WebUSB 功能需在 `localhost` 或 HTTPS 下使用。
+
+**自己打包**
+
+```powershell
+npm install
+npm run build:offline
+```
+
+产物在 `_release/modusignal-offline-<版本>.zip`（系统无 `zip` 命令时为 `.tar.gz`）。解压目录内的 `OFFLINE.txt` 有简要说明。
+
+## 浏览器要求
+
+| 功能 | 浏览器 |
+|------|--------|
+| 串口（Web Serial） | Chrome / Edge 89+，需要 HTTPS 或 localhost |
+| WebUSB | Chrome / Edge，需要 HTTPS 或 localhost |
+| WebSocket | 现代浏览器都行 |
+| MQTT over WebSocket | 现代浏览器都行 |
+
+Firefox 和 Safari 没有 Web Serial / WebUSB，串口和 WebUSB 设备用不了，其它功能正常。
+
+## 项目结构
+
+英文版的 `Architecture` 表已经列得很清楚了，这里不重复。简单说就是：设备层和传输层分开，加新设备 = 写一个驱动 + 注册 + 加一个页面。像 MicroScope Power 这种自己管理 WebUSB 和曲线的专用上位机，可以在注册表里标记为 `standalone`，详见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
+
+## MicroScope Power WebUSB 上位机
+
+MicroScope Power 页面嵌入了 `pages/devices/microscope-power/` 下的浏览器上位机。它直接通过 WebUSB 连接 RP2040 固件（`VID 0xCAFE`、`PID 0x4011`），页面内自带采样率、假信号/ADC 模式、曲线缩放平移、游标、校准、CSV/PNG 导出。
+
+使用时通过 `localhost` 或 HTTPS 用 Chrome / Edge 打开站点，在设备库选择 **MicroScope Power**，再在内嵌上位机里点击 **连接设备**。这里没有打包原项目的 Pico 固件、SDK 和构建产物，只集成浏览器上位机源码。
+
+## AOMaster 寄存器表
+
+| 地址 | 读写 | 含义 |
+|------|------|------|
+| 0x0000 | R/W | 信号类型（电流 / 电压） |
+| 0x0001 | R/W | 波形：0=恒定 1=阶跃 2=斜坡 3=方波 4=三角 5=正弦 |
+| 0x0002 | R/W | 设定值 / 低值 |
+| 0x0003 | R/W | 高值 / 阶跃保持时间 |
+| 0x0004 | R/W | 周期（ms）/ 循环次数 |
+| 0x0005 | R/W | 占空比 × 10 |
+| 0x0006 | R | 实际输出（回读） |
+| 0x0007+ | R/W | 步进序列值 |
+
+上位机用 `01 03 00 00 00 07 04 08` 读取 `0x0000..0x0006`。回包必须包含全部 7 个寄存器；`0x0000` 选择电流/电压单位，`0x0006` 是实际输出回读值。模拟量原始值按 1000 缩放：原始值 `10600` 在电压模式表示 `10.600 V`，在电流模式表示 `10.600 mA`。实际输出曲线的 Y 轴会随回包类型切换为 `0..10 V` 或 `4..20 mA`。
+
+默认轮询周期 50ms，阶跃模式先写 `0x0007+` 序列值，再写头部寄存器。
+
+## 自定义设备
+
+不想写 JS 也能配一个驱动出来：
+
+- 输出范围、单位、步长
+- 发送模板，支持 `{value}`、`{value:2}`、`{unit}` 占位符
+- 解析规则：正则、JSON 路径、HEX 偏移、Modbus 载荷
+- 数值换算：`解析值 × 比例 + 偏移`
+
+## 项目状态
+
+仍在持续迭代。新设备和解析能力会陆续加进来，欢迎在 [issues](https://github.com/txp666/modusignal/issues) 里讨论你想要的功能。需要新设备但不方便自己写驱动的，[提一个 issue](https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82) 附上协议文档、报文样例和默认连接参数即可。
+
+## 贡献
+
+欢迎 PR 增加设备或修复驱动，提交前请看 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
+
+## 许可证
+
+[Apache License 2.0](./LICENSE.txt)。
+
+如果 modusignal 帮你省下了一个下午跟厂家上位机较劲的时间，点个 star 能让更多人看到它。
 
 ---
 
@@ -225,151 +371,6 @@ Apache License 2.0. See [`LICENSE.txt`](./LICENSE.txt).
 
 If modusignal saved you an afternoon of fighting with a vendor installer, a star helps other people find it.
 
----
-
-<a id="中文"></a>
-
-## modusignal · 中文说明
-
-浏览器里的设备调试台，纯静态前端，没有上位机要装、没有后端要起。打开网页、选设备、连上、看原始报文、手动发命令、看实时曲线，就这样。
-
-> 一个标签页，一根线，跟设备直接对话。
-
-## 适用场景
-
-- 临时调一块 Modbus RTU 板子，不想装某厂家 200MB 的上位机
-- 进车间带个 USB 转 485，笔记本插上就是 HART 调试工具
-- 新设备走 WebSocket 或 MQTT，想边看流量边看曲线
-- 调 RP2040 WebUSB 小电流采集，不想单独装桌面上位机
-- 把链接发给同事，比发 `setup.exe` 省事
-- 内部协议没有现成工具，用 *自定义设备* 页面拼一个，不用写 JS
-
-不适合：长时间数据采集、生产监控、SCADA。这是个调试工具。
-
-## 内置设备
-
-| 设备 | 传输 | 默认参数 | 说明 |
-|------|------|----------|------|
-| AOMaster | 串口 | 115200 8N1 | 4-20mA / 0-10V 信号源，6 种波形 |
-| Modbus RTU | 串口 | 9600 8N1 | 读写保持 / 输入寄存器 |
-| HART | 串口 | 1200 8O1 | 设备搜索、通用命令、PV/SV/TV/QV |
-| WebSocket | WebSocket | — | JSON / HEX / Modbus 报文调试 |
-| MQTT | MQTT over WS | — | 发布订阅、QoS、保留消息、统计 |
-| MicroScope Power | WebUSB | VID `0xCAFE`, PID `0x4011` | RP2040 小电流波形采集、游标、校准、CSV/PNG 导出 |
-| 自定义设备 | 任意 | — | 模板 + 解析规则，无需写代码 |
-
-普通设备切换时通讯方式和参数会跟着自动切换。MicroScope Power 这类独立 WebUSB 工具会在设备页内部保留自己的连接和采集控制。
-
-## 跑起来
-
-开发模式不用构建，起一个静态服务即可：
-
-```powershell
-python -m http.server 4173
-```
-
-用 Chrome / Edge 打开 `http://localhost:4173`。
-
-要发布的话：
-
-```powershell
-npm install
-npm run build
-npm run preview
-```
-
-构建脚本是 `scripts/build.mjs`（基于 esbuild），产物在 `_site/`。
-
-## 离线使用
-
-适合在笔记本、工控机或现场环境拷贝一份，无需联网拉代码。
-
-**获取离线包**
-
-- 每次推送到 `main`：打开 [Actions → Offline package](https://github.com/txp666/modusignal/actions/workflows/offline-package.yml)，在最新一次运行里下载 Artifact `modusignal-offline-<版本>.zip`。
-- 打 `v*` 标签发布：在 [Releases](https://github.com/txp666/modusignal/releases) 下载 `modusignal-offline-<标签>.zip`。
-
-**本地运行**
-
-解压后双击 `start-modusignal.bat`（Windows）或运行 `start-modusignal.sh`（macOS/Linux），会自动起服务并打开浏览器。
-
-也可手动执行：
-
-```powershell
-python -m http.server 4173
-```
-
-用 Chrome / Edge 打开 `http://localhost:4173`。串口和 WebUSB 功能需在 `localhost` 或 HTTPS 下使用。
-
-**自己打包**
-
-```powershell
-npm install
-npm run build:offline
-```
-
-产物在 `_release/modusignal-offline-<版本>.zip`（系统无 `zip` 命令时为 `.tar.gz`）。解压目录内的 `OFFLINE.txt` 有简要说明。
-
-## 浏览器要求
-
-| 功能 | 浏览器 |
-|------|--------|
-| 串口（Web Serial） | Chrome / Edge 89+，需要 HTTPS 或 localhost |
-| WebUSB | Chrome / Edge，需要 HTTPS 或 localhost |
-| WebSocket | 现代浏览器都行 |
-| MQTT over WebSocket | 现代浏览器都行 |
-
-Firefox 和 Safari 没有 Web Serial / WebUSB，串口和 WebUSB 设备用不了，其它功能正常。
-
-## 项目结构
-
-英文版的 `Architecture` 表已经列得很清楚了，这里不重复。简单说就是：设备层和传输层分开，加新设备 = 写一个驱动 + 注册 + 加一个页面。像 MicroScope Power 这种自己管理 WebUSB 和曲线的专用上位机，可以在注册表里标记为 `standalone`，详见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
-
-## MicroScope Power WebUSB 上位机
-
-MicroScope Power 页面嵌入了 `pages/devices/microscope-power/` 下的浏览器上位机。它直接通过 WebUSB 连接 RP2040 固件（`VID 0xCAFE`、`PID 0x4011`），页面内自带采样率、假信号/ADC 模式、曲线缩放平移、游标、校准、CSV/PNG 导出。
-
-使用时通过 `localhost` 或 HTTPS 用 Chrome / Edge 打开站点，在设备库选择 **MicroScope Power**，再在内嵌上位机里点击 **连接设备**。这里没有打包原项目的 Pico 固件、SDK 和构建产物，只集成浏览器上位机源码。
-
-## AOMaster 寄存器表
-
-| 地址 | 读写 | 含义 |
-|------|------|------|
-| 0x0000 | R/W | 信号类型（电流 / 电压） |
-| 0x0001 | R/W | 波形：0=恒定 1=阶跃 2=斜坡 3=方波 4=三角 5=正弦 |
-| 0x0002 | R/W | 设定值 / 低值 |
-| 0x0003 | R/W | 高值 / 阶跃保持时间 |
-| 0x0004 | R/W | 周期（ms）/ 循环次数 |
-| 0x0005 | R/W | 占空比 × 10 |
-| 0x0006 | R | 实际输出（回读） |
-| 0x0007+ | R/W | 步进序列值 |
-
-Host polling note: the AOMaster web host reads `0x0000..0x0006` with `01 03 00 00 00 07 04 08`. The response must include all seven registers; `0x0000` selects current/voltage units and `0x0006` is the actual output. Raw analog values are scaled by 1000: raw `10600` means `10.600 V` in voltage mode or `10.600 mA` in current mode. The actual-output chart Y axis follows the response type: `0..10 V` or `4..20 mA`.
-
-默认轮询周期 50ms，阶跃模式先写 `0x0007+` 序列值，再写头部寄存器。
-
-## 自定义设备
-
-不想写 JS 也能配一个驱动出来：
-
-- 输出范围、单位、步长
-- 发送模板，支持 `{value}`、`{value:2}`、`{unit}` 占位符
-- 解析规则：正则、JSON 路径、HEX 偏移、Modbus 载荷
-- 数值换算：`解析值 × 比例 + 偏移`
-
-## 项目状态
-
-仍在持续迭代。新设备和解析能力会陆续加进来，欢迎在 [issues](https://github.com/txp666/modusignal/issues) 里讨论你想要的功能。需要新设备但不方便自己写驱动的，[提一个 issue](https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82) 附上协议文档、报文样例和默认连接参数即可。
-
-## 贡献
-
-欢迎 PR 增加设备或修复驱动，提交前请看 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
-
-## 许可证
-
-[Apache License 2.0](./LICENSE.txt)。
-
-如果 modusignal 帮你省下了一个下午跟厂家上位机较劲的时间，点个 star 能让更多人看到它。
 
 ---
 
