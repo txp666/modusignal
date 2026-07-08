@@ -1,6 +1,6 @@
 export const USB_CONFIG = Object.freeze({
   vendorId: 0xcafe,
-  productId: 0x4011,
+  productId: 0x4012,
   interfaceNumber: 0,
   endpointIn: 1,
   endpointOut: 1,
@@ -25,16 +25,19 @@ export const WAVE_FRAME = Object.freeze({
 });
 
 export const FRAME_FLAGS = Object.freeze({
-  fakeData: 1 << 0,
-  adcData: 1 << 1,
-  overflow: 1 << 2,
+  adcData: 1 << 0,
+  overflow: 1 << 1,
+  range10Ohm: 1 << 2,
+  autoRange: 1 << 3,
 });
 
 export const SAMPLE_RATES = Object.freeze([10000, 20000, 50000, 100000]);
 
 export const DEFAULT_CALIBRATION = Object.freeze({
-  zeroCode: 0,
-  gainNaPerCode: 763,
+  zeroLowCode: 0,
+  zeroHighCode: 0,
+  senseLowOhm: 1,
+  senseHighOhm: 10,
 });
 
 const textDecoder = new TextDecoder("utf-8", { fatal: false });

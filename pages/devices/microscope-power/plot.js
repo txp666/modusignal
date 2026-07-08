@@ -1,6 +1,3 @@
-const CODE_MIN = 0;
-const CODE_MAX = 65535;
-
 export class WavePlot {
   constructor(canvas) {
     this.canvas = canvas;
@@ -32,10 +29,10 @@ export class WavePlot {
     const ctx = this.ctx;
     const width = this.width;
     const height = this.height;
-    const padLeft = Math.round(60 * this.dpr);
-    const padRight = Math.round(22 * this.dpr);
-    const padTop = Math.round(20 * this.dpr);
-    const padBottom = Math.round(38 * this.dpr);
+    const padLeft = Math.round(92 * this.dpr);
+    const padRight = Math.round(82 * this.dpr);
+    const padTop = Math.round(18 * this.dpr);
+    const padBottom = Math.round(36 * this.dpr);
     const plotWidth = Math.max(1, width - padLeft - padRight);
     const plotHeight = Math.max(1, height - padTop - padBottom);
 
@@ -75,33 +72,93 @@ export class WavePlot {
     ctx.beginPath();
     ctx.rect(x0, y0, width, height);
     ctx.clip();
-    ctx.strokeStyle = "#1d4ed8";
-    ctx.lineWidth = Math.max(1, this.dpr);
 
-    const samplesPerColumn = source.visibleSamples / width;
+    const columns = Math.max(1, Math.floor(width));
+    const samplesPerColumn = source.visibleSamples / columns;
+    const maxReadsPerColumn = source.showEnvelope ? 64 : 16;
+    const meanPoints = [];
 
-    for (let x = 0; x < width; x += 1) {
+    if (source.showEnvelope) {
+      ctx.strokeStyle = "rgba(29, 78, 216, 0.18)";
+      ctx.lineWidth = Math.max(1, this.dpr);
+    }
+
+    for (let x = 0; x < columns; x += 1) {
       const start = Math.floor(x * samplesPerColumn);
       const end = Math.max(start + 1, Math.floor((x + 1) * samplesPerColumn));
-      let min = CODE_MAX;
-      let max = CODE_MIN;
+      const countInBucket = Math.max(1, end - start);
+      const step = Math.max(1, Math.ceil(countInBucket / maxReadsPerColumn));
+      let min = Infinity;
+      let max = -Infinity;
+      let sum = 0;
+      let count = 0;
 
-      for (let i = start; i < end && i < source.visibleSamples; i += 1) {
+      for (let i = start; i < end && i < source.visibleSamples; i += step) {
         const sample = source.readVisibleSample(i);
         if (sample < min) min = sample;
         if (sample > max) max = sample;
+        sum += sample;
+        count += 1;
       }
 
-      const yMin = this.codeToY(min, y0, height, source.yRange);
-      const yMax = this.codeToY(max, y0, height, source.yRange);
+      const lastIndex = Math.min(source.visibleSamples - 1, end - 1);
+      if (lastIndex >= start && ((lastIndex - start) % step) !== 0) {
+        const sample = source.readVisibleSample(lastIndex);
+        if (sample < min) min = sample;
+        if (sample > max) max = sample;
+        sum += sample;
+        count += 1;
+      }
+
       const px = x0 + x + 0.5;
+      if (source.showEnvelope && count > 0) {
+        const yMin = this.valueToY(min, y0, height, source.yRange);
+        const yMax = this.valueToY(max, y0, height, source.yRange);
+        ctx.beginPath();
+        ctx.moveTo(px, yMin);
+        ctx.lineTo(px, yMax);
+        ctx.stroke();
+      }
+
+      if (count > 0) {
+        meanPoints.push({
+          x: px,
+          y: this.valueToY(sum / count, y0, height, source.yRange),
+        });
+      }
+    }
+
+    const displayPoints = source.smoothDisplay ? this.smoothPoints(meanPoints, 3) : meanPoints;
+    if (displayPoints.length > 0) {
+      ctx.strokeStyle = "#1d4ed8";
+      ctx.lineWidth = Math.max(1.4, 1.4 * this.dpr);
       ctx.beginPath();
-      ctx.moveTo(px, yMin);
-      ctx.lineTo(px, yMax);
+      ctx.moveTo(displayPoints[0].x, displayPoints[0].y);
+      for (let i = 1; i < displayPoints.length; i += 1) {
+        ctx.lineTo(displayPoints[i].x, displayPoints[i].y);
+      }
       ctx.stroke();
     }
 
     ctx.restore();
+  }
+
+  smoothPoints(points, radius) {
+    if (points.length <= 2 || radius <= 0) {
+      return points;
+    }
+
+    return points.map((point, index) => {
+      const start = Math.max(0, index - radius);
+      const end = Math.min(points.length - 1, index + radius);
+      let sum = 0;
+      let count = 0;
+      for (let i = start; i <= end; i += 1) {
+        sum += points[i].y;
+        count += 1;
+      }
+      return { x: point.x, y: sum / count };
+    });
   }
 
   drawGrid(ctx, x, y, width, height) {
@@ -134,18 +191,23 @@ export class WavePlot {
 
     const yMin = source.yRange.min;
     const yMax = source.yRange.max;
-    const yMid = Math.round((yMin + yMax) / 2);
-    ctx.fillText(String(yMax), x - 8 * this.dpr, y);
-    ctx.fillText(String(yMid), x - 8 * this.dpr, y + height / 2);
-    ctx.fillText(String(yMin), x - 8 * this.dpr, y + height);
+    const yMid = (yMin + yMax) / 2;
+    ctx.fillText(this.formatMicroamps(yMax), x - 8 * this.dpr, y);
+    ctx.fillText(this.formatMicroamps(yMid), x - 8 * this.dpr, y + height / 2);
+    ctx.fillText(this.formatMicroamps(yMin), x - 8 * this.dpr, y + height);
+
+    ctx.textAlign = "left";
+    ctx.fillText(this.formatMilliamps(yMax), x + width + 8 * this.dpr, y);
+    ctx.fillText(this.formatMilliamps(yMid), x + width + 8 * this.dpr, y + height / 2);
+    ctx.fillText(this.formatMilliamps(yMin), x + width + 8 * this.dpr, y + height);
 
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
     const seconds = source.visibleSamples / Math.max(1, source.sampleRate);
     const offset = source.viewOffsetSamples / Math.max(1, source.sampleRate);
     const label = source.viewOffsetSamples > 0
-      ? `${seconds.toFixed(3)} s，距最新 ${offset.toFixed(3)} s`
-      : `${seconds.toFixed(3)} s，最新`;
+      ? `${this.formatSeconds(seconds)}，距最新 ${this.formatSeconds(offset)}`
+      : `${this.formatSeconds(seconds)}，最新`;
     ctx.fillText(label, x + width / 2, y + height + 10 * this.dpr);
   }
 
@@ -186,11 +248,45 @@ export class WavePlot {
     ctx.fillText("等待采样数据", width / 2, height / 2);
   }
 
-  codeToY(code, y, height, yRange) {
+  valueToY(value, y, height, yRange) {
     const min = yRange.min;
-    const max = Math.max(min + 1, yRange.max);
-    const normalized = (Math.max(min, Math.min(max, code)) - min) / (max - min);
+    const max = yRange.max > min ? yRange.max : min + 1e-9;
+    const normalized = (Math.max(min, Math.min(max, value)) - min) / (max - min);
     return y + height - normalized * height;
+  }
+
+  formatMicroamps(value) {
+    if (Math.abs(value) >= 10000) {
+      return `${Math.round(value)} uA`;
+    }
+    if (Math.abs(value) >= 1000) {
+      return `${value.toFixed(1)} uA`;
+    }
+    if (Math.abs(value) >= 10) {
+      return `${value.toFixed(1)} uA`;
+    }
+    return `${value.toFixed(3)} uA`;
+  }
+
+  formatMilliamps(value) {
+    const ma = value / 1000;
+    if (Math.abs(ma) >= 10) {
+      return `${ma.toFixed(2)} mA`;
+    }
+    if (Math.abs(ma) >= 1) {
+      return `${ma.toFixed(3)} mA`;
+    }
+    return `${ma.toFixed(4)} mA`;
+  }
+
+  formatSeconds(seconds) {
+    if (seconds < 0.001) {
+      return `${(seconds * 1000000).toFixed(1)} us`;
+    }
+    if (seconds < 1) {
+      return `${(seconds * 1000).toFixed(3)} ms`;
+    }
+    return `${seconds.toFixed(3)} s`;
   }
 
   clientXToSampleOffset(clientX) {
@@ -198,10 +294,34 @@ export class WavePlot {
       return null;
     }
 
+    const ratio = this.clientXToPlotRatio(clientX);
+    if (ratio === null) {
+      return null;
+    }
+    return Math.round(ratio * Math.max(0, this.metrics.visibleSamples - 1));
+  }
+
+  clientXToPlotRatio(clientX) {
+    if (!this.metrics) {
+      return null;
+    }
+
     const rect = this.canvas.getBoundingClientRect();
     const x = (clientX - rect.left) * this.metrics.dpr;
     const rel = Math.max(0, Math.min(this.metrics.plotWidth, x - this.metrics.padLeft));
-    return Math.round((rel / this.metrics.plotWidth) * Math.max(0, this.metrics.visibleSamples - 1));
+    return rel / this.metrics.plotWidth;
+  }
+
+  clientYToValue(clientY) {
+    if (!this.metrics) {
+      return null;
+    }
+
+    const rect = this.canvas.getBoundingClientRect();
+    const y = (clientY - rect.top) * this.metrics.dpr;
+    const rel = Math.max(0, Math.min(this.metrics.plotHeight, y - this.metrics.padTop));
+    const normalized = 1 - rel / this.metrics.plotHeight;
+    return this.metrics.yMin + normalized * (this.metrics.yMax - this.metrics.yMin);
   }
 
   sampleOffsetToClientX(sampleOffset) {
