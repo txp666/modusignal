@@ -19,6 +19,9 @@ const ADS_REF_MV = 2500;
 const FRONTEND_GAIN = 50;
 const RANGE_LOW_OHM = 1;
 const RANGE_HIGH_OHM = 10;
+const FIRMWARE_RELEASE_API_URL = "https://api.github.com/repos/txp666/MicroScope-Power/releases/latest";
+const FIRMWARE_RELEASE_LIST_API_URL = "https://api.github.com/repos/txp666/MicroScope-Power/releases?per_page=5";
+const FIRMWARE_RELEASES_URL = "https://github.com/txp666/MicroScope-Power/releases";
 
 const STATE_LABELS = Object.freeze({
   BOOT: "启动",
@@ -73,6 +76,9 @@ const dom = {
   viewLabel: document.querySelector("#viewLabel"),
   cursorLabel: document.querySelector("#cursorLabel"),
   stateValue: document.querySelector("#stateValue"),
+  firmwareValue: document.querySelector("#firmwareValue"),
+  firmwareUpdateRow: document.querySelector("#firmwareUpdateRow"),
+  firmwareUpdateValue: document.querySelector("#firmwareUpdateValue"),
   sampleRateValue: document.querySelector("#sampleRateValue"),
   modeValue: document.querySelector("#modeValue"),
   rangeValue: document.querySelector("#rangeValue"),
@@ -117,6 +123,7 @@ let bytesWindowStart = performance.now();
 let bytesAtWindowStart = 0;
 let lastStats = emptyStats();
 let state = "IDLE";
+let lastCheckedFirmwareVersion = "";
 
 let visibleSeconds = 2;
 let viewOffsetSamples = 0;
@@ -258,6 +265,145 @@ async function cleanupDevice() {
   parser.reset();
   setConnectedUi(false);
   setState("IDLE");
+  dom.firmwareValue.textContent = "-";
+  lastCheckedFirmwareVersion = "";
+  setFirmwareUpdateStatus("等待设备");
+}
+
+function setFirmwareUpdateStatus(text, href = "", highlight = false) {
+  dom.firmwareUpdateRow.classList.toggle("highlight", highlight);
+
+  if (!href) {
+    dom.firmwareUpdateValue.textContent = text;
+    return;
+  }
+
+  const link = document.createElement("a");
+  link.href = href;
+  link.target = "_blank";
+  link.rel = "noreferrer";
+  link.textContent = text;
+  dom.firmwareUpdateValue.replaceChildren(link);
+}
+
+function parseFirmwareVersion(version) {
+  const normalized = String(version ?? "")
+    .trim()
+    .replace(/^firmware[-_]?/i, "")
+    .replace(/^v/i, "")
+    .split("+")[0]
+    .split("-")[0];
+  const match = normalized.match(/^(\d+)(?:\.(\d+))?(?:\.(\d+))?$/);
+
+  if (!match) {
+    return null;
+  }
+
+  return [Number(match[1]), Number(match[2] ?? 0), Number(match[3] ?? 0)];
+}
+
+function compareFirmwareVersions(left, right) {
+  for (let i = 0; i < 3; i += 1) {
+    if (left[i] > right[i]) return 1;
+    if (left[i] < right[i]) return -1;
+  }
+
+  return 0;
+}
+
+function findFirmwareAsset(release) {
+  const assets = Array.isArray(release.assets) ? release.assets : [];
+  return assets.find((asset) => /\.uf2$/i.test(asset.name))
+    ?? assets.find((asset) => /firmware|pico|scope/i.test(asset.name));
+}
+
+async function fetchGitHubJson(url) {
+  const response = await fetch(url, {
+    cache: "no-store",
+    headers: {
+      Accept: "application/vnd.github+json",
+    },
+  });
+
+  if (!response.ok) {
+    const error = new Error(`GitHub ${response.status}`);
+    error.status = response.status;
+    throw error;
+  }
+
+  return response.json();
+}
+
+async function fetchLatestFirmwareRelease() {
+  try {
+    return await fetchGitHubJson(FIRMWARE_RELEASE_API_URL);
+  } catch (err) {
+    if (err.status !== 404) {
+      throw err;
+    }
+  }
+
+  const releases = await fetchGitHubJson(FIRMWARE_RELEASE_LIST_API_URL);
+  return Array.isArray(releases) ? releases.find((release) => !release.draft) : null;
+}
+
+async function checkFirmwareUpdate(localVersion) {
+  const version = String(localVersion ?? "").trim();
+  if (!version || version === "-") {
+    setFirmwareUpdateStatus("等待版本");
+    return;
+  }
+
+  if (version === lastCheckedFirmwareVersion) {
+    return;
+  }
+  lastCheckedFirmwareVersion = version;
+  setFirmwareUpdateStatus("检查中...");
+
+  try {
+    const release = await fetchLatestFirmwareRelease();
+    if (!release) {
+      setFirmwareUpdateStatus("无发布版本", FIRMWARE_RELEASES_URL);
+      return;
+    }
+
+    const latestVersion = release.tag_name || release.name;
+    const latest = parseFirmwareVersion(latestVersion);
+    const local = parseFirmwareVersion(version);
+    const releaseUrl = release.html_url || FIRMWARE_RELEASES_URL;
+    const firmwareAsset = findFirmwareAsset(release);
+    const downloadUrl = firmwareAsset?.browser_download_url || releaseUrl;
+
+    if (!latestVersion) {
+      setFirmwareUpdateStatus("无发布版本", FIRMWARE_RELEASES_URL);
+      return;
+    }
+
+    if (!local || !latest) {
+      setFirmwareUpdateStatus(`最新 ${latestVersion}`, releaseUrl);
+      appendLog(`固件版本无法比较：本地 ${version}，最新 ${latestVersion}`);
+      return;
+    }
+
+    const comparison = compareFirmwareVersions(local, latest);
+    if (comparison < 0) {
+      setFirmwareUpdateStatus(`有更新 ${latestVersion}`, downloadUrl, true);
+      appendLog(`发现固件更新：本地 ${version}，最新 ${latestVersion}`);
+    } else if (comparison === 0) {
+      setFirmwareUpdateStatus("已是最新", releaseUrl);
+    } else {
+      setFirmwareUpdateStatus("本地较新", releaseUrl);
+    }
+  } catch (err) {
+    if (err.status === 404) {
+      setFirmwareUpdateStatus("无法公开检查", FIRMWARE_RELEASES_URL);
+      appendLog("固件发布仓库或 Release API 未公开，网页无法自动检查。");
+      return;
+    }
+
+    setFirmwareUpdateStatus("检查失败", FIRMWARE_RELEASES_URL);
+    appendLog(`固件更新检查失败：${err.message}`);
+  }
 }
 
 async function startCapture() {
@@ -343,6 +489,10 @@ function handleText(text) {
     );
 
     if (fields.state) setState(fields.state);
+    if (fields.fw) {
+      dom.firmwareValue.textContent = fields.fw;
+      checkFirmwareUpdate(fields.fw);
+    }
     if (fields.srate) sampleRate = Number(fields.srate);
     if (fields.dropped) droppedFrames = Number(fields.dropped);
     if (fields.range) {

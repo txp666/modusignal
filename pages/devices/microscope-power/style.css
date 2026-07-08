@@ -419,6 +419,15 @@ label {
   letter-spacing: 0;
 }
 
+.stat strong a {
+  color: var(--blue-dark);
+  text-decoration: none;
+}
+
+.stat strong a:hover {
+  text-decoration: underline;
+}
+
 .stat.highlight {
   border-color: rgba(37, 99, 235, 0.18);
   background: #eef5ff;
