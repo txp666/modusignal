@@ -35,6 +35,57 @@ function replaceAssetVersion(content, version) {
   return content.replaceAll("__ASSET_VERSION__", version);
 }
 
+function patchHtmlAssetUrls(content, version) {
+  return content.replace(
+    /((?:src|href)=["'])(\.[^"']+\.(?:css|gif|html|ico|jpeg|jpg|js|png|svg|webp))(?:\?v=[^"']*)?(["'])/g,
+    `$1$2?v=${version}$3`,
+  );
+}
+
+function patchRelativeModuleSpecifier(content, version) {
+  return content
+    .replace(/(from\s+)(["'])(\.[^"']+\.js)(?:\?v=[^"']*)?\2/g, `$1$2$3?v=${version}$2`)
+    .replace(/(import\s*\(\s*)(["'])(\.[^"']+\.js)(?:\?v=[^"']*)?\2/g, `$1$2$3?v=${version}$2`);
+}
+
+function walkFilesWithExtensions(dir, extensions) {
+  if (!existsSync(dir)) {
+    return [];
+  }
+
+  const files = [];
+
+  for (const name of readdirSync(dir)) {
+    const filePath = join(dir, name);
+    const stats = statSync(filePath);
+
+    if (stats.isDirectory()) {
+      files.push(...walkFilesWithExtensions(filePath, extensions));
+      continue;
+    }
+
+    if (extensions.some((extension) => name.endsWith(extension))) {
+      files.push(filePath);
+    }
+  }
+
+  return files;
+}
+
+function injectStaticAssetVersion(version) {
+  const pagesRoot = join(siteRoot, "pages");
+
+  for (const filePath of walkFilesWithExtensions(pagesRoot, [".html"])) {
+    const content = readFileSync(filePath, "utf8");
+    writeFileSync(filePath, patchHtmlAssetUrls(replaceAssetVersion(content, version), version));
+  }
+
+  for (const filePath of walkFilesWithExtensions(pagesRoot, [".js"])) {
+    const content = readFileSync(filePath, "utf8");
+    writeFileSync(filePath, patchRelativeModuleSpecifier(replaceAssetVersion(content, version), version));
+  }
+}
+
 function copyStaticAssets() {
   const copies = [
     ["pages", "pages"],
@@ -161,6 +212,7 @@ async function main() {
 
   await bundleApp(version);
   copyStaticAssets();
+  injectStaticAssetVersion(version);
   createProductionIndex(version);
   printBuildSummary();
 

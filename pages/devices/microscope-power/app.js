@@ -5,8 +5,8 @@ import {
   WAVE_FRAME,
   WaveFrameParser,
   commandLine,
-} from "./protocol.js";
-import { WavePlot } from "./plot.js?v=20260708-zero2";
+} from "./protocol.js?v=__ASSET_VERSION__";
+import { WavePlot } from "./plot.js?v=__ASSET_VERSION__";
 
 const SAMPLE_BUFFER_SECONDS = 120;
 const MAX_SAMPLE_RATE = 100000;
