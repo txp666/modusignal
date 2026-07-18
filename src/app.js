@@ -60,6 +60,11 @@ import {
   getHartCommandLabel,
 } from "./hart/hart.js";
 import {
+  HARTLINK_VERSION_QUERY,
+  isHartLinkVersionProbeChunk,
+  parseHartLinkVersionResponse,
+} from "./hart/hartlink.js";
+import {
   buildMqttMessage,
   describeMqttSummary,
   getMqttPublishOptions,
@@ -176,6 +181,9 @@ const AOMASTER_VALUE_DISPLAY_STORAGE_KEY = "modusignal.aomasterValueDisplayMode.
 const SIDEBAR_PANELS_STORAGE_KEY = "modusignal.sidebarPanels.v1";
 const MOBILE_LAYOUT_QUERY = "(max-width: 1050px)";
 const AOMASTER_INTERFRAME_DELAY_MS = 20;
+const HARTLINK_VERSION_DETECT_DELAY_MS = 80;
+const HARTLINK_VERSION_DETECT_TIMEOUT_MS = 1200;
+const HARTLINK_VERSION_RESPONSE_BUFFER_LIMIT = 512;
 
 /** @type {Record<string, HTMLElement | HTMLElement[] | null>} */
 const elements = {};
@@ -273,6 +281,7 @@ function cacheElements() {
     hartCustomCommandField: document.querySelector("#hartCustomCommandField"),
     hartFrameChecksum: document.querySelector("#hartFrameChecksum"),
     hartDeviceInfo: document.querySelector("#hartDeviceInfo"),
+    hartlinkVersionInfo: document.querySelector("#hartlinkVersionInfo"),
     hartSearchDevice: document.querySelector("#hartSearchDevice"),
     hartScanAddresses: document.querySelector("#hartScanAddresses"),
     hartCommandResponse: document.querySelector("#hartCommandResponse"),
@@ -431,6 +440,9 @@ let session = null;
 let modbusPollTimer = null;
 let hartPollTimer = null;
 let hartAddressScanActive = false;
+let hartLinkVersionProbeTimer = null;
+let hartLinkVersionResponseBuffer = "";
+let hartLinkVersionState = { status: "idle", version: "", model: "" };
 let aomasterPollTimer = null;
 let websocketPollTimer = null;
 let mqttPollTimer = null;
@@ -1987,6 +1999,7 @@ function bindSessionEvents(target) {
     stopAllPolling();
     resetModbusRxBuffer();
     resetHartRxBuffer();
+    resetHartLinkVersionProbe();
     resetAomasterRxBuffer();
     resetMqttRxBuffer();
     resetWebSocketRxBuffer();
@@ -2000,12 +2013,20 @@ function bindSessionEvents(target) {
 
   target.addEventListener("rx", (event) => {
     const { bytes, text, topic } = event.detail;
+    const hartLinkProbeChunk =
+      state.deviceId === HART_DEVICE_ID && state.transportId === DEFAULT_TRANSPORT_ID
+        ? handleHartLinkVersionProbeRx(text)
+        : false;
     const useHexDisplay =
       state.deviceId === MODBUS_DEVICE_ID ||
       state.deviceId === HART_DEVICE_ID ||
       state.deviceId === DEFAULT_DEVICE_ID;
     const rxPayload = topic ? `[${topic}] ${text ?? bytesToHex(bytes)}` : text ?? bytesToHex(bytes);
-    queueRxLogDisplay(bytes, rxPayload, useHexDisplay && !topic);
+    queueRxLogDisplay(bytes, rxPayload, useHexDisplay && !topic && !hartLinkProbeChunk);
+
+    if (hartLinkProbeChunk) {
+      return;
+    }
 
     if (state.deviceId === WEBSOCKET_DEVICE_ID) {
       websocketMessageStats.rx += 1;
@@ -2287,6 +2308,7 @@ function applyDeviceTransportDefaults(deviceId = state.deviceId) {
 }
 
 function selectDevice(deviceId) {
+  resetHartLinkVersionProbe();
   const standalone = isStandaloneDevice(deviceId);
   state.pollingActive = false;
   stopAllPolling();
@@ -2333,6 +2355,10 @@ function selectDevice(deviceId) {
   applySidebarPanelLayout();
   resetViewportScroll();
   appendLog("info", i18n("log.device"), `${i18n("log.switchedTo")} ${getDeviceProfile(state.deviceId, customConfig, modbusConfig).name}`);
+
+  if (deviceId === HART_DEVICE_ID && state.transportId === DEFAULT_TRANSPORT_ID && session?.connected) {
+    void detectHartLinkVersion(session);
+  }
 }
 
 function navigateToPage(pageId) {
@@ -3100,6 +3126,9 @@ async function connect() {
     await session.connect(readTransportOptions());
     if (session?.connected) {
       updateConnectionUi(true);
+      if (state.deviceId === HART_DEVICE_ID && state.transportId === DEFAULT_TRANSPORT_ID) {
+        void detectHartLinkVersion(session);
+      }
     }
   } catch (error) {
     appendLog("error", i18n("log.connect"), error.message);
@@ -4655,6 +4684,120 @@ function updateHartDeviceInfo() {
   }
 
   elements.hartDeviceInfo.textContent = `${i18n("hart.devicePrefix")}${formatHartDeviceSummary(normalizeHartConfig(hartConfig).device)}`;
+  updateHartLinkVersionInfo();
+}
+
+function clearHartLinkVersionProbeTimer() {
+  if (hartLinkVersionProbeTimer) {
+    window.clearTimeout(hartLinkVersionProbeTimer);
+    hartLinkVersionProbeTimer = null;
+  }
+}
+
+function updateHartLinkVersionInfo() {
+  if (!elements.hartlinkVersionInfo) {
+    return;
+  }
+
+  const { status, version, model } = hartLinkVersionState;
+  const translationKey =
+    status === "detecting"
+      ? "hart.hartlinkDetecting"
+      : status === "detected"
+        ? "hart.hartlinkDetected"
+        : status === "not-detected"
+          ? "hart.hartlinkNotDetected"
+          : status === "error"
+            ? "hart.hartlinkProbeFailed"
+            : "hart.hartlinkWaiting";
+
+  elements.hartlinkVersionInfo.dataset.state = status;
+  elements.hartlinkVersionInfo.textContent = i18n(translationKey)
+    .replace("{version}", version)
+    .replace("{model}", model);
+}
+
+function setHartLinkVersionState(status, details = {}) {
+  hartLinkVersionState = {
+    status,
+    version: details.version ?? "",
+    model: details.model ?? "",
+  };
+  updateHartLinkVersionInfo();
+}
+
+function resetHartLinkVersionProbe(status = "idle") {
+  clearHartLinkVersionProbeTimer();
+  hartLinkVersionResponseBuffer = "";
+  setHartLinkVersionState(status);
+}
+
+function handleHartLinkVersionProbeRx(text) {
+  if (hartLinkVersionState.status !== "detecting" || !isHartLinkVersionProbeChunk(text)) {
+    return false;
+  }
+
+  hartLinkVersionResponseBuffer = `${hartLinkVersionResponseBuffer}${text}`.slice(
+    -HARTLINK_VERSION_RESPONSE_BUFFER_LIMIT,
+  );
+  const detected = parseHartLinkVersionResponse(hartLinkVersionResponseBuffer);
+  if (!detected) {
+    return true;
+  }
+
+  clearHartLinkVersionProbeTimer();
+  hartLinkVersionResponseBuffer = "";
+  resetHartRxBuffer();
+  setHartLinkVersionState("detected", detected);
+  appendLog(
+    "info",
+    "HARTLink",
+    i18n("hart.hartlinkDetectedLog")
+      .replace("{version}", detected.version)
+      .replace("{model}", detected.model),
+  );
+  return true;
+}
+
+async function detectHartLinkVersion(targetSession = session) {
+  resetHartLinkVersionProbe("detecting");
+  resetHartRxBuffer();
+  await wait(HARTLINK_VERSION_DETECT_DELAY_MS);
+
+  if (
+    targetSession !== session ||
+    !targetSession?.connected ||
+    state.deviceId !== HART_DEVICE_ID ||
+    state.transportId !== DEFAULT_TRANSPORT_ID
+  ) {
+    resetHartLinkVersionProbe();
+    return;
+  }
+
+  try {
+    await targetSession.write(HARTLINK_VERSION_QUERY);
+  } catch (error) {
+    if (targetSession === session && targetSession?.connected) {
+      resetHartLinkVersionProbe("error");
+      appendLog("warning", "HARTLink", `${i18n("hart.hartlinkProbeFailed")}: ${error.message}`);
+    }
+    return;
+  }
+
+  if (hartLinkVersionState.status !== "detecting") {
+    return;
+  }
+
+  hartLinkVersionProbeTimer = window.setTimeout(() => {
+    hartLinkVersionProbeTimer = null;
+    if (hartLinkVersionState.status !== "detecting") {
+      return;
+    }
+    hartLinkVersionResponseBuffer = "";
+    resetHartRxBuffer();
+    setHartLinkVersionState("not-detected");
+    appendLog("info", "HARTLink", i18n("hart.hartlinkNotDetectedLog"));
+  }, HARTLINK_VERSION_DETECT_TIMEOUT_MS);
 }
 
 async function sendHartSearchCommand(pollAddress = normalizeHartConfig(hartConfig).pollAddress) {

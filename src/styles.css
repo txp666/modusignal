@@ -712,6 +712,9 @@ button:focus-visible {
 }
 
 .hart-device-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
   margin-bottom: 0.75rem;
 }
 
@@ -863,6 +866,7 @@ button:focus-visible {
 }
 
 .hart-device-info code {
+  flex: 1 1 18rem;
   display: block;
   padding: 0.55rem 0.65rem;
   border: 1px solid var(--line);
@@ -871,6 +875,23 @@ button:focus-visible {
   color: var(--text);
   font-size: 0.82rem;
   overflow-wrap: anywhere;
+}
+
+.hartlink-version-info[data-state="detecting"] {
+  border-color: rgba(180, 83, 9, 0.35);
+  background: #fff8e8;
+  color: var(--amber);
+}
+
+.hartlink-version-info[data-state="detected"] {
+  border-color: rgba(22, 163, 74, 0.35);
+  background: #ecfdf3;
+  color: var(--green);
+}
+
+.hartlink-version-info[data-state="not-detected"],
+.hartlink-version-info[data-state="error"] {
+  color: var(--muted);
 }
 
 .device-library-empty {
