@@ -16,7 +16,7 @@
   <section class="panel aomaster-product-card" aria-labelledby="aomasterProductTitle">
     <div class="aomaster-product-media">
       <img
-        src="./images/AOMaster.png?v=__ASSET_VERSION__"
+        src="./images/AOMaster-product.jpg?v=__ASSET_VERSION__"
         alt=""
         aria-hidden="true"
       />
@@ -33,6 +33,7 @@
       </div>
       <div class="panel-actions">
         <button id="openAomasterProductDialog" type="button" data-i18n="home.aomasterMore">查看产品介绍</button>
+        <a class="action-link" href="https://mall.bilibili.com/neul-next/detailuniversal/detail.html?page=detailuniversal_detail&amp;itemsId=41266804&amp;loadingShow=1&amp;noTitleBar=1#noReffer=true&amp;msource=merchant_share" target="_blank" rel="noreferrer" data-i18n="home.buyProduct">购买产品</a>
         <button class="ghost-button" type="button" data-page-target="aomaster" data-device-id="aomaster" data-i18n="home.aomasterDebug">打开调试页</button>
       </div>
     </div>
@@ -61,7 +62,7 @@
         <div class="aomaster-dialog-main">
           <div class="aomaster-dialog-visual">
             <img
-              src="./images/AOMaster.png?v=__ASSET_VERSION__"
+              src="./images/AOMaster-product.jpg?v=__ASSET_VERSION__"
               alt=""
               aria-hidden="true"
             />
@@ -94,7 +95,98 @@
         </div>
         <div class="panel-actions aomaster-dialog-actions">
           <button type="button" data-page-target="aomaster" data-device-id="aomaster" data-i18n="home.aomasterDebug">打开调试页</button>
+          <a class="action-link" href="https://mall.bilibili.com/neul-next/detailuniversal/detail.html?page=detailuniversal_detail&amp;itemsId=41266804&amp;loadingShow=1&amp;noTitleBar=1#noReffer=true&amp;msource=merchant_share" target="_blank" rel="noreferrer" data-i18n="home.buyProduct">购买产品</a>
           <a class="action-link" href="https://oshwhub.com/txp666/project_dvokplei" target="_blank" rel="noreferrer" data-i18n="home.aomasterHardware">硬件资料</a>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <section class="panel aomaster-product-card hartlink-product-card" aria-labelledby="hartlinkProductTitle">
+    <div class="aomaster-product-media">
+      <img
+        src="./images/HARTLink.jpg?v=__ASSET_VERSION__"
+        alt=""
+        aria-hidden="true"
+      />
+    </div>
+    <div class="aomaster-product-content">
+      <span class="aomaster-product-kicker" data-i18n="home.hartlinkKicker">HARTLink M1 产品</span>
+      <h2 id="hartlinkProductTitle" data-i18n="home.hartlinkProductTitle">HARTLink M1 便携式 HART 手操器</h2>
+      <p data-i18n="home.hartlinkProductDesc">基于 CH32L103F8U6 的便携式 HART 基础读取手操器与 USB 透传桥，支持 OLED 本机菜单、设备扫描、USB CDC 原始帧透传与 USB HID IAP 升级。</p>
+      <div class="aomaster-product-highlights" aria-label="HARTLink M1 highlights">
+        <span>HART 1200 baud 8O1</span>
+        <span data-i18n="home.hartlinkReadOnly">安全只读</span>
+        <span>USB CDC</span>
+        <span data-i18n="home.hartlinkLocalMenu">OLED 本机菜单</span>
+      </div>
+      <div class="panel-actions">
+        <button id="openHartlinkProductDialog" type="button" data-i18n="home.hartlinkMore">查看产品介绍</button>
+        <a class="action-link" href="https://mall.bilibili.com/neul-next/detailuniversal/detail.html?page=detailuniversal_detail&amp;itemsId=41482265&amp;loadingShow=1&amp;noTitleBar=1#noReffer=true&amp;msource=merchant_share" target="_blank" rel="noreferrer" data-i18n="home.buyProduct">购买产品</a>
+        <a class="action-link" href="https://oshwhub.com/txp666/project_dhswhikf" target="_blank" rel="noreferrer" data-i18n="home.hartlinkHardware">立创开源硬件</a>
+        <button class="ghost-button" type="button" data-page-target="hart" data-device-id="hart" data-i18n="home.hartlinkDebug">打开调试页</button>
+      </div>
+    </div>
+  </section>
+
+  <dialog id="hartlinkProductDialog" class="aomaster-product-dialog" aria-labelledby="hartlinkProductDialogTitle">
+    <div class="aomaster-dialog-shell">
+      <header class="aomaster-dialog-header">
+        <div>
+          <span class="aomaster-product-kicker" data-i18n="home.hartlinkKicker">HARTLink M1 产品</span>
+          <h2 id="hartlinkProductDialogTitle" data-i18n="home.hartlinkProductTitle">HARTLink M1 便携式 HART 手操器</h2>
+        </div>
+        <button
+          id="closeHartlinkProductDialog"
+          class="icon-button"
+          type="button"
+          data-i18n-aria-label="home.hartlinkClose"
+          data-i18n-title="home.hartlinkClose"
+          aria-label="关闭产品介绍"
+          title="关闭产品介绍"
+        >
+          &#215;
+        </button>
+      </header>
+      <div class="aomaster-dialog-content">
+        <div class="aomaster-dialog-main">
+          <div class="aomaster-dialog-visual">
+            <img
+              src="./images/HARTLink.jpg?v=__ASSET_VERSION__"
+              alt=""
+              aria-hidden="true"
+            />
+          </div>
+          <div class="aomaster-dialog-copy">
+            <p data-i18n="home.hartlinkIntro">HARTLink M1 面向学习、实验和现场调试，可脱离电脑发现 HART 设备并读取过程变量与诊断状态；连接电脑后则作为 USB 与 HART 物理层之间的原始帧桥，配合 modusignal 完成更复杂的操作。</p>
+            <div class="aomaster-dialog-feature-grid">
+              <article>
+                <strong data-i18n="home.hartlinkFeatureRead">本机安全读取</strong>
+                <span data-i18n="home.hartlinkFeatureReadDesc">提供 Cmd0/1/2/3/7/12/13/14/15/20 等基础读命令，本机菜单不向现场设备发送写参数命令。</span>
+              </article>
+              <article>
+                <strong data-i18n="home.hartlinkFeatureScan">设备发现与轮询</strong>
+                <span data-i18n="home.hartlinkFeatureScanDesc">扫描轮询地址 0-15，缓存设备身份与长地址，并在 OLED 上查看过程变量、状态和诊断信息。</span>
+              </article>
+              <article>
+                <strong data-i18n="home.hartlinkFeatureBridge">USB HART 透传</strong>
+                <span data-i18n="home.hartlinkFeatureBridgeDesc">USB CDC 双向转发原始 HART 字节流；上位机活跃时本机不会抢占总线。</span>
+              </article>
+              <article>
+                <strong data-i18n="home.hartlinkFeatureUpdate">在线固件升级</strong>
+                <span data-i18n="home.hartlinkFeatureUpdateDesc">内置 Bootloader 支持 USB HID IAP，可使用应用固件完成日常升级。</span>
+              </article>
+            </div>
+          </div>
+        </div>
+        <div class="aomaster-dialog-note">
+          <strong data-i18n="home.hartlinkUsageTitle">接线提示</strong>
+          <span data-i18n="home.hartlinkUsageDesc">USB 仅为 HARTLink 本机供电，不给 4-20 mA/HART 回路供电。请将测试线并联在约 250 Ω 负载两端或现场仪表端子，并在接线前确认回路极性、外部供电、负载与现场安全条件。</span>
+        </div>
+        <div class="panel-actions aomaster-dialog-actions">
+          <button type="button" data-page-target="hart" data-device-id="hart" data-i18n="home.hartlinkDebug">打开调试页</button>
+          <a class="action-link" href="https://mall.bilibili.com/neul-next/detailuniversal/detail.html?page=detailuniversal_detail&amp;itemsId=41482265&amp;loadingShow=1&amp;noTitleBar=1#noReffer=true&amp;msource=merchant_share" target="_blank" rel="noreferrer" data-i18n="home.buyProduct">购买产品</a>
+          <a class="action-link" href="https://oshwhub.com/txp666/project_dhswhikf" target="_blank" rel="noreferrer" data-i18n="home.hartlinkHardware">立创开源硬件</a>
         </div>
       </div>
     </div>

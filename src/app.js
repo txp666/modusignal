@@ -196,6 +196,9 @@ function cacheElements() {
     openAomasterProductDialog: document.querySelector("#openAomasterProductDialog"),
     aomasterProductDialog: document.querySelector("#aomasterProductDialog"),
     closeAomasterProductDialog: document.querySelector("#closeAomasterProductDialog"),
+    openHartlinkProductDialog: document.querySelector("#openHartlinkProductDialog"),
+    hartlinkProductDialog: document.querySelector("#hartlinkProductDialog"),
+    closeHartlinkProductDialog: document.querySelector("#closeHartlinkProductDialog"),
     newDeviceRequestLink: document.querySelector("#newDeviceRequestLink"),
     deviceRequestTemplate: document.querySelector("#deviceRequestTemplate"),
     copyRequestTemplate: document.querySelector("#copyRequestTemplate"),
@@ -576,8 +579,7 @@ function on(element, eventName, handler) {
   }
 }
 
-function openAomasterProductDialog() {
-  const dialog = elements.aomasterProductDialog;
+function openProductDialog(dialog) {
   if (!dialog) {
     return;
   }
@@ -589,8 +591,7 @@ function openAomasterProductDialog() {
   }
 }
 
-function closeAomasterProductDialog() {
-  const dialog = elements.aomasterProductDialog;
+function closeProductDialog(dialog) {
   if (!dialog) {
     return;
   }
@@ -600,6 +601,16 @@ function closeAomasterProductDialog() {
   } else {
     dialog.removeAttribute("open");
   }
+}
+
+function bindProductDialog(openButton, dialog, closeButton) {
+  on(openButton, "click", () => openProductDialog(dialog));
+  on(closeButton, "click", () => closeProductDialog(dialog));
+  on(dialog, "click", (event) => {
+    if (event.target === dialog || event.target.closest("[data-page-target]")) {
+      closeProductDialog(dialog);
+    }
+  });
 }
 
 function safeUpdateDeviceUi() {
@@ -1710,13 +1721,8 @@ function bindEvents() {
   });
   on(elements.sendManual, "click", sendManualCommand);
   on(elements.copyRequestTemplate, "click", copyRequestTemplate);
-  on(elements.openAomasterProductDialog, "click", openAomasterProductDialog);
-  on(elements.closeAomasterProductDialog, "click", closeAomasterProductDialog);
-  on(elements.aomasterProductDialog, "click", (event) => {
-    if (event.target === elements.aomasterProductDialog || event.target.closest("[data-page-target]")) {
-      closeAomasterProductDialog();
-    }
-  });
+  bindProductDialog(elements.openAomasterProductDialog, elements.aomasterProductDialog, elements.closeAomasterProductDialog);
+  bindProductDialog(elements.openHartlinkProductDialog, elements.hartlinkProductDialog, elements.closeHartlinkProductDialog);
   on(elements.clearLog, "click", () => {
     resetRxLogCoalesce();
     elements.serialLog.innerHTML = "";
