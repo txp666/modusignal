@@ -39,14 +39,11 @@ import {
 } from "./devices/modbus-device.js";
 import {
   createHartPollCommand,
-  createHartSearchCommand,
   DEFAULT_HART_CONFIG,
   describeHartSummary,
   getHartMode,
-  getHartStandardRequestFields,
   HART_DEVICE_ID,
   HART_TRANSPORT_DEFAULTS,
-  HART_UNIVERSAL_COMMANDS,
   HART_VARIABLE_CARDS,
   mergeHartDiscovery,
   normalizeHartConfig,
@@ -55,14 +52,10 @@ import {
 } from "./devices/hart-device.js";
 import {
   formatHartDeviceSummary,
-  getHartCommandLabel,
-  validateHartTrimValue,
 } from "./hart/hart.js";
-import {
-  HARTLINK_VERSION_QUERY,
-  isHartLinkVersionProbeChunk,
-  parseHartLinkVersionResponse,
-} from "./hart/hartlink.js";
+import { createHartConfigUi } from "./hart/hart-config-ui.js";
+import { createHartSessionController } from "./hart/hart-session-controller.js";
+import { createHartWorkspaceController } from "./hart/hart-workspace-controller.js";
 import {
   buildMqttMessage,
   describeMqttSummary,
@@ -180,9 +173,6 @@ const AOMASTER_VALUE_DISPLAY_STORAGE_KEY = "modusignal.aomasterValueDisplayMode.
 const SIDEBAR_PANELS_STORAGE_KEY = "modusignal.sidebarPanels.v1";
 const MOBILE_LAYOUT_QUERY = "(max-width: 1050px)";
 const AOMASTER_INTERFRAME_DELAY_MS = 20;
-const HARTLINK_VERSION_DETECT_DELAY_MS = 80;
-const HARTLINK_VERSION_DETECT_TIMEOUT_MS = 1200;
-const HARTLINK_VERSION_RESPONSE_BUFFER_LIMIT = 512;
 
 /** @type {Record<string, HTMLElement | HTMLElement[] | null>} */
 const elements = {};
@@ -462,17 +452,9 @@ let chartConfig = loadChartConfig();
 let session = null;
 let modbusPollTimer = null;
 let hartPollTimer = null;
-let hartAddressScanActive = false;
-let hartLinkVersionProbeTimer = null;
-let hartLinkVersionResponseBuffer = "";
-let hartLinkVersionState = { status: "idle", version: "", model: "" };
-let hartWorkspace = "general";
-let hartCalibrationState = {
-  awaitingGuidelines: false,
-  deviceVariable: null,
-  guidelines: null,
-  lastTrimValues: { low: null, high: null },
-};
+let hartConfigUi = null;
+let hartSessionController = null;
+let hartWorkspaceController = null;
 let aomasterPollTimer = null;
 let websocketPollTimer = null;
 let mqttPollTimer = null;
@@ -484,7 +466,6 @@ let deviceLibrarySearchQuery = "";
 let transportOptions = {};
 const RX_LOG_IDLE_MS = 45;
 const CHART_CSV_FORMAT = "modusignal-chart-csv/v1";
-const HART_SCAN_ADDRESS_DELAY_MS = 650;
 let rxLogFlushTimer = null;
 /** @type {Uint8Array | string | null} */
 let rxLogBuffer = null;
@@ -518,6 +499,7 @@ async function boot() {
     i18n.apply(document.body);
     mountChartCurveSections();
     cacheElements();
+    initializeHartControllers();
     await initialize();
   } catch (error) {
     console.error(i18n("app.bootFailed"), error);
@@ -545,7 +527,7 @@ async function initialize() {
   }
   populateCustomConfigForm(customConfig);
   populateModbusConfigForm(modbusConfig);
-  populateHartConfigForm(hartConfig);
+  hartConfigUi.populateConfigForm(hartConfig);
   populateWebsocketConfigForm(websocketConfig);
   populateMqttConfigForm(mqttConfig);
   populateAomasterConfigForm(aomasterConfig);
@@ -598,17 +580,50 @@ function refreshAllDynamicUi() {
   updateChartPointLabels();
   populateCustomConfigForm(customConfig);
   populateModbusConfigForm(modbusConfig);
-  const hartUnitValue = elements.hartSettingsUnit?.value;
-  const hartTransferValue = elements.hartSettingsTransferFunction?.value;
-  elements.hartSettingsUnit?.replaceChildren();
-  elements.hartSettingsTransferFunction?.replaceChildren();
-  populateHartConfigForm(hartConfig);
-  setHartWorkspaceSelectValue(elements.hartSettingsUnit, hartUnitValue);
-  setHartWorkspaceSelectValue(elements.hartSettingsTransferFunction, hartTransferValue);
+  hartWorkspaceController.refreshLocalizedOptions();
+  hartConfigUi.populateConfigForm(hartConfig);
   populateWebsocketConfigForm(websocketConfig);
   populateMqttConfigForm(mqttConfig);
   populateAomasterConfigForm(aomasterConfig);
   syncAomasterValueDisplayControls();
+}
+
+function initializeHartControllers() {
+  hartSessionController = createHartSessionController({
+    elements,
+    getConfig: () => hartConfig,
+    setConfig: (config) => {
+      hartConfig = config;
+    },
+    getSession: () => session,
+    getDeviceId: () => state.deviceId,
+    canProbeLink: () => state.transportId === DEFAULT_TRANSPORT_ID,
+    populateConfigForm: (config) => hartConfigUi.populateConfigForm(config),
+    updateDeviceUi,
+    resetRxBuffer: resetHartRxBuffer,
+    bytesToHex,
+    appendLog,
+  });
+  hartWorkspaceController = createHartWorkspaceController({
+    elements,
+    getConfig: () => hartConfig,
+    setConfig: (config) => {
+      hartConfig = config;
+    },
+    isConnected: () => Boolean(session?.connected),
+    isAddressScanActive: () => hartSessionController.isAddressScanActive(),
+    readConfigForm: () => hartConfigUi.readConfigForm(),
+    populateConfigForm: (config) => hartConfigUi.populateConfigForm(config),
+    updateDeviceUi,
+    sendSearchCommand: () => hartSessionController.sendSearchCommand(),
+    sendDeviceCommand,
+  });
+  hartConfigUi = createHartConfigUi({
+    elements,
+    getConfig: () => hartConfig,
+    populateWorkspaceControls: (config) => hartWorkspaceController.populateControls(config),
+    updateDeviceInfo: updateHartDeviceInfo,
+  });
 }
 
 function on(element, eventName, handler) {
@@ -976,7 +991,7 @@ function updateHartCommandResponse(telemetry) {
 
 function handleHartTelemetry(telemetry) {
   updateHartCommandResponse(telemetry);
-  updateHartWorkspaceFromTelemetry(telemetry);
+  hartWorkspaceController.updateFromTelemetry(telemetry);
 
   if (telemetry?.isMulti && telemetry.variables) {
     updateHartVariableCards(telemetry.variables);
@@ -1711,13 +1726,13 @@ function bindEvents() {
   on(elements.deviceShell, "click", (event) => {
     const hartWorkspaceTab = event.target.closest("[data-hart-workspace-tab]");
     if (hartWorkspaceTab) {
-      switchHartWorkspace(hartWorkspaceTab.dataset.hartWorkspaceTab);
+      hartWorkspaceController.switchWorkspace(hartWorkspaceTab.dataset.hartWorkspaceTab);
       return;
     }
 
     const hartWorkspaceAction = event.target.closest("[data-hart-workspace-action]");
     if (hartWorkspaceAction) {
-      handleHartWorkspaceAction(hartWorkspaceAction.dataset.hartWorkspaceAction).catch((error) =>
+      hartWorkspaceController.handleAction(hartWorkspaceAction.dataset.hartWorkspaceAction).catch((error) =>
         appendLog("error", "HART", error.message),
       );
       return;
@@ -1871,7 +1886,7 @@ function bindEvents() {
 
   on(elements.deviceLibrarySearch, "input", handleDeviceLibrarySearchInput);
 
-  getHartConfigControls().filter(Boolean).forEach((control) => {
+  hartConfigUi.getConfigControls().filter(Boolean).forEach((control) => {
     control.addEventListener("input", updateHartDraftConfig);
     control.addEventListener("change", updateHartDraftConfig);
   });
@@ -1908,10 +1923,10 @@ function bindEvents() {
   on(elements.customAddCurve, "click", () => handleAddDebugCurve("custom"));
 
   on(elements.hartSearchDevice, "click", () => {
-    sendHartSearchCommand().catch((error) => appendLog("error", "HART", error.message));
+    hartSessionController.sendSearchCommand().catch((error) => appendLog("error", "HART", error.message));
   });
   on(elements.hartScanAddresses, "click", () => {
-    scanHartAddresses().catch((error) => appendLog("error", "HART", error.message));
+    hartSessionController.scanAddresses().catch((error) => appendLog("error", "HART", error.message));
   });
   elements.hartChartSeriesInputs.forEach((input) => {
     input.addEventListener("change", handleHartChartSeriesChange);
@@ -2021,7 +2036,7 @@ function bindSessionEvents(target) {
     stopAllPolling();
     resetModbusRxBuffer();
     resetHartRxBuffer();
-    resetHartLinkVersionProbe();
+    hartSessionController.resetLinkProbe();
     resetAomasterRxBuffer();
     resetMqttRxBuffer();
     resetWebSocketRxBuffer();
@@ -2037,7 +2052,7 @@ function bindSessionEvents(target) {
     const { bytes, text, topic } = event.detail;
     const hartLinkProbeChunk =
       state.deviceId === HART_DEVICE_ID && state.transportId === DEFAULT_TRANSPORT_ID
-        ? handleHartLinkVersionProbeRx(text)
+        ? hartSessionController.handleLinkProbeRx(text)
         : false;
     const useHexDisplay =
       state.deviceId === MODBUS_DEVICE_ID ||
@@ -2075,9 +2090,9 @@ function bindSessionEvents(target) {
     if (telemetry) {
       if (state.deviceId === HART_DEVICE_ID && telemetry.isDiscovery) {
         hartConfig = mergeHartDiscovery(hartConfig, telemetry);
-        populateHartConfigForm(hartConfig);
+        hartConfigUi.populateConfigForm(hartConfig);
         updateHartDeviceInfo();
-        updateHartWorkspaceFromDiscovery(telemetry);
+        hartWorkspaceController.updateFromDiscovery(telemetry);
         appendLog("info", "HART", formatHartDeviceSummary(hartConfig.device));
         updateDeviceUi();
         return;
@@ -2331,7 +2346,7 @@ function applyDeviceTransportDefaults(deviceId = state.deviceId) {
 }
 
 function selectDevice(deviceId) {
-  resetHartLinkVersionProbe();
+  hartSessionController.resetLinkProbe();
   const standalone = isStandaloneDevice(deviceId);
   state.pollingActive = false;
   stopAllPolling();
@@ -2380,7 +2395,7 @@ function selectDevice(deviceId) {
   appendLog("info", i18n("log.device"), `${i18n("log.switchedTo")} ${getDeviceProfile(state.deviceId, customConfig, modbusConfig).name}`);
 
   if (deviceId === HART_DEVICE_ID && state.transportId === DEFAULT_TRANSPORT_ID && session?.connected) {
-    void detectHartLinkVersion(session);
+    void hartSessionController.detectLinkVersion(session);
   }
 }
 
@@ -2511,7 +2526,7 @@ function updateDeviceUi() {
     }
     syncChartCurvePanelUi();
     if (isHart) {
-      syncHartCommandModeUi();
+      hartConfigUi.syncCommandModeUi();
       ensureHartTelemetryChart();
       syncHartChartSeriesControls();
       updateHartVariableCards();
@@ -2969,16 +2984,16 @@ function updateSetpointUi() {
 
   if (state.deviceId === HART_DEVICE_ID) {
     updateHartDeviceInfo();
-    updateHartWorkspaceUi();
+    hartWorkspaceController.updateUi();
     if (sendDriverCommand) {
       sendDriverCommand.textContent = i18n("driver.sendCommand");
     }
     if (elements.hartSearchDevice) {
-      elements.hartSearchDevice.disabled = !session?.connected || hartAddressScanActive;
+      elements.hartSearchDevice.disabled = !session?.connected || hartSessionController.isAddressScanActive();
     }
     if (elements.hartScanAddresses) {
-      elements.hartScanAddresses.disabled = !session?.connected || hartAddressScanActive;
-      elements.hartScanAddresses.textContent = hartAddressScanActive ? i18n("hart.scanning") : i18n("hart.scanAddresses");
+      elements.hartScanAddresses.disabled = !session?.connected || hartSessionController.isAddressScanActive();
+      elements.hartScanAddresses.textContent = hartSessionController.isAddressScanActive() ? i18n("hart.scanning") : i18n("hart.scanAddresses");
     }
     if (driverState) {
       driverState.textContent = normalizeHartConfig(hartConfig).device.discovered ? i18n("driver.hartIdentified") : i18n("driver.hartNotSearched");
@@ -3151,7 +3166,7 @@ async function connect() {
     if (session?.connected) {
       updateConnectionUi(true);
       if (state.deviceId === HART_DEVICE_ID && state.transportId === DEFAULT_TRANSPORT_ID) {
-        void detectHartLinkVersion(session);
+        void hartSessionController.detectLinkVersion(session);
       }
     }
   } catch (error) {
@@ -4438,9 +4453,9 @@ async function sendHartPollCommand() {
 }
 
 function updateHartDraftConfig() {
-  hartConfig = readHartConfigForm();
-  syncHartCommandModeUi(hartConfig);
-  renderHartStandardCommandFields(hartConfig);
+  hartConfig = hartConfigUi.readConfigForm();
+  hartConfigUi.syncCommandModeUi(hartConfig);
+  hartConfigUi.renderStandardCommandFields(hartConfig);
 
   if (state.deviceId === HART_DEVICE_ID) {
     const normalized = normalizeHartConfig(hartConfig);
@@ -4458,9 +4473,9 @@ function updateHartDraftConfig() {
 }
 
 function saveHartConfig() {
-  hartConfig = readHartConfigForm();
+  hartConfig = hartConfigUi.readConfigForm();
   localStorage.setItem(HART_CONFIG_STORAGE_KEY, JSON.stringify(hartConfig));
-  populateHartConfigForm(hartConfig);
+  hartConfigUi.populateConfigForm(hartConfig);
   updateDeviceUi();
   updateActivePolling();
   appendLog("info", i18n("log.device"), `${i18n("device.hart")}${i18n("common.configSavedShort")}`);
@@ -4469,7 +4484,7 @@ function saveHartConfig() {
 function resetHartConfig() {
   hartConfig = resetHartDeviceState(DEFAULT_HART_CONFIG);
   localStorage.setItem(HART_CONFIG_STORAGE_KEY, JSON.stringify(hartConfig));
-  populateHartConfigForm(hartConfig);
+  hartConfigUi.populateConfigForm(hartConfig);
   resetHartRxBuffer();
 
   if (state.deviceId === HART_DEVICE_ID) {
@@ -4497,781 +4512,13 @@ function wait(ms) {
   });
 }
 
-function switchHartWorkspace(workspace) {
-  const next = ["general", "settings", "calibration"].includes(workspace) ? workspace : "general";
-  hartWorkspace = next;
-  document.querySelector("#hartPage")?.classList.toggle("hart-workspace-expanded", next !== "general");
-  elements.hartWorkspaceTabs.forEach((button) => {
-    const active = button.dataset.hartWorkspaceTab === next;
-    button.classList.toggle("active", active);
-    button.setAttribute("aria-selected", String(active));
-  });
-  elements.hartWorkspacePanels.forEach((panel) => {
-    panel.hidden = panel.dataset.hartWorkspacePanel !== next;
-  });
-}
-
-function populateHartWorkspaceControls(config = hartConfig) {
-  const normalized = normalizeHartConfig(config);
-  const unitSelect = elements.hartSettingsUnit;
-  if (unitSelect && unitSelect.options.length === 0) {
-    const placeholder = document.createElement("option");
-    placeholder.value = "";
-    placeholder.textContent = i18n("hart.selectUnit");
-    placeholder.disabled = true;
-    placeholder.selected = true;
-    unitSelect.append(placeholder);
-    const unitField = getHartStandardRequestFields(35).find((entry) => entry.key === "unit_code");
-    unitField?.options.forEach((entry) => {
-      const option = document.createElement("option");
-      option.value = entry.value;
-      option.textContent = entry.label;
-      unitSelect.append(option);
-    });
-  }
-  const transferSelect = elements.hartSettingsTransferFunction;
-  if (transferSelect && transferSelect.options.length === 0) {
-    const transferField = getHartStandardRequestFields(47).find((entry) => entry.key === "transfer_function");
-    transferField?.options.forEach((entry) => {
-      const option = document.createElement("option");
-      option.value = entry.value;
-      option.textContent = entry.label;
-      transferSelect.append(option);
-    });
-  }
-  if (elements.hartSettingsDate && !elements.hartSettingsDate.value) {
-    elements.hartSettingsDate.value = new Date().toISOString().slice(0, 10);
-  }
-  if (elements.hartSettingsPollAddress && !elements.hartSettingsPollAddress.dataset.initialized) {
-    elements.hartSettingsPollAddress.value = String(normalized.pollAddress);
-    elements.hartSettingsPollAddress.dataset.initialized = "true";
-  }
-  switchHartWorkspace(hartWorkspace);
-  updateHartWorkspaceUi();
-}
-
-function updateHartWorkspaceUi() {
-  const connected = Boolean(session?.connected);
-  elements.hartWorkspaceActions.forEach((button) => {
-    const action = button.dataset.hartWorkspaceAction;
-    let enabled = connected && !hartAddressScanActive;
-    if (action === "trim-low-pv") {
-      enabled = enabled && [1, 3].includes(hartCalibrationState.guidelines?.supportedTrimPoints);
-    }
-    if (action === "trim-high-pv") {
-      enabled = enabled && [2, 3].includes(hartCalibrationState.guidelines?.supportedTrimPoints);
-    }
-    button.disabled = !enabled;
-  });
-}
-
-function setHartWorkspaceStatus(element, text, stateName = "info") {
-  if (!element) return;
-  element.textContent = text || i18n("hart.workspace.ready");
-  element.dataset.state = stateName;
-}
-
-function readHartWorkspaceNumber(element, label, minimum = -Infinity, maximum = Infinity) {
-  const value = Number(element?.value);
-  if (!Number.isFinite(value) || value < minimum || value > maximum) {
-    throw new Error(`${label}${i18n("hart.input.range").replace("{min}", minimum).replace("{max}", maximum)}`);
-  }
-  return String(value);
-}
-
-async function sendHartWorkspaceCommand(command, values = {}, statusElement = null) {
-  if (!session?.connected) throw new Error(i18n("hart.workspace.connectFirst"));
-  if (command !== 0 && !normalizeHartConfig(hartConfig).device.discovered) {
-    throw new Error(i18n("hart.searchFirst"));
-  }
-
-  if (command === 0) {
-    setHartWorkspaceStatus(statusElement, i18n("hart.workspace.sending").replace("{command}", "0"));
-    await sendHartSearchCommand();
-    return;
-  }
-
-  const commandKey = String(command);
-  const current = readHartConfigForm();
-  hartConfig = normalizeHartConfig({
-    ...current,
-    commandMode: "preset",
-    command,
-    standardCommandValues: {
-      ...current.standardCommandValues,
-      [commandKey]: Object.fromEntries(Object.entries(values).map(([key, value]) => [key, String(value)])),
-    },
-  });
-  populateHartConfigForm(hartConfig);
-  updateDeviceUi();
-  setHartWorkspaceStatus(statusElement, i18n("hart.workspace.sending").replace("{command}", String(command)));
-  await sendDeviceCommand();
-}
-
-async function handleHartWorkspaceAction(action) {
-  const settingsStatus = elements.hartSettingsStatus;
-  const calibrationStatus = elements.hartCalibrationStatus;
-  switch (action) {
-    case "read-identity":
-      return sendHartWorkspaceCommand(0, {}, settingsStatus);
-    case "read-sensor":
-      return sendHartWorkspaceCommand(14, {}, elements.hartSettingsMeasurementStatus);
-    case "read-config":
-      return sendHartWorkspaceCommand(15, {}, elements.hartSettingsMeasurementStatus);
-    case "write-unit":
-      return sendHartWorkspaceCommand(44, { unit_code: elements.hartSettingsUnit?.value }, settingsStatus);
-    case "write-range":
-      return sendHartWorkspaceCommand(
-        35,
-        {
-          unit_code: elements.hartSettingsUnit?.value,
-          upper_range: readHartWorkspaceNumber(elements.hartSettingsUpperRange, i18n("hart.input.upperRange")),
-          lower_range: readHartWorkspaceNumber(elements.hartSettingsLowerRange, i18n("hart.input.lowerRange")),
-        },
-        settingsStatus,
-      );
-    case "write-damping":
-      return sendHartWorkspaceCommand(
-        34,
-        { damping_seconds: readHartWorkspaceNumber(elements.hartSettingsDamping, i18n("hart.input.dampingSeconds"), 0) },
-        settingsStatus,
-      );
-    case "write-transfer":
-      return sendHartWorkspaceCommand(47, { transfer_function: elements.hartSettingsTransferFunction?.value }, settingsStatus);
-    case "read-message":
-      return sendHartWorkspaceCommand(12, {}, settingsStatus);
-    case "write-message":
-      return sendHartWorkspaceCommand(17, { message: elements.hartSettingsMessage?.value ?? "" }, settingsStatus);
-    case "read-tag":
-      return sendHartWorkspaceCommand(13, {}, settingsStatus);
-    case "write-tag":
-      return sendHartWorkspaceCommand(
-        18,
-        {
-          tag: elements.hartSettingsTag?.value ?? "",
-          descriptor: elements.hartSettingsDescriptor?.value ?? "",
-          date: elements.hartSettingsDate?.value ?? "",
-        },
-        settingsStatus,
-      );
-    case "read-assembly":
-      return sendHartWorkspaceCommand(16, {}, settingsStatus);
-    case "write-assembly":
-      return sendHartWorkspaceCommand(
-        19,
-        { final_assembly_number: readHartWorkspaceNumber(elements.hartSettingsAssembly, i18n("hart.input.finalAssemblyNumber"), 0, 0xffffff) },
-        settingsStatus,
-      );
-    case "write-address":
-      return sendHartWorkspaceCommand(
-        6,
-        {
-          polling_address: readHartWorkspaceNumber(elements.hartSettingsPollAddress, i18n("hart.input.pollAddress"), 0, 63),
-          loop_current_mode: elements.hartSettingsLoopMode?.value ?? "1",
-        },
-        settingsStatus,
-      );
-    case "read-burst":
-      return sendHartWorkspaceCommand(105, { burst_message: elements.hartSettingsBurstMessage?.value ?? "0" }, settingsStatus);
-    case "write-burst":
-      return sendHartWorkspaceCommand(
-        108,
-        {
-          burst_command: elements.hartSettingsBurstCommand?.value ?? "1",
-          burst_message: elements.hartSettingsBurstMessage?.value ?? "0",
-        },
-        settingsStatus,
-      );
-    case "enable-burst":
-    case "disable-burst":
-      return sendHartWorkspaceCommand(
-        109,
-        {
-          burst_control: action === "enable-burst" ? "1" : "0",
-          burst_message: elements.hartSettingsBurstMessage?.value ?? "0",
-        },
-        settingsStatus,
-      );
-    case "fixed-preset":
-      return sendHartWorkspaceCommand(40, { fixed_current: elements.hartCalibrationPresetCurrent?.value ?? "4" }, calibrationStatus);
-    case "fixed-custom":
-      return sendHartWorkspaceCommand(
-        40,
-        { fixed_current: readHartWorkspaceNumber(elements.hartCalibrationCustomCurrent, i18n("hart.calibration.customCurrent"), 0, 30) },
-        calibrationStatus,
-      );
-    case "fixed-exit":
-      return sendHartWorkspaceCommand(40, { fixed_current: "0" }, calibrationStatus);
-    case "output-low":
-      return sendHartWorkspaceCommand(40, { fixed_current: "4" }, calibrationStatus);
-    case "output-high":
-      return sendHartWorkspaceCommand(40, { fixed_current: "20" }, calibrationStatus);
-    case "trim-low-current":
-      return sendHartWorkspaceCommand(
-        45,
-        { measured_current: readHartWorkspaceNumber(elements.hartCalibrationLowCurrent, i18n("hart.input.measuredCurrent"), 0, 30) },
-        calibrationStatus,
-      );
-    case "trim-high-current":
-      return sendHartWorkspaceCommand(
-        46,
-        { measured_current: readHartWorkspaceNumber(elements.hartCalibrationHighCurrent, i18n("hart.input.measuredCurrent"), 0, 30) },
-        calibrationStatus,
-      );
-    case "pv-zero":
-      return sendHartWorkspaceCommand(43, {}, calibrationStatus);
-    case "read-trim-guidelines":
-      hartCalibrationState = {
-        awaitingGuidelines: true,
-        deviceVariable: null,
-        guidelines: null,
-        lastTrimValues: { low: null, high: null },
-      };
-      updateHartWorkspaceUi();
-      setHartWorkspaceStatus(elements.hartCalibrationGuidelines, i18n("hart.calibration.readingMapping"));
-      return sendHartWorkspaceCommand(50, {}, calibrationStatus);
-    case "trim-low-pv":
-    case "trim-high-pv": {
-      const guidelines = hartCalibrationState.guidelines;
-      if (!guidelines) throw new Error(i18n("hart.calibration.readGuidelinesFirst"));
-      const upper = action === "trim-high-pv";
-      const editor = upper ? elements.hartCalibrationHighValue : elements.hartCalibrationLowValue;
-      const trimValue = readHartWorkspaceNumber(editor, upper ? i18n("hart.calibration.appliedHigh") : i18n("hart.calibration.appliedLow"));
-      validateHartTrimValue(
-        trimValue,
-        upper ? 2 : 1,
-        guidelines,
-        upper ? hartCalibrationState.lastTrimValues.low : hartCalibrationState.lastTrimValues.high,
-      );
-      return sendHartWorkspaceCommand(
-        82,
-        {
-          device_variable: guidelines.deviceVariable,
-          trim_point: upper ? 2 : 1,
-          unit_code: guidelines.unitCode,
-          trim_value: trimValue,
-        },
-        calibrationStatus,
-      );
-    }
-    default:
-      return undefined;
-  }
-}
-
-function updateHartWorkspaceFromDiscovery(telemetry) {
-  const normalized = normalizeHartConfig(hartConfig);
-  if (elements.hartSettingsPollAddress) elements.hartSettingsPollAddress.value = String(normalized.pollAddress);
-  setHartWorkspaceStatus(elements.hartSettingsStatus, formatHartDeviceSummary(normalized.device), "success");
-  hartCalibrationState = {
-    awaitingGuidelines: false,
-    deviceVariable: null,
-    guidelines: null,
-    lastTrimValues: { low: null, high: null },
-  };
-  updateHartWorkspaceUi();
-}
-
-function setHartWorkspaceSelectValue(select, value, fallbackLabel = null) {
-  if (!select || value === null || value === undefined) return;
-  const stringValue = String(value);
-  if (![...select.options].some((option) => option.value === stringValue)) {
-    const option = document.createElement("option");
-    option.value = stringValue;
-    option.textContent = fallbackLabel ?? stringValue;
-    select.append(option);
-  }
-  select.value = stringValue;
-}
-
-function updateHartWorkspaceFromTelemetry(telemetry) {
-  const { command, fields } = telemetry ?? {};
-  if (!Number.isFinite(command)) return;
-  const summary = telemetry.commandLines?.join("\n") || telemetry.commandSummary || `${i18n("hart.command")} ${command}`;
-
-  if ([6, 12, 13, 14, 15, 16, 17, 18, 19, 34, 35, 44, 47, 105, 108, 109].includes(command)) {
-    setHartWorkspaceStatus(elements.hartSettingsStatus, summary, telemetry.isError ? "error" : "success");
-  }
-  if ([14, 15, 34, 35, 44, 47].includes(command)) {
-    setHartWorkspaceStatus(elements.hartSettingsMeasurementStatus, summary, telemetry.isError ? "error" : "success");
-  }
-  if (!telemetry.isError && fields) {
-    if ((command === 12 || command === 17) && elements.hartSettingsMessage) elements.hartSettingsMessage.value = fields.message ?? "";
-    if (command === 13 || command === 18) {
-      if (elements.hartSettingsTag) elements.hartSettingsTag.value = fields.tag ?? "";
-      if (elements.hartSettingsDescriptor) elements.hartSettingsDescriptor.value = fields.descriptor ?? "";
-      if (elements.hartSettingsDate && fields.date) elements.hartSettingsDate.value = fields.date;
-    }
-    if ((command === 16 || command === 19) && elements.hartSettingsAssembly) {
-      elements.hartSettingsAssembly.value = String(fields.assemblyNumber ?? 0);
-    }
-    if (command === 6) {
-      if (elements.hartSettingsPollAddress) elements.hartSettingsPollAddress.value = String(fields.pollingAddress ?? 0);
-      if (elements.hartSettingsLoopMode) elements.hartSettingsLoopMode.value = String(fields.loopCurrentMode ?? 1);
-    }
-    if ([14, 15, 35, 44].includes(command)) {
-      setHartWorkspaceSelectValue(elements.hartSettingsUnit, fields.unitCode, `${fields.unitCode} · ${fields.unit ?? ""}`);
-    }
-    if (command === 15 || command === 35) {
-      if (elements.hartSettingsUpperRange && Number.isFinite(fields.upper)) elements.hartSettingsUpperRange.value = String(fields.upper);
-      if (elements.hartSettingsLowerRange && Number.isFinite(fields.lower)) elements.hartSettingsLowerRange.value = String(fields.lower);
-    }
-    if (command === 15 || command === 34) {
-      const damping = command === 34 ? fields.value : fields.damping;
-      if (elements.hartSettingsDamping && Number.isFinite(damping)) elements.hartSettingsDamping.value = String(damping);
-    }
-    if (command === 15 || command === 47) {
-      setHartWorkspaceSelectValue(
-        elements.hartSettingsTransferFunction,
-        fields.transferFunction,
-        `${fields.transferFunction}`,
-      );
-    }
-    if (command === 105 || command === 108) {
-      setHartWorkspaceSelectValue(
-        elements.hartSettingsBurstCommand,
-        fields.burstCommand,
-        `Cmd ${fields.burstCommand}`,
-      );
-    }
-    if ([105, 108, 109].includes(command) && elements.hartSettingsBurstMessage && Number.isInteger(fields.burstMessage)) {
-      elements.hartSettingsBurstMessage.value = String(fields.burstMessage);
-    }
-  }
-
-  if ([40, 43, 45, 46, 50, 81, 82].includes(command)) {
-    setHartWorkspaceStatus(elements.hartCalibrationStatus, summary, telemetry.isError ? "error" : "success");
-  }
-  if (command === 50 && hartCalibrationState.awaitingGuidelines && !telemetry.isError) {
-    const deviceVariable = fields?.pv;
-    if (!Number.isInteger(deviceVariable) || deviceVariable >= 244) {
-      hartCalibrationState.awaitingGuidelines = false;
-      setHartWorkspaceStatus(elements.hartCalibrationGuidelines, i18n("hart.calibration.invalidPvMapping").replace("{code}", String(deviceVariable)), "error");
-      return;
-    }
-    hartCalibrationState.deviceVariable = deviceVariable;
-    setHartWorkspaceStatus(elements.hartCalibrationGuidelines, i18n("hart.calibration.readingGuidelines").replace("{code}", String(deviceVariable)));
-    void sendHartWorkspaceCommand(81, { device_variable: deviceVariable }, elements.hartCalibrationStatus).catch((error) => {
-      hartCalibrationState.awaitingGuidelines = false;
-      setHartWorkspaceStatus(elements.hartCalibrationGuidelines, error.message, "error");
-    });
-    return;
-  }
-  if (command === 81) {
-    hartCalibrationState.awaitingGuidelines = false;
-    if (!telemetry.isError && fields) {
-      hartCalibrationState.guidelines = fields;
-      hartCalibrationState.lastTrimValues = { low: null, high: null };
-      setHartWorkspaceStatus(elements.hartCalibrationGuidelines, summary, "success");
-      if (elements.hartCalibrationLowValue && Number.isFinite(fields.minimumLower)) {
-        elements.hartCalibrationLowValue.placeholder = `${fields.minimumLower}…${fields.maximumLower} ${fields.unit}`;
-      }
-      if (elements.hartCalibrationHighValue && Number.isFinite(fields.minimumUpper)) {
-        elements.hartCalibrationHighValue.placeholder = `${fields.minimumUpper}…${fields.maximumUpper} ${fields.unit}`;
-      }
-    }
-    updateHartWorkspaceUi();
-  }
-  if (command === 82 && !telemetry.isError && fields) {
-    if (fields.trimPoint === 1) hartCalibrationState.lastTrimValues.low = fields.value;
-    if (fields.trimPoint === 2) hartCalibrationState.lastTrimValues.high = fields.value;
-  }
-}
-
-function syncHartCommandModeUi(config = hartConfig) {
-  const normalized = normalizeHartConfig(config);
-  const isCustom = normalized.commandMode === "custom";
-
-  if (elements.hartCommandMode) {
-    elements.hartCommandMode.value = normalized.commandMode;
-  }
-  if (elements.hartPresetCommandField) {
-    elements.hartPresetCommandField.hidden = isCustom;
-  }
-  if (elements.hartCustomCommandField) {
-    elements.hartCustomCommandField.hidden = !isCustom;
-  }
-  if (elements.hartCustomCommandDataField) {
-    elements.hartCustomCommandDataField.hidden = !isCustom;
-  }
-  if (elements.hartStandardCommandSection) {
-    elements.hartStandardCommandSection.hidden = isCustom;
-  }
-  if (elements.hartCustomCommand) {
-    elements.hartCustomCommand.value = String(normalized.customCommand);
-  }
-}
-
-function readHartStandardCommandValues() {
-  const valuesByCommand = { ...normalizeHartConfig(hartConfig).standardCommandValues };
-  const container = elements.hartStandardCommandFields;
-  const renderedCommand = container?.dataset.command;
-  if (!container || renderedCommand === undefined) return valuesByCommand;
-
-  const values = { ...(valuesByCommand[renderedCommand] ?? {}) };
-  container.querySelectorAll("[data-hart-command-value]").forEach((control) => {
-    values[control.dataset.hartCommandValue] = control.value;
-  });
-  valuesByCommand[renderedCommand] = values;
-  return valuesByCommand;
-}
-
-function renderHartStandardCommandFields(config = hartConfig, force = false) {
-  const container = elements.hartStandardCommandFields;
-  if (!container) return;
-
-  const normalized = normalizeHartConfig(config);
-  const commandKey = String(normalized.command);
-  if (!force && container.dataset.command === commandKey && container.childElementCount > 0) return;
-
-  const fields = getHartStandardRequestFields(normalized.command, {
-    ...normalized.device,
-    pollAddress: normalized.pollAddress,
-  });
-  const savedValues = normalized.standardCommandValues[commandKey] ?? {};
-  container.replaceChildren();
-  container.dataset.command = commandKey;
-
-  if (fields.length === 0) {
-    const empty = document.createElement("p");
-    empty.className = "hart-standard-empty";
-    empty.textContent = i18n("hart.noRequestValues");
-    container.append(empty);
-    return;
-  }
-
-  fields.forEach((definition) => {
-    const label = document.createElement("label");
-    const caption = document.createElement("span");
-    caption.textContent = definition.label;
-    label.append(caption);
-
-    const isSelect = definition.type === "select" || definition.type === "unit-select";
-    const control = document.createElement(isSelect ? "select" : "input");
-    control.dataset.hartCommandValue = definition.key;
-    if (isSelect) {
-      if (definition.type === "unit-select") {
-        const placeholder = document.createElement("option");
-        placeholder.value = "";
-        placeholder.textContent = i18n("hart.selectUnit");
-        placeholder.disabled = true;
-        control.append(placeholder);
-      }
-      definition.options.forEach((entry) => {
-        const item = document.createElement("option");
-        item.value = entry.value;
-        item.textContent = entry.label;
-        control.append(item);
-      });
-    } else {
-      control.type = definition.type === "decimal-list" ? "text" : definition.type;
-      if (definition.min !== undefined) control.min = String(definition.min);
-      if (definition.max !== undefined) control.max = String(definition.max);
-      if (definition.step !== undefined) control.step = String(definition.step);
-      if (definition.maxLength !== undefined) control.maxLength = definition.maxLength;
-      if (definition.type === "decimal-list") control.placeholder = "246, 247, 248, 249";
-    }
-    control.value = String(savedValues[definition.key] ?? definition.defaultValue ?? "");
-    label.append(control);
-    container.append(label);
-  });
-}
-
-function populateHartCommandSelect(selectedCommand = hartConfig.command) {
-  if (!elements.hartCommand) {
-    return;
-  }
-
-  const normalized = normalizeHartConfig({ ...hartConfig, command: selectedCommand });
-  elements.hartCommand.innerHTML = "";
-
-  let currentGroup = null;
-  HART_UNIVERSAL_COMMANDS.forEach((entry) => {
-    const category = entry.category === "common" ? i18n("hart.cmdGroup.common") : i18n("hart.cmdGroup.universal");
-    const direction = entry.kind === "write" ? i18n("hart.cmdGroup.write") : i18n("hart.cmdGroup.read");
-    const groupName = `${category} · ${direction}`;
-    if (groupName !== currentGroup) {
-      currentGroup = groupName;
-      const optgroup = document.createElement("optgroup");
-      optgroup.label = groupName;
-      elements.hartCommand.append(optgroup);
-    }
-
-    const option = document.createElement("option");
-    option.value = String(entry.value);
-    option.textContent = getHartCommandLabel(entry.value);
-    if (entry.value === normalized.command) {
-      option.selected = true;
-    }
-    elements.hartCommand.lastElementChild.append(option);
-  });
-}
-
-function readHartChartSeriesFromControls() {
-  const chartSeries = { ...normalizeHartConfig(hartConfig).chartSeries };
-  elements.hartChartSeriesInputs.forEach((input) => {
-    const key = input.dataset.hartSeries;
-    if (key) {
-      chartSeries[key] = input.checked;
-    }
-  });
-  return chartSeries;
-}
-
-function readHartConfigForm() {
-  if (!elements.hartPollAddress) {
-    return normalizeHartConfig(hartConfig);
-  }
-
-  return normalizeHartConfig({
-    ...hartConfig,
-    pollAddress: elements.hartPollAddress.value,
-    masterType: elements.hartMasterType?.value ?? hartConfig.masterType,
-    pollMode: elements.hartPollMode?.value ?? hartConfig.pollMode,
-    commandMode: elements.hartCommandMode?.value ?? hartConfig.commandMode,
-    command: elements.hartCommand?.value ?? hartConfig.command,
-    customCommand: elements.hartCustomCommand?.value ?? hartConfig.customCommand,
-    customCommandData: elements.hartCustomCommandData?.value ?? "",
-    standardCommandValues: readHartStandardCommandValues(),
-    preambleLength: elements.hartPreambleLength.value,
-    scale: elements.hartScale.value,
-    offset: elements.hartOffset.value,
-    fieldName: elements.hartFieldName.value,
-    unit: elements.hartUnit.value,
-    pollIntervalMs: elements.hartPollIntervalMs.value,
-    chartSeries: readHartChartSeriesFromControls(),
-  });
-}
-
-function populateHartConfigForm(config) {
-  if (!elements.hartPollAddress) {
-    return;
-  }
-
-  const normalized = normalizeHartConfig(config);
-  populateHartCommandSelect(normalized.command);
-  syncHartCommandModeUi(normalized);
-  elements.hartPollAddress.value = String(normalized.pollAddress);
-  if (elements.hartMasterType) {
-    elements.hartMasterType.value = normalized.masterType;
-  }
-  if (elements.hartPollMode) {
-    elements.hartPollMode.value = normalized.pollMode;
-  }
-  elements.hartCommand.value = String(normalized.command);
-  if (elements.hartCustomCommandData) {
-    elements.hartCustomCommandData.value = normalized.customCommandData;
-  }
-  renderHartStandardCommandFields(normalized, true);
-  elements.hartPreambleLength.value = String(normalized.preambleLength);
-  elements.hartScale.value = String(normalized.scale);
-  elements.hartOffset.value = String(normalized.offset);
-  elements.hartFieldName.value = normalized.fieldName;
-  elements.hartUnit.value = normalized.unit;
-  elements.hartPollIntervalMs.value = String(normalized.pollIntervalMs);
-  populateHartWorkspaceControls(normalized);
-  updateHartDeviceInfo();
-}
-
 function updateHartDeviceInfo() {
   if (!elements.hartDeviceInfo) {
     return;
   }
 
   elements.hartDeviceInfo.textContent = `${i18n("hart.devicePrefix")}${formatHartDeviceSummary(normalizeHartConfig(hartConfig).device)}`;
-  updateHartLinkVersionInfo();
-}
-
-function clearHartLinkVersionProbeTimer() {
-  if (hartLinkVersionProbeTimer) {
-    window.clearTimeout(hartLinkVersionProbeTimer);
-    hartLinkVersionProbeTimer = null;
-  }
-}
-
-function updateHartLinkVersionInfo() {
-  if (!elements.hartlinkVersionInfo) {
-    return;
-  }
-
-  const { status, version, model } = hartLinkVersionState;
-  const translationKey =
-    status === "detecting"
-      ? "hart.hartlinkDetecting"
-      : status === "detected"
-        ? "hart.hartlinkDetected"
-        : status === "not-detected"
-          ? "hart.hartlinkNotDetected"
-          : status === "error"
-            ? "hart.hartlinkProbeFailed"
-            : "hart.hartlinkWaiting";
-
-  elements.hartlinkVersionInfo.dataset.state = status;
-  elements.hartlinkVersionInfo.textContent = i18n(translationKey)
-    .replace("{version}", version)
-    .replace("{model}", model);
-}
-
-function setHartLinkVersionState(status, details = {}) {
-  hartLinkVersionState = {
-    status,
-    version: details.version ?? "",
-    model: details.model ?? "",
-  };
-  updateHartLinkVersionInfo();
-}
-
-function resetHartLinkVersionProbe(status = "idle") {
-  clearHartLinkVersionProbeTimer();
-  hartLinkVersionResponseBuffer = "";
-  setHartLinkVersionState(status);
-}
-
-function handleHartLinkVersionProbeRx(text) {
-  if (hartLinkVersionState.status !== "detecting" || !isHartLinkVersionProbeChunk(text)) {
-    return false;
-  }
-
-  hartLinkVersionResponseBuffer = `${hartLinkVersionResponseBuffer}${text}`.slice(
-    -HARTLINK_VERSION_RESPONSE_BUFFER_LIMIT,
-  );
-  const detected = parseHartLinkVersionResponse(hartLinkVersionResponseBuffer);
-  if (!detected) {
-    return true;
-  }
-
-  clearHartLinkVersionProbeTimer();
-  hartLinkVersionResponseBuffer = "";
-  resetHartRxBuffer();
-  setHartLinkVersionState("detected", detected);
-  appendLog(
-    "info",
-    "HARTLink",
-    i18n("hart.hartlinkDetectedLog")
-      .replace("{version}", detected.version)
-      .replace("{model}", detected.model),
-  );
-  return true;
-}
-
-async function detectHartLinkVersion(targetSession = session) {
-  resetHartLinkVersionProbe("detecting");
-  resetHartRxBuffer();
-  await wait(HARTLINK_VERSION_DETECT_DELAY_MS);
-
-  if (
-    targetSession !== session ||
-    !targetSession?.connected ||
-    state.deviceId !== HART_DEVICE_ID ||
-    state.transportId !== DEFAULT_TRANSPORT_ID
-  ) {
-    resetHartLinkVersionProbe();
-    return;
-  }
-
-  try {
-    await targetSession.write(HARTLINK_VERSION_QUERY);
-  } catch (error) {
-    if (targetSession === session && targetSession?.connected) {
-      resetHartLinkVersionProbe("error");
-      appendLog("warning", "HARTLink", `${i18n("hart.hartlinkProbeFailed")}: ${error.message}`);
-    }
-    return;
-  }
-
-  if (hartLinkVersionState.status !== "detecting") {
-    return;
-  }
-
-  hartLinkVersionProbeTimer = window.setTimeout(() => {
-    hartLinkVersionProbeTimer = null;
-    if (hartLinkVersionState.status !== "detecting") {
-      return;
-    }
-    hartLinkVersionResponseBuffer = "";
-    resetHartRxBuffer();
-    setHartLinkVersionState("not-detected");
-    appendLog("info", "HARTLink", i18n("hart.hartlinkNotDetectedLog"));
-  }, HARTLINK_VERSION_DETECT_TIMEOUT_MS);
-}
-
-async function sendHartSearchCommand(pollAddress = normalizeHartConfig(hartConfig).pollAddress) {
-  if (!session?.connected) {
-    return;
-  }
-
-  resetHartRxBuffer();
-  const searchConfig = normalizeHartConfig({ ...hartConfig, pollAddress, command: 0 });
-  const command = createHartSearchCommand(searchConfig, { bytesToHex });
-  await session.write(command.bytes);
-}
-
-async function scanHartAddresses() {
-  if (!session?.connected || hartAddressScanActive) {
-    return;
-  }
-
-  const originalConfig = normalizeHartConfig(hartConfig);
-  hartAddressScanActive = true;
-  resetHartRxBuffer();
-  updateDeviceUi();
-  appendLog("info", "HART", i18n("hart.scanStarted"));
-
-  try {
-    for (let address = 0; address <= 15; address += 1) {
-      if (!hartAddressScanActive || !session?.connected) {
-        break;
-      }
-
-      hartConfig = normalizeHartConfig({
-        ...hartConfig,
-        pollAddress: address,
-        device: { ...DEFAULT_HART_CONFIG.device },
-      });
-      populateHartConfigForm(hartConfig);
-      updateDeviceUi();
-      await sendHartSearchCommand(address);
-
-      const startedAt = Date.now();
-      while (Date.now() - startedAt < HART_SCAN_ADDRESS_DELAY_MS) {
-        if (!hartAddressScanActive || !session?.connected) {
-          break;
-        }
-        if (normalizeHartConfig(hartConfig).device.discovered) {
-          appendLog("info", "HART", i18n("hart.scanFound").replace("{address}", String(normalizeHartConfig(hartConfig).pollAddress)));
-          return;
-        }
-        await wait(50);
-      }
-    }
-
-    if (!normalizeHartConfig(hartConfig).device.discovered) {
-      hartConfig = originalConfig;
-      populateHartConfigForm(hartConfig);
-      appendLog("warning", "HART", i18n("hart.scanNotFound"));
-    }
-  } finally {
-    hartAddressScanActive = false;
-    updateDeviceUi();
-  }
-}
-
-function getHartConfigControls() {
-  return [
-    elements.hartPollAddress,
-    elements.hartMasterType,
-    elements.hartPollMode,
-    elements.hartCommandMode,
-    elements.hartCommand,
-    elements.hartCustomCommand,
-    elements.hartCustomCommandData,
-    elements.hartPreambleLength,
-    elements.hartScale,
-    elements.hartOffset,
-    elements.hartFieldName,
-    elements.hartUnit,
-    elements.hartPollIntervalMs,
-  ];
+  hartSessionController.updateLinkInfo();
 }
 
 function updateAomasterPolling() {
