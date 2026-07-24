@@ -787,6 +787,8 @@ function buildHartUniversalTelemetry(config, universal, parsed) {
     commandLines,
     commandLabel: universal.commandLabel,
     command: universal.command,
+    fields: universal.fields ?? null,
+    isError: Boolean(universal.isError),
     fieldName: universal.commandLabel,
     unit: "",
     value: universal.variables?.pv?.value ?? null,

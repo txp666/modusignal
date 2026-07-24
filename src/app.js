@@ -286,6 +286,35 @@ function cacheElements() {
     hartSearchDevice: document.querySelector("#hartSearchDevice"),
     hartScanAddresses: document.querySelector("#hartScanAddresses"),
     hartCommandResponse: document.querySelector("#hartCommandResponse"),
+    hartWorkspaceTabs: [...document.querySelectorAll("[data-hart-workspace-tab]")],
+    hartWorkspacePanels: [...document.querySelectorAll("[data-hart-workspace-panel]")],
+    hartWorkspaceActions: [...document.querySelectorAll("[data-hart-workspace-action]")],
+    hartSettingsUnit: document.querySelector("#hartSettingsUnit"),
+    hartSettingsDamping: document.querySelector("#hartSettingsDamping"),
+    hartSettingsUpperRange: document.querySelector("#hartSettingsUpperRange"),
+    hartSettingsLowerRange: document.querySelector("#hartSettingsLowerRange"),
+    hartSettingsTransferFunction: document.querySelector("#hartSettingsTransferFunction"),
+    hartSettingsMeasurementStatus: document.querySelector("#hartSettingsMeasurementStatus"),
+    hartSettingsMessage: document.querySelector("#hartSettingsMessage"),
+    hartSettingsTag: document.querySelector("#hartSettingsTag"),
+    hartSettingsDescriptor: document.querySelector("#hartSettingsDescriptor"),
+    hartSettingsDate: document.querySelector("#hartSettingsDate"),
+    hartSettingsAssembly: document.querySelector("#hartSettingsAssembly"),
+    hartSettingsPollAddress: document.querySelector("#hartSettingsPollAddress"),
+    hartSettingsLoopMode: document.querySelector("#hartSettingsLoopMode"),
+    hartSettingsBurstCommand: document.querySelector("#hartSettingsBurstCommand"),
+    hartSettingsBurstMessage: document.querySelector("#hartSettingsBurstMessage"),
+    hartSettingsStatus: document.querySelector("#hartSettingsStatus"),
+    hartCalibrationPresetCurrent: document.querySelector("#hartCalibrationPresetCurrent"),
+    hartCalibrationCustomCurrent: document.querySelector("#hartCalibrationCustomCurrent"),
+    hartCalibrationLowCurrent: document.querySelector("#hartCalibrationLowCurrent"),
+    hartCalibrationHighCurrent: document.querySelector("#hartCalibrationHighCurrent"),
+    hartCalibrationGuidelines: document.querySelector("#hartCalibrationGuidelines"),
+    hartCalibrationLowValue: document.querySelector("#hartCalibrationLowValue"),
+    hartCalibrationHighValue: document.querySelector("#hartCalibrationHighValue"),
+    hartCalibrationLowButton: document.querySelector("#hartCalibrationLowButton"),
+    hartCalibrationHighButton: document.querySelector("#hartCalibrationHighButton"),
+    hartCalibrationStatus: document.querySelector("#hartCalibrationStatus"),
     hartChartSeriesBlock: document.querySelector("#hartChartSeriesBlock"),
     hartChartSeriesInputs: [...document.querySelectorAll("[data-hart-series]")],
     saveHartConfig: document.querySelector("#saveHartConfig"),
@@ -436,6 +465,12 @@ let hartAddressScanActive = false;
 let hartLinkVersionProbeTimer = null;
 let hartLinkVersionResponseBuffer = "";
 let hartLinkVersionState = { status: "idle", version: "", model: "" };
+let hartWorkspace = "general";
+let hartCalibrationState = {
+  awaitingGuidelines: false,
+  deviceVariable: null,
+  guidelines: null,
+};
 let aomasterPollTimer = null;
 let websocketPollTimer = null;
 let mqttPollTimer = null;
@@ -933,6 +968,7 @@ function updateHartCommandResponse(telemetry) {
 
 function handleHartTelemetry(telemetry) {
   updateHartCommandResponse(telemetry);
+  updateHartWorkspaceFromTelemetry(telemetry);
 
   if (telemetry?.isMulti && telemetry.variables) {
     updateHartVariableCards(telemetry.variables);
@@ -1665,6 +1701,20 @@ function bindEvents() {
     }
   });
   on(elements.deviceShell, "click", (event) => {
+    const hartWorkspaceTab = event.target.closest("[data-hart-workspace-tab]");
+    if (hartWorkspaceTab) {
+      switchHartWorkspace(hartWorkspaceTab.dataset.hartWorkspaceTab);
+      return;
+    }
+
+    const hartWorkspaceAction = event.target.closest("[data-hart-workspace-action]");
+    if (hartWorkspaceAction) {
+      handleHartWorkspaceAction(hartWorkspaceAction.dataset.hartWorkspaceAction).catch((error) =>
+        appendLog("error", "HART", error.message),
+      );
+      return;
+    }
+
     if (event.target.closest('[data-field="sendDriverCommand"]')) {
       sendDeviceCommand();
       return;
@@ -2019,6 +2069,7 @@ function bindSessionEvents(target) {
         hartConfig = mergeHartDiscovery(hartConfig, telemetry);
         populateHartConfigForm(hartConfig);
         updateHartDeviceInfo();
+        updateHartWorkspaceFromDiscovery(telemetry);
         appendLog("info", "HART", formatHartDeviceSummary(hartConfig.device));
         updateDeviceUi();
         return;
@@ -2910,6 +2961,7 @@ function updateSetpointUi() {
 
   if (state.deviceId === HART_DEVICE_ID) {
     updateHartDeviceInfo();
+    updateHartWorkspaceUi();
     if (sendDriverCommand) {
       sendDriverCommand.textContent = i18n("driver.sendCommand");
     }
@@ -4437,6 +4489,323 @@ function wait(ms) {
   });
 }
 
+function switchHartWorkspace(workspace) {
+  const next = ["general", "settings", "calibration"].includes(workspace) ? workspace : "general";
+  hartWorkspace = next;
+  document.querySelector("#hartPage")?.classList.toggle("hart-workspace-expanded", next !== "general");
+  elements.hartWorkspaceTabs.forEach((button) => {
+    const active = button.dataset.hartWorkspaceTab === next;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
+  elements.hartWorkspacePanels.forEach((panel) => {
+    panel.hidden = panel.dataset.hartWorkspacePanel !== next;
+  });
+}
+
+function populateHartWorkspaceControls(config = hartConfig) {
+  const normalized = normalizeHartConfig(config);
+  const unitSelect = elements.hartSettingsUnit;
+  if (unitSelect && unitSelect.options.length === 0) {
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = i18n("hart.selectUnit");
+    placeholder.disabled = true;
+    placeholder.selected = true;
+    unitSelect.append(placeholder);
+    const unitField = getHartStandardRequestFields(35).find((entry) => entry.key === "unit_code");
+    unitField?.options.forEach((entry) => {
+      const option = document.createElement("option");
+      option.value = entry.value;
+      option.textContent = entry.label;
+      unitSelect.append(option);
+    });
+  }
+  if (elements.hartSettingsDate && !elements.hartSettingsDate.value) {
+    elements.hartSettingsDate.value = new Date().toISOString().slice(0, 10);
+  }
+  if (elements.hartSettingsPollAddress && !elements.hartSettingsPollAddress.dataset.initialized) {
+    elements.hartSettingsPollAddress.value = String(normalized.pollAddress);
+    elements.hartSettingsPollAddress.dataset.initialized = "true";
+  }
+  switchHartWorkspace(hartWorkspace);
+  updateHartWorkspaceUi();
+}
+
+function updateHartWorkspaceUi() {
+  const connected = Boolean(session?.connected);
+  elements.hartWorkspaceActions.forEach((button) => {
+    const action = button.dataset.hartWorkspaceAction;
+    let enabled = connected && !hartAddressScanActive;
+    if (action === "trim-low-pv") {
+      enabled = enabled && [1, 3].includes(hartCalibrationState.guidelines?.supportedTrimPoints);
+    }
+    if (action === "trim-high-pv") {
+      enabled = enabled && [2, 3].includes(hartCalibrationState.guidelines?.supportedTrimPoints);
+    }
+    button.disabled = !enabled;
+  });
+}
+
+function setHartWorkspaceStatus(element, text, stateName = "info") {
+  if (!element) return;
+  element.textContent = text || i18n("hart.workspace.ready");
+  element.dataset.state = stateName;
+}
+
+function readHartWorkspaceNumber(element, label, minimum = -Infinity, maximum = Infinity) {
+  const value = Number(element?.value);
+  if (!Number.isFinite(value) || value < minimum || value > maximum) {
+    throw new Error(`${label}${i18n("hart.input.range").replace("{min}", minimum).replace("{max}", maximum)}`);
+  }
+  return String(value);
+}
+
+async function sendHartWorkspaceCommand(command, values = {}, statusElement = null) {
+  if (!session?.connected) throw new Error(i18n("hart.workspace.connectFirst"));
+  if (command !== 0 && !normalizeHartConfig(hartConfig).device.discovered) {
+    throw new Error(i18n("hart.searchFirst"));
+  }
+
+  if (command === 0) {
+    setHartWorkspaceStatus(statusElement, i18n("hart.workspace.sending").replace("{command}", "0"));
+    await sendHartSearchCommand();
+    return;
+  }
+
+  const commandKey = String(command);
+  const current = readHartConfigForm();
+  hartConfig = normalizeHartConfig({
+    ...current,
+    commandMode: "preset",
+    command,
+    standardCommandValues: {
+      ...current.standardCommandValues,
+      [commandKey]: Object.fromEntries(Object.entries(values).map(([key, value]) => [key, String(value)])),
+    },
+  });
+  populateHartConfigForm(hartConfig);
+  updateDeviceUi();
+  setHartWorkspaceStatus(statusElement, i18n("hart.workspace.sending").replace("{command}", String(command)));
+  await sendDeviceCommand();
+}
+
+async function handleHartWorkspaceAction(action) {
+  const settingsStatus = elements.hartSettingsStatus;
+  const calibrationStatus = elements.hartCalibrationStatus;
+  switch (action) {
+    case "read-identity":
+      return sendHartWorkspaceCommand(0, {}, settingsStatus);
+    case "read-sensor":
+      return sendHartWorkspaceCommand(14, {}, elements.hartSettingsMeasurementStatus);
+    case "read-config":
+      return sendHartWorkspaceCommand(15, {}, elements.hartSettingsMeasurementStatus);
+    case "write-unit":
+      return sendHartWorkspaceCommand(44, { unit_code: elements.hartSettingsUnit?.value }, settingsStatus);
+    case "write-range":
+      return sendHartWorkspaceCommand(
+        35,
+        {
+          unit_code: elements.hartSettingsUnit?.value,
+          upper_range: readHartWorkspaceNumber(elements.hartSettingsUpperRange, i18n("hart.input.upperRange")),
+          lower_range: readHartWorkspaceNumber(elements.hartSettingsLowerRange, i18n("hart.input.lowerRange")),
+        },
+        settingsStatus,
+      );
+    case "write-damping":
+      return sendHartWorkspaceCommand(
+        34,
+        { damping_seconds: readHartWorkspaceNumber(elements.hartSettingsDamping, i18n("hart.input.dampingSeconds"), 0) },
+        settingsStatus,
+      );
+    case "write-transfer":
+      return sendHartWorkspaceCommand(47, { transfer_function: elements.hartSettingsTransferFunction?.value }, settingsStatus);
+    case "read-message":
+      return sendHartWorkspaceCommand(12, {}, settingsStatus);
+    case "write-message":
+      return sendHartWorkspaceCommand(17, { message: elements.hartSettingsMessage?.value ?? "" }, settingsStatus);
+    case "read-tag":
+      return sendHartWorkspaceCommand(13, {}, settingsStatus);
+    case "write-tag":
+      return sendHartWorkspaceCommand(
+        18,
+        {
+          tag: elements.hartSettingsTag?.value ?? "",
+          descriptor: elements.hartSettingsDescriptor?.value ?? "",
+          date: elements.hartSettingsDate?.value ?? "",
+        },
+        settingsStatus,
+      );
+    case "read-assembly":
+      return sendHartWorkspaceCommand(16, {}, settingsStatus);
+    case "write-assembly":
+      return sendHartWorkspaceCommand(
+        19,
+        { final_assembly_number: readHartWorkspaceNumber(elements.hartSettingsAssembly, i18n("hart.input.finalAssemblyNumber"), 0, 0xffffff) },
+        settingsStatus,
+      );
+    case "write-address":
+      return sendHartWorkspaceCommand(
+        6,
+        {
+          polling_address: readHartWorkspaceNumber(elements.hartSettingsPollAddress, i18n("hart.input.pollAddress"), 0, 63),
+          loop_current_mode: elements.hartSettingsLoopMode?.value ?? "1",
+        },
+        settingsStatus,
+      );
+    case "read-burst":
+      return sendHartWorkspaceCommand(105, { burst_message: elements.hartSettingsBurstMessage?.value ?? "0" }, settingsStatus);
+    case "write-burst":
+      return sendHartWorkspaceCommand(
+        108,
+        {
+          burst_command: elements.hartSettingsBurstCommand?.value ?? "1",
+          burst_message: elements.hartSettingsBurstMessage?.value ?? "0",
+        },
+        settingsStatus,
+      );
+    case "enable-burst":
+    case "disable-burst":
+      return sendHartWorkspaceCommand(
+        109,
+        {
+          burst_control: action === "enable-burst" ? "1" : "0",
+          burst_message: elements.hartSettingsBurstMessage?.value ?? "0",
+        },
+        settingsStatus,
+      );
+    case "fixed-preset":
+      return sendHartWorkspaceCommand(40, { fixed_current: elements.hartCalibrationPresetCurrent?.value ?? "4" }, calibrationStatus);
+    case "fixed-custom":
+      return sendHartWorkspaceCommand(
+        40,
+        { fixed_current: readHartWorkspaceNumber(elements.hartCalibrationCustomCurrent, i18n("hart.calibration.customCurrent"), 0, 30) },
+        calibrationStatus,
+      );
+    case "fixed-exit":
+      return sendHartWorkspaceCommand(40, { fixed_current: "0" }, calibrationStatus);
+    case "output-low":
+      return sendHartWorkspaceCommand(40, { fixed_current: "4" }, calibrationStatus);
+    case "output-high":
+      return sendHartWorkspaceCommand(40, { fixed_current: "20" }, calibrationStatus);
+    case "trim-low-current":
+      return sendHartWorkspaceCommand(
+        45,
+        { measured_current: readHartWorkspaceNumber(elements.hartCalibrationLowCurrent, i18n("hart.input.measuredCurrent"), 0, 30) },
+        calibrationStatus,
+      );
+    case "trim-high-current":
+      return sendHartWorkspaceCommand(
+        46,
+        { measured_current: readHartWorkspaceNumber(elements.hartCalibrationHighCurrent, i18n("hart.input.measuredCurrent"), 0, 30) },
+        calibrationStatus,
+      );
+    case "pv-zero":
+      return sendHartWorkspaceCommand(43, {}, calibrationStatus);
+    case "read-trim-guidelines":
+      hartCalibrationState = { awaitingGuidelines: true, deviceVariable: null, guidelines: null };
+      updateHartWorkspaceUi();
+      setHartWorkspaceStatus(elements.hartCalibrationGuidelines, i18n("hart.calibration.readingMapping"));
+      return sendHartWorkspaceCommand(50, {}, calibrationStatus);
+    case "trim-low-pv":
+    case "trim-high-pv": {
+      const guidelines = hartCalibrationState.guidelines;
+      if (!guidelines) throw new Error(i18n("hart.calibration.readGuidelinesFirst"));
+      const upper = action === "trim-high-pv";
+      const editor = upper ? elements.hartCalibrationHighValue : elements.hartCalibrationLowValue;
+      return sendHartWorkspaceCommand(
+        82,
+        {
+          device_variable: guidelines.deviceVariable,
+          trim_point: upper ? 2 : 1,
+          unit_code: guidelines.unitCode,
+          trim_value: readHartWorkspaceNumber(editor, upper ? i18n("hart.calibration.appliedHigh") : i18n("hart.calibration.appliedLow")),
+        },
+        calibrationStatus,
+      );
+    }
+    default:
+      return undefined;
+  }
+}
+
+function updateHartWorkspaceFromDiscovery(telemetry) {
+  const normalized = normalizeHartConfig(hartConfig);
+  if (elements.hartSettingsPollAddress) elements.hartSettingsPollAddress.value = String(normalized.pollAddress);
+  setHartWorkspaceStatus(elements.hartSettingsStatus, formatHartDeviceSummary(normalized.device), "success");
+  hartCalibrationState = { awaitingGuidelines: false, deviceVariable: null, guidelines: null };
+  updateHartWorkspaceUi();
+}
+
+function updateHartWorkspaceFromTelemetry(telemetry) {
+  const { command, fields } = telemetry ?? {};
+  if (!Number.isFinite(command)) return;
+  const summary = telemetry.commandLines?.join("\n") || telemetry.commandSummary || `${i18n("hart.command")} ${command}`;
+
+  if ([6, 12, 13, 14, 15, 16, 17, 18, 19, 34, 35, 44, 47, 105, 108, 109].includes(command)) {
+    setHartWorkspaceStatus(elements.hartSettingsStatus, summary, telemetry.isError ? "error" : "success");
+  }
+  if ([14, 15, 34, 35, 44, 47].includes(command)) {
+    setHartWorkspaceStatus(elements.hartSettingsMeasurementStatus, summary, telemetry.isError ? "error" : "success");
+  }
+  if (!telemetry.isError && fields) {
+    if ((command === 12 || command === 17) && elements.hartSettingsMessage) elements.hartSettingsMessage.value = fields.message ?? "";
+    if (command === 13 || command === 18) {
+      if (elements.hartSettingsTag) elements.hartSettingsTag.value = fields.tag ?? "";
+      if (elements.hartSettingsDescriptor) elements.hartSettingsDescriptor.value = fields.descriptor ?? "";
+      if (elements.hartSettingsDate && fields.date) elements.hartSettingsDate.value = fields.date;
+    }
+    if (command === 16 && elements.hartSettingsAssembly) elements.hartSettingsAssembly.value = String(fields.assemblyNumber ?? 0);
+    if (command === 6) {
+      if (elements.hartSettingsPollAddress) elements.hartSettingsPollAddress.value = String(fields.pollingAddress ?? 0);
+      if (elements.hartSettingsLoopMode) elements.hartSettingsLoopMode.value = String(fields.loopCurrentMode ?? 1);
+    }
+    if (command === 14) {
+      if (elements.hartSettingsUnit) elements.hartSettingsUnit.value = String(fields.unitCode ?? "");
+    }
+    if (command === 15) {
+      if (elements.hartSettingsUnit) elements.hartSettingsUnit.value = String(fields.unitCode ?? "");
+      if (elements.hartSettingsUpperRange && Number.isFinite(fields.upper)) elements.hartSettingsUpperRange.value = String(fields.upper);
+      if (elements.hartSettingsLowerRange && Number.isFinite(fields.lower)) elements.hartSettingsLowerRange.value = String(fields.lower);
+      if (elements.hartSettingsDamping && Number.isFinite(fields.damping)) elements.hartSettingsDamping.value = String(fields.damping);
+      if (elements.hartSettingsTransferFunction) elements.hartSettingsTransferFunction.value = String(fields.transferFunction ?? 0);
+    }
+  }
+
+  if ([40, 43, 45, 46, 50, 81, 82].includes(command)) {
+    setHartWorkspaceStatus(elements.hartCalibrationStatus, summary, telemetry.isError ? "error" : "success");
+  }
+  if (command === 50 && hartCalibrationState.awaitingGuidelines && !telemetry.isError) {
+    const deviceVariable = fields?.pv;
+    if (!Number.isInteger(deviceVariable) || deviceVariable >= 244) {
+      hartCalibrationState.awaitingGuidelines = false;
+      setHartWorkspaceStatus(elements.hartCalibrationGuidelines, i18n("hart.calibration.invalidPvMapping").replace("{code}", String(deviceVariable)), "error");
+      return;
+    }
+    hartCalibrationState.deviceVariable = deviceVariable;
+    setHartWorkspaceStatus(elements.hartCalibrationGuidelines, i18n("hart.calibration.readingGuidelines").replace("{code}", String(deviceVariable)));
+    void sendHartWorkspaceCommand(81, { device_variable: deviceVariable }, elements.hartCalibrationStatus).catch((error) => {
+      hartCalibrationState.awaitingGuidelines = false;
+      setHartWorkspaceStatus(elements.hartCalibrationGuidelines, error.message, "error");
+    });
+    return;
+  }
+  if (command === 81) {
+    hartCalibrationState.awaitingGuidelines = false;
+    if (!telemetry.isError && fields) {
+      hartCalibrationState.guidelines = fields;
+      setHartWorkspaceStatus(elements.hartCalibrationGuidelines, summary, "success");
+      if (elements.hartCalibrationLowValue && Number.isFinite(fields.minimumLower)) {
+        elements.hartCalibrationLowValue.placeholder = `${fields.minimumLower}…${fields.maximumLower} ${fields.unit}`;
+      }
+      if (elements.hartCalibrationHighValue && Number.isFinite(fields.minimumUpper)) {
+        elements.hartCalibrationHighValue.placeholder = `${fields.minimumUpper}…${fields.maximumUpper} ${fields.unit}`;
+      }
+    }
+    updateHartWorkspaceUi();
+  }
+}
+
 function syncHartCommandModeUi(config = hartConfig) {
   const normalized = normalizeHartConfig(config);
   const isCustom = normalized.commandMode === "custom";
@@ -4628,6 +4997,7 @@ function populateHartConfigForm(config) {
   elements.hartFieldName.value = normalized.fieldName;
   elements.hartUnit.value = normalized.unit;
   elements.hartPollIntervalMs.value = String(normalized.pollIntervalMs);
+  populateHartWorkspaceControls(normalized);
   updateHartDeviceInfo();
 }
 

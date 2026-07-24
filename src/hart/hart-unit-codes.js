@@ -141,7 +141,7 @@ export const HART_ENGINEERING_UNITS = Object.freeze({
   "142": {"symbol":"Btu/h Velocity","description":"British thermal unit per hour 2 1Btu (IT) = 0.2519958kcal Energy"},
   "145": {"symbol":"inH₂O (60 °F)","description":"F) inches of water at 60 °F"},
   "146": {"symbol":"µg/l","description":"micrograms per liter"},
-  "147": {"symbol":"?g/m?","description":"micrograms per cubic meter"},
+  "147": {"symbol":"µg/m³","description":"micrograms per cubic meter"},
   "148": {"symbol":"%","description":"percent consistency"},
   "149": {"symbol":"vol%","description":"volume percent"},
   "150": {"symbol":"%","description":"percent steam quality Proportion of vapor to condensate. 100% = 100% steam (no condensate)."},
@@ -643,4 +643,3 @@ export function getHartEngineeringUnit(unitCode, classification = null) {
   }
   return HART_ENGINEERING_UNITS[code] ?? null;
 }
-

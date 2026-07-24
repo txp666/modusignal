@@ -2439,6 +2439,16 @@ code {
   gap: 0.75rem;
 }
 
+.device-shell:has(.hart-page.active.hart-workspace-expanded) .hart-page.active {
+  flex: 1 1 100%;
+  width: 100%;
+  max-width: 100%;
+}
+
+.device-shell:has(.hart-page.active.hart-workspace-expanded) .workbench-mount {
+  display: none;
+}
+
 .hart-page .panel {
   padding: 0.85rem;
 }
@@ -2549,6 +2559,150 @@ code {
   border: 1px solid var(--line);
   border-radius: 0.5rem;
   background: #fbfcfd;
+}
+
+.hart-workspace-tabs {
+  display: flex;
+  gap: 0.35rem;
+  margin: 0.15rem 0 0.7rem;
+  padding: 0.3rem;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  background: #f4f7f8;
+}
+
+.hart-workspace-tabs button {
+  flex: 1;
+  min-height: 2.35rem;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+}
+
+.hart-workspace-tabs button.active {
+  border-color: var(--line);
+  background: #fff;
+  color: var(--text);
+  box-shadow: 0 1px 3px rgb(15 23 42 / 8%);
+}
+
+.hart-workspace-panel[hidden],
+[data-hart-workspace-panel="general"][hidden] {
+  display: none;
+}
+
+.hart-workspace-panel {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.hart-workspace-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  background: #fbfcfd;
+}
+
+.hart-workspace-intro h3,
+.hart-tool-card h4 {
+  margin: 0;
+}
+
+.hart-workspace-intro p {
+  margin: 0.2rem 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.hart-workspace-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.hart-tool-card {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  background: #fff;
+}
+
+.hart-tool-card > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.hart-tool-card header small {
+  display: block;
+  margin-top: 0.18rem;
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.hart-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.hart-card-actions.wrap {
+  flex-wrap: wrap;
+}
+
+.hart-card-actions button {
+  min-height: 2.1rem;
+  padding: 0 0.62rem;
+}
+
+.hart-tool-fields {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.hart-tool-wide,
+.hart-identity-card,
+.hart-pv-trim-card {
+  grid-column: 1 / -1;
+}
+
+.hart-settings-grid .hart-burst-card {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.hart-card-status {
+  display: block;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.4rem;
+  background: #f4f7f8;
+  color: var(--muted);
+  font-size: 0.76rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.hart-calibration-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: end;
+  gap: 0.5rem;
+}
+
+.hart-calibration-row button {
+  min-height: 2.35rem;
+  white-space: nowrap;
 }
 
 .hart-essential-grid,
@@ -2737,6 +2891,32 @@ code {
 
   .hart-command-preview .panel-actions {
     grid-template-columns: 1fr;
+  }
+
+  .hart-workspace-tabs,
+  .hart-workspace-intro,
+  .hart-tool-card > header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .hart-workspace-tabs button {
+    flex: none;
+  }
+
+  .hart-workspace-grid,
+  .hart-tool-fields,
+  .hart-calibration-row {
+    grid-template-columns: 1fr;
+  }
+
+  .hart-settings-grid .hart-burst-card {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .hart-card-actions {
+    flex-wrap: wrap;
   }
 
   .hart-standard-command-heading {

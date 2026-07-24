@@ -899,13 +899,14 @@ export function parseHartUniversalResponse(parsedFrame) {
   }
 
   if (command === 6 && data.length >= 2) {
-    const pollingAddress = data[0] & 0x0f;
+    const pollingAddress = data[0] & 0x3f;
     const loopMode = data[1];
     return {
       command,
       commandLabel: getHartCommandLabel(command),
       summary: `${i18n("hart.pollAddress")} ${pollingAddress} · ${i18n("hart.loopMode")} 0x${formatHexNumber(loopMode, 2)}${statusSuffix}`,
       lines: [`${i18n("hart.pollAddress")} ${pollingAddress}`, `${i18n("hart.loopMode")} 0x${formatHexNumber(loopMode, 2)}`],
+      fields: { pollingAddress, loopCurrentMode: loopMode },
     };
   }
 
@@ -913,8 +914,9 @@ export function parseHartUniversalResponse(parsedFrame) {
     return {
       command,
       commandLabel: getHartCommandLabel(command),
-      summary: `${i18n("hart.pollAddress")} ${data[0] & 0x0f} · ${i18n("hart.loopMode")} 0x${formatHexNumber(data[1], 2)}${statusSuffix}`,
-      lines: [`${i18n("hart.pollAddress")} ${data[0] & 0x0f}`, `${i18n("hart.loopMode")} 0x${formatHexNumber(data[1], 2)}`],
+      summary: `${i18n("hart.pollAddress")} ${data[0] & 0x3f} · ${i18n("hart.loopMode")} 0x${formatHexNumber(data[1], 2)}${statusSuffix}`,
+      lines: [`${i18n("hart.pollAddress")} ${data[0] & 0x3f}`, `${i18n("hart.loopMode")} 0x${formatHexNumber(data[1], 2)}`],
+      fields: { pollingAddress: data[0] & 0x3f, loopCurrentMode: data[1] },
     };
   }
 
@@ -937,6 +939,7 @@ export function parseHartUniversalResponse(parsedFrame) {
       commandLabel: getHartCommandLabel(command),
       summary: `${message || emptyMsg}${statusSuffix}`,
       lines: [message || emptyMsg],
+      fields: { message },
     };
   }
 
@@ -954,11 +957,13 @@ export function parseHartUniversalResponse(parsedFrame) {
     };
   }
 
-  if (command === 14 && data.length >= 15) {
-    const upper = readHartVariable(data, 0, 1);
-    const lower = readHartVariable(data, 5, 6);
-    const minSpan = readHartVariable(data, 10, 11);
+  if (command === 14 && data.length >= 16) {
+    const transducerSerialNumber = (data[0] << 16) | (data[1] << 8) | data[2];
+    const upper = readHartVariable(data, 3, 4);
+    const lower = readHartVariable(data, 3, 8);
+    const minSpan = readHartVariable(data, 3, 12);
     const lines = [
+      `${i18n("hart.transducerSerial")} ${transducerSerialNumber}`,
       upper ? formatHartVariableLine(i18n("hart.upperRange"), upper.value, upper.unit) : null,
       lower ? formatHartVariableLine(i18n("hart.lowerRange"), lower.value, lower.unit) : null,
       minSpan ? formatHartVariableLine(i18n("hart.minSpan"), minSpan.value, minSpan.unit) : null,
@@ -968,13 +973,21 @@ export function parseHartUniversalResponse(parsedFrame) {
       commandLabel: getHartCommandLabel(command),
       summary: `${lines.join(" · ")}${statusSuffix}`,
       lines,
+      fields: {
+        transducerSerialNumber,
+        unitCode: data[3],
+        upper: upper?.value,
+        lower: lower?.value,
+        minSpan: minSpan?.value,
+        unit: upper?.unit ?? getHartUnitString(data[3]),
+      },
     };
   }
 
   if (command === 15 && data.length >= 15) {
     const upper = readHartVariable(data, 2, 3);
-    const lower = readHartVariable(data, 7, 8);
-    const damping = byteArrayToFloat(data, 12);
+    const lower = readHartVariable(data, 2, 7);
+    const damping = byteArrayToFloat(data, 11);
     const lines = [
       `${i18n("hart.alarm")} ${data[0]} · ${i18n("hart.transferFunc")} ${data[1]}`,
       upper ? formatHartVariableLine(i18n("hart.upperRangeLimit"), upper.value, upper.unit) : null,
@@ -986,6 +999,17 @@ export function parseHartUniversalResponse(parsedFrame) {
       commandLabel: getHartCommandLabel(command),
       summary: `${lines.join(" · ")}${statusSuffix}`,
       lines,
+      fields: {
+        alarmSelection: data[0],
+        transferFunction: data[1],
+        unitCode: data[2],
+        upper: upper?.value,
+        lower: lower?.value,
+        damping,
+        writeProtect: data.length >= 16 ? data[15] : null,
+        analogChannelFlags: data.length >= 18 ? data[17] : null,
+        unit: upper?.unit ?? getHartUnitString(data[2]),
+      },
     };
   }
 
@@ -996,6 +1020,7 @@ export function parseHartUniversalResponse(parsedFrame) {
       commandLabel: getHartCommandLabel(command),
       summary: `${i18n("hart.assemblyNumber")} 0x${assembly.toString(16).toUpperCase().padStart(6, "0")}${statusSuffix}`,
       lines: [`${i18n("hart.assemblyNumber")} 0x${assembly.toString(16).toUpperCase().padStart(6, "0")}`],
+      fields: { assemblyNumber: assembly },
     };
   }
 
@@ -1098,6 +1123,92 @@ export function parseHartUniversalResponse(parsedFrame) {
       lines,
       fields: { pv: data[0], sv: data[1], tv: data[2], qv: data[3] },
     };
+  }
+
+  if ([34, 40, 45, 46].includes(command) && data.length >= 4) {
+    const value = byteArrayToFloat(data, 0);
+    const unit = command === 34 ? "s" : "mA";
+    const line = formatHartVariableLine(command === 34 ? i18n("hart.damping") : i18n("hart.loopCurrent"), value, unit);
+    return {
+      command,
+      commandLabel: getHartCommandLabel(command),
+      summary: `${line}${statusSuffix}`,
+      lines: [line],
+      fields: { value, unit },
+    };
+  }
+
+  if (command === 35 && data.length >= 9) {
+    const unitCode = data[0];
+    const upper = byteArrayToFloat(data, 1);
+    const lower = byteArrayToFloat(data, 5);
+    const unit = getHartUnitString(unitCode);
+    const lines = [
+      formatHartVariableLine(i18n("hart.upperRangeLimit"), upper, unit),
+      formatHartVariableLine(i18n("hart.lowerRangeLimit"), lower, unit),
+    ];
+    return {
+      command,
+      commandLabel: getHartCommandLabel(command),
+      summary: `${lines.join(" · ")}${statusSuffix}`,
+      lines,
+      fields: { unitCode, unit, upper, lower },
+    };
+  }
+
+  if (command === 44 && data.length >= 1) {
+    const unitCode = data[0];
+    const unit = getHartUnitString(unitCode);
+    return {
+      command,
+      commandLabel: getHartCommandLabel(command),
+      summary: `${i18n("hart.unitCode")} ${unitCode} · ${unit}${statusSuffix}`,
+      lines: [`${i18n("hart.unitCode")} ${unitCode} · ${unit}`],
+      fields: { unitCode, unit },
+    };
+  }
+
+  if (command === 47 && data.length >= 1) {
+    return {
+      command,
+      commandLabel: getHartCommandLabel(command),
+      summary: `${i18n("hart.transferFunc")} ${data[0]}${statusSuffix}`,
+      lines: [`${i18n("hart.transferFunc")} ${data[0]}`],
+      fields: { transferFunction: data[0] },
+    };
+  }
+
+  if (command === 81 && data.length >= 23) {
+    const fields = {
+      deviceVariable: data[0],
+      supportedTrimPoints: data[1],
+      unitCode: data[2],
+      unit: getHartUnitString(data[2]),
+      minimumLower: byteArrayToFloat(data, 3),
+      maximumLower: byteArrayToFloat(data, 7),
+      minimumUpper: byteArrayToFloat(data, 11),
+      maximumUpper: byteArrayToFloat(data, 15),
+      minimumDifferential: byteArrayToFloat(data, 19),
+    };
+    const lines = [
+      `${i18n("hart.deviceVariable")} ${fields.deviceVariable} · ${i18n("hart.trimPoints")} ${fields.supportedTrimPoints}`,
+      `${i18n("hart.lowPointRange")} ${formatHartFloat(fields.minimumLower, fields.unit)}…${formatHartFloat(fields.maximumLower, fields.unit)}`,
+      `${i18n("hart.highPointRange")} ${formatHartFloat(fields.minimumUpper, fields.unit)}…${formatHartFloat(fields.maximumUpper, fields.unit)}`,
+      `${i18n("hart.minimumDifferential")} ${formatHartFloat(fields.minimumDifferential, fields.unit)}`,
+    ];
+    return { command, commandLabel: getHartCommandLabel(command), summary: `${lines.join(" · ")}${statusSuffix}`, lines, fields };
+  }
+
+  if (command === 82 && data.length >= 7) {
+    const fields = {
+      deviceVariable: data[0],
+      trimPoint: data[1],
+      unitCode: data[2],
+      unit: getHartUnitString(data[2]),
+      value: byteArrayToFloat(data, 3),
+    };
+    const line = `${i18n("hart.deviceVariable")} ${fields.deviceVariable} · ${i18n("hart.trimPoint")} ${fields.trimPoint} · ${formatHartFloat(fields.value, fields.unit)}`;
+    return { command, commandLabel: getHartCommandLabel(command), summary: `${line}${statusSuffix}`, lines: [line], fields };
   }
 
   if (data.length === 0) {

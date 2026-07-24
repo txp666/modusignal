@@ -6,6 +6,7 @@ import {
   parseCommand0Device,
   parseHartCommand33Variables,
   parseHartFrame,
+  parseHartUniversalResponse,
   getHartUnitString,
   verifyHartChecksum,
 } from "../src/hart/hart.js";
@@ -105,6 +106,7 @@ test("engineering units follow Common Table 2 revision 27", () => {
   assert.equal(getHartUnitString(39), "mA");
   assert.equal(getHartUnitString(57), "%");
   assert.equal(getHartUnitString(58), "V");
+  assert.equal(getHartUnitString(147), "µg/m³");
   assert.equal(getHartUnitString(237), "MPa");
 });
 
@@ -114,6 +116,73 @@ test("unit expansion codes are resolved with Device Variable Classification", ()
   assert.equal(getHartUnitString(189, 105), "bbl (US)/h");
   assert.equal(getHartUnitString(189, 106), "bbl (US)/d");
   assert.match(getHartUnitString(189), /189/);
+});
+
+test("instrument settings responses use the HART universal-command byte layout", () => {
+  const sensorData = Uint8Array.from([
+    0x01,
+    0x02,
+    0x03,
+    32,
+    ...floatBytes(100),
+    ...floatBytes(-10),
+    ...floatBytes(1),
+  ]);
+  const sensor = parseHartUniversalResponse({ command: 14, data: sensorData, responseCode: 0, status: 0, byteCount: 18 });
+  assert.deepEqual(sensor.fields, {
+    transducerSerialNumber: 0x010203,
+    unitCode: 32,
+    upper: 100,
+    lower: -10,
+    minSpan: 1,
+    unit: "°C",
+  });
+
+  const outputData = Uint8Array.from([
+    1,
+    0,
+    32,
+    ...floatBytes(120),
+    ...floatBytes(-20),
+    ...floatBytes(2.5),
+    1,
+    0,
+    3,
+  ]);
+  const output = parseHartUniversalResponse({ command: 15, data: outputData, responseCode: 0, status: 0, byteCount: 20 });
+  assert.equal(output.fields.alarmSelection, 1);
+  assert.equal(output.fields.transferFunction, 0);
+  assert.equal(output.fields.unitCode, 32);
+  assert.equal(output.fields.upper, 120);
+  assert.equal(output.fields.lower, -20);
+  assert.equal(output.fields.damping, 2.5);
+  assert.equal(output.fields.writeProtect, 1);
+  assert.equal(output.fields.analogChannelFlags, 3);
+});
+
+test("calibration guideline responses expose both trim ranges and differential", () => {
+  const data = Uint8Array.from([
+    0,
+    3,
+    32,
+    ...floatBytes(-40),
+    ...floatBytes(20),
+    ...floatBytes(50),
+    ...floatBytes(150),
+    ...floatBytes(10),
+  ]);
+  const response = parseHartUniversalResponse({ command: 81, data, responseCode: 0, status: 0, byteCount: 25 });
+  assert.deepEqual(response.fields, {
+    deviceVariable: 0,
+    supportedTrimPoints: 3,
+    unitCode: 32,
+    unit: "°C",
+    minimumLower: -40,
+    maximumLower: 20,
+    minimumUpper: 50,
+    maximumUpper: 150,
+    minimumDifferential: 10,
+  });
 });
 
 test("command catalog matches HARTLink Studio defaults and validates payloads", () => {

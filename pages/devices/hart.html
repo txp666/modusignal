@@ -17,6 +17,14 @@
       <code id="hartlinkVersionInfo" class="hartlink-version-info" data-state="idle" data-i18n="hart.hartlinkWaiting" aria-live="polite">HARTLink：连接串口后自动探测版本</code>
     </div>
 
+    <nav class="hart-workspace-tabs" aria-label="HART workspace">
+      <button class="active" type="button" data-hart-workspace-tab="general" data-i18n="hart.workspace.general">通用命令</button>
+      <button type="button" data-hart-workspace-tab="settings" data-i18n="hart.workspace.settings">仪表设置</button>
+      <button type="button" data-hart-workspace-tab="calibration" data-i18n="hart.workspace.calibration">输入输出校正</button>
+    </nav>
+
+    <div data-hart-workspace-panel="general">
+
     <div id="hartVariableCards" class="hart-variable-cards" aria-label="HART 动态变量">
       <article class="hart-value-card" data-hart-card="pv">
         <span class="hart-value-label">PV</span>
@@ -157,5 +165,247 @@
 
       </div>
     </details>
+    </div>
+
+    <section class="hart-workspace-panel" data-hart-workspace-panel="settings" hidden>
+      <div class="hart-workspace-intro">
+        <div>
+          <h3 data-i18n="hart.settings.title">仪表基本参数设置</h3>
+          <p data-i18n="hart.settings.desc">读取传感器能力，并通过标准 HART 命令设置 PV 量程、单位、阻尼、输出特性、设备标识和 Burst 模式。</p>
+        </div>
+        <button type="button" data-hart-workspace-action="read-identity" data-i18n="hart.settings.readIdentity">读取仪表标识 · Cmd 0</button>
+      </div>
+
+      <div class="hart-workspace-grid hart-settings-grid">
+        <article class="hart-tool-card">
+          <header>
+            <div>
+              <h4 data-i18n="hart.settings.measurement">测量范围与信号参数</h4>
+              <small data-i18n="hart.settings.measurementDesc">Cmd 14/15 读取，Cmd 34/35/44/47 写入</small>
+            </div>
+            <div class="hart-card-actions">
+              <button class="ghost-button" type="button" data-hart-workspace-action="read-sensor">Cmd 14</button>
+              <button class="ghost-button" type="button" data-hart-workspace-action="read-config">Cmd 15</button>
+            </div>
+          </header>
+          <code id="hartSettingsMeasurementStatus" class="hart-card-status" data-i18n="hart.settings.notRead">尚未读取仪表参数</code>
+          <div class="config-grid hart-tool-fields">
+            <label>
+              <span data-i18n="hart.input.unitCode">工程单位</span>
+              <select id="hartSettingsUnit"></select>
+            </label>
+            <label>
+              <span data-i18n="hart.input.dampingSeconds">PV 阻尼（秒）</span>
+              <input id="hartSettingsDamping" type="number" step="any" value="1.0" />
+            </label>
+            <label>
+              <span data-i18n="hart.input.upperRange">量程上限 URV</span>
+              <input id="hartSettingsUpperRange" type="number" step="any" />
+            </label>
+            <label>
+              <span data-i18n="hart.input.lowerRange">量程下限 LRV</span>
+              <input id="hartSettingsLowerRange" type="number" step="any" />
+            </label>
+            <label>
+              <span data-i18n="hart.input.transferFunction">PV 传递函数</span>
+              <select id="hartSettingsTransferFunction">
+                <option value="0" data-i18n="hart.transfer.linear">0 · 线性</option>
+                <option value="1" data-i18n="hart.transfer.sqrt">1 · 平方根</option>
+                <option value="2" data-i18n="hart.transfer.sqrt3">2 · 平方根三次方</option>
+                <option value="3" data-i18n="hart.transfer.sqrt5">3 · 平方根五次方</option>
+                <option value="4" data-i18n="hart.transfer.special">4 · 特殊曲线</option>
+              </select>
+            </label>
+          </div>
+          <div class="hart-card-actions wrap">
+            <button type="button" data-hart-workspace-action="write-unit" data-i18n="hart.settings.writeUnit">写入单位 · Cmd 44</button>
+            <button type="button" data-hart-workspace-action="write-range" data-i18n="hart.settings.writeRange">写入量程 · Cmd 35</button>
+            <button type="button" data-hart-workspace-action="write-damping" data-i18n="hart.settings.writeDamping">写入阻尼 · Cmd 34</button>
+            <button type="button" data-hart-workspace-action="write-transfer" data-i18n="hart.settings.writeTransfer">写入特性 · Cmd 47</button>
+          </div>
+        </article>
+
+        <article class="hart-tool-card hart-identity-card">
+          <header>
+            <div>
+              <h4 data-i18n="hart.settings.identity">仪表与传感器信息</h4>
+              <small data-i18n="hart.settings.identityDesc">标准标识字段、装配号和短地址</small>
+            </div>
+          </header>
+          <div class="config-grid hart-tool-fields">
+            <label class="hart-tool-wide">
+              <span data-i18n="hart.input.message">Message</span>
+              <input id="hartSettingsMessage" type="text" maxlength="32" />
+            </label>
+            <label>
+              <span data-i18n="hart.input.shortTag">短 Tag</span>
+              <input id="hartSettingsTag" type="text" maxlength="8" />
+            </label>
+            <label>
+              <span data-i18n="hart.input.descriptor">描述符</span>
+              <input id="hartSettingsDescriptor" type="text" maxlength="16" />
+            </label>
+            <label>
+              <span data-i18n="hart.input.date">日期</span>
+              <input id="hartSettingsDate" type="date" />
+            </label>
+            <label>
+              <span data-i18n="hart.input.finalAssemblyNumber">最终装配号</span>
+              <input id="hartSettingsAssembly" type="number" min="0" max="16777215" step="1" value="0" />
+            </label>
+            <label>
+              <span data-i18n="hart.input.pollAddress">新轮询地址</span>
+              <input id="hartSettingsPollAddress" type="number" min="0" max="63" step="1" value="0" />
+            </label>
+            <label>
+              <span data-i18n="hart.input.loopCurrentMode">回路电流模式</span>
+              <select id="hartSettingsLoopMode">
+                <option value="0" data-i18n="hart.option.disabled">0 · 禁用</option>
+                <option value="1" selected data-i18n="hart.option.enabled">1 · 启用</option>
+              </select>
+            </label>
+          </div>
+          <div class="hart-card-actions wrap">
+            <button class="ghost-button" type="button" data-hart-workspace-action="read-message" data-i18n="hart.settings.readMessage">读取 Message · Cmd 12</button>
+            <button type="button" data-hart-workspace-action="write-message" data-i18n="hart.settings.writeMessage">写入 Message · Cmd 17</button>
+            <button class="ghost-button" type="button" data-hart-workspace-action="read-tag" data-i18n="hart.settings.readTag">读取 Tag · Cmd 13</button>
+            <button type="button" data-hart-workspace-action="write-tag" data-i18n="hart.settings.writeTag">写入 Tag · Cmd 18</button>
+            <button class="ghost-button" type="button" data-hart-workspace-action="read-assembly" data-i18n="hart.settings.readAssembly">读取装配号 · Cmd 16</button>
+            <button type="button" data-hart-workspace-action="write-assembly" data-i18n="hart.settings.writeAssembly">写入装配号 · Cmd 19</button>
+            <button type="button" data-hart-workspace-action="write-address" data-i18n="hart.settings.writeAddress">写入地址 · Cmd 6</button>
+          </div>
+        </article>
+
+        <article class="hart-tool-card hart-burst-card">
+          <header>
+            <div>
+              <h4 data-i18n="hart.settings.burst">Burst 模式</h4>
+              <small data-i18n="hart.settings.burstDesc">使用 HART 7 完整请求格式配置消息 0</small>
+            </div>
+          </header>
+          <div class="config-grid hart-tool-fields">
+            <label>
+              <span data-i18n="hart.input.burstCommand">Burst 命令号</span>
+              <select id="hartSettingsBurstCommand">
+                <option value="1">Cmd 1</option>
+                <option value="2">Cmd 2</option>
+                <option value="3">Cmd 3</option>
+                <option value="9">Cmd 9</option>
+                <option value="33">Cmd 33</option>
+                <option value="38">Cmd 38</option>
+                <option value="48">Cmd 48</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="hart.input.burstMessage">Burst 消息号</span>
+              <input id="hartSettingsBurstMessage" type="number" min="0" max="255" step="1" value="0" />
+            </label>
+          </div>
+          <div class="hart-card-actions wrap">
+            <button class="ghost-button" type="button" data-hart-workspace-action="read-burst" data-i18n="hart.settings.readBurst">读取配置 · Cmd 105</button>
+            <button type="button" data-hart-workspace-action="write-burst" data-i18n="hart.settings.writeBurst">写入命令 · Cmd 108</button>
+            <button type="button" data-hart-workspace-action="enable-burst" data-i18n="hart.settings.enableBurst">启用 · Cmd 109</button>
+            <button class="ghost-button" type="button" data-hart-workspace-action="disable-burst" data-i18n="hart.settings.disableBurst">停用 · Cmd 109</button>
+          </div>
+          <code id="hartSettingsStatus" class="hart-card-status" data-i18n="hart.workspace.ready">就绪</code>
+        </article>
+      </div>
+    </section>
+
+    <section class="hart-workspace-panel" data-hart-workspace-panel="calibration" hidden>
+      <div class="hart-workspace-intro">
+        <div>
+          <h3 data-i18n="hart.calibration.title">仪表输入输出校正</h3>
+          <p data-i18n="hart.calibration.desc">使用标准命令执行固定电流输出、回路电流零点/增益校正和设备变量输入校正。</p>
+        </div>
+        <span class="state-pill warning" data-i18n="hart.calibration.safety">校正会影响现场输出</span>
+      </div>
+
+      <div class="hart-workspace-grid hart-calibration-grid">
+        <article class="hart-tool-card">
+          <header>
+            <div>
+              <h4 data-i18n="hart.calibration.fixedCurrent">固定电流输出</h4>
+              <small data-i18n="hart.calibration.fixedCurrentDesc">Cmd 40；0 mA 退出固定电流模式</small>
+            </div>
+          </header>
+          <div class="config-grid hart-tool-fields">
+            <label>
+              <span data-i18n="hart.calibration.presetCurrent">预设电流</span>
+              <select id="hartCalibrationPresetCurrent">
+                <option value="4">4.000 mA</option>
+                <option value="8">8.000 mA</option>
+                <option value="12">12.000 mA</option>
+                <option value="16">16.000 mA</option>
+                <option value="20">20.000 mA</option>
+              </select>
+            </label>
+            <label>
+              <span data-i18n="hart.calibration.customCurrent">自定义电流（mA）</span>
+              <input id="hartCalibrationCustomCurrent" type="number" min="0" max="30" step="0.001" value="10.000" />
+            </label>
+          </div>
+          <div class="hart-card-actions wrap">
+            <button type="button" data-hart-workspace-action="fixed-preset" data-i18n="hart.calibration.setPreset">设置预设输出</button>
+            <button type="button" data-hart-workspace-action="fixed-custom" data-i18n="hart.calibration.setCustom">设置自定义输出</button>
+            <button class="ghost-button" type="button" data-hart-workspace-action="fixed-exit" data-i18n="hart.calibration.exitFixed">退出固定电流模式</button>
+          </div>
+        </article>
+
+        <article class="hart-tool-card">
+          <header>
+            <div>
+              <h4 data-i18n="hart.calibration.loopTrim">回路电流输出校正</h4>
+              <small data-i18n="hart.calibration.loopTrimDesc">先固定端点，再输入高精度电流表实测值</small>
+            </div>
+          </header>
+          <div class="hart-calibration-row">
+            <label>
+              <span data-i18n="hart.calibration.measuredLow">外部实测低端（mA）</span>
+              <input id="hartCalibrationLowCurrent" type="number" step="0.0001" value="4.0000" />
+            </label>
+            <button class="ghost-button" type="button" data-hart-workspace-action="output-low" data-i18n="hart.calibration.outputLow">先输出 4 mA</button>
+            <button type="button" data-hart-workspace-action="trim-low-current" data-i18n="hart.calibration.trimLow">校正 4 mA · Cmd 45</button>
+          </div>
+          <div class="hart-calibration-row">
+            <label>
+              <span data-i18n="hart.calibration.measuredHigh">外部实测高端（mA）</span>
+              <input id="hartCalibrationHighCurrent" type="number" step="0.0001" value="20.0000" />
+            </label>
+            <button class="ghost-button" type="button" data-hart-workspace-action="output-high" data-i18n="hart.calibration.outputHigh">先输出 20 mA</button>
+            <button type="button" data-hart-workspace-action="trim-high-current" data-i18n="hart.calibration.trimHigh">校正 20 mA · Cmd 46</button>
+          </div>
+        </article>
+
+        <article class="hart-tool-card hart-pv-trim-card">
+          <header>
+            <div>
+              <h4 data-i18n="hart.calibration.pvTrim">仪表输入 / 主变量校正</h4>
+              <small data-i18n="hart.calibration.pvTrimDesc">Cmd 50 → Cmd 81 获取校正规则，再用 Cmd 82 写入校正点</small>
+            </div>
+          </header>
+          <div class="hart-card-actions wrap">
+            <button class="ghost-button" type="button" data-hart-workspace-action="pv-zero" data-i18n="hart.calibration.pvZero">设置当前过程为 PV 零点 · Cmd 43</button>
+            <button type="button" data-hart-workspace-action="read-trim-guidelines" data-i18n="hart.calibration.readGuidelines">读取 PV 校正规则</button>
+          </div>
+          <code id="hartCalibrationGuidelines" class="hart-card-status" data-i18n="hart.calibration.guidelinesHint">先读取 Cmd 50 的 PV 映射，再读取 Cmd 81 校正规则。</code>
+          <div class="hart-calibration-row">
+            <label>
+              <span data-i18n="hart.calibration.appliedLow">当前施加低点值</span>
+              <input id="hartCalibrationLowValue" type="number" step="any" />
+            </label>
+            <button id="hartCalibrationLowButton" type="button" data-hart-workspace-action="trim-low-pv" disabled data-i18n="hart.calibration.trimPvLow">校正低点 · Cmd 82</button>
+          </div>
+          <div class="hart-calibration-row">
+            <label>
+              <span data-i18n="hart.calibration.appliedHigh">当前施加高点值</span>
+              <input id="hartCalibrationHighValue" type="number" step="any" />
+            </label>
+            <button id="hartCalibrationHighButton" type="button" data-hart-workspace-action="trim-high-pv" disabled data-i18n="hart.calibration.trimPvHigh">校正高点 · Cmd 82</button>
+          </div>
+          <code id="hartCalibrationStatus" class="hart-card-status" data-i18n="hart.workspace.ready">就绪</code>
+        </article>
+      </div>
+    </section>
   </section>
 </section>
