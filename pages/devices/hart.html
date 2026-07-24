@@ -53,7 +53,7 @@
       <div class="config-grid hart-essential-grid">
         <label>
           <span data-i18n="hart.pollAddress">轮询地址</span>
-          <input id="hartPollAddress" type="number" min="0" max="15" step="1" value="0" />
+          <input id="hartPollAddress" type="number" min="0" max="63" step="1" value="0" />
         </label>
         <label>
           <span data-i18n="hart.pollMode">轮询方式</span>
@@ -76,14 +76,14 @@
       </div>
       <div class="config-grid hart-command-grid">
         <label id="hartPresetCommandField">
-          <span data-i18n="hart.universalCmd">通用命令</span>
+          <span data-i18n="hart.universalCmd">标准命令</span>
           <select id="hartCommand"></select>
         </label>
         <label id="hartCustomCommandField" hidden>
           <span data-i18n="hart.cmdNumber">命令号</span>
-          <input id="hartCustomCommand" type="number" min="0" max="255" step="1" value="1" data-i18n-title="hart.cmdNumberTitle" title="0–255，自动组帧并计算 XOR 校验" />
+          <input id="hartCustomCommand" type="number" min="0" max="65535" step="1" value="1" data-i18n-title="hart.cmdNumberTitle" title="0–65535；大于 255 时自动使用扩展命令 Cmd 31 组帧" />
         </label>
-        <label class="hart-data-field">
+        <label id="hartCustomCommandDataField" class="hart-data-field" hidden>
           <span data-i18n="hart.cmdData">命令数据 (HEX)</span>
           <input id="hartCustomCommandData" type="text" data-i18n-placeholder="hart.cmdDataPlaceholder" placeholder="可选；写命令或带参数读命令时填入，校验自动计算" />
         </label>
@@ -92,6 +92,13 @@
           <code id="hartFrameChecksum">--</code>
         </p>
       </div>
+      <section id="hartStandardCommandSection" class="hart-standard-command-section">
+        <div class="hart-standard-command-heading">
+          <strong data-i18n="hart.standardValues">命令参数</strong>
+          <small data-i18n="hart.valuesEncodedHint">填写实际值，程序会按 HART 规范自动编码；无需输入 HEX。</small>
+        </div>
+        <div id="hartStandardCommandFields" class="config-grid hart-standard-input-grid"></div>
+      </section>
     </div>
 
     <div class="command-preview hart-command-preview">
@@ -109,7 +116,7 @@
     <details class="hart-advanced-section">
       <summary>
         <span data-i18n="hart.advancedSettings">高级设置</span>
-        <small data-i18n="hart.advancedSettingsDesc">主站/前导码、PV 显示缩放和命令数据助手</small>
+        <small data-i18n="hart.advancedSettingsDesc">主站/前导码和 PV 显示缩放</small>
       </summary>
       <div class="hart-advanced-body">
         <div class="config-grid hart-advanced-grid">
@@ -148,44 +155,6 @@
           </label>
         </div>
 
-        <section class="hart-command-helper">
-          <div class="subsection-heading compact">
-            <div>
-              <h3 data-i18n="hart.dataHelper">命令数据助手</h3>
-              <p data-i18n="hart.dataHelperDesc">按现场常用场景生成请求数据，仍可在 HEX 输入框中手工修改。</p>
-            </div>
-          </div>
-          <div class="config-grid compact">
-            <label>
-              <span data-i18n="hart.helperTemplate">模板</span>
-              <select id="hartDataTemplate"></select>
-            </label>
-            <label>
-              <span data-i18n="hart.helperText">文本 / Tag</span>
-              <input id="hartTemplateText" type="text" maxlength="64" placeholder="TAG001" />
-            </label>
-            <label>
-              <span data-i18n="hart.helperDescriptor">描述符</span>
-              <input id="hartTemplateDescriptor" type="text" maxlength="32" placeholder="FIELD DEVICE" />
-            </label>
-            <label>
-              <span data-i18n="hart.helperDate">日期</span>
-              <input id="hartTemplateDate" type="date" />
-            </label>
-            <label>
-              <span data-i18n="hart.helperLoopMode">Loop Mode Byte</span>
-              <input id="hartTemplateLoopMode" type="number" min="0" max="255" step="1" value="0" />
-            </label>
-          </div>
-          <div class="hart-helper-actions">
-            <button id="hartApplyDataTemplate" type="button" data-i18n="hart.applyTemplate">生成命令数据</button>
-            <button id="hartClearCommandData" class="ghost-button" type="button" data-i18n="hart.clearCommandData">清空数据</button>
-          </div>
-          <p class="hart-frame-meta">
-            <span data-i18n="hart.templatePreview">模板预览</span>
-            <code id="hartTemplatePreview">--</code>
-          </p>
-        </section>
       </div>
     </details>
   </section>

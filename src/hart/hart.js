@@ -1,4 +1,5 @@
 import i18n from "../i18n.js";
+import { getHartEngineeringUnit } from "./hart-unit-codes.js";
 
 export const TX_ADDR_SHORT = 0x02;
 export const TX_ADDR_LONG = 0x82;
@@ -6,26 +7,6 @@ export const RX_ADDR_SHORT = 0x06;
 export const RX_ADDR_LONG = 0x86;
 export const PRIMARY_MASTER = 0x80;
 export const SECONDARY_MASTER = 0x00;
-
-const HART_UNIT_CODES = {
-  1: "°C",
-  2: "°F",
-  3: "K",
-  4: "mA",
-  5: "V",
-  6: "mV",
-  7: "kPa",
-  8: "MPa",
-  9: "Pa",
-  10: "bar",
-  11: "mbar",
-  12: "psi",
-  32: "%",
-  39: "mA",
-  48: "mm",
-  57: "%",
-  250: "",
-};
 
 const HART_DEVICE_STATUS_BITS = [
   { mask: 0x80, key: "hart.status.deviceMalfunction" },
@@ -84,10 +65,26 @@ const HART_DYNAMIC_VARIABLE_CODE_MAP = {
   1: "sv",
   2: "tv",
   3: "qv",
+  246: "pv",
+  247: "sv",
+  248: "tv",
+  249: "qv",
 };
 
-export function getHartUnitString(unitCode) {
-  return HART_UNIT_CODES[unitCode] ?? "";
+export function getHartUnitString(unitCode, classification = null) {
+  const unit = getHartEngineeringUnit(unitCode, classification);
+  if (unit) {
+    return unit.symbol;
+  }
+
+  const code = Math.trunc(Number(unitCode));
+  if (code >= 170 && code <= 219) {
+    return `${i18n("hart.unitCode", "Unit")} ${code}`;
+  }
+  if (code >= 240 && code <= 249) {
+    return `${i18n("hart.manufacturerUnit", "Mfr Unit")} ${code}`;
+  }
+  return "";
 }
 
 export function byteArrayToFloat(data, offset = 0) {
@@ -108,20 +105,35 @@ export function buildHartFrame({
   device = null,
   commandData = new Uint8Array(0),
 }) {
+  const commandNumber = Math.trunc(Number(command));
+  if (!Number.isInteger(commandNumber) || commandNumber < 0 || commandNumber > 0xffff) {
+    throw new RangeError("HART command must be an integer from 0 to 65535");
+  }
+
   const safePreamble = clamp(Math.trunc(preambleLength), 2, 20);
   const masterBit = masterType === SECONDARY_MASTER ? SECONDARY_MASTER : PRIMARY_MASTER;
-  const shortAddress = pollAddress & 0x0f;
+  const shortAddress = pollAddress & 0x3f;
+  const payload = commandData instanceof Uint8Array ? commandData : Uint8Array.from(commandData ?? []);
+  const wireCommand = commandNumber > 0xff ? 31 : commandNumber;
+  const wireData =
+    commandNumber > 0xff
+      ? Uint8Array.from([(commandNumber >> 8) & 0xff, commandNumber & 0xff, ...payload])
+      : payload;
+  if (wireData.length > 0xff) {
+    throw new RangeError("HART command data cannot exceed 255 bytes");
+  }
   const parts = [];
 
-  if (command === 0) {
+  if (wireCommand === 0) {
     parts.push(TX_ADDR_SHORT, shortAddress | masterBit);
   } else if (device?.discovered) {
-    const addressManufacturer = device.addressManufacturer ?? device.manufacturer;
-    const addressDeviceType = device.addressDeviceType ?? device.deviceType;
+    const expandedDeviceType = device.expandedDeviceType ??
+      (((device.addressManufacturer ?? device.manufacturer ?? 0) & 0xff) << 8) |
+        ((device.addressDeviceType ?? device.deviceType ?? 0) & 0xff);
     parts.push(
       TX_ADDR_LONG,
-      (addressManufacturer & 0xff) | masterBit,
-      addressDeviceType & 0xff,
+      ((expandedDeviceType >> 8) & 0x3f) | masterBit,
+      expandedDeviceType & 0xff,
       (device.deviceId >> 16) & 0xff,
       (device.deviceId >> 8) & 0xff,
       device.deviceId & 0xff,
@@ -130,8 +142,8 @@ export function buildHartFrame({
     parts.push(TX_ADDR_SHORT, shortAddress | masterBit);
   }
 
-  parts.push(command & 0xff, commandData.length & 0xff);
-  commandData.forEach((byte) => parts.push(byte & 0xff));
+  parts.push(wireCommand, wireData.length);
+  wireData.forEach((byte) => parts.push(byte & 0xff));
 
   const body = Uint8Array.from(parts);
   let checksum = 0;
@@ -179,18 +191,23 @@ export function parseHartFrame(frame) {
   }
 
   const delimiter = frame[0];
-  if (delimiter !== RX_ADDR_SHORT && delimiter !== RX_ADDR_LONG) {
+  if ((delimiter & 0x07) !== 0x06) {
     return null;
   }
 
-  const addressLength = delimiter === RX_ADDR_SHORT ? 1 : 5;
-  const headerLength = 1 + addressLength + 2;
+  const addressLength = (delimiter & 0x80) !== 0 ? 5 : 1;
+  const expansionByteCount = (delimiter >> 5) & 0x03;
+  const headerLength = 1 + addressLength + expansionByteCount + 2;
   if (frame.length < headerLength + 2) {
     return null;
   }
 
-  const command = frame[1 + addressLength];
-  const byteCount = frame[2 + addressLength];
+  const commandIndex = 1 + addressLength + expansionByteCount;
+  const wireCommand = frame[commandIndex];
+  const byteCount = frame[commandIndex + 1];
+  if (byteCount < 2) {
+    return null;
+  }
   const frameLength = headerLength + byteCount + 1;
 
   if (frame.length < frameLength) {
@@ -206,18 +223,25 @@ export function parseHartFrame(frame) {
   const responseCode = frame[dataStart];
   const status = frame[dataStart + 1];
   const payloadLength = Math.max(0, byteCount - 2);
-  const data = frame.subarray(dataStart + 2, dataStart + 2 + payloadLength);
+  let command = wireCommand;
+  let data = frame.subarray(dataStart + 2, dataStart + 2 + payloadLength);
+  if (wireCommand === 31 && data.length >= 2) {
+    command = (data[0] << 8) | data[1];
+    data = data.subarray(2);
+  }
 
   let pollAddress = null;
-  if (delimiter === RX_ADDR_SHORT) {
-    pollAddress = frame[1] & 0x0f;
+  if (addressLength === 1) {
+    pollAddress = frame[1] & 0x3f;
   }
 
   return {
     delimiter,
     addressLength,
+    expansionByteCount,
     pollAddress,
     command,
+    wireCommand,
     byteCount,
     responseCode,
     status,
@@ -235,7 +259,7 @@ export function extractHartFrames(buffer) {
 
     for (let index = offset; index < buffer.length; index += 1) {
       const byte = buffer[index];
-      if (byte === RX_ADDR_SHORT || byte === RX_ADDR_LONG) {
+      if ((byte & 0x07) === 0x06) {
         startIndex = index;
         break;
       }
@@ -252,8 +276,9 @@ export function extractHartFrames(buffer) {
     }
 
     const delimiter = buffer[startIndex];
-    const addressLength = delimiter === RX_ADDR_SHORT ? 1 : 5;
-    const headerLength = 1 + addressLength + 2;
+    const addressLength = (delimiter & 0x80) !== 0 ? 5 : 1;
+    const expansionByteCount = (delimiter >> 5) & 0x03;
+    const headerLength = 1 + addressLength + expansionByteCount + 2;
 
     if (buffer.length - startIndex < headerLength + 2) {
       break;
@@ -285,12 +310,17 @@ export function extractHartFrames(buffer) {
 }
 
 export function parseCommand0Device(parsedFrame) {
-  if (!parsedFrame || parsedFrame.command !== 0 || parsedFrame.byteCount < 14) {
+  if (
+    !parsedFrame ||
+    ![0, 11, 21].includes(parsedFrame.command) ||
+    parsedFrame.responseCode !== 0 ||
+    parsedFrame.byteCount < 14
+  ) {
     return null;
   }
 
   const { data } = parsedFrame;
-  if (data.length < 12) {
+  if (data.length < 12 || data[0] !== 0xfe) {
     return null;
   }
 
@@ -419,7 +449,12 @@ export const HART_COMMAND_LABELS = {
   46: "hart.cmd.46",
   47: "hart.cmd.47",
   48: "hart.cmd.48",
-  49: "hart.cmd.49",
+  50: "hart.cmd.50",
+  81: "hart.cmd.81",
+  82: "hart.cmd.82",
+  105: "hart.cmd.105",
+  108: "hart.cmd.108",
+  109: "hart.cmd.109",
 };
 
 export function getHartCommandLabel(command) {
@@ -534,6 +569,18 @@ export function describeHartResponseCode(command, responseCode) {
 
   const key = HART_COMMAND_RESPONSE_CODE_KEYS[command]?.[responseCode] ?? HART_RESPONSE_CODE_KEYS[responseCode];
   return key ? i18n(key) : i18n("hart.response.undefined");
+}
+
+export function isHartCommandResponseWarning(command, responseCode) {
+  if ((responseCode & 0x80) !== 0) {
+    return false;
+  }
+  if ([1, 2, 3, 33, 34].includes(command)) return responseCode === 8;
+  if (command === 9) return [8, 14, 30].includes(responseCode);
+  if ([35, 36, 48, 82].includes(command)) return [8, 14].includes(responseCode);
+  if (command === 37) return responseCode === 14;
+  if ([107, 108, 109].includes(command)) return responseCode === 8;
+  return false;
 }
 
 export function formatHartFrameStatusLines(parsedFrame) {
@@ -651,7 +698,7 @@ export function parseHartCommand9Variables(data) {
 
     const code = data[offset];
     const classification = data[offset + 1];
-    const unit = getHartUnitString(data[offset + 2]);
+    const unit = getHartUnitString(data[offset + 2], classification);
     const value = byteArrayToFloat(data, offset + 3);
     const status = data[offset + 7];
     const entry = {
@@ -743,7 +790,18 @@ export function parseHartUniversalResponse(parsedFrame) {
           .padStart(2, "0")}`
       : "";
 
-  if (command === 0) {
+  if (responseCode !== 0 && !isHartCommandResponseWarning(command, responseCode)) {
+    const response = describeHartResponseCode(command, responseCode);
+    return {
+      command,
+      commandLabel: getHartCommandLabel(command),
+      summary: `${i18n("hart.responseCode")} 0x${formatHexNumber(responseCode, 2)} · ${response}`,
+      lines: [`${i18n("hart.responseCode")} 0x${formatHexNumber(responseCode, 2)} · ${response}`],
+      isError: true,
+    };
+  }
+
+  if (command === 0 || command === 11 || command === 21) {
     const device = parseCommand0Device(parsedFrame);
     if (!device) {
       return null;
@@ -882,7 +940,7 @@ export function parseHartUniversalResponse(parsedFrame) {
     };
   }
 
-  if ((command === 11 || command === 13 || command === 18) && data.length >= 21) {
+  if ((command === 13 || command === 18) && data.length >= 21) {
     const tag = decodeHartPackedAscii(data, 0, 6);
     const descriptor = decodeHartPackedAscii(data, 6, 12);
     const date = formatHartDateBytes(data, 18);
@@ -1027,6 +1085,18 @@ export function parseHartUniversalResponse(parsedFrame) {
       commandLabel: getHartCommandLabel(command),
       summary: `${i18n("hart.additionalStatus")} ${formatHexBytes(data)}${statusSuffix}`,
       lines,
+    };
+  }
+
+  if (command === 50 && data.length >= 4) {
+    const labels = ["PV", "SV", "TV", "QV"];
+    const lines = labels.map((label, index) => `${label} → ${i18n("hart.deviceVariable")} ${data[index]}`);
+    return {
+      command,
+      commandLabel: getHartCommandLabel(command),
+      summary: `${lines.join(" · ")}${statusSuffix}`,
+      lines,
+      fields: { pv: data[0], sv: data[1], tv: data[2], qv: data[3] },
     };
   }
 

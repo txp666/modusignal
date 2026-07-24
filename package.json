@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "node --test",
     "build": "node scripts/build.mjs",
     "package": "node scripts/package.mjs",
     "build:offline": "npm run build && npm run package",

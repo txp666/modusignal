@@ -2562,6 +2562,38 @@ code {
   align-items: end;
 }
 
+.hart-standard-command-section {
+  display: grid;
+  gap: 0.55rem;
+  padding-top: 0.1rem;
+}
+
+.hart-standard-command-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.hart-standard-command-heading small,
+.hart-standard-empty {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.hart-standard-input-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.hart-standard-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0.65rem;
+  border: 1px dashed var(--line);
+  border-radius: 0.4rem;
+}
+
 .hart-data-field,
 .hart-checksum-meta {
   grid-column: 1 / -1;
@@ -2697,6 +2729,7 @@ code {
 
   .hart-essential-grid,
   .hart-command-grid,
+  .hart-standard-input-grid,
   .hart-advanced-grid,
   .hart-command-helper .config-grid.compact {
     grid-template-columns: 1fr;
@@ -2704,6 +2737,12 @@ code {
 
   .hart-command-preview .panel-actions {
     grid-template-columns: 1fr;
+  }
+
+  .hart-standard-command-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.2rem;
   }
 
   .hart-advanced-section summary {

@@ -1,7 +1,9 @@
 import i18n from "../i18n.js";
 import {
-  RX_ADDR_SHORT,
   buildHartFrame,
+  encodeHartDateBytes,
+  encodeHartLatin1,
+  encodeHartPackedAscii,
   extractHartFrames,
   formatHartFrameStatusLines,
   formatHartDeviceSummary,
@@ -16,6 +18,7 @@ import {
   PRIMARY_MASTER,
   SECONDARY_MASTER,
 } from "../hart/hart.js";
+import { HART_ENGINEERING_UNITS } from "../hart/hart-unit-codes.js";
 
 export const HART_DEVICE_ID = "hart";
 export const HART_DEFAULT_BAUD_RATE = 1200;
@@ -60,6 +63,7 @@ export const DEFAULT_HART_CONFIG = {
   customCommand: 1,
   pollMode: "pv",
   customCommandData: "",
+  standardCommandValues: {},
   fieldName: "PV",
   unit: "",
   scale: 1,
@@ -87,48 +91,367 @@ export const HART_DYNAMIC_VARIABLE_KEYS = ["pv", "sv", "tv", "qv"];
 let rxBuffer = new Uint8Array(0);
 
 const HART_UNIVERSAL_COMMAND_ENTRIES = [
-  { value: 0, kind: "read" },
-  { value: 1, kind: "read" },
-  { value: 2, kind: "read" },
-  { value: 3, kind: "read" },
-  { value: 7, kind: "read" },
-  { value: 8, kind: "read" },
-  { value: 9, kind: "read" },
-  { value: 11, kind: "read" },
-  { value: 12, kind: "read" },
-  { value: 13, kind: "read" },
-  { value: 14, kind: "read" },
-  { value: 15, kind: "read" },
-  { value: 16, kind: "read" },
-  { value: 20, kind: "read" },
-  { value: 21, kind: "read" },
-  { value: 33, kind: "read" },
-  { value: 48, kind: "read" },
-  { value: 6, kind: "write" },
-  { value: 17, kind: "write" },
-  { value: 18, kind: "write" },
-  { value: 19, kind: "write" },
-  { value: 22, kind: "write" },
-  { value: 34, kind: "write" },
-  { value: 35, kind: "write" },
-  { value: 36, kind: "write" },
-  { value: 37, kind: "write" },
-  { value: 38, kind: "write" },
-  { value: 39, kind: "write" },
-  { value: 40, kind: "write" },
-  { value: 41, kind: "write" },
-  { value: 43, kind: "write" },
-  { value: 44, kind: "write" },
-  { value: 45, kind: "write" },
-  { value: 46, kind: "write" },
-  { value: 47, kind: "write" },
-  { value: 49, kind: "write" },
+  { value: 0, kind: "read", category: "universal" },
+  { value: 1, kind: "read", category: "universal" },
+  { value: 2, kind: "read", category: "universal" },
+  { value: 3, kind: "read", category: "universal" },
+  { value: 7, kind: "read", category: "universal" },
+  { value: 8, kind: "read", category: "universal" },
+  { value: 9, kind: "read", category: "universal", defaultData: [246, 247, 248, 249] },
+  { value: 11, kind: "read", category: "universal" },
+  { value: 12, kind: "read", category: "universal" },
+  { value: 13, kind: "read", category: "universal" },
+  { value: 14, kind: "read", category: "universal" },
+  { value: 15, kind: "read", category: "universal" },
+  { value: 16, kind: "read", category: "universal" },
+  { value: 20, kind: "read", category: "universal" },
+  { value: 21, kind: "read", category: "universal" },
+  { value: 48, kind: "read", category: "universal" },
+  { value: 33, kind: "read", category: "common", defaultData: [246, 247, 248, 249] },
+  { value: 50, kind: "read", category: "common" },
+  { value: 81, kind: "read", category: "common", defaultData: [0] },
+  { value: 105, kind: "read", category: "common", defaultData: [0] },
+  { value: 6, kind: "write", category: "universal" },
+  { value: 17, kind: "write", category: "universal" },
+  { value: 18, kind: "write", category: "universal" },
+  { value: 19, kind: "write", category: "universal" },
+  { value: 22, kind: "write", category: "universal" },
+  { value: 38, kind: "write", category: "universal" },
+  { value: 34, kind: "write", category: "common" },
+  { value: 35, kind: "write", category: "common" },
+  { value: 40, kind: "write", category: "common" },
+  { value: 43, kind: "write", category: "common" },
+  { value: 44, kind: "write", category: "common" },
+  { value: 45, kind: "write", category: "common" },
+  { value: 46, kind: "write", category: "common" },
+  { value: 47, kind: "write", category: "common" },
+  { value: 82, kind: "write", category: "common" },
+  { value: 108, kind: "write", category: "common" },
+  { value: 109, kind: "write", category: "common" },
 ];
 
 export const HART_UNIVERSAL_COMMANDS = HART_UNIVERSAL_COMMAND_ENTRIES.map((entry) => ({
   ...entry,
+  defaultData: entry.defaultData ? Uint8Array.from(entry.defaultData) : null,
   label: getHartCommandLabel(entry.value),
 }));
+
+export function getHartCommandDefinition(command) {
+  return HART_UNIVERSAL_COMMANDS.find((entry) => entry.value === Number(command)) ?? null;
+}
+
+const field = (key, labelKey, type, options = {}) => ({
+  key,
+  label: i18n(labelKey),
+  type,
+  ...options,
+});
+
+const choice = (key, labelKey, defaultValue, options) =>
+  field(key, labelKey, "select", { defaultValue: String(defaultValue), options });
+
+const option = (value, labelKey) => ({ value: String(value), label: i18n(labelKey) });
+
+function engineeringUnitOptions() {
+  const units = new Map(
+    Object.entries(HART_ENGINEERING_UNITS).map(([code, unit]) => [
+      Number(code),
+      { value: code, label: `${code} · ${unit.symbol || unit.description}` },
+    ]),
+  );
+  for (let code = 170; code <= 219; code += 1) {
+    units.set(code, { value: String(code), label: `${code} · ${i18n("hart.unitExpansionOption")}` });
+  }
+  for (let code = 240; code <= 249; code += 1) {
+    units.set(code, { value: String(code), label: `${code} · ${i18n("hart.manufacturerUnitOption")}` });
+  }
+  return [...units.entries()].sort(([left], [right]) => left - right).map(([, entry]) => entry);
+}
+
+export function getHartStandardRequestFields(command, device = DEFAULT_HART_DEVICE) {
+  const currentDate = new Date().toISOString().slice(0, 10);
+  switch (Number(command)) {
+    case 6:
+      return [
+        field("polling_address", "hart.input.pollAddress", "number", {
+          min: 0,
+          max: 63,
+          step: 1,
+          defaultValue: String(clamp(Math.trunc(toFiniteNumber(device?.pollAddress, 0)), 0, 63)),
+        }),
+        choice("loop_current_mode", "hart.input.loopCurrentMode", 1, [
+          option(0, "hart.option.disabled"),
+          option(1, "hart.option.enabled"),
+        ]),
+      ];
+    case 9:
+      return [field("device_variables", "hart.input.deviceVariables", "decimal-list", { defaultValue: "246, 247, 248, 249" })];
+    case 11:
+      return [field("tag", "hart.input.shortTag", "text", { maxLength: 8, defaultValue: "" })];
+    case 17:
+      return [field("message", "hart.input.message", "text", { maxLength: 32, defaultValue: "" })];
+    case 18:
+      return [
+        field("tag", "hart.input.shortTag", "text", { maxLength: 8, defaultValue: "" }),
+        field("descriptor", "hart.input.descriptor", "text", { maxLength: 16, defaultValue: "" }),
+        field("date", "hart.input.date", "date", { defaultValue: currentDate }),
+      ];
+    case 19:
+      return [field("final_assembly_number", "hart.input.finalAssemblyNumber", "number", { min: 0, max: 0xffffff, step: 1, defaultValue: "0" })];
+    case 21:
+    case 22:
+      return [field("long_tag", "hart.input.longTag", "text", { maxLength: 32, defaultValue: "" })];
+    case 33:
+      return [field("device_variables", "hart.input.deviceVariables", "decimal-list", { defaultValue: "246, 247, 248, 249" })];
+    case 34:
+      return [field("damping_seconds", "hart.input.dampingSeconds", "number", { step: "any", defaultValue: "1.0" })];
+    case 35:
+      return [
+        field("unit_code", "hart.input.unitCode", "unit-select", { options: engineeringUnitOptions(), defaultValue: "" }),
+        field("upper_range", "hart.input.upperRange", "number", { step: "any", defaultValue: "" }),
+        field("lower_range", "hart.input.lowerRange", "number", { step: "any", defaultValue: "" }),
+      ];
+    case 38:
+      return [
+        field("configuration_change_counter", "hart.input.configCounter", "number", {
+          min: 0,
+          max: 0xffff,
+          step: 1,
+          optional: true,
+          defaultValue: Number.isFinite(device?.configChangeCounter) ? String(device.configChangeCounter) : "",
+        }),
+      ];
+    case 40:
+      return [field("fixed_current", "hart.input.fixedCurrent", "number", { step: "any", defaultValue: "0.0" })];
+    case 44:
+      return [field("unit_code", "hart.input.unitCode", "unit-select", { options: engineeringUnitOptions(), defaultValue: "" })];
+    case 45:
+      return [field("measured_current", "hart.input.measuredCurrent", "number", { step: "any", defaultValue: "4.0" })];
+    case 46:
+      return [field("measured_current", "hart.input.measuredCurrent", "number", { step: "any", defaultValue: "20.0" })];
+    case 47:
+      return [
+        choice("transfer_function", "hart.input.transferFunction", 0, [
+          option(0, "hart.transfer.linear"),
+          option(1, "hart.transfer.sqrt"),
+          option(2, "hart.transfer.sqrt3"),
+          option(3, "hart.transfer.sqrt5"),
+          option(4, "hart.transfer.special"),
+          option(5, "hart.transfer.square"),
+          option(10, "hart.transfer.equal25"),
+          option(11, "hart.transfer.equal33"),
+          option(12, "hart.transfer.equal50"),
+          option(15, "hart.transfer.quick25"),
+          option(16, "hart.transfer.quick33"),
+          option(17, "hart.transfer.quick50"),
+          option(230, "hart.transfer.discrete"),
+        ]),
+      ];
+    case 81:
+      return [field("device_variable", "hart.input.deviceVariable", "number", { min: 0, max: 255, step: 1, defaultValue: "0" })];
+    case 82:
+      return [
+        field("device_variable", "hart.input.deviceVariable", "number", { min: 0, max: 255, step: 1, defaultValue: "0" }),
+        choice("trim_point", "hart.input.trimPoint", 1, [option(1, "hart.option.lowPoint"), option(2, "hart.option.highPoint")]),
+        field("unit_code", "hart.input.unitCode", "unit-select", { options: engineeringUnitOptions(), defaultValue: "" }),
+        field("trim_value", "hart.input.trimValue", "number", { step: "any", defaultValue: "" }),
+      ];
+    case 105:
+      return [field("burst_message", "hart.input.burstMessage", "number", { min: 0, max: 255, step: 1, defaultValue: "0" })];
+    case 108:
+      return [
+        field("burst_command", "hart.input.burstCommand", "number", { min: 0, max: 0xffff, step: 1, defaultValue: "1" }),
+        field("burst_message", "hart.input.burstMessage", "number", { min: 0, max: 255, step: 1, defaultValue: "0" }),
+      ];
+    case 109:
+      return [
+        choice("burst_control", "hart.input.burstControl", 0, [
+          option(0, "hart.option.burstOff"),
+          option(1, "hart.option.burstToken"),
+          option(2, "hart.option.burstTdma"),
+          option(3, "hart.option.burstBoth"),
+          option(4, "hart.option.burstIp"),
+        ]),
+        field("burst_message", "hart.input.burstMessage", "number", { min: 0, max: 255, step: 1, defaultValue: "0" }),
+      ];
+    default:
+      return [];
+  }
+}
+
+export function encodeHartStandardRequestData(command, suppliedValues = {}, device = DEFAULT_HART_DEVICE) {
+  const fields = getHartStandardRequestFields(command, device);
+  if (fields.length === 0) return new Uint8Array(0);
+
+  const values = Object.fromEntries(
+    fields.map((entry) => [entry.key, String(suppliedValues?.[entry.key] ?? entry.defaultValue ?? "")]),
+  );
+  const fail = (message) => {
+    throw new Error(message);
+  };
+  const unsigned = (key, label, minimum, maximum, optional = false) => {
+    const text = values[key].trim();
+    if (optional && text === "") return null;
+    if (!/^\d+$/.test(text)) fail(`${label}${i18n("hart.input.mustBeDecimal")}`);
+    const value = Number(text);
+    if (!Number.isSafeInteger(value) || value < minimum || value > maximum) {
+      fail(`${label}${i18n("hart.input.range").replace("{min}", minimum).replace("{max}", maximum)}`);
+    }
+    return value;
+  };
+  const floating = (key, label) => {
+    const value = Number(values[key].trim());
+    if (values[key].trim() === "" || !Number.isFinite(value) || !Number.isFinite(Math.fround(value))) {
+      fail(`${label}${i18n("hart.input.mustBeNumber")}`);
+    }
+    return Math.fround(value);
+  };
+  const uintBytes = (value, length) => {
+    const bytes = new Uint8Array(length);
+    for (let index = length - 1, remaining = value; index >= 0; index -= 1) {
+      bytes[index] = remaining & 0xff;
+      remaining = Math.floor(remaining / 256);
+    }
+    return bytes;
+  };
+  const floatBytes = (value) => {
+    const bytes = new Uint8Array(4);
+    new DataView(bytes.buffer).setFloat32(0, value, false);
+    return bytes;
+  };
+  const concat = (...parts) => {
+    const bytes = new Uint8Array(parts.reduce((total, part) => total + part.length, 0));
+    let offset = 0;
+    parts.forEach((part) => {
+      bytes.set(part, offset);
+      offset += part.length;
+    });
+    return bytes;
+  };
+  const packedText = (key, label, characters) => {
+    const text = values[key];
+    if (text.length > characters) fail(`${label}${i18n("hart.input.tooLong").replace("{max}", characters)}`);
+    for (const character of text.toUpperCase()) {
+      const code = character.charCodeAt(0);
+      if (code < 0x20 || code > 0x5f) fail(`${label}${i18n("hart.input.invalidPackedAscii")}`);
+    }
+    return encodeHartPackedAscii(text, characters);
+  };
+  const latin1Text = (key, label, characters) => {
+    const text = values[key];
+    if (text.length > characters) fail(`${label}${i18n("hart.input.tooLong").replace("{max}", characters)}`);
+    for (const character of text) {
+      if (character.charCodeAt(0) > 0xff) fail(`${label}${i18n("hart.input.invalidLatin1")}`);
+    }
+    const encoded = encodeHartLatin1(text, characters);
+    encoded.fill(0, text.length);
+    return encoded;
+  };
+  const decimalList = (key, label, maximumItems) => {
+    const parts = values[key].trim().split(/[\s,，;；]+/).filter(Boolean);
+    if (parts.length < 1 || parts.length > maximumItems) {
+      fail(`${label}${i18n("hart.input.listCount").replace("{max}", maximumItems)}`);
+    }
+    return Uint8Array.from(parts.map((part) => unsignedValue(part, label, 0, 255)));
+  };
+  const unsignedValue = (text, label, minimum, maximum) => {
+    if (!/^\d+$/.test(text)) fail(`${label}${i18n("hart.input.mustBeDecimal")}`);
+    const value = Number(text);
+    if (!Number.isSafeInteger(value) || value < minimum || value > maximum) {
+      fail(`${label}${i18n("hart.input.range").replace("{min}", minimum).replace("{max}", maximum)}`);
+    }
+    return value;
+  };
+
+  switch (Number(command)) {
+    case 6:
+      return Uint8Array.from([
+        unsigned("polling_address", i18n("hart.input.pollAddress"), 0, 63),
+        unsigned("loop_current_mode", i18n("hart.input.loopCurrentMode"), 0, 1),
+      ]);
+    case 9:
+      return decimalList("device_variables", i18n("hart.input.deviceVariables"), 8);
+    case 11:
+      return packedText("tag", i18n("hart.input.shortTag"), 8);
+    case 17:
+      return packedText("message", i18n("hart.input.message"), 32);
+    case 18: {
+      const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(values.date);
+      if (!match) fail(i18n("hart.input.invalidDate"));
+      const date = new Date(`${values.date}T00:00:00`);
+      const expectedYear = Number(match[1]);
+      const expectedMonth = Number(match[2]);
+      const expectedDay = Number(match[3]);
+      if (
+        !Number.isFinite(date.getTime()) ||
+        expectedYear < 1900 ||
+        expectedYear > 2155 ||
+        date.getFullYear() !== expectedYear ||
+        date.getMonth() + 1 !== expectedMonth ||
+        date.getDate() !== expectedDay
+      ) {
+        fail(i18n("hart.input.invalidDate"));
+      }
+      return concat(
+        packedText("tag", i18n("hart.input.shortTag"), 8),
+        packedText("descriptor", i18n("hart.input.descriptor"), 16),
+        encodeHartDateBytes(values.date),
+      );
+    }
+    case 19:
+      return uintBytes(unsigned("final_assembly_number", i18n("hart.input.finalAssemblyNumber"), 0, 0xffffff), 3);
+    case 21:
+    case 22:
+      return latin1Text("long_tag", i18n("hart.input.longTag"), 32);
+    case 33:
+      return decimalList("device_variables", i18n("hart.input.deviceVariables"), 4);
+    case 34:
+      return floatBytes(floating("damping_seconds", i18n("hart.input.dampingSeconds")));
+    case 35:
+      return concat(
+        uintBytes(unsigned("unit_code", i18n("hart.input.unitCode"), 0, 255), 1),
+        floatBytes(floating("upper_range", i18n("hart.input.upperRange"))),
+        floatBytes(floating("lower_range", i18n("hart.input.lowerRange"))),
+      );
+    case 38: {
+      const value = unsigned("configuration_change_counter", i18n("hart.input.configCounter"), 0, 0xffff, true);
+      if (value !== null) return uintBytes(value, 2);
+      return Number.isFinite(device?.configChangeCounter) ? uintBytes(device.configChangeCounter, 2) : new Uint8Array(0);
+    }
+    case 40:
+      return floatBytes(floating("fixed_current", i18n("hart.input.fixedCurrent")));
+    case 44:
+      return uintBytes(unsigned("unit_code", i18n("hart.input.unitCode"), 0, 255), 1);
+    case 45:
+    case 46:
+      return floatBytes(floating("measured_current", i18n("hart.input.measuredCurrent")));
+    case 47:
+      return uintBytes(unsigned("transfer_function", i18n("hart.input.transferFunction"), 0, 255), 1);
+    case 81:
+      return uintBytes(unsigned("device_variable", i18n("hart.input.deviceVariable"), 0, 255), 1);
+    case 82:
+      return concat(
+        uintBytes(unsigned("device_variable", i18n("hart.input.deviceVariable"), 0, 255), 1),
+        uintBytes(unsigned("trim_point", i18n("hart.input.trimPoint"), 1, 2), 1),
+        uintBytes(unsigned("unit_code", i18n("hart.input.unitCode"), 0, 255), 1),
+        floatBytes(floating("trim_value", i18n("hart.input.trimValue"))),
+      );
+    case 105:
+      return uintBytes(unsigned("burst_message", i18n("hart.input.burstMessage"), 0, 255), 1);
+    case 108:
+      return concat(
+        uintBytes(unsigned("burst_command", i18n("hart.input.burstCommand"), 0, 0xffff), 2),
+        uintBytes(unsigned("burst_message", i18n("hart.input.burstMessage"), 0, 255), 1),
+      );
+    case 109:
+      return Uint8Array.from([
+        unsigned("burst_control", i18n("hart.input.burstControl"), 0, 4),
+        unsigned("burst_message", i18n("hart.input.burstMessage"), 0, 255),
+      ]);
+    default:
+      return new Uint8Array(0);
+  }
+}
 
 export function getHartProfile() {
   return {
@@ -197,12 +520,13 @@ export function normalizeHartConfig(config = {}) {
   };
 
   return {
-    pollAddress: clamp(Math.trunc(toFiniteNumber(merged.pollAddress, DEFAULT_HART_CONFIG.pollAddress)), 0, 15),
+    pollAddress: clamp(Math.trunc(toFiniteNumber(merged.pollAddress, DEFAULT_HART_CONFIG.pollAddress)), 0, 63),
     masterType: merged.masterType === "secondary" ? "secondary" : "primary",
     commandMode: merged.commandMode === "custom" ? "custom" : "preset",
     command: normalizeCommand(merged.command),
-    customCommand: clamp(Math.trunc(toFiniteNumber(merged.customCommand, merged.command)), 0, 255),
+    customCommand: clamp(Math.trunc(toFiniteNumber(merged.customCommand, merged.command)), 0, 0xffff),
     customCommandData: String(merged.customCommandData ?? ""),
+    standardCommandValues: normalizeHartStandardCommandValues(merged.standardCommandValues),
     fieldName: String(merged.fieldName || DEFAULT_HART_CONFIG.fieldName),
     unit: String(merged.unit ?? ""),
     scale: toFiniteNumber(merged.scale, DEFAULT_HART_CONFIG.scale),
@@ -214,7 +538,7 @@ export function normalizeHartConfig(config = {}) {
     device: normalizeHartDevice(merged.device),
     activeCommand:
       merged.commandMode === "custom"
-        ? clamp(Math.trunc(toFiniteNumber(merged.customCommand, merged.command)), 0, 255)
+        ? clamp(Math.trunc(toFiniteNumber(merged.customCommand, merged.command)), 0, 0xffff)
         : normalizeCommand(merged.command),
   };
 }
@@ -295,7 +619,7 @@ function createHartCommandBytes(normalized, command, helpers) {
   }
 
   let commandData = new Uint8Array(0);
-  if (normalized.customCommandData.trim()) {
+  if (normalized.commandMode === "custom" && normalized.customCommandData.trim()) {
     try {
       commandData = helpers.parseHexPayload(normalized.customCommandData);
     } catch (error) {
@@ -307,21 +631,89 @@ function createHartCommandBytes(normalized, command, helpers) {
     }
   }
 
-  const bytes = buildHartFrame({
-    command,
-    pollAddress: normalized.pollAddress,
-    masterType: normalized.masterType === "secondary" ? SECONDARY_MASTER : PRIMARY_MASTER,
-    preambleLength: normalized.preambleLength,
-    device: normalized.device,
-    commandData,
-  });
+  const definition = getHartCommandDefinition(command);
+  if (normalized.commandMode === "preset") {
+    try {
+      commandData = encodeHartStandardRequestData(
+      command,
+      normalized.standardCommandValues[String(command)] ?? {},
+        { ...normalized.device, pollAddress: normalized.pollAddress },
+      );
+    } catch (error) {
+      return { supported: false, preview: error.message, bytes: null };
+    }
+    if (commandData.length === 0 && definition?.defaultData && getHartStandardRequestFields(command).length === 0) {
+      commandData = definition.defaultData;
+    }
+  }
+  if (command === 38 && commandData.length === 0 && Number.isFinite(normalized.device.configChangeCounter)) {
+    const counter = normalized.device.configChangeCounter;
+    commandData = Uint8Array.from([(counter >> 8) & 0xff, counter & 0xff]);
+  }
+
+  const validationError = validateHartCommandData(command, commandData);
+  if (validationError) {
+    return {
+      supported: false,
+      preview: validationError,
+      bytes: null,
+    };
+  }
+
+  let bytes;
+  try {
+    bytes = buildHartFrame({
+      command,
+      pollAddress: normalized.pollAddress,
+      masterType: normalized.masterType === "secondary" ? SECONDARY_MASTER : PRIMARY_MASTER,
+      preambleLength: normalized.preambleLength,
+      device: normalized.device,
+      commandData,
+    });
+  } catch (error) {
+    return { supported: false, preview: error.message, bytes: null };
+  }
 
   return {
     supported: true,
     preview: formatHartCommandPreview(bytes, helpers.bytesToHex),
     bytes,
     checksum: bytes[bytes.length - 1],
+    command,
+    commandData,
+    kind: definition?.kind ?? "custom",
+    requiresConfirmation: definition?.kind === "write" || (!definition && commandData.length > 0),
   };
+}
+
+export function validateHartCommandData(command, data = new Uint8Array(0)) {
+  const length = data?.length ?? 0;
+  const exact = (expected) =>
+    length === expected ? null : `${getHartCommandLabel(command)}：请求数据必须为 ${expected} 字节（当前 ${length} 字节）`;
+  const range = (minimum, maximum, description) =>
+    length >= minimum && length <= maximum
+      ? null
+      : `${getHartCommandLabel(command)}：请求数据${description}（当前 ${length} 字节）`;
+
+  if ([0, 1, 2, 3, 7, 8, 12, 13, 14, 15, 16, 20, 43, 50].includes(command)) return exact(0);
+  if (command === 6) return [1, 2].includes(length) ? null : `${getHartCommandLabel(command)}：请求数据必须为 1 或 2 字节`;
+  if (command === 9) return range(1, 8, "必须包含 1–8 个设备变量码");
+  if (command === 11) return exact(6);
+  if (command === 17) return exact(24);
+  if (command === 18) return exact(21);
+  if (command === 19) return exact(3);
+  if (command === 21 || command === 22) return exact(32);
+  if (command === 33) return range(1, 4, "必须包含 1–4 个设备变量码");
+  if ([34, 40, 45, 46].includes(command)) return exact(4);
+  if (command === 35) return exact(9);
+  if (command === 38) return [0, 2].includes(length) ? null : `${getHartCommandLabel(command)}：请求数据必须为空或为 2 字节计数器`;
+  if ([44, 47, 81].includes(command)) return exact(1);
+  if (command === 48) return length === 0 || (length >= 9 && length <= 25) ? null : `${getHartCommandLabel(command)}：请求数据必须为空或为 9–25 字节状态镜像`;
+  if (command === 82) return exact(7);
+  if (command === 105) return [0, 1].includes(length) ? null : `${getHartCommandLabel(command)}：请求数据必须为空或为 1 字节消息号`;
+  if (command === 108) return [1, 3].includes(length) ? null : `${getHartCommandLabel(command)}：请求数据必须为 1 或 3 字节`;
+  if (command === 109) return [1, 2].includes(length) ? null : `${getHartCommandLabel(command)}：请求数据必须为 1 或 2 字节`;
+  return length <= 0xff ? null : `${getHartCommandLabel(command)}：请求数据不能超过 255 字节`;
 }
 
 export function parseHartTelemetry(bytes, config) {
@@ -577,11 +969,11 @@ function applyHartVariableScale(entry, config) {
 }
 
 function matchesHartResponseAddress(parsed, config) {
-  if (parsed.delimiter !== RX_ADDR_SHORT || parsed.pollAddress === null) {
+  if (parsed.addressLength !== 1 || parsed.pollAddress === null) {
     return true;
   }
 
-  return parsed.pollAddress === (config.pollAddress & 0x0f);
+  return parsed.pollAddress === (config.pollAddress & 0x3f);
 }
 
 export function describeHartSummary(config) {
@@ -648,7 +1040,7 @@ function nullableWord(value) {
 
 function normalizeCommand(value) {
   const command = Math.trunc(Number(value));
-  if (command >= 0 && command <= 255) {
+  if (command >= 0 && command <= 0xffff) {
     return command;
   }
 
@@ -669,6 +1061,18 @@ function normalizeChartSeries(value = {}) {
     tv: value.tv !== false,
     qv: hasLegacyCurrent ? value.current !== false : value.qv !== false,
   };
+}
+
+function normalizeHartStandardCommandValues(value = {}) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const normalized = {};
+  Object.entries(value).forEach(([command, fields]) => {
+    if (!fields || typeof fields !== "object" || Array.isArray(fields)) return;
+    normalized[String(command)] = Object.fromEntries(
+      Object.entries(fields).map(([key, fieldValue]) => [String(key), String(fieldValue ?? "")]),
+    );
+  });
+  return normalized;
 }
 
 function concatBytes(left, right) {
