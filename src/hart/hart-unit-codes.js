@@ -595,10 +595,12 @@ export const HART_ENGINEERING_UNIT_EXPANSIONS = Object.freeze({
       "235": {"symbol":"gal/d","description":"US gallons per day 3,785 411 784 Liter 3"},
     },
   "107": {
-      "171": {"symbol":"/F","description":"/F = /C x 1.8 Table that may only be used by Field Devices compatible with"},
+      "170": {"symbol":"/°C","description":"per degree Celsius"},
+      "171": {"symbol":"/°F","description":"per degree Fahrenheit; /°F = /°C × 1.8"},
     },
   "108": {
-      "170": {"symbol":"kJ/l? MJ/m","description":"kilojoules per liter Base unit Megajoules per Normal Cubic Meter"},
+      "170": {"symbol":"kJ/l","description":"kilojoules per liter; base unit"},
+      "171": {"symbol":"MJ/m³","description":"megajoules per Normal Cubic Meter"},
     },
   "109": {
       "170": {"symbol":"MJ/kg","description":"Megajoules per Kilogram Base unit"},

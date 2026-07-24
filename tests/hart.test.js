@@ -8,6 +8,7 @@ import {
   parseHartFrame,
   parseHartUniversalResponse,
   getHartUnitString,
+  validateHartTrimValue,
   verifyHartChecksum,
 } from "../src/hart/hart.js";
 import {
@@ -115,6 +116,10 @@ test("unit expansion codes are resolved with Device Variable Classification", ()
   assert.equal(getHartUnitString(189, 104), "bbl (US)/min");
   assert.equal(getHartUnitString(189, 105), "bbl (US)/h");
   assert.equal(getHartUnitString(189, 106), "bbl (US)/d");
+  assert.equal(getHartUnitString(170, 107), "/°C");
+  assert.equal(getHartUnitString(171, 107), "/°F");
+  assert.equal(getHartUnitString(170, 108), "kJ/l");
+  assert.equal(getHartUnitString(171, 108), "MJ/m³");
   assert.match(getHartUnitString(189), /189/);
 });
 
@@ -185,6 +190,74 @@ test("calibration guideline responses expose both trim ranges and differential",
   });
 });
 
+test("write and burst responses echo the actual values accepted by the device", () => {
+  const assembly = parseHartUniversalResponse({
+    command: 19,
+    data: Uint8Array.from([0x12, 0x34, 0x56]),
+    responseCode: 0,
+    status: 0,
+    byteCount: 5,
+  });
+  assert.equal(assembly.fields.assemblyNumber, 0x123456);
+
+  const burstConfig = parseHartUniversalResponse({
+    command: 105,
+    data: Uint8Array.from([
+      1, 31,
+      246, 247, 248, 249, 250, 250, 250, 250,
+      2, 4,
+      0, 33,
+      0, 0, 0x7d, 0,
+      0, 0, 0xfa, 0,
+      0, 1, 32,
+      ...floatBytes(10),
+    ]),
+    responseCode: 0,
+    status: 0,
+    byteCount: 31,
+  });
+  assert.equal(burstConfig.fields.burstCommand, 33);
+  assert.equal(burstConfig.fields.burstMessage, 2);
+  assert.equal(burstConfig.fields.maximumBurstMessages, 4);
+  assert.equal(burstConfig.fields.updateTimeMs, 1000);
+  assert.equal(burstConfig.fields.maximumUpdateTimeMs, 2000);
+  assert.deepEqual(burstConfig.fields.deviceVariables, [246, 247, 248, 249, 250, 250, 250, 250]);
+  assert.equal(burstConfig.fields.triggerValue, 10);
+
+  const writeBurst = parseHartUniversalResponse({
+    command: 108,
+    data: Uint8Array.from([0, 33, 2]),
+    responseCode: 0,
+    status: 0,
+    byteCount: 5,
+  });
+  assert.deepEqual(writeBurst.fields, { burstCommand: 33, burstMessage: 2 });
+
+  const controlBurst = parseHartUniversalResponse({
+    command: 109,
+    data: Uint8Array.from([1, 2]),
+    responseCode: 0,
+    status: 0,
+    byteCount: 4,
+  });
+  assert.deepEqual(controlBurst.fields, { burstControl: 1, burstMessage: 2 });
+});
+
+test("trim writes are checked against Command 81 guidelines", () => {
+  const guidelines = {
+    minimumLower: -40,
+    maximumLower: 20,
+    minimumUpper: 50,
+    maximumUpper: 150,
+    minimumDifferential: 10,
+    unit: "°C",
+  };
+  assert.equal(validateHartTrimValue(0, 1, guidelines), 0);
+  assert.equal(validateHartTrimValue(100, 2, guidelines, 0), 100);
+  assert.throws(() => validateHartTrimValue(25, 1, guidelines), /-40.*20/);
+  assert.throws(() => validateHartTrimValue(55, 2, guidelines, 50), /10/);
+});
+
 test("command catalog matches HARTLink Studio defaults and validates payloads", () => {
   assert.ok(HART_UNIVERSAL_COMMANDS.some((entry) => entry.value === 50));
   assert.ok(HART_UNIVERSAL_COMMANDS.some((entry) => entry.value === 109));
@@ -226,6 +299,11 @@ test("standard command values are encoded without requiring HEX input", () => {
   assert.equal(encodeHartStandardRequestData(18, { tag: "TAG1", descriptor: "DEVICE", date: "2026-07-24" }).length, 21);
   assert.equal(getHartStandardRequestFields(43).length, 0);
   assert.equal(getHartStandardRequestFields(82).length, 4);
+  const transferField = getHartStandardRequestFields(47).find((entry) => entry.key === "transfer_function");
+  assert.deepEqual(
+    [6, 30, 107, 233].map((code) => transferField.options.some((entry) => entry.value === String(code))),
+    [true, true, true, true],
+  );
   const unitField = getHartStandardRequestFields(35).find((entry) => entry.key === "unit_code");
   assert.equal(unitField.type, "unit-select");
   assert.equal(unitField.options.find((entry) => entry.value === "32").label, "32 · °C");

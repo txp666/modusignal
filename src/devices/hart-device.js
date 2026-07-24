@@ -152,6 +152,45 @@ const choice = (key, labelKey, defaultValue, options) =>
 
 const option = (value, labelKey) => ({ value: String(value), label: i18n(labelKey) });
 
+export const HART_TRANSFER_FUNCTION_OPTIONS = [
+  [0, "hart.transfer.linear"],
+  [1, "hart.transfer.sqrt"],
+  [2, "hart.transfer.sqrt3"],
+  [3, "hart.transfer.sqrt5"],
+  [4, "hart.transfer.special"],
+  [5, "hart.transfer.square"],
+  [6, "hart.transfer.sqrtCutoff"],
+  [10, "hart.transfer.equal25"],
+  [11, "hart.transfer.equal33"],
+  [12, "hart.transfer.equal50"],
+  [15, "hart.transfer.quick25"],
+  [16, "hart.transfer.quick33"],
+  [17, "hart.transfer.quick50"],
+  [30, "hart.transfer.hyperbolic010"],
+  [31, "hart.transfer.hyperbolic020"],
+  [32, "hart.transfer.hyperbolic030"],
+  [34, "hart.transfer.hyperbolic050"],
+  [37, "hart.transfer.hyperbolic070"],
+  [40, "hart.transfer.hyperbolic100"],
+  [41, "hart.transfer.hyperbolic150"],
+  [42, "hart.transfer.hyperbolic200"],
+  [43, "hart.transfer.hyperbolic300"],
+  [44, "hart.transfer.hyperbolic400"],
+  [45, "hart.transfer.hyperbolic500"],
+  [100, "hart.transfer.flatBottomTank"],
+  [101, "hart.transfer.conicalBottomTank"],
+  [102, "hart.transfer.parabolicBottomTank"],
+  [103, "hart.transfer.sphericalBottomTank"],
+  [104, "hart.transfer.angledBottomTank"],
+  [105, "hart.transfer.flatEndCylinder"],
+  [106, "hart.transfer.parabolicEndCylinder"],
+  [107, "hart.transfer.sphericalTank"],
+  [230, "hart.transfer.discrete"],
+  [231, "hart.transfer.sqrtSpecial"],
+  [232, "hart.transfer.sqrt3Special"],
+  [233, "hart.transfer.sqrt5Special"],
+].map(([value, labelKey]) => ({ value: String(value), labelKey }));
+
 function engineeringUnitOptions() {
   const units = new Map(
     Object.entries(HART_ENGINEERING_UNITS).map(([code, unit]) => [
@@ -231,21 +270,12 @@ export function getHartStandardRequestFields(command, device = DEFAULT_HART_DEVI
       return [field("measured_current", "hart.input.measuredCurrent", "number", { step: "any", defaultValue: "20.0" })];
     case 47:
       return [
-        choice("transfer_function", "hart.input.transferFunction", 0, [
-          option(0, "hart.transfer.linear"),
-          option(1, "hart.transfer.sqrt"),
-          option(2, "hart.transfer.sqrt3"),
-          option(3, "hart.transfer.sqrt5"),
-          option(4, "hart.transfer.special"),
-          option(5, "hart.transfer.square"),
-          option(10, "hart.transfer.equal25"),
-          option(11, "hart.transfer.equal33"),
-          option(12, "hart.transfer.equal50"),
-          option(15, "hart.transfer.quick25"),
-          option(16, "hart.transfer.quick33"),
-          option(17, "hart.transfer.quick50"),
-          option(230, "hart.transfer.discrete"),
-        ]),
+        choice(
+          "transfer_function",
+          "hart.input.transferFunction",
+          0,
+          HART_TRANSFER_FUNCTION_OPTIONS.map(({ value, labelKey }) => option(value, labelKey)),
+        ),
       ];
     case 81:
       return [field("device_variable", "hart.input.deviceVariable", "number", { min: 0, max: 255, step: 1, defaultValue: "0" })];

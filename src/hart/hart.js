@@ -97,6 +97,47 @@ export function byteArrayToFloat(data, offset = 0) {
   return Number.isFinite(value) ? value : null;
 }
 
+function byteArrayToUint32(data, offset = 0) {
+  if (!data || data.length < offset + 4) {
+    return null;
+  }
+  return new DataView(data.buffer, data.byteOffset + offset, 4).getUint32(0, false);
+}
+
+export function validateHartTrimValue(value, trimPoint, guidelines, pairedValue = null) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    throw new TypeError(i18n("hart.input.mustBeNumber"));
+  }
+
+  const upper = Number(trimPoint) === 2;
+  const minimum = upper ? guidelines?.minimumUpper : guidelines?.minimumLower;
+  const maximum = upper ? guidelines?.maximumUpper : guidelines?.maximumLower;
+  if (Number.isFinite(minimum) && Number.isFinite(maximum) && (numeric < minimum || numeric > maximum)) {
+    const point = i18n(upper ? "hart.calibration.appliedHigh" : "hart.calibration.appliedLow");
+    throw new RangeError(
+      i18n("hart.calibration.trimOutsideRange")
+        .replace("{point}", point)
+        .replace("{min}", String(minimum))
+        .replace("{max}", String(maximum))
+        .replace("{unit}", guidelines?.unit ?? ""),
+    );
+  }
+
+  if (
+    Number.isFinite(pairedValue) &&
+    Number.isFinite(guidelines?.minimumDifferential) &&
+    Math.abs(numeric - pairedValue) < guidelines.minimumDifferential
+  ) {
+    throw new RangeError(
+      i18n("hart.calibration.trimDifferential")
+        .replace("{min}", String(guidelines.minimumDifferential))
+        .replace("{unit}", guidelines?.unit ?? ""),
+    );
+  }
+  return numeric;
+}
+
 export function buildHartFrame({
   command,
   pollAddress = 0,
@@ -1013,7 +1054,7 @@ export function parseHartUniversalResponse(parsedFrame) {
     };
   }
 
-  if (command === 16 && data.length >= 3) {
+  if ((command === 16 || command === 19) && data.length >= 3) {
     const assembly = (data[0] << 16) | (data[1] << 8) | data[2];
     return {
       command,
@@ -1176,6 +1217,67 @@ export function parseHartUniversalResponse(parsedFrame) {
       lines: [`${i18n("hart.transferFunc")} ${data[0]}`],
       fields: { transferFunction: data[0] },
     };
+  }
+
+  if (command === 105 && data.length >= 2) {
+    const modern = data.length >= 29 && data[1] === 31;
+    const burstCommand = modern ? (data[12] << 8) | data[13] : data[1];
+    const fields = {
+      burstControl: data[0],
+      burstCommand,
+      burstMessage: modern ? data[10] : 0,
+    };
+    const lines = [
+      `${i18n("hart.burstControl")} ${fields.burstControl}`,
+      `${i18n("hart.burstCommand")} ${fields.burstCommand}`,
+      `${i18n("hart.burstMessage")} ${fields.burstMessage}`,
+    ];
+    if (modern) {
+      const updateTimeRaw = byteArrayToUint32(data, 14);
+      const maximumUpdateTimeRaw = byteArrayToUint32(data, 18);
+      Object.assign(fields, {
+        deviceVariables: Array.from(data.subarray(2, 10)),
+        maximumBurstMessages: data[11],
+        updateTimeMs: updateTimeRaw / 32,
+        maximumUpdateTimeMs: maximumUpdateTimeRaw / 32,
+        triggerMode: data[22],
+        triggerClassification: data[23],
+        triggerUnitCode: data[24],
+        triggerUnit: getHartUnitString(data[24], data[23]),
+        triggerValue: byteArrayToFloat(data, 25),
+      });
+      lines.push(
+        `${i18n("hart.burstDeviceVariables")} ${fields.deviceVariables.join(", ")}`,
+        `${i18n("hart.burstUpdateTime")} ${formatHartFloat(fields.updateTimeMs, "ms")} · ${i18n("hart.burstMaximumUpdateTime")} ${formatHartFloat(fields.maximumUpdateTimeMs, "ms")}`,
+        `${i18n("hart.burstTrigger")} ${fields.triggerMode} · ${i18n("hart.classification")} ${fields.triggerClassification} · ${formatHartFloat(fields.triggerValue, fields.triggerUnit)}`,
+      );
+    }
+    return { command, commandLabel: getHartCommandLabel(command), summary: `${lines.join(" · ")}${statusSuffix}`, lines, fields };
+  }
+
+  if (command === 108 && data.length >= 1) {
+    const modern = data.length >= 3;
+    const fields = {
+      burstCommand: modern ? (data[0] << 8) | data[1] : data[0],
+      burstMessage: modern ? data[2] : 0,
+    };
+    const lines = [
+      `${i18n("hart.burstCommand")} ${fields.burstCommand}`,
+      `${i18n("hart.burstMessage")} ${fields.burstMessage}`,
+    ];
+    return { command, commandLabel: getHartCommandLabel(command), summary: `${lines.join(" · ")}${statusSuffix}`, lines, fields };
+  }
+
+  if (command === 109 && data.length >= 1) {
+    const fields = {
+      burstControl: data[0],
+      burstMessage: data.length >= 2 ? data[1] : 0,
+    };
+    const lines = [
+      `${i18n("hart.burstControl")} ${fields.burstControl}`,
+      `${i18n("hart.burstMessage")} ${fields.burstMessage}`,
+    ];
+    return { command, commandLabel: getHartCommandLabel(command), summary: `${lines.join(" · ")}${statusSuffix}`, lines, fields };
   }
 
   if (command === 81 && data.length >= 23) {

@@ -56,6 +56,7 @@ import {
 import {
   formatHartDeviceSummary,
   getHartCommandLabel,
+  validateHartTrimValue,
 } from "./hart/hart.js";
 import {
   HARTLINK_VERSION_QUERY,
@@ -470,6 +471,7 @@ let hartCalibrationState = {
   awaitingGuidelines: false,
   deviceVariable: null,
   guidelines: null,
+  lastTrimValues: { low: null, high: null },
 };
 let aomasterPollTimer = null;
 let websocketPollTimer = null;
@@ -596,7 +598,13 @@ function refreshAllDynamicUi() {
   updateChartPointLabels();
   populateCustomConfigForm(customConfig);
   populateModbusConfigForm(modbusConfig);
+  const hartUnitValue = elements.hartSettingsUnit?.value;
+  const hartTransferValue = elements.hartSettingsTransferFunction?.value;
+  elements.hartSettingsUnit?.replaceChildren();
+  elements.hartSettingsTransferFunction?.replaceChildren();
   populateHartConfigForm(hartConfig);
+  setHartWorkspaceSelectValue(elements.hartSettingsUnit, hartUnitValue);
+  setHartWorkspaceSelectValue(elements.hartSettingsTransferFunction, hartTransferValue);
   populateWebsocketConfigForm(websocketConfig);
   populateMqttConfigForm(mqttConfig);
   populateAomasterConfigForm(aomasterConfig);
@@ -4521,6 +4529,16 @@ function populateHartWorkspaceControls(config = hartConfig) {
       unitSelect.append(option);
     });
   }
+  const transferSelect = elements.hartSettingsTransferFunction;
+  if (transferSelect && transferSelect.options.length === 0) {
+    const transferField = getHartStandardRequestFields(47).find((entry) => entry.key === "transfer_function");
+    transferField?.options.forEach((entry) => {
+      const option = document.createElement("option");
+      option.value = entry.value;
+      option.textContent = entry.label;
+      transferSelect.append(option);
+    });
+  }
   if (elements.hartSettingsDate && !elements.hartSettingsDate.value) {
     elements.hartSettingsDate.value = new Date().toISOString().slice(0, 10);
   }
@@ -4703,7 +4721,12 @@ async function handleHartWorkspaceAction(action) {
     case "pv-zero":
       return sendHartWorkspaceCommand(43, {}, calibrationStatus);
     case "read-trim-guidelines":
-      hartCalibrationState = { awaitingGuidelines: true, deviceVariable: null, guidelines: null };
+      hartCalibrationState = {
+        awaitingGuidelines: true,
+        deviceVariable: null,
+        guidelines: null,
+        lastTrimValues: { low: null, high: null },
+      };
       updateHartWorkspaceUi();
       setHartWorkspaceStatus(elements.hartCalibrationGuidelines, i18n("hart.calibration.readingMapping"));
       return sendHartWorkspaceCommand(50, {}, calibrationStatus);
@@ -4713,13 +4736,20 @@ async function handleHartWorkspaceAction(action) {
       if (!guidelines) throw new Error(i18n("hart.calibration.readGuidelinesFirst"));
       const upper = action === "trim-high-pv";
       const editor = upper ? elements.hartCalibrationHighValue : elements.hartCalibrationLowValue;
+      const trimValue = readHartWorkspaceNumber(editor, upper ? i18n("hart.calibration.appliedHigh") : i18n("hart.calibration.appliedLow"));
+      validateHartTrimValue(
+        trimValue,
+        upper ? 2 : 1,
+        guidelines,
+        upper ? hartCalibrationState.lastTrimValues.low : hartCalibrationState.lastTrimValues.high,
+      );
       return sendHartWorkspaceCommand(
         82,
         {
           device_variable: guidelines.deviceVariable,
           trim_point: upper ? 2 : 1,
           unit_code: guidelines.unitCode,
-          trim_value: readHartWorkspaceNumber(editor, upper ? i18n("hart.calibration.appliedHigh") : i18n("hart.calibration.appliedLow")),
+          trim_value: trimValue,
         },
         calibrationStatus,
       );
@@ -4733,8 +4763,25 @@ function updateHartWorkspaceFromDiscovery(telemetry) {
   const normalized = normalizeHartConfig(hartConfig);
   if (elements.hartSettingsPollAddress) elements.hartSettingsPollAddress.value = String(normalized.pollAddress);
   setHartWorkspaceStatus(elements.hartSettingsStatus, formatHartDeviceSummary(normalized.device), "success");
-  hartCalibrationState = { awaitingGuidelines: false, deviceVariable: null, guidelines: null };
+  hartCalibrationState = {
+    awaitingGuidelines: false,
+    deviceVariable: null,
+    guidelines: null,
+    lastTrimValues: { low: null, high: null },
+  };
   updateHartWorkspaceUi();
+}
+
+function setHartWorkspaceSelectValue(select, value, fallbackLabel = null) {
+  if (!select || value === null || value === undefined) return;
+  const stringValue = String(value);
+  if (![...select.options].some((option) => option.value === stringValue)) {
+    const option = document.createElement("option");
+    option.value = stringValue;
+    option.textContent = fallbackLabel ?? stringValue;
+    select.append(option);
+  }
+  select.value = stringValue;
 }
 
 function updateHartWorkspaceFromTelemetry(telemetry) {
@@ -4755,20 +4802,40 @@ function updateHartWorkspaceFromTelemetry(telemetry) {
       if (elements.hartSettingsDescriptor) elements.hartSettingsDescriptor.value = fields.descriptor ?? "";
       if (elements.hartSettingsDate && fields.date) elements.hartSettingsDate.value = fields.date;
     }
-    if (command === 16 && elements.hartSettingsAssembly) elements.hartSettingsAssembly.value = String(fields.assemblyNumber ?? 0);
+    if ((command === 16 || command === 19) && elements.hartSettingsAssembly) {
+      elements.hartSettingsAssembly.value = String(fields.assemblyNumber ?? 0);
+    }
     if (command === 6) {
       if (elements.hartSettingsPollAddress) elements.hartSettingsPollAddress.value = String(fields.pollingAddress ?? 0);
       if (elements.hartSettingsLoopMode) elements.hartSettingsLoopMode.value = String(fields.loopCurrentMode ?? 1);
     }
-    if (command === 14) {
-      if (elements.hartSettingsUnit) elements.hartSettingsUnit.value = String(fields.unitCode ?? "");
+    if ([14, 15, 35, 44].includes(command)) {
+      setHartWorkspaceSelectValue(elements.hartSettingsUnit, fields.unitCode, `${fields.unitCode} · ${fields.unit ?? ""}`);
     }
-    if (command === 15) {
-      if (elements.hartSettingsUnit) elements.hartSettingsUnit.value = String(fields.unitCode ?? "");
+    if (command === 15 || command === 35) {
       if (elements.hartSettingsUpperRange && Number.isFinite(fields.upper)) elements.hartSettingsUpperRange.value = String(fields.upper);
       if (elements.hartSettingsLowerRange && Number.isFinite(fields.lower)) elements.hartSettingsLowerRange.value = String(fields.lower);
-      if (elements.hartSettingsDamping && Number.isFinite(fields.damping)) elements.hartSettingsDamping.value = String(fields.damping);
-      if (elements.hartSettingsTransferFunction) elements.hartSettingsTransferFunction.value = String(fields.transferFunction ?? 0);
+    }
+    if (command === 15 || command === 34) {
+      const damping = command === 34 ? fields.value : fields.damping;
+      if (elements.hartSettingsDamping && Number.isFinite(damping)) elements.hartSettingsDamping.value = String(damping);
+    }
+    if (command === 15 || command === 47) {
+      setHartWorkspaceSelectValue(
+        elements.hartSettingsTransferFunction,
+        fields.transferFunction,
+        `${fields.transferFunction}`,
+      );
+    }
+    if (command === 105 || command === 108) {
+      setHartWorkspaceSelectValue(
+        elements.hartSettingsBurstCommand,
+        fields.burstCommand,
+        `Cmd ${fields.burstCommand}`,
+      );
+    }
+    if ([105, 108, 109].includes(command) && elements.hartSettingsBurstMessage && Number.isInteger(fields.burstMessage)) {
+      elements.hartSettingsBurstMessage.value = String(fields.burstMessage);
     }
   }
 
@@ -4794,6 +4861,7 @@ function updateHartWorkspaceFromTelemetry(telemetry) {
     hartCalibrationState.awaitingGuidelines = false;
     if (!telemetry.isError && fields) {
       hartCalibrationState.guidelines = fields;
+      hartCalibrationState.lastTrimValues = { low: null, high: null };
       setHartWorkspaceStatus(elements.hartCalibrationGuidelines, summary, "success");
       if (elements.hartCalibrationLowValue && Number.isFinite(fields.minimumLower)) {
         elements.hartCalibrationLowValue.placeholder = `${fields.minimumLower}…${fields.maximumLower} ${fields.unit}`;
@@ -4803,6 +4871,10 @@ function updateHartWorkspaceFromTelemetry(telemetry) {
       }
     }
     updateHartWorkspaceUi();
+  }
+  if (command === 82 && !telemetry.isError && fields) {
+    if (fields.trimPoint === 1) hartCalibrationState.lastTrimValues.low = fields.value;
+    if (fields.trimPoint === 2) hartCalibrationState.lastTrimValues.high = fields.value;
   }
 }
 
