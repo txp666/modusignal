@@ -1,15 +1,15 @@
-import i18n from "../i18n.js";
+import i18n from "../../i18n.js";
 import {
   createHartSearchCommand,
   DEFAULT_HART_CONFIG,
   HART_DEVICE_ID,
   normalizeHartConfig,
-} from "../devices/hart-device.js";
+} from "../../devices/hart-device.js";
 import {
   HARTLINK_VERSION_QUERY,
   isHartLinkVersionProbeChunk,
   parseHartLinkVersionResponse,
-} from "./hartlink.js";
+} from "../../hart/hartlink.js";
 
 const LINK_DETECT_DELAY_MS = 80;
 const LINK_DETECT_TIMEOUT_MS = 1200;

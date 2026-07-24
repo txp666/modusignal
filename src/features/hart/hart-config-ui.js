@@ -1,10 +1,10 @@
-import i18n from "../i18n.js";
+import i18n from "../../i18n.js";
 import {
   getHartStandardRequestFields,
   HART_UNIVERSAL_COMMANDS,
   normalizeHartConfig,
-} from "../devices/hart-device.js";
-import { getHartCommandLabel } from "./hart.js";
+} from "../../devices/hart-device.js";
+import { getHartCommandLabel } from "../../hart/hart.js";
 
 export function createHartConfigUi({ elements, getConfig, populateWorkspaceControls, updateDeviceInfo }) {
   function syncCommandModeUi(config = getConfig()) {

@@ -1,6 +1,6 @@
-import i18n from "../i18n.js";
-import { getHartStandardRequestFields, normalizeHartConfig } from "../devices/hart-device.js";
-import { formatHartDeviceSummary, validateHartTrimValue } from "./hart.js";
+import i18n from "../../i18n.js";
+import { getHartStandardRequestFields, normalizeHartConfig } from "../../devices/hart-device.js";
+import { formatHartDeviceSummary, validateHartTrimValue } from "../../hart/hart.js";
 
 const EMPTY_CALIBRATION_STATE = () => ({
   awaitingGuidelines: false,
