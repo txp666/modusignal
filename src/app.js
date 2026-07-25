@@ -6,6 +6,7 @@ import { collectAppElements } from "./ui/app-elements.js";
 import { createSidebarController } from "./ui/sidebar-controller.js";
 import { createDeviceNavigationUi } from "./ui/device-navigation-ui.js";
 import { createChartCsvController } from "./monitoring/chart-csv-controller.js";
+import { createChartController } from "./monitoring/chart-controller.js";
 import {
   createModbusConfigUi,
   loadModbusConfig as loadModbusConfigSnapshot,
@@ -16,8 +17,10 @@ import {
   loadMessageConfig,
 } from "./features/message-debug/message-config-ui.js";
 import { createAomasterWaveformUi } from "./features/aomaster/aomaster-waveform-ui.js";
+import { createAomasterController } from "./features/aomaster/aomaster-controller.js";
 import { createTransportController } from "./core/transport-controller.js";
 import { createPollingController } from "./core/polling-controller.js";
+import { createSessionEventController } from "./core/session-event-controller.js";
 import { createDebugCurveController } from "./ui/debug-curve-controller.js";
 import {
   createCustomConfigUi,
@@ -29,18 +32,12 @@ import { DEFAULT_TRANSPORT_ID } from "./transports/registry.js";
 import {
   AOMASTER_DEVICE_ID,
   describeAomasterSummary,
-  createAOMasterReadCommand,
-  formatSetpoint,
   resetAomasterRxBuffer,
 } from "./devices/aomaster.js";
-import {
-  listCustomChartSeries,
-  resetCustomRxBuffer,
-} from "./devices/custom-device.js";
+import { resetCustomRxBuffer } from "./devices/custom-device.js";
 import {
   describeModbusSummary,
   getModbusMode,
-  listModbusDeviceChartSeries,
   resetModbusRxBuffer,
 } from "./devices/modbus-device.js";
 import {
@@ -49,8 +46,6 @@ import {
   describeHartSummary,
   getHartMode,
   HART_DEVICE_ID,
-  HART_VARIABLE_CARDS,
-  mergeHartDiscovery,
   normalizeHartConfig,
   resetHartDeviceState,
   resetHartRxBuffer,
@@ -62,21 +57,8 @@ import { createHartConfigUi } from "./features/hart/hart-config-ui.js";
 import { createHartMonitorController } from "./features/hart/hart-monitor-controller.js";
 import { createHartSessionController } from "./features/hart/hart-session-controller.js";
 import { createHartWorkspaceController } from "./features/hart/hart-workspace-controller.js";
-import {
-  describeMqttSummary,
-  listMqttChartSeries,
-  resetMqttRxBuffer,
-} from "./devices/mqtt-device.js";
-import {
-  describeWebSocketSummary,
-  listWebSocketChartSeries,
-  resetWebSocketRxBuffer,
-} from "./devices/websocket-device.js";
-import {
-  requestChartCurvePanelResize,
-  updateChartCurvePanel,
-} from "./chart-curve-panel.js";
-import { describeJsonCurveSummary } from "./devices/json-curve-config.js";
+import { describeMqttSummary } from "./devices/mqtt-device.js";
+import { describeWebSocketSummary } from "./devices/websocket-device.js";
 import {
   readDebugCurveConfigForm,
 } from "./debug-curve-form.js";
@@ -86,7 +68,6 @@ import {
   bytesToHex,
   createDeviceSetOutputCommand,
   CUSTOM_DEVICE_ID,
-  DEFAULT_AOMASTER_CONFIG,
   DEFAULT_CUSTOM_CONFIG,
   DEFAULT_DEVICE_ID,
   DEFAULT_MODBUS_CONFIG,
@@ -98,7 +79,6 @@ import {
   getModeConfig,
   MODBUS_DEVICE_ID,
   MODUSIGNAL_APP,
-  normalizeAomasterConfig,
   normalizeCustomConfig,
   normalizeModbusConfig,
   normalizeMqttConfig,
@@ -109,35 +89,16 @@ import {
   MQTT_DEVICE_ID,
   WEBSOCKET_DEVICE_ID,
 } from "./protocols.js";
-import {
-  DEFAULT_CHART_CONFIG,
-  getChartPointSettings as resolveChartPointSettings,
-  normalizeChartConfig,
-} from "./chart-config.js";
 
 const CUSTOM_CONFIG_STORAGE_KEY = "modusignal.customDevice.v1";
 const HART_CONFIG_STORAGE_KEY = "modusignal.hartDevice.v1";
 const WEBSOCKET_CONFIG_STORAGE_KEY = "modusignal.websocketDevice.v1";
 const MQTT_CONFIG_STORAGE_KEY = "modusignal.mqttDevice.v1";
-const AOMASTER_CONFIG_STORAGE_KEY = "modusignal.aomasterDevice.v1";
-const CHART_CONFIG_STORAGE_KEY = "modusignal.chart.v1";
-const AOMASTER_VALUE_DISPLAY_STORAGE_KEY = "modusignal.aomasterValueDisplayMode.v1";
 const AOMASTER_INTERFRAME_DELAY_MS = 20;
 
 /** @type {Record<string, HTMLElement | HTMLElement[] | null>} */
 const elements = {};
 
-let chart = null;
-let hartChart = null;
-let jsonMultiChart = null;
-let setpointChart = null;
-let actualChart = null;
-let allCharts = [];
-let chartsReady = false;
-let chartConfigEventsBound = false;
-let EchartsLiveChartClass = null;
-let EchartsMultiLiveChartClass = null;
-let jsonMultiChartSignature = "";
 let customConfig = loadCustomConfigSnapshot(CUSTOM_CONFIG_STORAGE_KEY);
 let modbusConfig = loadModbusConfigSnapshot();
 let hartConfig = loadHartConfig();
@@ -147,8 +108,6 @@ let websocketConfig = loadMessageConfig(
   normalizeWebSocketConfig,
 );
 let mqttConfig = loadMessageConfig(MQTT_CONFIG_STORAGE_KEY, DEFAULT_MQTT_CONFIG, normalizeMqttConfig);
-let aomasterConfig = loadAomasterConfig();
-let chartConfig = loadChartConfig();
 let session = null;
 let hartConfigUi = null;
 let hartMonitorController = null;
@@ -159,15 +118,17 @@ let modbusConfigUi = null;
 let sidebarController = null;
 let deviceNavigationUi = null;
 let chartCsvController = null;
+let chartController = null;
 let websocketConfigUi = null;
 let mqttConfigUi = null;
 let aomasterWaveformUi = null;
+let aomasterController = null;
 let transportController = null;
 let pollingController = null;
 let debugCurveController = null;
 let customConfigUi = null;
 let messageDebugController = null;
-let aomasterActualMode = null;
+let sessionEventController = null;
 
 const state = {
   pageId: "home",
@@ -176,7 +137,7 @@ const state = {
   mode: "current",
   setpoint: 12,
   waveform: "constant",
-  aomasterValueDisplayMode: loadAomasterValueDisplayMode(),
+  aomasterValueDisplayMode: "value",
   waveLow: 4,
   waveHigh: 20,
   wavePeriodMs: 1000,
@@ -196,6 +157,8 @@ async function boot() {
     i18n.apply(document.body);
     mountChartCurveSections();
     Object.assign(elements, collectAppElements());
+    initializeChartController();
+    initializeAomasterController();
     initializeInfrastructureControllers();
     initializeHartControllers();
     initializeChartControllers();
@@ -229,10 +192,10 @@ async function initialize() {
   hartConfigUi.populateConfigForm(hartConfig);
   websocketConfigUi.populate(websocketConfig);
   mqttConfigUi.populate(mqttConfig);
-  populateAomasterConfigForm(aomasterConfig);
-  populateChartConfigForm(chartConfig);
-  syncAomasterValueDisplayControls();
-  updateChartPointLabels();
+  aomasterController.populateConfigForm();
+  chartController.populateConfigForm();
+  aomasterController.syncDisplayControls();
+  chartController.updatePointLabels();
   transportController.populateSelect();
   deviceNavigationUi.renderLibrary();
   deviceNavigationUi.renderHomeCards();
@@ -255,7 +218,7 @@ async function initialize() {
     hartWorkspaceController,
     hartMonitorController,
     handlers: {
-      requestChartResize,
+      requestChartResize: chartController.requestResize,
       updateSetpoint,
       sendDeviceCommand,
       sendManualCommand,
@@ -265,12 +228,12 @@ async function initialize() {
       loadMessageIntoManualSender: messageDebugController.loadIntoManualSender,
       resetRxLogCoalesce,
       appendLog,
-      clearAllCharts,
+      clearAllCharts: chartController.clearAll,
       selectDevice,
       navigateToPage,
       updateDeviceUi,
       updateSetpointUi,
-      setAomasterValueDisplayMode,
+      setAomasterValueDisplayMode: aomasterController.setDisplayMode,
       testDeviceParser,
       updateModbusDraftConfig,
       saveModbusConfig,
@@ -280,17 +243,17 @@ async function initialize() {
       resetHartConfig,
       readWebsocketHeartbeatPreset: messageDebugController.readWebsocketHeartbeatPreset,
       readMqttHeartbeatPreset: messageDebugController.readMqttHeartbeatPreset,
-      getAomasterConfigControls,
-      updateAomasterDraftConfig,
-      saveAomasterConfig,
-      resetAomasterConfig,
-      bindChartConfigEvents,
+      getAomasterConfigControls: aomasterController.getConfigControls,
+      updateAomasterDraftConfig: aomasterController.updateDraftConfig,
+      saveAomasterConfig: aomasterController.saveConfig,
+      resetAomasterConfig: aomasterController.resetConfig,
+      bindChartConfigEvents: chartController.bindConfigEvents,
     },
   });
   await transportController.setTransport(state.transportId);
   deviceNavigationUi.updatePage();
   safeUpdateDeviceUi();
-  void initMonitoringCharts();
+  void chartController.init();
   appendLog(
     "info",
     i18n("log.system"),
@@ -322,19 +285,50 @@ function refreshAllDynamicUi() {
   transportController.updateConnectionUi(Boolean(session?.connected));
   pollingController.updateUi();
   updateSetpointUi();
-  syncChartCurvePanelUi();
+  chartController.syncCurvePanelUi();
   deviceNavigationUi.updatePage();
   transportController.populateSelect();
   transportController.renderFields();
-  updateChartPointLabels();
+  chartController.updatePointLabels();
   customConfigUi.populate(customConfig);
   modbusConfigUi.populateConfigForm(modbusConfig);
   hartWorkspaceController.refreshLocalizedOptions();
   hartConfigUi.populateConfigForm(hartConfig);
   websocketConfigUi.populate(websocketConfig);
   mqttConfigUi.populate(mqttConfig);
-  populateAomasterConfigForm(aomasterConfig);
-  syncAomasterValueDisplayControls();
+  aomasterController.populateConfigForm();
+  aomasterController.syncDisplayControls();
+}
+
+function initializeChartController() {
+  chartController = createChartController({
+    elements,
+    state,
+    getConfigs: () => ({ customConfig, modbusConfig, hartConfig, websocketConfig, mqttConfig }),
+    isDevicePageActive: () => deviceNavigationUi?.isDevicePageActive() ?? false,
+    getHartSeriesDefs: () => hartMonitorController?.buildSeriesDefs() ?? [],
+    clearAomasterCharts: () => aomasterWaveformUi?.clearCharts(),
+    updateHartVariableCards: (variables) => hartMonitorController?.updateVariableCards(variables),
+    getCsvController: () => chartCsvController,
+    safeUpdateDeviceUi,
+    appendLog,
+  });
+}
+
+function initializeAomasterController() {
+  aomasterController = createAomasterController({
+    elements,
+    state,
+    getCustomConfig: () => customConfig,
+    getModbusConfig: () => modbusConfig,
+    getSession: () => session,
+    getPollingController: () => pollingController,
+    getWaveformUi: () => aomasterWaveformUi,
+    getChartController: () => chartController,
+    updateDeviceUi,
+    updateSetpointUi,
+    appendLog,
+  });
 }
 
 function initializeInfrastructureControllers() {
@@ -342,6 +336,37 @@ function initializeInfrastructureControllers() {
   logController = createLogController({
     getLogElement: () => elements.serialLog,
     bytesToHex,
+  });
+  sessionEventController = createSessionEventController({
+    elements,
+    state,
+    getConfigs: () => ({
+      customConfig,
+      modbusConfig,
+      hartConfig,
+      websocketConfig,
+      mqttConfig,
+      aomasterConfig: aomasterController.getConfig(),
+    }),
+    setHartConfig: (config) => {
+      hartConfig = config;
+    },
+    getControllers: () => ({
+      aomasterController,
+      chartController,
+      hartConfigUi,
+      hartMonitorController,
+      hartSessionController,
+      hartWorkspaceController,
+      messageDebugController,
+      pollingController,
+      transportController,
+    }),
+    updateHartDeviceInfo,
+    updateDeviceUi,
+    queueRxLogDisplay,
+    finalizeRxLogCoalesce,
+    appendLog,
   });
   modbusConfigUi = createModbusConfigUi({
     elements,
@@ -362,7 +387,7 @@ function initializeInfrastructureControllers() {
     setConfig: (config) => { customConfig = config; },
     getModbusConfig: () => modbusConfig,
     syncCurveRows: debugCurveController.syncRows,
-    syncChartPanel: syncChartCurvePanelUi,
+    syncChartPanel: chartController.syncCurvePanelUi,
     renderNavigation: () => {
       deviceNavigationUi.renderLibrary();
       deviceNavigationUi.renderHomeCards();
@@ -374,17 +399,24 @@ function initializeInfrastructureControllers() {
     elements,
     state,
     getSession: () => session,
-    getConfigs: () => ({ customConfig, modbusConfig, hartConfig, websocketConfig, mqttConfig, aomasterConfig }),
+    getConfigs: () => ({
+      customConfig,
+      modbusConfig,
+      hartConfig,
+      websocketConfig,
+      mqttConfig,
+      aomasterConfig: aomasterController.getConfig(),
+    }),
     sendDeviceCommand,
     sendHartPoll: sendHartPollCommand,
-    sendAomasterPoll: sendAomasterReadCommand,
+    sendAomasterPoll: aomasterController.sendReadCommand,
     appendLog,
   });
   const sharedMessageConfigOptions = {
     elements,
     state,
     syncCurveRows: debugCurveController.syncRows,
-    syncChartPanel: syncChartCurvePanelUi,
+    syncChartPanel: chartController.syncCurvePanelUi,
     updateDeviceUi,
     canCurrentDevicePoll: pollingController.canPoll,
     updateActivePolling: pollingController.updateActive,
@@ -453,24 +485,22 @@ function initializeInfrastructureControllers() {
     state,
     getCustomConfig: () => customConfig,
     getModbusConfig: () => modbusConfig,
-    getSetpointChart: () => setpointChart,
-    getActualChart: () => actualChart,
-    getActualMode: getAomasterActualMode,
-    resetActualMode: () => {
-      aomasterActualMode = null;
-    },
-    isPercentMode: isAomasterPercentMode,
-    getDisplayStep: getAomasterDisplayStep,
-    formatDisplayNumber: formatAomasterDisplayNumber,
-    readDisplayNumber: readAomasterDisplayNumber,
-    getDisplayNumber: getAomasterDisplayNumber,
-    getDisplayUnit: getAomasterDisplayUnit,
-    formatDisplayValue: formatAomasterDisplayValue,
-    formatDisplaySequence: formatAomasterDisplaySequence,
+    getSetpointChart: () => chartController.getCharts().setpointChart,
+    getActualChart: () => chartController.getCharts().actualChart,
+    getActualMode: aomasterController.getActualMode,
+    resetActualMode: aomasterController.resetActualMode,
+    isPercentMode: aomasterController.isPercentMode,
+    getDisplayStep: aomasterController.getDisplayStep,
+    formatDisplayNumber: aomasterController.formatDisplayNumber,
+    readDisplayNumber: aomasterController.readDisplayNumber,
+    getDisplayNumber: aomasterController.getDisplayNumber,
+    getDisplayUnit: aomasterController.getDisplayUnit,
+    formatDisplayValue: aomasterController.formatDisplayValue,
+    formatDisplaySequence: aomasterController.formatDisplaySequence,
     updateSetpointUi,
-    applyChartPointCountConfig,
-    getChartPointCount,
-    requestChartResize,
+    applyChartPointCountConfig: chartController.applyPointCountConfig,
+    getChartPointCount: chartController.getPointCount,
+    requestChartResize: chartController.requestResize,
     appendLog,
   });
   transportController = createTransportController({
@@ -481,7 +511,7 @@ function initializeInfrastructureControllers() {
     setSession: (nextSession) => {
       session = nextSession;
     },
-    bindSessionEvents,
+    bindSessionEvents: sessionEventController.bind,
     appendLog,
     updateWebSocketStats: () => messageDebugController?.updateWebsocketStatsUi(),
     updateMqttDebugger: () => messageDebugController?.updateMqttDebuggerUi(),
@@ -541,10 +571,10 @@ function initializeHartControllers() {
     setConfig: (config) => {
       hartConfig = config;
     },
-    ensureChart: ensureHartTelemetryChart,
-    getChart: () => hartChart,
+    ensureChart: chartController.ensureHartChart,
+    getChart: () => chartController.getCharts().hartChart,
     updateWorkspaceFromTelemetry: (telemetry) => hartWorkspaceController.updateFromTelemetry(telemetry),
-    syncChartPanel: syncChartCurvePanelUi,
+    syncChartPanel: chartController.syncCurvePanelUi,
   });
 }
 
@@ -553,24 +583,22 @@ function initializeChartControllers() {
     elements,
     state,
     getConfigs: () => ({ customConfig, modbusConfig, websocketConfig, mqttConfig }),
-    getCharts: () => ({ chart, hartChart, jsonMultiChart, setpointChart, actualChart }),
-    getChartPointSettings,
-    getAomasterDisplayUnit,
-    getAomasterActualMode,
+    getCharts: chartController.getCharts,
+    getChartPointSettings: chartController.getPointSettings,
+    getAomasterDisplayUnit: aomasterController.getDisplayUnit,
+    getAomasterActualMode: aomasterController.getActualMode,
     getHartSeriesDefs: () => hartMonitorController.buildSeriesDefs(),
-    shouldUseJsonMultiChart,
-    getJsonMultiChartMeta,
-    ensureHartChart: ensureHartTelemetryChart,
-    ensureJsonMultiChart: ensureJsonMultiTelemetryChart,
-    ensureSingleChart: ensureSingleTelemetryChart,
-    getChartConfig: () => chartConfig,
-    setChartConfig: (config) => {
-      chartConfig = config;
-    },
-    populateChartConfigForm,
-    applyChartPointCountConfig,
+    shouldUseJsonMultiChart: chartController.shouldUseJsonMultiChart,
+    getJsonMultiChartMeta: chartController.getJsonMultiChartMeta,
+    ensureHartChart: chartController.ensureHartChart,
+    ensureJsonMultiChart: chartController.ensureJsonMultiChart,
+    ensureSingleChart: chartController.ensureSingleChart,
+    getChartConfig: chartController.getConfig,
+    setChartConfig: chartController.setConfig,
+    populateChartConfigForm: chartController.populateConfigForm,
+    applyChartPointCountConfig: chartController.applyPointCountConfig,
     updateHartVariableCards: (variables) => hartMonitorController.updateVariableCards(variables),
-    requestChartResize,
+    requestChartResize: chartController.requestResize,
     appendLog,
   });
 }
@@ -587,559 +615,6 @@ function safeUpdateDeviceUi() {
   } catch (error) {
     console.error("updateDeviceUi failed", error);
   }
-}
-
-async function initMonitoringCharts() {
-  try {
-    const { EchartsLiveChart, EchartsMultiLiveChart } = await import("./echarts-charts.js");
-    EchartsLiveChartClass = EchartsLiveChart;
-    EchartsMultiLiveChartClass = EchartsMultiLiveChart;
-    const chartPointSettings = getChartPointSettings();
-    chart = new EchartsLiveChart(elements.telemetryChart, {
-      maxPoints: chartPointSettings.totalPointCount,
-      visiblePoints: chartPointSettings.visiblePointCount,
-      color: "#0f766e",
-      areaColor: "rgba(15, 118, 110, 0.12)",
-      emptyText: i18n("chart.emptyText"),
-      title: i18n("chart.realTimeChart"),
-    });
-    setpointChart = new EchartsLiveChart(elements.setpointChartCanvas, {
-      maxPoints: chartPointSettings.totalPointCount,
-      visiblePoints: chartPointSettings.visiblePointCount,
-      color: "#2563eb",
-      areaColor: "rgba(37, 99, 235, 0.12)",
-      emptyText: i18n("chart.emptySetpoint"),
-      title: i18n("chart.setpointPreview"),
-    });
-    actualChart = new EchartsLiveChart(elements.actualChartCanvas, {
-      maxPoints: chartPointSettings.totalPointCount,
-      visiblePoints: chartPointSettings.visiblePointCount,
-      color: "#0f766e",
-      areaColor: "rgba(15, 118, 110, 0.12)",
-      emptyText: i18n("chart.emptyActual"),
-      title: i18n("chart.realTimeOutput"),
-    });
-    allCharts = [chart, setpointChart, actualChart];
-    chartsReady = true;
-    bindChartResize();
-    safeUpdateDeviceUi();
-    requestChartResize();
-  } catch (error) {
-    chartsReady = false;
-    console.error("initMonitoringCharts failed", error);
-    if (elements.chartPanelSummary) {
-      elements.chartPanelSummary.textContent = `${i18n("chart.moduleLoadFailed")}${error.message}`;
-    }
-  }
-}
-
-function getChartPointSettings() {
-  return resolveChartPointSettings(chartConfig);
-}
-
-function getChartPointCount() {
-  return getChartPointSettings().totalPointCount;
-}
-
-function applyChartPointCountConfig() {
-  const chartPointSettings = getChartPointSettings();
-  allCharts.filter(Boolean).forEach((item) => {
-    item.setMaxPoints?.(chartPointSettings.totalPointCount);
-    item.setVisiblePoints?.(chartPointSettings.visiblePointCount);
-  });
-  updateChartPointLabels();
-}
-
-function buildJsonMultiChartSeriesDefs(config, listSeriesFn) {
-  return listSeriesFn(config).map((series) => ({
-    key: series.key,
-    name: series.fieldName,
-    unit: series.unit,
-    color: series.color,
-    areaColor: `${series.color}1f`,
-    visible: true,
-  }));
-}
-
-function buildMqttChartSeriesDefs(config = mqttConfig) {
-  return buildJsonMultiChartSeriesDefs(config, listMqttChartSeries);
-}
-
-function buildWebsocketChartSeriesDefs(config = websocketConfig) {
-  return buildJsonMultiChartSeriesDefs(config, listWebSocketChartSeries);
-}
-
-function buildCustomChartSeriesDefs(config = customConfig) {
-  return buildJsonMultiChartSeriesDefs(config, listCustomChartSeries);
-}
-
-function buildModbusChartSeriesDefs(config = modbusConfig) {
-  return buildJsonMultiChartSeriesDefs(config, listModbusDeviceChartSeries);
-}
-
-function shouldUseMqttMultiChart(config = mqttConfig) {
-  return buildMqttChartSeriesDefs(config).length > 1;
-}
-
-function shouldUseWebsocketMultiChart(config = websocketConfig) {
-  return buildWebsocketChartSeriesDefs(config).length > 1;
-}
-
-function shouldUseCustomMultiChart(config = customConfig) {
-  return buildCustomChartSeriesDefs(config).length > 1;
-}
-
-function shouldUseModbusMultiChart(config = modbusConfig) {
-  return buildModbusChartSeriesDefs(config).length > 1;
-}
-
-function shouldUseJsonMultiChart() {
-  if (state.deviceId === MQTT_DEVICE_ID) {
-    return shouldUseMqttMultiChart();
-  }
-
-  if (state.deviceId === WEBSOCKET_DEVICE_ID) {
-    return shouldUseWebsocketMultiChart();
-  }
-
-  if (state.deviceId === CUSTOM_DEVICE_ID) {
-    return shouldUseCustomMultiChart();
-  }
-
-  if (state.deviceId === MODBUS_DEVICE_ID) {
-    return shouldUseModbusMultiChart();
-  }
-
-  return false;
-}
-
-function buildJsonMultiChartSignature(seriesDefs) {
-  return JSON.stringify(
-    seriesDefs.map((series) => ({
-      key: series.key,
-      name: series.name,
-      color: series.color,
-    })),
-  );
-}
-
-function getJsonMultiChartMeta() {
-  if (state.deviceId === WEBSOCKET_DEVICE_ID) {
-    return {
-      title: i18n("chart.wsChart"),
-      emptyText: i18n("chart.wsEmpty"),
-      seriesDefs: buildWebsocketChartSeriesDefs(),
-    };
-  }
-
-  if (state.deviceId === CUSTOM_DEVICE_ID) {
-    return {
-      title: i18n("chart.serialChart"),
-      emptyText: i18n("chart.serialEmpty"),
-      seriesDefs: buildCustomChartSeriesDefs(),
-    };
-  }
-
-  if (state.deviceId === MODBUS_DEVICE_ID) {
-    return {
-      title: i18n("chart.modbusChart"),
-      emptyText: i18n("chart.modbusEmpty"),
-      seriesDefs: buildModbusChartSeriesDefs(),
-    };
-  }
-
-  return {
-    title: i18n("chart.mqttChart"),
-    emptyText: i18n("chart.mqttEmpty"),
-    seriesDefs: buildMqttChartSeriesDefs(),
-  };
-}
-
-function ensureHartTelemetryChart() {
-  if (!chartsReady || !EchartsMultiLiveChartClass || !elements.telemetryChart) {
-    return;
-  }
-
-  if (hartChart) {
-    hartChart.setVisibleMap(normalizeHartConfig(hartConfig).chartSeries);
-    return;
-  }
-
-  chart?.dispose();
-  chart = null;
-  jsonMultiChart?.dispose();
-  jsonMultiChart = null;
-  jsonMultiChartSignature = "";
-
-  const chartPointSettings = getChartPointSettings();
-  hartChart = new EchartsMultiLiveChartClass(elements.telemetryChart, {
-    maxPoints: chartPointSettings.totalPointCount,
-    visiblePoints: chartPointSettings.visiblePointCount,
-    emptyText: i18n("chart.emptyText"),
-    title: i18n("chart.hartVar"),
-    series: hartMonitorController.buildSeriesDefs(),
-  });
-  allCharts = [hartChart, setpointChart, actualChart].filter(Boolean);
-  applyChartPointCountConfig();
-}
-
-function ensureJsonMultiTelemetryChart() {
-  if (!chartsReady || !EchartsMultiLiveChartClass || !elements.telemetryChart) {
-    return;
-  }
-
-  const { title, emptyText, seriesDefs } = getJsonMultiChartMeta();
-  const nextSignature = buildJsonMultiChartSignature(seriesDefs);
-  if (jsonMultiChart && jsonMultiChartSignature === nextSignature) {
-    return;
-  }
-
-  chart?.dispose();
-  chart = null;
-  hartChart?.dispose();
-  hartChart = null;
-  jsonMultiChart?.dispose();
-  jsonMultiChart = null;
-
-  const chartPointSettings = getChartPointSettings();
-  jsonMultiChart = new EchartsMultiLiveChartClass(elements.telemetryChart, {
-    maxPoints: chartPointSettings.totalPointCount,
-    visiblePoints: chartPointSettings.visiblePointCount,
-    emptyText,
-    title,
-    series: seriesDefs,
-  });
-  jsonMultiChartSignature = nextSignature;
-  allCharts = [jsonMultiChart, setpointChart, actualChart].filter(Boolean);
-  applyChartPointCountConfig();
-}
-
-function ensureSingleTelemetryChart() {
-  if (!chartsReady || !EchartsLiveChartClass || !elements.telemetryChart) {
-    return;
-  }
-
-  if (chart) {
-    return;
-  }
-
-  hartChart?.dispose();
-  hartChart = null;
-  jsonMultiChart?.dispose();
-  jsonMultiChart = null;
-  jsonMultiChartSignature = "";
-
-  const chartPointSettings = getChartPointSettings();
-  chart = new EchartsLiveChartClass(elements.telemetryChart, {
-    maxPoints: chartPointSettings.totalPointCount,
-    visiblePoints: chartPointSettings.visiblePointCount,
-    color: "#0f766e",
-    areaColor: "rgba(15, 118, 110, 0.12)",
-    emptyText: i18n("chart.emptyText"),
-    title: i18n("chart.realTimeChart"),
-  });
-  allCharts = [chart, setpointChart, actualChart].filter(Boolean);
-  applyChartPointCountConfig();
-}
-
-function handleJsonMultiTelemetry(telemetry) {
-  if (telemetry?.isMulti && telemetry.variables) {
-    ensureJsonMultiTelemetryChart();
-    const sample = Object.fromEntries(
-      Object.entries(telemetry.variables).map(([key, entry]) => [key, entry.value]),
-    );
-    jsonMultiChart?.addSample(sample);
-
-    if (elements.chartValue) {
-      elements.chartValue.textContent = Object.values(telemetry.variables)
-        .map((entry) => `${entry.fieldName} ${entry.value.toFixed(3)}${entry.unit ? ` ${entry.unit}` : ""}`)
-        .join(" · ");
-    }
-    return;
-  }
-
-  if (telemetry && Number.isFinite(telemetry.value)) {
-    chart?.add(telemetry.value);
-    if (elements.chartValue) {
-      elements.chartValue.textContent = `${telemetry.fieldName} ${telemetry.value.toFixed(3)}${telemetry.unit ? ` ${telemetry.unit}` : ""}`;
-    }
-  }
-}
-
-function describeChartPanelSummary(totalPointCount, visiblePointCount) {
-  if (state.deviceId === DEFAULT_DEVICE_ID) {
-    return i18n("chart.aomasterDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount);
-  }
-
-  if (state.deviceId === HART_DEVICE_ID) {
-    return i18n("chart.hartDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount);
-  }
-
-  if (state.deviceId === MODBUS_DEVICE_ID) {
-    return shouldUseModbusMultiChart()
-      ? i18n("chart.modbusMultiDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount)
-      : i18n("chart.modbusSingleDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount);
-  }
-
-  if (state.deviceId === WEBSOCKET_DEVICE_ID) {
-    return shouldUseWebsocketMultiChart()
-      ? i18n("chart.wsMultiDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount)
-      : i18n("chart.wsSingleDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount);
-  }
-
-  if (state.deviceId === MQTT_DEVICE_ID) {
-    return shouldUseMqttMultiChart()
-      ? i18n("chart.mqttMultiDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount)
-      : i18n("chart.mqttSingleDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount);
-  }
-
-  if (state.deviceId === CUSTOM_DEVICE_ID) {
-    return shouldUseCustomMultiChart()
-      ? i18n("chart.customMultiDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount)
-      : i18n("chart.customSingleDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount);
-  }
-
-  return i18n("chart.defaultDesc").replace("{total}", totalPointCount).replace("{visible}", visiblePointCount);
-}
-
-function describeChartCurveConfigSummary() {
-  if (state.deviceId === DEFAULT_DEVICE_ID) {
-    return i18n("chart.dualCurve");
-  }
-
-  if (state.deviceId === MODBUS_DEVICE_ID) {
-    const series = listModbusDeviceChartSeries(modbusConfig);
-    if (series.length > 1) {
-      return i18n("chart.modbusCurveCount").replace("{count}", series.length);
-    }
-    const normalized = normalizeModbusConfig(modbusConfig);
-    return `${i18n("chart.singleCurve")} · ${normalized.fieldName || i18n("chart.registryValue")}`;
-  }
-
-  if (state.deviceId === HART_DEVICE_ID) {
-    const normalized = normalizeHartConfig(hartConfig);
-    const labels = HART_VARIABLE_CARDS.filter((card) => normalized.chartSeries[card.key]).map((card) => card.label);
-    return labels.length ? labels.join(" / ") : i18n("chart.notSelected");
-  }
-
-  if (state.deviceId === CUSTOM_DEVICE_ID) {
-    const normalized = normalizeCustomConfig(customConfig);
-    const series = listCustomChartSeries(customConfig);
-    if (series.length > 1) {
-      const modeLabel = normalized.parserMode === "hex" ? "HEX" : normalized.parserMode === "modbus" ? "Modbus" : "JSON";
-      return i18n("chart.multiCurveCount").replace("{count}", series.length).replace("{mode}", modeLabel);
-    }
-    if (normalized.parserMode === "hex") {
-      return `${i18n("chart.singleCurve")} · HEX ${i18n("chart.hexRaw").split(" · ").pop()}`;
-    }
-    if (normalized.parserMode === "modbus") {
-      return `${i18n("chart.singleCurve")} · ${i18n("chart.modbusPayload").split(" · ").pop()}`;
-    }
-    return describeJsonCurveSummary(normalized, DEFAULT_CUSTOM_CONFIG);
-  }
-
-  if (state.deviceId === WEBSOCKET_DEVICE_ID) {
-    const normalized = normalizeWebSocketConfig(websocketConfig);
-    const series = listWebSocketChartSeries(websocketConfig);
-    if (series.length > 1) {
-      const modeLabel = normalized.parserMode === "hex" ? "HEX" : normalized.parserMode === "modbus" ? "Modbus" : "JSON";
-      return i18n("chart.multiCurveCount").replace("{count}", series.length).replace("{mode}", modeLabel);
-    }
-    if (normalized.parserMode === "hex") {
-      return `${i18n("chart.singleCurve")} · HEX ${i18n("chart.hexRaw").split(" · ").pop()}`;
-    }
-    if (normalized.parserMode === "modbus") {
-      return `${i18n("chart.singleCurve")} · ${i18n("chart.modbusPayload").split(" · ").pop()}`;
-    }
-    return describeJsonCurveSummary(normalized, DEFAULT_WEBSOCKET_CONFIG);
-  }
-
-  if (state.deviceId === MQTT_DEVICE_ID) {
-    const normalized = normalizeMqttConfig(mqttConfig);
-    const series = listMqttChartSeries(mqttConfig);
-    if (series.length > 1) {
-      const modeLabel = normalized.parserMode === "hex" ? "HEX" : normalized.parserMode === "modbus" ? "Modbus" : "JSON";
-      return i18n("chart.multiCurveCount").replace("{count}", series.length).replace("{mode}", modeLabel);
-    }
-    if (normalized.parserMode === "hex") {
-      return `${i18n("chart.singleCurve")} · HEX ${i18n("chart.hexRaw").split(" · ").pop()}`;
-    }
-    if (normalized.parserMode === "modbus") {
-      return `${i18n("chart.singleCurve")} · ${i18n("chart.modbusPayload").split(" · ").pop()}`;
-    }
-    return describeJsonCurveSummary(normalized, DEFAULT_MQTT_CONFIG);
-  }
-
-  return i18n("chart.singleCurve");
-}
-
-function syncChartCurvePanelUi() {
-  updateChartCurvePanel({
-    elements,
-    deviceId: state.deviceId,
-    isDevicePage: deviceNavigationUi.isDevicePageActive(),
-    summary: describeChartCurveConfigSummary(),
-  });
-  requestChartCurvePanelResize();
-}
-
-function updateChartPointLabels() {
-  const chartPointSettings = getChartPointSettings();
-  const { totalPointCount, visiblePointCount } = chartPointSettings;
-  if (elements.singleChartPointCount) {
-    elements.singleChartPointCount.textContent = String(totalPointCount);
-  }
-  if (elements.singleChartVisiblePointCount) {
-    elements.singleChartVisiblePointCount.textContent = String(visiblePointCount);
-  }
-  if (elements.dualChartPointCount) {
-    elements.dualChartPointCount.textContent = String(totalPointCount);
-  }
-  if (elements.dualChartVisiblePointCount) {
-    elements.dualChartVisiblePointCount.textContent = String(visiblePointCount);
-  }
-  if (elements.chartPointCount) {
-    elements.chartPointCount.value = String(totalPointCount);
-    elements.chartPointCount.title = i18n("workbench.totalPointsTitle");
-  }
-  if (elements.visibleChartPointCount) {
-    elements.visibleChartPointCount.value = String(visiblePointCount);
-    elements.visibleChartPointCount.max = String(totalPointCount);
-    elements.visibleChartPointCount.title = i18n("workbench.displayPointsTitle");
-  }
-  if (elements.chartPanelSummary) {
-    elements.chartPanelSummary.textContent = describeChartPanelSummary(totalPointCount, visiblePointCount);
-  }
-}
-
-function bindSessionEvents(target) {
-  target.addEventListener("connected", () => {
-    messageDebugController.resetStats();
-    resetMqttRxBuffer();
-    resetWebSocketRxBuffer();
-    resetCustomRxBuffer(customConfig);
-    transportController.updateConnectionUi(true);
-    pollingController.updateActive();
-    appendLog("info", i18n("log.connect"), transportController.describeConnectionSummary());
-  });
-
-  target.addEventListener("disconnected", () => {
-    state.pollingActive = false;
-    pollingController.stopAll();
-    resetModbusRxBuffer();
-    resetHartRxBuffer();
-    hartSessionController.resetLinkProbe();
-    resetAomasterRxBuffer();
-    resetMqttRxBuffer();
-    resetWebSocketRxBuffer();
-    resetCustomRxBuffer(customConfig);
-    finalizeRxLogCoalesce();
-    transportController.updateConnectionUi(false);
-    messageDebugController.resetStats();
-    appendLog("info", i18n("log.connect"), i18n("log.disconnected"));
-  });
-
-  target.addEventListener("rx", (event) => {
-    const { bytes, text, topic } = event.detail;
-    const hartLinkProbeChunk =
-      state.deviceId === HART_DEVICE_ID && state.transportId === DEFAULT_TRANSPORT_ID
-        ? hartSessionController.handleLinkProbeRx(text)
-        : false;
-    const useHexDisplay =
-      state.deviceId === MODBUS_DEVICE_ID ||
-      state.deviceId === HART_DEVICE_ID ||
-      state.deviceId === DEFAULT_DEVICE_ID;
-    const rxPayload = topic ? `[${topic}] ${text ?? bytesToHex(bytes)}` : text ?? bytesToHex(bytes);
-    queueRxLogDisplay(bytes, rxPayload, useHexDisplay && !topic && !hartLinkProbeChunk);
-
-    if (hartLinkProbeChunk) {
-      return;
-    }
-
-    if (state.deviceId === WEBSOCKET_DEVICE_ID) {
-      messageDebugController.increment("websocket", "rx");
-    }
-
-    if (state.deviceId === MQTT_DEVICE_ID) {
-      messageDebugController.increment("mqtt", "rx");
-    }
-
-    const telemetry = parseDeviceTelemetry(
-      state.deviceId,
-      text,
-      customConfig,
-      modbusConfig,
-      bytes,
-      state,
-      aomasterConfig,
-      hartConfig,
-      websocketConfig,
-      mqttConfig,
-    );
-    if (telemetry) {
-      if (state.deviceId === HART_DEVICE_ID && telemetry.isDiscovery) {
-        hartConfig = mergeHartDiscovery(hartConfig, telemetry);
-        hartConfigUi.populateConfigForm(hartConfig);
-        updateHartDeviceInfo();
-        hartWorkspaceController.updateFromDiscovery(telemetry);
-        appendLog("info", "HART", formatHartDeviceSummary(hartConfig.device));
-        updateDeviceUi();
-        return;
-      }
-
-      if (state.deviceId === DEFAULT_DEVICE_ID) {
-        const readbackMode = telemetry.mode || state.mode;
-        aomasterActualMode = readbackMode;
-        actualChart?.setMeta({ unit: getAomasterDisplayUnit(readbackMode) });
-        aomasterWaveformUi.syncActualChartRange(readbackMode);
-        actualChart?.add(getAomasterDisplayNumber(telemetry.value, readbackMode));
-        const formatted = formatAomasterDisplayValue(telemetry.value, readbackMode);
-        elements.actualChartValue.textContent = `${telemetry.fieldName} ${formatted}`;
-      } else if (state.deviceId === HART_DEVICE_ID) {
-        hartMonitorController.handleTelemetry(telemetry);
-      } else if (
-        state.deviceId === MQTT_DEVICE_ID ||
-        state.deviceId === WEBSOCKET_DEVICE_ID ||
-        state.deviceId === CUSTOM_DEVICE_ID ||
-        state.deviceId === MODBUS_DEVICE_ID
-      ) {
-        handleJsonMultiTelemetry(telemetry);
-      } else {
-        chart?.add(telemetry.value);
-        const formatted = `${telemetry.value.toFixed(3)}${telemetry.unit ? ` ${telemetry.unit}` : ""}`;
-        elements.chartValue.textContent = `${telemetry.fieldName} ${formatted}`;
-      }
-    }
-  });
-
-  target.addEventListener("tx", (event) => {
-    finalizeRxLogCoalesce();
-    const { bytes, text, topic, qos, retain } = event.detail;
-    let payload = text ?? bytesToHex(bytes);
-    if (topic) {
-      const flags = [];
-      if (qos) {
-        flags.push(`QoS${qos}`);
-      }
-      if (retain) {
-        flags.push("retain");
-      }
-      payload = `[${topic}${flags.length ? ` ${flags.join(" ")}` : ""}] ${payload}`;
-    }
-    appendLog("tx", "TX", payload);
-
-    if (state.deviceId === WEBSOCKET_DEVICE_ID) {
-      messageDebugController.increment("websocket", "tx");
-    }
-
-    if (state.deviceId === MQTT_DEVICE_ID) {
-      messageDebugController.increment("mqtt", "tx");
-    }
-  });
-
-  target.addEventListener("error", (event) => {
-    appendLog("error", i18n("log.error"), event.detail.error?.message ?? String(event.detail.error));
-  });
 }
 
 function selectDevice(deviceId) {
@@ -1179,7 +654,7 @@ function selectDevice(deviceId) {
     transportController.applyDeviceDefaultTransport(deviceId);
   }
 
-  clearAllCharts();
+  chartController.clearAll();
   if (!standalone) {
     aomasterWaveformUi.syncChartRanges();
   }
@@ -1214,9 +689,8 @@ function resetViewportScroll() {
 }
 
 function updateDeviceUi() {
-  syncChartConfigElements();
-  bindChartConfigEvents();
-  updateChartPointLabels();
+  chartController.bindConfigEvents();
+  chartController.updatePointLabels();
   const profile = getDeviceProfile(state.deviceId, customConfig, modbusConfig);
   const isCustom = state.deviceId === CUSTOM_DEVICE_ID;
   const isModbus = state.deviceId === MODBUS_DEVICE_ID;
@@ -1249,28 +723,16 @@ function updateDeviceUi() {
     if (elements.dualChartBlock) {
       elements.dualChartBlock.hidden = !isAomaster;
     }
-    syncChartCurvePanelUi();
+    chartController.syncCurvePanelUi();
     if (isHart) {
       hartConfigUi.syncCommandModeUi();
-      ensureHartTelemetryChart();
+      chartController.ensureHartChart();
       hartMonitorController.syncSeriesControls();
       hartMonitorController.updateVariableCards();
-    } else if (
-      (isMqtt && shouldUseMqttMultiChart()) ||
-      (isWebsocket && shouldUseWebsocketMultiChart()) ||
-      (isCustom && shouldUseCustomMultiChart()) ||
-      (isModbus && shouldUseModbusMultiChart())
-    ) {
-      ensureJsonMultiTelemetryChart();
+    } else if (chartController.shouldUseJsonMultiChart()) {
+      chartController.ensureJsonMultiChart();
     } else {
-      ensureSingleTelemetryChart();
-    }
-    if (elements.chartPanelSummary) {
-      const chartPointSettings = getChartPointSettings();
-      elements.chartPanelSummary.textContent = describeChartPanelSummary(
-        chartPointSettings.totalPointCount,
-        chartPointSettings.visiblePointCount,
-      );
+      chartController.ensureSingleChart();
     }
   }
 
@@ -1287,7 +749,7 @@ function updateDeviceUi() {
     } else if (isMqtt) {
       summary.textContent = describeMqttSummary(mqttConfig);
     } else if (isAomaster) {
-      summary.textContent = describeAomasterSummary(aomasterConfig);
+      summary.textContent = describeAomasterSummary(aomasterController.getConfig());
     } else {
       summary.textContent = profile.name;
     }
@@ -1301,13 +763,13 @@ function updateDeviceUi() {
   });
 
   if (isStandalone) {
-    requestChartResize();
+    chartController.requestResize();
     pollingController.updateUi();
     return;
   }
 
   if (isAomaster) {
-    syncAomasterValueDisplayControls();
+    aomasterController.syncDisplayControls();
     aomasterWaveformUi.populateOutputModes();
     if (elements.outputModeSelect) {
       elements.outputModeSelect.value = state.mode;
@@ -1323,9 +785,10 @@ function updateDeviceUi() {
     aomasterWaveformUi.refreshPreview();
   }
 
+  const { chart } = chartController.getCharts();
   if (!isAomaster && !isHart && !isMessageDebug && chart) {
-    const chartConfig = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
-    chart.setMeta({ title: i18n("chart.realTimeChart"), unit: chartConfig.unit });
+    const modeConfig = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
+    chart.setMeta({ title: i18n("chart.realTimeChart"), unit: modeConfig.unit });
   }
 
   if (isHart) {
@@ -1354,7 +817,7 @@ function updateDeviceUi() {
     }
   }
 
-  requestChartResize();
+  chartController.requestResize();
   updateSetpointUi();
   pollingController.updateUi();
 }
@@ -1368,69 +831,9 @@ function queryDeviceField(name) {
   return page.querySelector(`[data-field="${name}"]`) ?? page.querySelector(`#${name}`);
 }
 
-function isAomasterPercentMode() {
-  return state.deviceId === DEFAULT_DEVICE_ID && state.aomasterValueDisplayMode === "percent";
-}
-
-function getAomasterActualMode() {
-  return aomasterActualMode || state.mode;
-}
-
-function getAomasterPercentValue(value, mode = state.mode) {
-  const config = getModeConfig(mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
-  const span = config.max - config.min;
-  if (!Number.isFinite(span) || span === 0) {
-    return 0;
-  }
-  return ((Number(value) - config.min) / span) * 100;
-}
-
-function getAomasterValueFromPercent(percent, mode = state.mode) {
-  const config = getModeConfig(mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
-  const span = config.max - config.min;
-  const bounded = Math.min(100, Math.max(0, Number(percent)));
-  return config.min + (span * bounded) / 100;
-}
-
-function getAomasterDisplayNumber(value, mode = state.mode) {
-  return isAomasterPercentMode() ? getAomasterPercentValue(value, mode) : Number(value);
-}
-
-function readAomasterDisplayNumber(value, mode = state.mode) {
-  return isAomasterPercentMode() ? getAomasterValueFromPercent(value, mode) : Number(value);
-}
-
-function getAomasterDisplayStep(mode = state.mode) {
-  const config = getModeConfig(mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
-  return isAomasterPercentMode() ? 0.1 : config.step;
-}
-
-function getAomasterDisplayDecimals(mode = state.mode) {
-  return isAomasterPercentMode() ? 1 : decimalPlaces(getModeConfig(mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig).step);
-}
-
-function formatAomasterDisplayNumber(value, mode = state.mode) {
-  return getAomasterDisplayNumber(value, mode).toFixed(getAomasterDisplayDecimals(mode));
-}
-
-function formatAomasterDisplayValue(value, mode = state.mode) {
-  const config = getModeConfig(mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig);
-  return isAomasterPercentMode()
-    ? `${formatAomasterDisplayNumber(value, mode)} %`
-    : `${formatSetpoint(mode, value)} ${config.unit}`;
-}
-
-function formatAomasterDisplaySequence(sequence, mode = state.mode) {
-  return sequence.map((value) => formatAomasterDisplayNumber(value, mode)).join(" → ");
-}
-
-function getAomasterDisplayUnit(mode = state.mode) {
-  return isAomasterPercentMode() ? "%" : getModeConfig(mode, DEFAULT_DEVICE_ID, customConfig, modbusConfig).unit;
-}
-
 function updateSetpoint(value) {
   const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
-  const sourceValue = isAomasterPercentMode() ? getAomasterValueFromPercent(value) : value;
+  const sourceValue = aomasterController.isPercentMode() ? aomasterController.getValueFromPercent(value) : value;
   const bounded = Math.min(config.max, Math.max(config.min, sourceValue));
   state.setpoint = Number.isFinite(bounded) ? bounded : config.presets.mid;
   updateSetpointUi();
@@ -1443,13 +846,13 @@ function updateSetpointUi() {
   }
 
   const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
-  const isPercent = isAomasterPercentMode();
+  const isPercent = aomasterController.isPercentMode();
   const formatted = isPercent
-    ? formatAomasterDisplayNumber(state.setpoint)
+    ? aomasterController.formatDisplayNumber(state.setpoint)
     : state.setpoint.toFixed(decimalPlaces(config.step));
   const controlMin = isPercent ? 0 : config.min;
   const controlMax = isPercent ? 100 : config.max;
-  const controlStep = isPercent ? getAomasterDisplayStep() : config.step;
+  const controlStep = isPercent ? aomasterController.getDisplayStep() : config.step;
   const setpointLabel = queryDeviceField("setpointLabel") ?? elements.setpointLabel;
   const setpointReadout = queryDeviceField("setpointReadout") ?? elements.setpointReadout;
   const setpointUnit = queryDeviceField("setpointUnit") ?? elements.setpointUnit;
@@ -1490,7 +893,7 @@ function updateSetpointUi() {
     state,
     customConfig,
     modbusConfig,
-    aomasterConfig,
+    aomasterController.getConfig(),
     hartConfig,
     websocketConfig,
     mqttConfig,
@@ -1574,7 +977,7 @@ function updateMessageDebugCommandUi() {
     state,
     customConfig,
     modbusConfig,
-    aomasterConfig,
+    aomasterController.getConfig(),
     hartConfig,
     websocketConfig,
     mqttConfig,
@@ -1613,7 +1016,7 @@ async function sendDeviceCommand() {
       state,
       customConfig,
       modbusConfig,
-      aomasterConfig,
+      aomasterController.getConfig(),
       hartConfig,
       websocketConfig,
       mqttConfig,
@@ -1746,7 +1149,7 @@ function testDeviceParser(deviceId) {
     modbusConfig,
     prepared.bytes,
     state,
-    aomasterConfig,
+    aomasterController.getConfig(),
     hartConfig,
     websocketConfig,
     mqttConfig,
@@ -1781,7 +1184,7 @@ function renderParserPreview(target, telemetry) {
 function updateModbusDraftConfig() {
   modbusConfig = modbusConfigUi.readConfigForm();
   debugCurveController.syncRows("modbus", modbusConfig);
-  syncChartCurvePanelUi();
+  chartController.syncCurvePanelUi();
 
   if (state.deviceId === MODBUS_DEVICE_ID) {
     const normalized = normalizeModbusConfig(modbusConfig);
@@ -1903,255 +1306,6 @@ function updateHartDeviceInfo() {
 
   elements.hartDeviceInfo.textContent = `${i18n("hart.devicePrefix")}${formatHartDeviceSummary(normalizeHartConfig(hartConfig).device)}`;
   hartSessionController.updateLinkInfo();
-}
-
-async function sendAomasterReadCommand() {
-  if (!session?.connected) {
-    return;
-  }
-
-  const bytes = createAOMasterReadCommand(aomasterConfig);
-  await session.write(bytes);
-}
-
-function updateAomasterDraftConfig() {
-  aomasterConfig = readAomasterConfigForm();
-  resetAomasterRxBuffer();
-  updateDeviceUi();
-  if (state.pollingActive && !pollingController.canPoll()) {
-    state.pollingActive = false;
-  }
-  pollingController.updateActive();
-}
-
-function saveAomasterConfig() {
-  aomasterConfig = readAomasterConfigForm();
-  localStorage.setItem(AOMASTER_CONFIG_STORAGE_KEY, JSON.stringify(aomasterConfig));
-  populateAomasterConfigForm(aomasterConfig);
-  updateDeviceUi();
-  pollingController.updateActive();
-  appendLog("info", i18n("log.device"), `${i18n("device.aomaster")}${i18n("common.configSavedShort")}`);
-}
-
-function resetAomasterConfig() {
-  aomasterConfig = normalizeAomasterConfig(DEFAULT_AOMASTER_CONFIG);
-  localStorage.setItem(AOMASTER_CONFIG_STORAGE_KEY, JSON.stringify(aomasterConfig));
-  populateAomasterConfigForm(aomasterConfig);
-  resetAomasterRxBuffer();
-  updateDeviceUi();
-  pollingController.updateActive();
-  appendLog("info", i18n("log.device"), `${i18n("device.aomaster")}${i18n("common.configResetShort")}`);
-}
-
-function loadAomasterConfig() {
-  try {
-    const saved = localStorage.getItem(AOMASTER_CONFIG_STORAGE_KEY);
-    return normalizeAomasterConfig(saved ? JSON.parse(saved) : DEFAULT_AOMASTER_CONFIG);
-  } catch {
-    return normalizeAomasterConfig(DEFAULT_AOMASTER_CONFIG);
-  }
-}
-
-function loadAomasterValueDisplayMode() {
-  try {
-    return localStorage.getItem(AOMASTER_VALUE_DISPLAY_STORAGE_KEY) === "percent" ? "percent" : "value";
-  } catch {
-    return "value";
-  }
-}
-
-function setAomasterValueDisplayMode(mode) {
-  const nextMode = mode === "percent" ? "percent" : "value";
-  if (state.aomasterValueDisplayMode === nextMode) {
-    return;
-  }
-
-  state.aomasterValueDisplayMode = nextMode;
-  try {
-    localStorage.setItem(AOMASTER_VALUE_DISPLAY_STORAGE_KEY, nextMode);
-  } catch {
-    // localStorage may be unavailable in restricted browser contexts.
-  }
-  syncAomasterValueDisplayControls();
-  aomasterWaveformUi.populateForm();
-  aomasterWaveformUi.renderStepSequence();
-  aomasterActualMode = null;
-  actualChart?.clear();
-  if (elements.actualChartValue) {
-    elements.actualChartValue.textContent = i18n("chart.noData");
-  }
-  updateSetpointUi();
-  aomasterWaveformUi.syncChartRanges();
-  requestChartResize();
-}
-
-function syncAomasterValueDisplayControls() {
-  elements.aomasterValueDisplayMode?.forEach((control) => {
-    control.checked = control.value === state.aomasterValueDisplayMode;
-  });
-}
-
-function readAomasterConfigForm() {
-  return normalizeAomasterConfig({
-    slaveId: elements.aomasterSlaveId.value,
-    pollIntervalMs: elements.aomasterPollIntervalMs.value,
-  });
-}
-
-function populateAomasterConfigForm(config) {
-  const normalized = normalizeAomasterConfig(config);
-  elements.aomasterSlaveId.value = String(normalized.slaveId);
-  elements.aomasterPollIntervalMs.value = String(normalized.pollIntervalMs);
-}
-
-function getAomasterConfigControls() {
-  return [elements.aomasterSlaveId, elements.aomasterPollIntervalMs];
-}
-
-function updateChartDraftConfig() {
-  chartConfig = readChartConfigForm();
-  applyChartPointCountConfig();
-}
-
-function saveChartConfig() {
-  chartConfig = readChartConfigForm();
-  localStorage.setItem(CHART_CONFIG_STORAGE_KEY, JSON.stringify(chartConfig));
-  populateChartConfigForm(chartConfig);
-  applyChartPointCountConfig();
-  appendLog("info", i18n("log.chart"), i18n("chart.scaleConfigSaved"));
-}
-
-function resetChartConfig() {
-  chartConfig = normalizeChartConfig(DEFAULT_CHART_CONFIG);
-  localStorage.setItem(CHART_CONFIG_STORAGE_KEY, JSON.stringify(chartConfig));
-  populateChartConfigForm(chartConfig);
-  applyChartPointCountConfig();
-  appendLog("info", i18n("log.chart"), i18n("chart.scaleConfigReset"));
-}
-
-function loadChartConfig() {
-  try {
-    const saved = localStorage.getItem(CHART_CONFIG_STORAGE_KEY);
-    if (saved) {
-      return normalizeChartConfig(JSON.parse(saved));
-    }
-
-    const legacyAomaster = localStorage.getItem(AOMASTER_CONFIG_STORAGE_KEY);
-    if (legacyAomaster) {
-      const parsed = JSON.parse(legacyAomaster);
-      if (parsed.chartPointCount != null || parsed.visibleChartPointCount != null) {
-        return normalizeChartConfig({
-          chartPointCount: parsed.chartPointCount,
-          visibleChartPointCount: parsed.visibleChartPointCount,
-        });
-      }
-    }
-
-    return normalizeChartConfig(DEFAULT_CHART_CONFIG);
-  } catch {
-    return normalizeChartConfig(DEFAULT_CHART_CONFIG);
-  }
-}
-
-function readChartConfigForm() {
-  syncChartConfigElements();
-  if (!elements.chartPointCount || !elements.visibleChartPointCount) {
-    return normalizeChartConfig(chartConfig);
-  }
-
-  return normalizeChartConfig({
-    chartPointCount: elements.chartPointCount.value,
-    visibleChartPointCount: elements.visibleChartPointCount.value,
-  });
-}
-
-function populateChartConfigForm(config) {
-  syncChartConfigElements();
-  const normalized = normalizeChartConfig(config);
-  if (!elements.chartPointCount || !elements.visibleChartPointCount) {
-    return;
-  }
-
-  elements.chartPointCount.value = String(normalized.chartPointCount);
-  elements.visibleChartPointCount.value = String(normalized.visibleChartPointCount);
-  elements.visibleChartPointCount.max = String(normalized.chartPointCount);
-}
-
-function syncChartConfigElements() {
-  elements.chartPointCount = document.querySelector("#chartPointCount");
-  elements.visibleChartPointCount = document.querySelector("#visibleChartPointCount");
-  elements.saveChartConfig = document.querySelector("#saveChartConfig");
-  elements.resetChartConfig = document.querySelector("#resetChartConfig");
-  elements.exportChartCsv = document.querySelector("#exportChartCsv");
-  elements.loadChartCsv = document.querySelector("#loadChartCsv");
-  elements.loadChartCsvInput = document.querySelector("#loadChartCsvInput");
-}
-
-function bindChartConfigEvents() {
-  syncChartConfigElements();
-  if (chartConfigEventsBound) {
-    return;
-  }
-
-  const controls = getChartConfigControls();
-  if (controls.length === 0) {
-    return;
-  }
-
-  controls.forEach((control) => {
-    control.addEventListener("input", updateChartDraftConfig);
-    control.addEventListener("change", updateChartDraftConfig);
-  });
-  on(elements.saveChartConfig, "click", saveChartConfig);
-  on(elements.resetChartConfig, "click", resetChartConfig);
-  on(elements.exportChartCsv, "click", chartCsvController.exportCsv);
-  on(elements.loadChartCsv, "click", chartCsvController.openPicker);
-  on(elements.loadChartCsvInput, "change", chartCsvController.loadFile);
-  chartConfigEventsBound = true;
-}
-
-function getChartConfigControls() {
-  return [elements.chartPointCount, elements.visibleChartPointCount].filter(Boolean);
-}
-
-function bindChartResize() {
-  window.addEventListener("resize", requestChartResize);
-  if (typeof ResizeObserver !== "undefined") {
-    const observer = new ResizeObserver(() => requestChartResize());
-    observer.observe(elements.deviceShell);
-    const chartHosts = document.querySelectorAll(
-      "#telemetryChart, #setpointChart, #actualChart, .chart-panel-body",
-    );
-    chartHosts.forEach((host) => observer.observe(host));
-  }
-}
-
-let chartResizeTimer = null;
-
-function requestChartResize() {
-  if (!chartsReady || !allCharts.length) {
-    return;
-  }
-
-  if (chartResizeTimer) {
-    window.cancelAnimationFrame(chartResizeTimer);
-  }
-  chartResizeTimer = window.requestAnimationFrame(() => {
-    allCharts.filter(Boolean).forEach((item) => item.resize());
-    window.requestAnimationFrame(() => {
-      allCharts.filter(Boolean).forEach((item) => item.resize());
-    });
-  });
-}
-
-function clearAllCharts() {
-  chart?.clear();
-  hartChart?.clear();
-  jsonMultiChart?.clear();
-  aomasterWaveformUi.clearCharts();
-  elements.chartValue.textContent = i18n("chart.noData");
-  hartMonitorController.updateVariableCards();
-  requestChartResize();
 }
 
 function decimalPlaces(step) {
