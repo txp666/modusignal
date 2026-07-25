@@ -17,6 +17,8 @@ export function collectAppElements(root = document) {
   Object.assign(elements, {
     appShell: root.querySelector(".app-shell"),
     modeRow: root.querySelector("#aomasterPage .mode-row"),
+    setpointChartCanvas: root.querySelector("#setpointChart"),
+    actualChartCanvas: root.querySelector("#actualChart"),
     pages: [...root.querySelectorAll("[data-page-id]")],
     aomasterValueDisplayMode: [...root.querySelectorAll('input[name="aomasterValueDisplayMode"]')],
     hartWorkspaceTabs: [...root.querySelectorAll("[data-hart-workspace-tab]")],
