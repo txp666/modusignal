@@ -975,6 +975,17 @@ button:focus-visible {
   object-fit: contain;
 }
 
+.hartlink-studio-card-media {
+  background:
+    radial-gradient(circle at 50% 48%, rgba(4, 185, 191, 0.13), transparent 48%),
+    var(--surface-muted);
+}
+
+.hartlink-studio-card-media img {
+  width: min(42%, 9rem);
+  filter: drop-shadow(0 0.85rem 1.4rem rgba(31, 159, 218, 0.14));
+}
+
 .aomaster-product-content,
 .aomaster-dialog-copy {
   display: grid;

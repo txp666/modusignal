@@ -89,6 +89,7 @@ function injectStaticAssetVersion(version) {
 function copyStaticAssets() {
   const copies = [
     ["pages", "pages"],
+    ["hartlink-studio", "hartlink-studio"],
     ["images", "images"],
     ["robots.txt", "robots.txt"],
     ["sitemap.xml", "sitemap.xml"],
