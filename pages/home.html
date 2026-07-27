@@ -218,6 +218,33 @@
     </div>
   </dialog>
 
+  <section class="panel aomaster-product-card" aria-labelledby="fluentSerialCardTitle">
+    <div class="aomaster-product-media fluent-serial-card-media">
+      <img
+        src="./fluent-serial-assistant/assets/show.gif"
+        alt="Fluent 串口助手串口连接、终端日志与数据发送操作演示"
+        width="1120"
+        height="900"
+        loading="lazy"
+      />
+    </div>
+    <div class="aomaster-product-content">
+      <span class="aomaster-product-kicker" data-i18n="home.fluentSerialKicker">桌面软件 · v0.1.9</span>
+      <h2 id="fluentSerialCardTitle" data-i18n="home.fluentSerialTitle">Fluent 串口助手 · 现代串口调试工作台</h2>
+      <p data-i18n="home.fluentSerialDesc">从基础收发、自动断帧和实时曲线，到协议模板、宏命令、自动应答与 JavaScript 脚本，在一个清爽的多标签桌面工作台里完成串口调试。</p>
+      <div class="aomaster-product-highlights" aria-label="Fluent Serial Assistant highlights">
+        <span>Windows · macOS · Linux</span>
+        <span data-i18n="home.fluentSerialTerminal">文本 / HEX / 混合终端</span>
+        <span data-i18n="home.fluentSerialAutomation">宏命令与脚本自动化</span>
+        <span data-i18n="home.fluentSerialPlot">实时曲线与数据表格</span>
+      </div>
+      <div class="panel-actions">
+        <a class="action-link" href="./fluent-serial-assistant/" data-i18n="home.fluentSerialMore">查看软件介绍</a>
+        <a class="ghost-button action-link" href="./fluent-serial-assistant/#downloads" data-i18n="home.fluentSerialDownload">下载 0.1.9</a>
+      </div>
+    </div>
+  </section>
+
   <div class="panel architecture-card">
     <h2 data-i18n="home.architecture">当前架构</h2>
     <div class="arch-diagram" role="img" data-i18n-aria-label="home.archAriaLabel" aria-label="modusignal 架构框图：页面 UI 经 app.js 调度，分为正交的设备层与传输层，数据汇入曲线与日志">
@@ -268,4 +295,5 @@
     </div>
     <p data-i18n="home.archDesc">设备层与传输层正交：设备只产出/解析字节，通过统一的 profile、命令构造和遥测解析接口接入；各设备可声明默认通讯方式，亦可在连接参数中手动切换。</p>
   </div>
+
 </section>

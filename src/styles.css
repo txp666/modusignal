@@ -986,6 +986,21 @@ button:focus-visible {
   filter: drop-shadow(0 0.85rem 1.4rem rgba(31, 159, 218, 0.14));
 }
 
+.fluent-serial-card-media {
+  padding: 0.65rem;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(10, 192, 202, 0.14), transparent 48%),
+    var(--surface-muted);
+}
+
+.fluent-serial-card-media img {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+  border-radius: 0.4rem;
+  filter: drop-shadow(0 0.65rem 1rem rgba(10, 75, 80, 0.1));
+}
+
 .aomaster-product-content,
 .aomaster-dialog-copy {
   display: grid;

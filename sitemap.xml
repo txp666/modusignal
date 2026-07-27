@@ -11,6 +11,11 @@
     <priority>0.9</priority>
   </url>
   <url>
+    <loc>https://modusignal.cn/fluent-serial-assistant/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://modusignal.cn/LICENSE.txt</loc>
     <changefreq>yearly</changefreq>
     <priority>0.2</priority>

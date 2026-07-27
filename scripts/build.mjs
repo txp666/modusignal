@@ -90,6 +90,7 @@ function copyStaticAssets() {
   const copies = [
     ["pages", "pages"],
     ["hartlink-studio", "hartlink-studio"],
+    ["fluent-serial-assistant", "fluent-serial-assistant"],
     ["images", "images"],
     ["robots.txt", "robots.txt"],
     ["sitemap.xml", "sitemap.xml"],
