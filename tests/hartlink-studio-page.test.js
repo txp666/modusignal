@@ -19,6 +19,8 @@ test("HARTLink Studio product page resolves the latest release dynamically", asy
   assert.doesNotMatch(html, /Portable ZIP/);
   assert.match(app, /loadLatestHartLinkRelease/);
   assert.match(app, /formatReleaseAssetSize/);
+  assert.match(app, /release\.js\?v=release-module/);
+  assert.match(html, /app\.js\?v=release-module/);
   assert.doesNotMatch(app, /0\.3\.6/);
   assert.doesNotMatch(html, /github\.com/i);
   assert.equal((html.match(/data-carousel-slide/g) || []).length, 4);

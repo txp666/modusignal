@@ -1,4 +1,4 @@
-export const HARTLINK_RELEASE_MANIFEST_PATH = "/hartlink-studio/latest.json";
+export const HARTLINK_RELEASE_MODULE_PATH = "/hartlink-studio/latest-release.js";
 export const HARTLINK_RELEASE_SOURCE_URL =
   "https://hartlinkstudio-ota-ap-1257631357.cos.ap-hongkong.myqcloud.com/HARTLinkStudio/ota/latest.json";
 
@@ -77,19 +77,18 @@ export function parseHartLinkReleaseManifest(value) {
   };
 }
 
-export async function loadLatestHartLinkRelease(fetchImplementation = globalThis.fetch) {
-  if (typeof fetchImplementation !== "function") {
-    throw new Error("Fetch is unavailable");
+export async function loadLatestHartLinkRelease(
+  importImplementation = (specifier) => import(specifier),
+) {
+  if (typeof importImplementation !== "function") {
+    throw new Error("Module loading is unavailable");
   }
 
-  const response = await fetchImplementation(HARTLINK_RELEASE_MANIFEST_PATH, {
-    cache: "no-store",
-    headers: { Accept: "application/json" },
-  });
-  if (!response.ok) {
-    throw new Error(`Unable to load the latest HARTLink Studio release (${response.status})`);
-  }
-  return parseHartLinkReleaseManifest(await response.json());
+  const separator = HARTLINK_RELEASE_MODULE_PATH.includes("?") ? "&" : "?";
+  const module = await importImplementation(
+    `${HARTLINK_RELEASE_MODULE_PATH}${separator}v=${Date.now()}`,
+  );
+  return parseHartLinkReleaseManifest(module.default);
 }
 
 export function findHartLinkReleaseAsset(release, operatingSystem, architecture, packageType) {

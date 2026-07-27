@@ -129,8 +129,8 @@ async function syncHartLinkReleaseManifest() {
   const manifest = await response.json();
   const release = parseHartLinkReleaseManifest(manifest);
   writeFileSync(
-    join(siteRoot, "hartlink-studio", "latest.json"),
-    `${JSON.stringify(manifest, null, 2)}\n`,
+    join(siteRoot, "hartlink-studio", "latest-release.js"),
+    `export default ${JSON.stringify(manifest, null, 2)};\n`,
   );
   console.log(`Synced HARTLink Studio ${release.version} release manifest`);
 }

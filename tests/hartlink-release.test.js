@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   findHartLinkReleaseAsset,
   formatReleaseAssetSize,
+  loadLatestHartLinkRelease,
   parseHartLinkReleaseManifest,
 } from "../hartlink-studio/release.js";
 
@@ -42,4 +43,15 @@ test("release manifest parser rejects non-modusignal release notes", () => {
     () => parseHartLinkReleaseManifest({ ...manifest, release_notes_url: "https://github.com/example/release" }),
     /modusignal\.cn/,
   );
+});
+
+test("latest release loader imports the same-origin release module", async () => {
+  let requestedSpecifier = "";
+  const release = await loadLatestHartLinkRelease(async (specifier) => {
+    requestedSpecifier = specifier;
+    return { default: manifest };
+  });
+
+  assert.equal(release.version, "9.8.7");
+  assert.match(requestedSpecifier, /^\/hartlink-studio\/latest-release\.js\?v=\d+$/);
 });

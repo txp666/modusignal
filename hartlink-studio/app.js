@@ -3,7 +3,7 @@ import {
   formatHartLinkReleaseDate,
   formatReleaseAssetSize,
   loadLatestHartLinkRelease,
-} from "./release.js";
+} from "./release.js?v=release-module";
 
 const PRIMARY_DOWNLOADS = {
   windows: {
