@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Fluent 串口助手：现代、跨平台的串口调试工作台，支持文本与 HEX 收发、实时曲线、协议模板、宏命令、自动应答和 JavaScript 脚本。" />
+  <meta name="description" content="Fluent 串口助手：现代、跨平台的串口调试工作台，支持文本与 HEX 收发、高性能实时绘图、协议模板、宏命令、自动应答和 JavaScript 脚本。" />
   <meta name="keywords" content="Fluent串口助手,串口助手,串口调试,Serial Port,HEX,Modbus RTU,实时曲线,协议模板,宏命令" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#f7fbfc" />
@@ -19,14 +19,14 @@
   <meta name="twitter:card" content="summary_large_image" />
   <title>Fluent 串口助手 · 现代串口调试工作台</title>
   <link rel="icon" href="../logo.ico" type="image/x-icon" />
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./styles.css?v=20260728.1" />
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "Fluent Serial Assistant",
       "alternateName": "Fluent 串口助手",
-      "softwareVersion": "0.1.9",
+      "softwareVersion": "0.1.10",
       "applicationCategory": "DeveloperApplication",
       "operatingSystem": "Windows, macOS, Linux",
       "license": "https://www.gnu.org/licenses/gpl-3.0.html",
@@ -65,20 +65,20 @@
         <div class="release-pill">
           <span class="release-dot" aria-hidden="true"></span>
           <span data-copy="stableRelease">最新稳定版</span>
-          <strong data-release-version>0.1.9</strong>
-          <span data-release-date>2026-07-09 发布</span>
+          <strong data-release-version>0.1.10</strong>
+          <span data-release-date>2026-07-27 发布</span>
         </div>
         <p class="eyebrow" data-copy="heroEyebrow">跨平台 · 开源 · Fluent Design</p>
-        <h1 data-copy="heroTitle">串口调试，<br />从连接到自动化</h1>
-        <p class="hero-lede" data-copy="heroDescription">一套专注日常效率的桌面串口工作台。看清每一帧数据，组织常用指令，绘制实时曲线，再用宏命令和脚本把重复测试交给软件。</p>
+        <h1 data-copy="heroTitle"><span class="hero-title-line">串口调试</span><span class="hero-title-line">从连接到自动化</span></h1>
+        <p class="hero-lede" data-copy="heroDescription">一套专注日常效率的桌面串口工作台。看清每一帧数据，用高性能实时曲线追踪多通道变化，再用宏命令和脚本把重复测试交给软件。</p>
         <div class="hero-actions">
           <a
             class="button button-primary"
             data-primary-download
-            href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.9/FluentSerialAssistant-v0.1.9-windows-x64.zip"
+            href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.10/FluentSerialAssistant-0.1.10-windows-x64-setup.exe"
           >
             <span data-copy="downloadNow">立即下载</span>
-            <small data-primary-download-label>Windows x64 · ZIP · 18.5 MB</small>
+            <small data-primary-download-label>Windows x64 · EXE · 16.8 MB</small>
           </a>
           <a class="button button-secondary" href="#downloads" data-copy="allPlatforms">查看全部平台</a>
         </div>
@@ -96,7 +96,7 @@
         <div class="app-window">
           <div class="window-bar" aria-hidden="true">
             <span></span><span></span><span></span>
-            <strong>Fluent 串口助手 <span data-release-version>0.1.9</span></strong>
+            <strong>Fluent 串口助手 <span data-release-version>0.1.10</span></strong>
           </div>
           <img
             src="./assets/show.gif"
@@ -145,8 +145,8 @@
         </article>
         <article>
           <span class="feature-index">04</span>
-          <h3 data-copy="featureVisualTitle">实时曲线与数据表格</h3>
-          <p data-copy="featureVisualDesc">从分隔值、键值对或 JSON 中提取多通道数字，实时绘图并导出 CSV；也可逐帧排序和过滤。</p>
+          <h3 data-copy="featureVisualTitle">高性能实时绘图</h3>
+          <p data-copy="featureVisualDesc">从分隔值、键值对或 JSON 中提取多通道数字，以高性能实时曲线呈现并导出 CSV；也可逐帧排序和过滤。</p>
         </article>
         <article>
           <span class="feature-index">05</span>
@@ -189,7 +189,7 @@
     <section id="downloads" class="download-section section-shell">
       <header class="section-heading download-heading">
         <div>
-          <p class="eyebrow"><span data-copy="downloadEyebrow">最新稳定版</span> <span data-release-version>0.1.9</span></p>
+          <p class="eyebrow"><span data-copy="downloadEyebrow">最新稳定版</span> <span data-release-version>0.1.10</span></p>
           <h2 data-copy="downloadTitle">选择你的平台，开始串口调试</h2>
         </div>
         <a class="release-link" data-release-page href="https://github.com/txp666/FluentSerialAssistant/releases/latest" target="_blank" rel="noreferrer">
@@ -202,30 +202,41 @@
         <article class="download-card recommended" data-platform="windows">
           <header><span>Windows</span><strong data-copy="recommended">推荐</strong></header>
           <h3>Windows x64</h3>
-          <p data-copy="windowsDescription">免安装便携包，解压后运行 FluentSerialAssistant.exe。</p>
-          <dl><div><dt data-copy="format">格式</dt><dd>ZIP</dd></div><div><dt data-copy="size">大小</dt><dd data-asset-size="windows">18.5 MB</dd></div></dl>
-          <a class="button button-download" data-asset="windows" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.9/FluentSerialAssistant-v0.1.9-windows-x64.zip" data-copy="downloadWindows">下载 Windows 版</a>
+          <p data-copy="windowsDescription">Inno Setup 安装包会请求管理员权限，并默认安装到 Windows 的 Program Files 目录。</p>
+          <dl><div><dt data-copy="format">格式</dt><dd>EXE</dd></div><div><dt data-copy="size">大小</dt><dd data-asset-size="windows">16.8 MB</dd></div></dl>
+          <a class="button button-download" data-asset="windows" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.10/FluentSerialAssistant-0.1.10-windows-x64-setup.exe" data-copy="downloadWindows">下载 Windows 版</a>
         </article>
 
         <article class="download-card" data-platform="macos">
-          <header><span>macOS</span><strong>Universal</strong></header>
-          <h3>macOS</h3>
-          <p data-copy="macDescription">适用于 macOS 的应用归档，解压后将应用移入“应用程序”。</p>
-          <dl><div><dt data-copy="format">格式</dt><dd>TAR.GZ</dd></div><div><dt data-copy="size">大小</dt><dd data-asset-size="macos">28.6 MB</dd></div></dl>
-          <a class="button button-download" data-asset="macos" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.9/FluentSerialAssistant-v0.1.9-macos.tar.gz" data-copy="downloadMac">下载 macOS 版</a>
+          <header><span>macOS</span><strong>Apple Silicon</strong></header>
+          <h3>macOS arm64</h3>
+          <p data-copy="macDescription">打开 DMG，将 Fluent Serial Assistant 拖入“应用程序”文件夹。</p>
+          <dl><div><dt data-copy="format">格式</dt><dd>DMG</dd></div><div><dt data-copy="size">大小</dt><dd data-asset-size="macos">29.1 MB</dd></div></dl>
+          <a class="button button-download" data-asset="macos" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.10/FluentSerialAssistant-0.1.10-macos-arm64.dmg" data-copy="downloadMac">下载 macOS 版</a>
         </article>
 
         <article class="download-card" data-platform="linux">
-          <header><span>Linux</span><strong>x64</strong></header>
-          <h3>Linux x64</h3>
-          <p data-copy="linuxDescription">包含启动脚本和运行依赖的便携归档，解压后即可运行。</p>
-          <dl><div><dt data-copy="format">格式</dt><dd>TAR.GZ</dd></div><div><dt data-copy="size">大小</dt><dd data-asset-size="linux">32.5 MB</dd></div></dl>
-          <a class="button button-download" data-asset="linux" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.9/FluentSerialAssistant-v0.1.9-linux-x64.tar.gz" data-copy="downloadLinux">下载 Linux 版</a>
+          <header><span>Linux</span><strong>x64 · arm64</strong></header>
+          <h3>Linux DEB</h3>
+          <p data-copy="linuxDescription">适用于 x64 或 64 位 ARM 的 Debian、Ubuntu 及其衍生发行版，可使用 APT 安装。</p>
+          <dl>
+            <div><dt data-copy="format">格式</dt><dd>DEB</dd></div>
+            <div><dt>x64</dt><dd data-asset-size="linux-x64">28.8 MB</dd></div>
+            <div><dt>arm64</dt><dd data-asset-size="linux-arm64">28.6 MB</dd></div>
+          </dl>
+          <div class="download-card-actions">
+            <a class="button button-download" data-asset="linux-x64" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.10/FluentSerialAssistant-0.1.10-linux-x64.deb" data-copy="downloadLinuxX64">下载 Linux x64 版</a>
+            <a class="button button-download" data-asset="linux-arm64" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.10/FluentSerialAssistant-0.1.10-linux-arm64.deb" data-copy="downloadLinuxArm64">下载 Linux arm64 版</a>
+          </div>
         </article>
       </div>
       <p class="download-note">
-        <span data-copy="downloadNote">下载按钮直接连接 GitHub Release 附件；如自动检查失败，仍会使用页面内置的已验证版本。</span>
-        <a href="https://github.com/txp666/FluentSerialAssistant" target="_blank" rel="noreferrer" data-copy="sourceCode">查看源代码</a>
+        <span data-copy="downloadNote">下载按钮直接连接 GitHub Release 附件，每个平台包均提供 SHA-256 校验文件。Windows Authenticode 开源签名正在申请中，当前安装包暂未签名。</span>
+        <span class="download-note-links">
+          <a href="https://github.com/txp666/FluentSerialAssistant/blob/main/README_EN.md" target="_blank" rel="noreferrer" data-copy="englishReadme">English README</a>
+          <a href="https://github.com/txp666/FluentSerialAssistant/blob/main/CODE_SIGNING_POLICY.md" target="_blank" rel="noreferrer" data-copy="signingPolicy">签名政策</a>
+          <a href="https://github.com/txp666/FluentSerialAssistant" target="_blank" rel="noreferrer" data-copy="sourceCode">查看源代码</a>
+        </span>
       </p>
     </section>
 
@@ -253,7 +264,7 @@
     </nav>
   </footer>
 
-  <script src="./app.js" defer></script>
+  <script src="./app.js?v=20260728.1" defer></script>
 </body>
 
 </html>

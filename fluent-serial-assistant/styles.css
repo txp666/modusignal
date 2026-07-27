@@ -156,10 +156,14 @@ h1, h2, h3, p { margin-top: 0; }
 
 h1 {
   margin-bottom: 1.3rem;
-  font-size: clamp(2.8rem, 5vw, 5rem);
+  font-size: clamp(2.8rem, 4.3vw, 4.35rem);
   line-height: 1.05;
   letter-spacing: -0.055em;
 }
+
+.hero-title-line { display: block; }
+
+html[lang="zh-CN"] .hero-title-line { white-space: nowrap; }
 
 .hero-lede { max-width: 40rem; margin-bottom: 1.75rem; color: var(--muted); font-size: clamp(1rem, 1.5vw, 1.15rem); }
 
@@ -325,9 +329,13 @@ h1 {
 
 .button-download:hover { background: #cff2f5; }
 
+.download-card-actions { display: grid; gap: 1rem; }
+
 .download-note { display: flex; justify-content: space-between; gap: 1rem; margin: 1.1rem 0 0; color: var(--muted); font-size: 0.72rem; }
 
 .download-note a { color: var(--accent-strong); font-weight: 750; }
+
+.download-note-links { display: flex; flex: none; flex-wrap: wrap; gap: 0.45rem 1rem; justify-content: flex-end; }
 
 .open-source-section { padding-block: 0 clamp(5rem, 8vw, 7rem); }
 
@@ -374,6 +382,7 @@ h1 {
   .feature-grid { grid-template-columns: 1fr; }
   .feature-grid article { min-height: 13rem; }
   .download-heading, .download-note, .open-source-card, .site-footer { align-items: flex-start; flex-direction: column; }
+  .download-note-links { justify-content: flex-start; }
   .workspace-grid { gap: 2rem; }
   .open-source-actions, .open-source-actions .button { width: 100%; }
   .site-footer nav { flex-wrap: wrap; }

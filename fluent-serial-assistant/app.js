@@ -10,8 +10,8 @@ const copy = {
   backToModusignal: { zh: "返回 modusignal", en: "Back to modusignal" },
   stableRelease: { zh: "最新稳定版", en: "Latest stable" },
   heroEyebrow: { zh: "跨平台 · 开源 · Fluent Design", en: "Cross-platform · Open source · Fluent Design" },
-  heroTitle: { zh: "串口调试，<br />从连接到自动化", en: "Serial debugging,<br />from connection to automation" },
-  heroDescription: { zh: "一套专注日常效率的桌面串口工作台。看清每一帧数据，组织常用指令，绘制实时曲线，再用宏命令和脚本把重复测试交给软件。", en: "A desktop serial workbench built for daily efficiency. Inspect every frame, organize frequent commands, plot live data, then hand repetitive tests to macros and scripts." },
+  heroTitle: { zh: "<span class=\"hero-title-line\">串口调试</span><span class=\"hero-title-line\">从连接到自动化</span>", en: "<span class=\"hero-title-line\">Serial debugging</span><span class=\"hero-title-line\">from connection to automation</span>" },
+  heroDescription: { zh: "一套专注日常效率的桌面串口工作台。看清每一帧数据，用高性能实时曲线追踪多通道变化，再用宏命令和脚本把重复测试交给软件。", en: "A desktop serial workbench built for daily efficiency. Inspect every frame, track multiple channels with high-performance live plots, then hand repetitive tests to macros and scripts." },
   downloadNow: { zh: "立即下载", en: "Download now" },
   allPlatforms: { zh: "查看全部平台", en: "All platforms" },
   releaseSource: { zh: "下载信息来自 GitHub Releases，页面会自动检查最新稳定版。", en: "Download information comes from GitHub Releases and is refreshed automatically." },
@@ -32,8 +32,8 @@ const copy = {
   featureProtocolDesc: { zh: "用协议模板拆解帧结构，内置 Modbus RTU 与常见 CRC、LRC、XOR、SUM8 计算及发送追加。", en: "Break frames down with protocol templates and use built-in Modbus RTU plus CRC, LRC, XOR and SUM8 calculation and appending." },
   featureAutomationTitle: { zh: "可复用的自动化", en: "Reusable automation" },
   featureAutomationDesc: { zh: "宏命令支持多步骤、等待响应、循环和失败中止；JavaScript 脚本可读取记录并控制发送。", en: "Macros support multiple steps, response waits, loops and stop-on-failure; JavaScript can inspect records and control sending." },
-  featureVisualTitle: { zh: "实时曲线与数据表格", en: "Live plots and data tables" },
-  featureVisualDesc: { zh: "从分隔值、键值对或 JSON 中提取多通道数字，实时绘图并导出 CSV；也可逐帧排序和过滤。", en: "Extract multiple channels from delimited values, key/value pairs or JSON, plot them live, export CSV, and sort or filter individual frames." },
+  featureVisualTitle: { zh: "高性能实时绘图", en: "High-performance live plotting" },
+  featureVisualDesc: { zh: "从分隔值、键值对或 JSON 中提取多通道数字，以高性能实时曲线呈现并导出 CSV；也可逐帧排序和过滤。", en: "Extract multiple channels from delimited values, key/value pairs or JSON, render them in high-performance live plots, export CSV, and sort or filter individual frames." },
   featureSendTitle: { zh: "面向现场的发送工具", en: "Practical sending tools" },
   featureSendDesc: { zh: "常用包、发送历史、循环发送、自动应答和分块文件发送覆盖调试现场的高频操作。", en: "Saved packets, history, cyclic sending, automatic replies and chunked file transfer cover common field workflows." },
   featureRecordTitle: { zh: "完整记录与恢复", en: "Complete logging and recovery" },
@@ -49,15 +49,18 @@ const copy = {
   downloadTitle: { zh: "选择你的平台，开始串口调试", en: "Choose your platform and start debugging" },
   viewRelease: { zh: "在 GitHub 查看 Release", en: "View release on GitHub" },
   recommended: { zh: "推荐", en: "Recommended" },
-  windowsDescription: { zh: "免安装便携包，解压后运行 FluentSerialAssistant.exe。", en: "Portable package. Extract it and run FluentSerialAssistant.exe." },
-  macDescription: { zh: "适用于 macOS 的应用归档，解压后将应用移入“应用程序”。", en: "Application archive for macOS. Extract it and move the app to Applications." },
-  linuxDescription: { zh: "包含启动脚本和运行依赖的便携归档，解压后即可运行。", en: "Portable archive with launcher and runtime dependencies, ready after extraction." },
+  windowsDescription: { zh: "Inno Setup 安装包会请求管理员权限，并默认安装到 Windows 的 Program Files 目录。", en: "The Inno Setup installer requests administrator privileges and installs to Windows Program Files by default." },
+  macDescription: { zh: "打开 DMG，将 Fluent Serial Assistant 拖入“应用程序”文件夹。", en: "Open the DMG and drag Fluent Serial Assistant into the Applications folder." },
+  linuxDescription: { zh: "适用于 x64 或 64 位 ARM 的 Debian、Ubuntu 及其衍生发行版，可使用 APT 安装。", en: "For x64 or 64-bit ARM Debian, Ubuntu and derivatives. Install the matching DEB package with APT." },
   format: { zh: "格式", en: "Format" },
   size: { zh: "大小", en: "Size" },
   downloadWindows: { zh: "下载 Windows 版", en: "Download for Windows" },
   downloadMac: { zh: "下载 macOS 版", en: "Download for macOS" },
-  downloadLinux: { zh: "下载 Linux 版", en: "Download for Linux" },
-  downloadNote: { zh: "下载按钮直接连接 GitHub Release 附件；如自动检查失败，仍会使用页面内置的已验证版本。", en: "Buttons link directly to GitHub Release assets. If the live check fails, the verified built-in release remains available." },
+  downloadLinuxX64: { zh: "下载 Linux x64 版", en: "Download Linux x64" },
+  downloadLinuxArm64: { zh: "下载 Linux arm64 版", en: "Download Linux arm64" },
+  downloadNote: { zh: "下载按钮直接连接 GitHub Release 附件，每个平台包均提供 SHA-256 校验文件。Windows Authenticode 开源签名正在申请中，当前安装包暂未签名。", en: "Buttons link directly to GitHub Release assets, with SHA-256 files for every package. Open-source Windows Authenticode signing is being applied for; the current installer is unsigned." },
+  englishReadme: { zh: "English README", en: "English README" },
+  signingPolicy: { zh: "签名政策", en: "Signing policy" },
   sourceCode: { zh: "查看源代码", en: "View source" },
   openEyebrow: { zh: "开放源码", en: "Open source" },
   openTitle: { zh: "工具保持透明，工作流由你掌控", en: "Transparent tooling, workflows you control" },
@@ -102,16 +105,17 @@ function applyLanguage(language) {
 }
 
 function assetPlatform(assetName) {
-  if (/windows-x64\.zip$/i.test(assetName)) return "windows";
-  if (/macos\.tar\.gz$/i.test(assetName)) return "macos";
-  if (/linux-x64\.tar\.gz$/i.test(assetName)) return "linux";
+  if (/windows-x64-setup\.exe$/i.test(assetName)) return "windows";
+  if (/macos-arm64\.dmg$/i.test(assetName)) return "macos";
+  if (/linux-x64\.deb$/i.test(assetName)) return "linux-x64";
+  if (/linux-arm64\.deb$/i.test(assetName)) return "linux-arm64";
   return null;
 }
 
 function preferredPlatform() {
   const hint = `${navigator.userAgent} ${navigator.platform}`.toLowerCase();
   if (hint.includes("mac")) return "macos";
-  if (hint.includes("linux")) return "linux";
+  if (hint.includes("linux")) return hint.includes("arm64") || hint.includes("aarch64") ? "linux-arm64" : "linux-x64";
   return "windows";
 }
 

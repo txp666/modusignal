@@ -11,13 +11,30 @@ test("Fluent Serial Assistant page exposes GitHub Release downloads", async () =
   const [html, script] = await Promise.all([readFile(pageUrl, "utf8"), readFile(scriptUrl, "utf8")]);
 
   assert.match(html, /Fluent 串口助手/);
-  assert.match(html, /FluentSerialAssistant-v0\.1\.9-windows-x64\.zip/);
-  assert.match(html, /FluentSerialAssistant-v0\.1\.9-macos\.tar\.gz/);
-  assert.match(html, /FluentSerialAssistant-v0\.1\.9-linux-x64\.tar\.gz/);
+  assert.match(html, /"softwareVersion": "0\.1\.10"/);
+  assert.match(html, /FluentSerialAssistant-0\.1\.10-windows-x64-setup\.exe/);
+  assert.match(html, /FluentSerialAssistant-0\.1\.10-macos-arm64\.dmg/);
+  assert.match(html, /FluentSerialAssistant-0\.1\.10-linux-x64\.deb/);
+  assert.match(html, /FluentSerialAssistant-0\.1\.10-linux-arm64\.deb/);
+  assert.match(html, /Program Files/);
+  assert.match(html, /高性能实时绘图/);
+  assert.match(html, /README_EN\.md/);
+  assert.match(html, /CODE_SIGNING_POLICY\.md/);
   assert.match(html, /github\.com\/txp666\/FluentSerialAssistant\/releases/);
-  assert.equal((html.match(/data-asset="/g) || []).length, 3);
+  assert.equal((html.match(/data-asset="/g) || []).length, 4);
+  assert.equal((html.match(/<article class="download-card(?: recommended)?" data-platform=/g) || []).length, 3);
+  assert.match(html, /data-platform="linux"/);
+  assert.doesNotMatch(html, /data-platform="linux-(?:x64|arm64)"/);
+  assert.match(html, /styles\.css\?v=20260728\.1/);
+  assert.match(html, /app\.js\?v=20260728\.1/);
+  assert.match(html, /<span class="hero-title-line">串口调试<\/span>/);
+  assert.match(html, /<span class="hero-title-line">从连接到自动化<\/span>/);
+  assert.doesNotMatch(html, /串口调试，/);
   assert.match(script, /api\.github\.com\/repos\/\$\{REPOSITORY\}\/releases\/latest/);
   assert.match(script, /browser_download_url/);
+  assert.match(script, /windows-x64-setup\\\.exe/);
+  assert.match(script, /linux-arm64\\\.deb/);
+  assert.match(script, /aarch64/);
 });
 
 test("modusignal home and production build include Fluent Serial Assistant", async () => {
@@ -26,6 +43,10 @@ test("modusignal home and production build include Fluent Serial Assistant", asy
   assert.match(home, /href="\.\/fluent-serial-assistant\/"/);
   assert.match(home, /href="\.\/fluent-serial-assistant\/#downloads"/);
   assert.match(home, /Fluent 串口助手/);
+  assert.match(home, /v0\.1\.10/);
+  assert.match(home, /高性能多通道实时绘图/);
+  assert.match(home, />下载最新版<\/a>/);
+  assert.doesNotMatch(home, />下载 0\.1\.10<\/a>/);
   assert.match(home, /src="\.\/fluent-serial-assistant\/assets\/show\.gif"/);
   assert.ok(home.lastIndexOf("hartlinkProductDialog") < home.lastIndexOf("fluentSerialCardTitle"));
   assert.ok(home.lastIndexOf("fluentSerialCardTitle") < home.lastIndexOf("architecture-card"));
