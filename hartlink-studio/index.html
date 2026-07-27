@@ -20,17 +20,15 @@
   <title>HARTLink Studio · 专业 HART 设备工作台</title>
   <link rel="icon" href="../logo.ico" type="image/x-icon" />
   <link rel="stylesheet" href="./styles.css?v=1.0.2-gallery" />
-  <script type="application/ld+json">
+  <script type="application/ld+json" data-release-schema>
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "HARTLink Studio",
-      "softwareVersion": "0.3.6",
       "applicationCategory": "DeveloperApplication",
       "operatingSystem": "Windows, macOS, Linux",
       "description": "跨平台 HART 主站与现场仪表调试软件。",
-      "url": "https://modusignal.cn/hartlink-studio/",
-      "downloadUrl": "https://hartlinkstudio-ota-ap-1257631357.cos.ap-hongkong.myqcloud.com/HARTLinkStudio/ota/releases/v0.3.6/HARTLinkStudio-0.3.6-windows-x64.zip"
+      "url": "https://modusignal.cn/hartlink-studio/"
     }
   </script>
 </head>
@@ -63,8 +61,8 @@
         <div class="release-pill">
           <span class="release-dot" aria-hidden="true"></span>
           <span data-copy="stableRelease">稳定版</span>
-          <strong>0.3.6</strong>
-          <span data-copy="releasedToday">2026-07-26 发布</span>
+          <strong data-release-version>最新版</strong>
+          <span data-release-date data-copy="releaseDatePending">自动同步最新版本</span>
         </div>
         <p class="eyebrow" data-copy="heroEyebrow">跨平台 HART 主站软件</p>
         <h1 data-copy="heroTitle">把 HART 设备调试<br />做成一件清楚的事</h1>
@@ -73,11 +71,11 @@
           <a
             class="button button-primary"
             data-primary-download
-            href="https://hartlinkstudio-ota-ap-1257631357.cos.ap-hongkong.myqcloud.com/HARTLinkStudio/ota/releases/v0.3.6/HARTLinkStudio-0.3.6-windows-x64.zip"
-            data-download-label="Windows x64 · ZIP"
+            href="#downloads"
+            data-download-label="Windows x64 · 安装程序"
           >
             <span data-copy="downloadNow">立即下载</span>
-            <small data-primary-download-label>Windows x64 · ZIP</small>
+            <small data-primary-download-label>Windows x64 · 安装程序</small>
           </a>
           <a class="button button-secondary" href="#downloads" data-copy="allPlatforms">查看全部平台</a>
         </div>
@@ -94,7 +92,7 @@
         <div class="app-window">
           <div class="window-bar" aria-hidden="true">
             <span></span><span></span><span></span>
-            <strong>HARTLink Studio 0.3.6</strong>
+            <strong>HARTLink Studio <span data-release-version>最新版</span></strong>
           </div>
           <img
             src="./assets/overview.gif?v=1.0.2"
@@ -226,7 +224,7 @@
       <div class="section-shell">
         <header class="download-heading">
           <div>
-            <p class="eyebrow" data-copy="downloadEyebrow">HARTLink Studio 0.3.6</p>
+            <p class="eyebrow" data-copy="downloadEyebrow">HARTLink Studio 最新版</p>
             <h2 data-copy="downloadTitle">选择你的平台<br />开始设备调试</h2>
           </div>
         </header>
@@ -234,18 +232,17 @@
         <div class="download-grid">
           <article class="download-card" data-platform="windows">
             <header><span>Windows</span><strong>x64</strong></header>
-            <h3>Portable ZIP</h3>
-            <p data-copy="windowsDescription">免安装便携包，解压后运行 HARTLinkStudio.exe。</p>
-            <dl><div><dt data-copy="fileSize">文件大小</dt><dd>25.3 MB</dd></div><div><dt>SHA-256</dt><dd title="08e7b069ea6ca62822669a4754122183664819274e8de74c76ed00f56b491799">08e7b069…1799</dd></div></dl>
-            <a class="button button-download" href="https://hartlinkstudio-ota-ap-1257631357.cos.ap-hongkong.myqcloud.com/HARTLinkStudio/ota/releases/v0.3.6/HARTLinkStudio-0.3.6-windows-x64.zip" data-copy="downloadWindows">下载 Windows 版</a>
+            <h3 data-copy="windowsPackageTitle">中文安装程序</h3>
+            <dl><div><dt data-copy="fileSize">文件大小</dt><dd data-asset-size>—</dd></div><div><dt>SHA-256</dt><dd data-asset-sha>—</dd></div></dl>
+            <a class="button button-download" href="#downloads" data-download-asset data-os="windows" data-architecture="x64" data-package-type="exe" data-copy="downloadWindows">下载 Windows 版</a>
           </article>
 
           <article class="download-card" data-platform="macos">
             <header><span>macOS</span><strong>Apple Silicon</strong></header>
             <h3>DMG</h3>
             <p data-copy="macDescription">适用于搭载 Apple Silicon 的 Mac，打开镜像后拖入应用程序。</p>
-            <dl><div><dt data-copy="fileSize">文件大小</dt><dd>30.6 MB</dd></div><div><dt>SHA-256</dt><dd title="054bb96cc229341b15bebe00f586210debc3a096187f6a46870a978873c395df">054bb96c…95df</dd></div></dl>
-            <a class="button button-download" href="https://hartlinkstudio-ota-ap-1257631357.cos.ap-hongkong.myqcloud.com/HARTLinkStudio/ota/releases/v0.3.6/HARTLinkStudio-0.3.6-macos-arm64.dmg" data-copy="downloadMac">下载 macOS 版</a>
+            <dl><div><dt data-copy="fileSize">文件大小</dt><dd data-asset-size>—</dd></div><div><dt>SHA-256</dt><dd data-asset-sha>—</dd></div></dl>
+            <a class="button button-download" href="#downloads" data-download-asset data-os="macos" data-architecture="arm64" data-package-type="dmg" data-copy="downloadMac">下载 macOS 版</a>
           </article>
 
           <article class="download-card" data-platform="linux">
@@ -253,10 +250,10 @@
             <h3>DEB &amp; TAR.GZ</h3>
             <p data-copy="linuxDescription">Debian / Ubuntu 推荐 DEB；其他发行版可使用便携 TAR.GZ。</p>
             <div class="linux-downloads">
-              <a href="https://hartlinkstudio-ota-ap-1257631357.cos.ap-hongkong.myqcloud.com/HARTLinkStudio/ota/releases/v0.3.6/HARTLinkStudio-0.3.6-linux-x64.deb" title="SHA-256: a227fa19c4e1088892a8898a16d64344c6d14df25d740523778e9893ea212364">x64 · DEB · 25.5 MB</a>
-              <a href="https://hartlinkstudio-ota-ap-1257631357.cos.ap-hongkong.myqcloud.com/HARTLinkStudio/ota/releases/v0.3.6/HARTLinkStudio-0.3.6-linux-x64.tar.gz" title="SHA-256: 28a89de94b2cec99f4e13560f1cb898fa2be21cf64a4e10bb55d49c8e6077642">x64 · TAR.GZ · 33.4 MB</a>
-              <a href="https://hartlinkstudio-ota-ap-1257631357.cos.ap-hongkong.myqcloud.com/HARTLinkStudio/ota/releases/v0.3.6/HARTLinkStudio-0.3.6-linux-arm64.deb" title="SHA-256: 2a7af71de25b43e3963e58ecf69806564788d4fa27a8274bfdcdae64cac93b65">ARM64 · DEB · 25.1 MB</a>
-              <a href="https://hartlinkstudio-ota-ap-1257631357.cos.ap-hongkong.myqcloud.com/HARTLinkStudio/ota/releases/v0.3.6/HARTLinkStudio-0.3.6-linux-arm64.tar.gz" title="SHA-256: 3b94cf78d6d198e2c920e4726e3d752248307c5e14dac194efcccafef9c01c9a">ARM64 · TAR.GZ · 33.0 MB</a>
+              <a href="#downloads" data-download-asset data-os="linux" data-architecture="x64" data-package-type="deb" data-asset-label="x64 · DEB">x64 · DEB</a>
+              <a href="#downloads" data-download-asset data-os="linux" data-architecture="x64" data-package-type="tar.gz" data-asset-label="x64 · TAR.GZ">x64 · TAR.GZ</a>
+              <a href="#downloads" data-download-asset data-os="linux" data-architecture="arm64" data-package-type="deb" data-asset-label="ARM64 · DEB">ARM64 · DEB</a>
+              <a href="#downloads" data-download-asset data-os="linux" data-architecture="arm64" data-package-type="tar.gz" data-asset-label="ARM64 · TAR.GZ">ARM64 · TAR.GZ</a>
             </div>
           </article>
         </div>
@@ -287,7 +284,7 @@
     <img data-image-dialog-image src="./assets/workbench.png?v=1.0.2" alt="" />
   </dialog>
 
-  <script type="module" src="./app.js?v=1.0.2-gallery"></script>
+  <script type="module" src="./app.js?v=latest-release"></script>
 </body>
 
 </html>

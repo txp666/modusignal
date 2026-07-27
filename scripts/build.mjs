@@ -12,6 +12,10 @@ import {
 } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  HARTLINK_RELEASE_SOURCE_URL,
+  parseHartLinkReleaseManifest,
+} from "../hartlink-studio/release.js";
 
 const projectRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const siteRoot = join(projectRoot, "_site");
@@ -111,6 +115,24 @@ function copyStaticAssets() {
   }
 
   writeFileSync(join(siteRoot, ".nojekyll"), "");
+}
+
+async function syncHartLinkReleaseManifest() {
+  const sourceUrl = process.env.HARTLINK_RELEASE_MANIFEST_URL?.trim() || HARTLINK_RELEASE_SOURCE_URL;
+  const response = await fetch(sourceUrl, {
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) {
+    throw new Error(`Unable to sync HARTLink Studio release manifest (${response.status})`);
+  }
+
+  const manifest = await response.json();
+  const release = parseHartLinkReleaseManifest(manifest);
+  writeFileSync(
+    join(siteRoot, "hartlink-studio", "latest.json"),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
+  console.log(`Synced HARTLink Studio ${release.version} release manifest`);
 }
 
 function createProductionIndex(version) {
@@ -214,6 +236,7 @@ async function main() {
 
   await bundleApp(version);
   copyStaticAssets();
+  await syncHartLinkReleaseManifest();
   injectStaticAssetVersion(version);
   createProductionIndex(version);
   printBuildSummary();

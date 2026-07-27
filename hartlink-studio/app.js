@@ -1,17 +1,29 @@
-const DOWNLOADS = {
+import {
+  findHartLinkReleaseAsset,
+  formatHartLinkReleaseDate,
+  formatReleaseAssetSize,
+  loadLatestHartLinkRelease,
+} from "./release.js";
+
+const PRIMARY_DOWNLOADS = {
   windows: {
-    label: "Windows x64 · ZIP",
-    url: "https://hartlinkstudio-ota-ap-1257631357.cos.ap-hongkong.myqcloud.com/HARTLinkStudio/ota/releases/v0.3.6/HARTLinkStudio-0.3.6-windows-x64.zip",
+    architecture: "x64",
+    packageType: "exe",
+    labelKey: "windowsPrimaryLabel",
   },
   macos: {
-    label: "macOS · Apple Silicon · DMG",
-    url: "https://hartlinkstudio-ota-ap-1257631357.cos.ap-hongkong.myqcloud.com/HARTLinkStudio/ota/releases/v0.3.6/HARTLinkStudio-0.3.6-macos-arm64.dmg",
+    architecture: "arm64",
+    packageType: "dmg",
+    labelKey: "macPrimaryLabel",
   },
   linux: {
-    label: "Linux x64 · DEB",
-    url: "https://hartlinkstudio-ota-ap-1257631357.cos.ap-hongkong.myqcloud.com/HARTLinkStudio/ota/releases/v0.3.6/HARTLinkStudio-0.3.6-linux-x64.deb",
+    architecture: "x64",
+    packageType: "deb",
+    labelKey: "linuxPrimaryLabel",
   },
 };
+
+let latestRelease = null;
 
 const COPY = {
   zh: {
@@ -21,7 +33,7 @@ const COPY = {
     navDownloads: "下载",
     backToModusignal: "返回 modusignal",
     stableRelease: "稳定版",
-    releasedToday: "2026-07-26 发布",
+    releaseDatePending: "自动同步最新版本",
     heroEyebrow: "跨平台 HART 主站软件",
     heroTitle: "把 HART 设备调试<br />做成一件清楚的事",
     heroDescription: "从连接、扫描、变量读取到通信帧解析，再到仪表设置、校准和 DD 工作区，一套桌面软件串起完整的设备调试流程。",
@@ -73,14 +85,17 @@ const COPY = {
     workflowTwoDesc: "扫描轮询地址，读取 CMD 0，并以设备身份约束后续 DD 与操作会话。",
     workflowThreeTitle: "读取、解析或配置",
     workflowThreeDesc: "从过程变量与通用命令开始，按需进入设置、校准或匹配的 DD 工作区。",
-    downloadEyebrow: "HARTLink Studio 0.3.6",
+    downloadEyebrow: "HARTLink Studio 最新版",
     downloadTitle: "选择你的平台<br />开始设备调试",
-    windowsDescription: "免安装便携包，解压后运行 HARTLinkStudio.exe。",
+    windowsPackageTitle: "中文安装程序",
     macDescription: "适用于搭载 Apple Silicon 的 Mac，打开镜像后拖入应用程序。",
     linuxDescription: "Debian / Ubuntu 推荐 DEB；其他发行版可使用便携 TAR.GZ。",
     fileSize: "文件大小",
     downloadWindows: "下载 Windows 版",
     downloadMac: "下载 macOS 版",
+    windowsPrimaryLabel: "Windows x64 · 安装程序",
+    macPrimaryLabel: "macOS · Apple Silicon · DMG",
+    linuxPrimaryLabel: "Linux x64 · DEB",
     footerTagline: "让每一次 HART 会话都有迹可循。",
     modusignalOnline: "modusignal 在线调试",
   },
@@ -91,7 +106,7 @@ const COPY = {
     navDownloads: "Download",
     backToModusignal: "Back to modusignal",
     stableRelease: "Stable",
-    releasedToday: "Released 2026-07-26",
+    releaseDatePending: "Latest release synced automatically",
     heroEyebrow: "Cross-platform HART master software",
     heroTitle: "Make HART device work<br />clear from end to end",
     heroDescription: "Connection, discovery, live variables, frame analysis, instrument settings, calibration and DD workspaces—all in one focused desktop workflow.",
@@ -143,14 +158,17 @@ const COPY = {
     workflowTwoDesc: "Scan polling addresses, read CMD 0 and scope DD and operation sessions to that identity.",
     workflowThreeTitle: "Read, parse or configure",
     workflowThreeDesc: "Start with variables and universal commands, then enter settings, calibration or the matching DD workspace.",
-    downloadEyebrow: "HARTLink Studio 0.3.6",
+    downloadEyebrow: "HARTLink Studio latest release",
     downloadTitle: "Choose your platform<br />Start working with devices",
-    windowsDescription: "Portable package. Extract it, then run HARTLinkStudio.exe.",
+    windowsPackageTitle: "Chinese installer",
     macDescription: "For Apple Silicon Macs. Open the disk image and drag the app into Applications.",
     linuxDescription: "DEB is recommended for Debian / Ubuntu; other distributions can use the portable TAR.GZ.",
     fileSize: "File size",
     downloadWindows: "Download for Windows",
     downloadMac: "Download for macOS",
+    windowsPrimaryLabel: "Windows x64 · Installer",
+    macPrimaryLabel: "macOS · Apple Silicon · DMG",
+    linuxPrimaryLabel: "Linux x64 · DEB",
     footerTagline: "Make every HART session traceable.",
     modusignalOnline: "modusignal online tools",
   },
@@ -163,15 +181,95 @@ function detectPlatform() {
   return "windows";
 }
 
-function configurePrimaryDownload() {
+function currentLanguage() {
+  return document.documentElement.lang.startsWith("en") ? "en" : "zh";
+}
+
+function configurePrimaryDownload(release = latestRelease) {
   const platform = detectPlatform();
-  const download = DOWNLOADS[platform];
+  const preference = PRIMARY_DOWNLOADS[platform];
+  const asset = findHartLinkReleaseAsset(
+    release,
+    platform,
+    preference.architecture,
+    preference.packageType,
+  );
+  const labelText = COPY[currentLanguage()][preference.labelKey];
   const link = document.querySelector("[data-primary-download]");
   const label = document.querySelector("[data-primary-download-label]");
-  link.href = download.url;
-  link.dataset.downloadLabel = download.label;
-  label.textContent = download.label;
+  link.href = asset?.url || "#downloads";
+  link.dataset.downloadLabel = labelText;
+  label.textContent = labelText;
   document.querySelector(`[data-platform="${platform}"]`)?.classList.add("recommended");
+}
+
+function renderLatestRelease(release = latestRelease) {
+  if (!release) {
+    configurePrimaryDownload(null);
+    return;
+  }
+
+  const language = currentLanguage();
+  const formattedDate = formatHartLinkReleaseDate(release.publishedAt, language);
+  document.querySelectorAll("[data-release-version]").forEach((element) => {
+    element.textContent = release.version;
+  });
+  document.querySelectorAll("[data-release-date]").forEach((element) => {
+    element.textContent = language === "en" ? `Released ${formattedDate}` : `${formattedDate} 发布`;
+  });
+
+  const downloadEyebrow = document.querySelector('[data-copy="downloadEyebrow"]');
+  if (downloadEyebrow) {
+    downloadEyebrow.textContent = `HARTLink Studio ${release.version}`;
+  }
+
+  document.querySelectorAll("[data-download-asset]").forEach((link) => {
+    const asset = findHartLinkReleaseAsset(
+      release,
+      link.dataset.os,
+      link.dataset.architecture,
+      link.dataset.packageType,
+    );
+    if (!asset) return;
+
+    link.href = asset.url;
+    link.title = `SHA-256: ${asset.sha256}`;
+    if (link.dataset.assetLabel) {
+      link.textContent = `${link.dataset.assetLabel} · ${formatReleaseAssetSize(asset.size, language)}`;
+    }
+
+    const card = link.closest(".download-card");
+    if (card && !link.closest(".linux-downloads")) {
+      const size = card.querySelector("[data-asset-size]");
+      const digest = card.querySelector("[data-asset-sha]");
+      if (size) size.textContent = formatReleaseAssetSize(asset.size, language);
+      if (digest) {
+        digest.textContent = `${asset.sha256.slice(0, 8)}…${asset.sha256.slice(-3)}`;
+        digest.title = asset.sha256;
+      }
+    }
+  });
+
+  const schemaElement = document.querySelector("[data-release-schema]");
+  const windowsAsset = findHartLinkReleaseAsset(release, "windows", "x64", "exe");
+  if (schemaElement && windowsAsset) {
+    const schema = JSON.parse(schemaElement.textContent);
+    schema.softwareVersion = release.version;
+    schema.datePublished = release.publishedAt;
+    schema.downloadUrl = windowsAsset.url;
+    schemaElement.textContent = JSON.stringify(schema);
+  }
+
+  configurePrimaryDownload(release);
+}
+
+async function refreshLatestRelease() {
+  try {
+    latestRelease = await loadLatestHartLinkRelease();
+    renderLatestRelease(latestRelease);
+  } catch (error) {
+    console.error("Unable to refresh the HARTLink Studio release", error);
+  }
 }
 
 function applyLanguage(language) {
@@ -193,6 +291,7 @@ function applyLanguage(language) {
   document.querySelectorAll("[data-lightbox-title-key]").forEach((element) => {
     element.dataset.lightboxTitle = copy[element.dataset.lightboxTitleKey];
   });
+  renderLatestRelease(latestRelease);
   try {
     localStorage.setItem("modusignal-lang", language);
   } catch {}
@@ -339,6 +438,7 @@ function initMotion() {
 
 configurePrimaryDownload();
 applyLanguage(initialLanguage());
+void refreshLatestRelease();
 bindLanguageToggle();
 bindStickyHeader();
 bindImageDialog();

@@ -1,4 +1,5 @@
 import i18n, { initI18n } from "./i18n.js";
+import { loadLatestHartLinkRelease } from "../hartlink-studio/release.js";
 import { mountChartCurveSections } from "./debug-curve-section.js";
 import { loadAppPages } from "./page-loader.js";
 import { createLogController } from "./ui/log-controller.js";
@@ -148,6 +149,8 @@ const state = {
   pollingActive: false,
 };
 
+let latestHartLinkRelease = null;
+
 boot();
 
 async function boot() {
@@ -157,6 +160,7 @@ async function boot() {
     i18n.apply(document.body);
     mountChartCurveSections();
     Object.assign(elements, collectAppElements());
+    void refreshHartLinkReleaseSummary();
     initializeChartController();
     initializeAomasterController();
     initializeInfrastructureControllers();
@@ -278,6 +282,30 @@ function updateLangSwitchButton(button) {
   button.textContent = i18n("lang.switchTarget");
 }
 
+function renderHartLinkReleaseSummary() {
+  if (!latestHartLinkRelease) return;
+
+  const language = i18n.getLanguage();
+  const version = latestHartLinkRelease.version;
+  const kicker = document.querySelector("[data-hartlink-release-kicker]");
+  const download = document.querySelector("[data-hartlink-release-download]");
+  if (kicker) {
+    kicker.textContent = language === "en" ? `Desktop software · v${version}` : `桌面软件 · v${version}`;
+  }
+  if (download) {
+    download.textContent = language === "en" ? `Download ${version}` : `下载 ${version}`;
+  }
+}
+
+async function refreshHartLinkReleaseSummary() {
+  try {
+    latestHartLinkRelease = await loadLatestHartLinkRelease();
+    renderHartLinkReleaseSummary();
+  } catch (error) {
+    console.warn("Unable to refresh the HARTLink Studio release summary", error);
+  }
+}
+
 function refreshAllDynamicUi() {
   deviceNavigationUi.renderLibrary();
   deviceNavigationUi.renderHomeCards();
@@ -298,6 +326,7 @@ function refreshAllDynamicUi() {
   mqttConfigUi.populate(mqttConfig);
   aomasterController.populateConfigForm();
   aomasterController.syncDisplayControls();
+  renderHartLinkReleaseSummary();
 }
 
 function initializeChartController() {

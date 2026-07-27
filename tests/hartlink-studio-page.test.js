@@ -3,17 +3,23 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 const pageUrl = new URL("../hartlink-studio/index.html", import.meta.url);
+const appUrl = new URL("../hartlink-studio/app.js", import.meta.url);
 const homeUrl = new URL("../pages/home.html", import.meta.url);
+const i18nUrl = new URL("../src/i18n.js", import.meta.url);
 
-test("HARTLink Studio product page exposes the current release downloads", async () => {
-  const html = await readFile(pageUrl, "utf8");
+test("HARTLink Studio product page resolves the latest release dynamically", async () => {
+  const [html, app] = await Promise.all([readFile(pageUrl, "utf8"), readFile(appUrl, "utf8")]);
 
   assert.match(html, /HARTLink Studio/);
-  assert.match(html, /HARTLinkStudio-0\.3\.6-windows-x64\.zip/);
-  assert.match(html, /HARTLinkStudio-0\.3\.6-macos-arm64\.dmg/);
-  assert.match(html, /HARTLinkStudio-0\.3\.6-linux-x64\.deb/);
-  assert.match(html, /HARTLinkStudio-0\.3\.6-linux-arm64\.deb/);
-  assert.match(html, /hartlinkstudio-ota-ap-1257631357\.cos\.ap-hongkong\.myqcloud\.com/);
+  assert.match(html, /data-release-version/);
+  assert.match(html, /data-release-date/);
+  assert.equal((html.match(/data-download-asset/g) || []).length, 6);
+  assert.match(html, /data-package-type="exe"/);
+  assert.doesNotMatch(html, /HARTLinkStudio-\d+\.\d+\.\d+/);
+  assert.doesNotMatch(html, /Portable ZIP/);
+  assert.match(app, /loadLatestHartLinkRelease/);
+  assert.match(app, /formatReleaseAssetSize/);
+  assert.doesNotMatch(app, /0\.3\.6/);
   assert.doesNotMatch(html, /github\.com/i);
   assert.equal((html.match(/data-carousel-slide/g) || []).length, 4);
   assert.match(html, /data-carousel-prev/);
@@ -24,9 +30,13 @@ test("HARTLink Studio product page exposes the current release downloads", async
 });
 
 test("modusignal home links to the independent HARTLink Studio page", async () => {
-  const html = await readFile(homeUrl, "utf8");
+  const [html, i18n] = await Promise.all([readFile(homeUrl, "utf8"), readFile(i18nUrl, "utf8")]);
   assert.match(html, /href="\.\/hartlink-studio\/"/);
   assert.match(html, /href="\.\/hartlink-studio\/#downloads"/);
   assert.match(html, /src="\.\/hartlink-studio\/assets\/logo\.png"/);
+  assert.match(html, /data-hartlink-release-kicker/);
+  assert.match(html, /data-hartlink-release-download/);
+  assert.doesNotMatch(html, /HARTLink Studio[^\n]*0\.3\.6|下载 0\.3\.6/);
+  assert.doesNotMatch(i18n, /home\.hartlinkStudio(?:Kicker|Download)[^\n]*0\.3\.6/);
   assert.doesNotMatch(html, /src="\.\/hartlink-studio\/assets\/workbench\.png"/);
 });
