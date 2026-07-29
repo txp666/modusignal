@@ -4,33 +4,33 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Fluent 串口助手：现代、跨平台的串口调试工作台，支持文本与 HEX 收发、高性能实时绘图、协议模板、宏命令、自动应答和 JavaScript 脚本。" />
-  <meta name="keywords" content="Fluent串口助手,串口助手,串口调试,Serial Port,HEX,Modbus RTU,实时曲线,协议模板,宏命令" />
+  <meta name="description" content="Fluent 串口助手：同时提供 GUI、机器可读 CLI 与 stdio MCP 服务，让脚本和 AI 安全复用串口会话、协议解析、收发记录与实时曲线。" />
+  <meta name="keywords" content="Fluent串口助手,串口助手,串口调试,Serial Port,CLI,MCP,AI,HEX,Modbus RTU,实时曲线,协议模板" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#f7fbfc" />
   <link rel="canonical" href="https://modusignal.cn/fluent-serial-assistant/" />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="zh_CN" />
   <meta property="og:site_name" content="modusignal" />
-  <meta property="og:title" content="Fluent 串口助手 · 现代串口调试工作台" />
-  <meta property="og:description" content="把串口收发、协议解析、实时曲线和自动化测试放进一套清爽的跨平台桌面软件。" />
+  <meta property="og:title" content="Fluent 串口助手 · GUI、CLI 与 MCP 串口工作台" />
+  <meta property="og:description" content="GUI 掌控串口，CLI 与 MCP 复用当前会话。让人、脚本和 AI 在同一套串口工作流中协作。" />
   <meta property="og:url" content="https://modusignal.cn/fluent-serial-assistant/" />
   <meta property="og:image" content="https://modusignal.cn/fluent-serial-assistant/assets/social-preview.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <title>Fluent 串口助手 · 现代串口调试工作台</title>
+  <title>Fluent 串口助手 · GUI、CLI 与 MCP 串口工作台</title>
   <link rel="icon" href="../logo.ico" type="image/x-icon" />
-  <link rel="stylesheet" href="./styles.css?v=20260728.1" />
+  <link rel="stylesheet" href="./styles.css?v=20260729.1" />
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "Fluent Serial Assistant",
       "alternateName": "Fluent 串口助手",
-      "softwareVersion": "0.1.10",
+      "softwareVersion": "0.1.11",
       "applicationCategory": "DeveloperApplication",
       "operatingSystem": "Windows, macOS, Linux",
       "license": "https://www.gnu.org/licenses/gpl-3.0.html",
-      "description": "基于 Qt 6 的现代跨平台串口调试工作台。",
+      "description": "同时提供 GUI、机器可读 CLI 与 stdio MCP 服务的跨平台串口调试工作台。",
       "url": "https://modusignal.cn/fluent-serial-assistant/",
       "downloadUrl": "https://github.com/txp666/FluentSerialAssistant/releases/latest"
     }
@@ -49,6 +49,7 @@
       </span>
     </a>
     <nav class="site-nav" aria-label="产品页面导航">
+      <a href="#ai-control" data-copy="navAiControl">CLI / MCP</a>
       <a href="#capabilities" data-copy="navCapabilities">核心能力</a>
       <a href="#workspace" data-copy="navWorkspace">软件界面</a>
       <a href="#downloads" data-copy="navDownloads">下载</a>
@@ -65,29 +66,28 @@
         <div class="release-pill">
           <span class="release-dot" aria-hidden="true"></span>
           <span data-copy="stableRelease">最新稳定版</span>
-          <strong data-release-version>0.1.10</strong>
-          <span data-release-date>2026-07-27 发布</span>
+          <strong data-release-version>0.1.11</strong>
+          <span data-release-date>2026-07-29 发布</span>
         </div>
-        <p class="eyebrow" data-copy="heroEyebrow">跨平台 · 开源 · Fluent Design</p>
-        <h1 data-copy="heroTitle"><span class="hero-title-line">串口调试</span><span class="hero-title-line">从连接到自动化</span></h1>
-        <p class="hero-lede" data-copy="heroDescription">一套专注日常效率的桌面串口工作台。看清每一帧数据，用高性能实时曲线追踪多通道变化，再用宏命令和脚本把重复测试交给软件。</p>
+        <p class="eyebrow" data-copy="heroEyebrow">GUI · CLI · MCP · 跨平台</p>
+        <h1 data-copy="heroTitle"><span class="hero-title-line">串口调试</span><span class="hero-title-line">现在交给 AI</span></h1>
+        <p class="hero-lede" data-copy="heroDescription">GUI 继续掌控串口，机器可读 CLI 与 MCP 安全复用当前会话。让脚本和 AI 扫描端口、连接设备、精确收发、读取结构化记录并打开实时曲线。</p>
         <div class="hero-actions">
           <a
             class="button button-primary"
             data-primary-download
-            href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.10/FluentSerialAssistant-0.1.10-windows-x64-setup.exe"
+            href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.11/FluentSerialAssistant-0.1.11-windows-x64-setup.exe"
           >
             <span data-copy="downloadNow">立即下载</span>
             <small data-primary-download-label>Windows x64 · EXE · 16.8 MB</small>
           </a>
-          <a class="button button-secondary" href="#downloads" data-copy="allPlatforms">查看全部平台</a>
+          <a class="button button-secondary" href="#ai-control" data-copy="exploreAiControl">了解 CLI / MCP</a>
         </div>
         <div class="hero-meta" aria-label="支持的平台与技术">
-          <span>Windows</span>
-          <span>macOS</span>
-          <span>Linux</span>
-          <span>Qt 6</span>
-          <span>GPL-3.0</span>
+          <span>CLI · JSON</span>
+          <span>MCP · 12 tools</span>
+          <span>Local IPC</span>
+          <span>Windows · macOS · Linux</span>
         </div>
         <p class="release-source" data-release-status data-copy="releaseSource">下载信息来自 GitHub Releases，页面会自动检查最新稳定版。</p>
       </div>
@@ -96,7 +96,7 @@
         <div class="app-window">
           <div class="window-bar" aria-hidden="true">
             <span></span><span></span><span></span>
-            <strong>Fluent 串口助手 <span data-release-version>0.1.10</span></strong>
+            <strong>Fluent 串口助手 <span data-release-version>0.1.11</span></strong>
           </div>
           <img
             src="./assets/show.gif"
@@ -107,17 +107,88 @@
           />
         </div>
         <div class="visual-caption">
-          <span data-copy="visualCaptionLead">多标签终端工作台</span>
-          <strong data-copy="visualCaptionTitle">参数、记录和发送区各就各位</strong>
+          <span data-copy="visualCaptionLead">CLI + MCP 已随安装包提供</span>
+          <strong data-copy="visualCaptionTitle">复用 GUI 会话，不与串口抢占</strong>
         </div>
       </div>
     </section>
 
     <section class="trust-strip" aria-label="产品亮点">
       <div class="section-shell trust-grid">
-        <p><strong data-copy="trustOneTitle">看清数据</strong><span data-copy="trustOneDesc">文本、HEX、混合显示与自动断帧</span></p>
-        <p><strong data-copy="trustTwoTitle">组织流程</strong><span data-copy="trustTwoDesc">常用包、协议模板、宏命令和自动应答</span></p>
-        <p><strong data-copy="trustThreeTitle">跨平台发布</strong><span data-copy="trustThreeDesc">Windows、macOS 与 Linux 原生构建</span></p>
+        <p><strong data-copy="trustOneTitle">GUI 唯一持有串口</strong><span data-copy="trustOneDesc">外部控制复用会话，不重复打开设备</span></p>
+        <p><strong data-copy="trustTwoTitle">CLI 输出稳定 JSON</strong><span data-copy="trustTwoDesc">适合终端、Shell 脚本与自动测试</span></p>
+        <p><strong data-copy="trustThreeTitle">MCP 提供 12 个工具</strong><span data-copy="trustThreeDesc">让 AI 发现并调用完整串口能力</span></p>
+      </div>
+    </section>
+
+    <section id="ai-control" class="ai-control-section">
+      <div class="section-shell">
+        <header class="section-heading ai-control-heading">
+          <p class="eyebrow" data-copy="aiEyebrow">新增 · AI 与自动化控制</p>
+          <h2 data-copy="aiTitle">同一个串口会话，三种操作方式</h2>
+          <p data-copy="aiDescription">在 GUI 中观察和调整，在 CLI 中编排脚本，在 MCP 客户端中直接让 AI 调用工具。三者共享会话、协议解析、收发记录和实时曲线。</p>
+        </header>
+
+        <div class="ai-control-grid">
+          <div class="ai-control-copy">
+            <div class="control-mode-list">
+              <article>
+                <span class="mode-mark" aria-hidden="true">&gt;_</span>
+                <div>
+                  <p class="mode-label">fluentserial-cli</p>
+                  <h3 data-copy="cliTitle">为终端和自动测试而生</h3>
+                  <p data-copy="cliDescription">端口扫描、会话选择、连接、文本/HEX 收发、记录读取、协议选择和绘图控制均返回稳定 JSON。</p>
+                </div>
+              </article>
+              <article>
+                <span class="mode-mark mode-mark-mcp" aria-hidden="true">M</span>
+                <div>
+                  <p class="mode-label">fluentserial-mcp</p>
+                  <h3 data-copy="mcpTitle">把串口能力变成 AI 工具</h3>
+                  <p data-copy="mcpDescription">标准 stdio MCP 服务提供 12 个可发现工具、JSON Schema 参数和结构化结果，业务错误可由模型识别并修正。</p>
+                </div>
+              </article>
+            </div>
+            <a class="inline-link" href="https://github.com/txp666/FluentSerialAssistant/blob/main/docs/ai-control.md" target="_blank" rel="noreferrer">
+              <span data-copy="viewAiDocs">查看 CLI、MCP 与 IPC 接入文档</span>
+              <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+
+          <div class="control-console" aria-label="CLI and MCP examples">
+            <div class="console-bar">
+              <span></span><span></span><span></span>
+              <strong data-copy="consoleTitle">控制当前 GUI 会话</strong>
+            </div>
+            <div class="console-group">
+              <p><span>CLI</span><small data-copy="consoleCliLabel">扫描、发送、读取</small></p>
+              <pre><code><span class="prompt">$</span> fluentserial-cli ports
+<span class="prompt">$</span> fluentserial-cli send-hex --hex \
+  <span class="code-value">"01 03 00 00 00 02 C4 0B"</span>
+<span class="prompt">$</span> fluentserial-cli records --direction rx --limit 20</code></pre>
+            </div>
+            <div class="console-group mcp-config">
+              <p><span>MCP</span><small data-copy="consoleMcpLabel">一次配置，按需调用</small></p>
+              <pre><code>{
+  <span class="code-key">"mcpServers"</span>: {
+    <span class="code-key">"fluent-serial-assistant"</span>: {
+      <span class="code-key">"command"</span>: <span class="code-value">"/path/to/fluentserial-mcp"</span>
+    }
+  }
+}</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-flow" aria-label="本地控制架构">
+          <div class="flow-node"><strong data-copy="flowClients">AI 客户端 / 脚本</strong><span>MCP stdio · CLI</span></div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="flow-node"><strong data-copy="flowIpc">用户级本地 IPC</strong><span>JSON · IPC v1</span></div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="flow-node flow-node-accent"><strong data-copy="flowGui">Fluent GUI 会话</strong><span data-copy="flowGuiDetail">协议 · 记录 · 曲线</span></div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="flow-node"><strong data-copy="flowDevice">串口设备</strong><span data-copy="flowDeviceDetail">由 GUI 唯一持有</span></div>
+        </div>
       </div>
     </section>
 
@@ -140,13 +211,13 @@
         </article>
         <article>
           <span class="feature-index">03</span>
-          <h3 data-copy="featureAutomationTitle">可复用的自动化</h3>
-          <p data-copy="featureAutomationDesc">宏命令支持多步骤、等待响应、循环和失败中止；JavaScript 脚本可读取记录并控制发送。</p>
+          <h3 data-copy="featureAutomationTitle">从宏命令到 AI 工具</h3>
+          <p data-copy="featureAutomationDesc">内置宏和 JavaScript 处理桌面自动化；机器可读 CLI 与 MCP 把同一套能力开放给脚本、测试和 AI。</p>
         </article>
         <article>
           <span class="feature-index">04</span>
           <h3 data-copy="featureVisualTitle">高性能实时绘图</h3>
-          <p data-copy="featureVisualDesc">从分隔值、键值对或 JSON 中提取多通道数字，以高性能实时曲线呈现并导出 CSV；也可逐帧排序和过滤。</p>
+          <p data-copy="featureVisualDesc">从分隔值、键值对或 JSON 中提取多通道数字，以高性能实时曲线呈现并导出 CSV；CLI/MCP 也可直接打开和配置曲线。</p>
         </article>
         <article>
           <span class="feature-index">05</span>
@@ -189,8 +260,9 @@
     <section id="downloads" class="download-section section-shell">
       <header class="section-heading download-heading">
         <div>
-          <p class="eyebrow"><span data-copy="downloadEyebrow">最新稳定版</span> <span data-release-version>0.1.10</span></p>
-          <h2 data-copy="downloadTitle">选择你的平台，开始串口调试</h2>
+          <p class="eyebrow"><span data-copy="downloadEyebrow">最新稳定版</span> <span data-release-version>0.1.11</span></p>
+          <h2 data-copy="downloadTitle">一次安装，同时获得 GUI、CLI 与 MCP</h2>
+          <p class="download-lede" data-copy="downloadDescription">Windows、macOS 与 Linux 安装包均已包含命令行和 MCP 服务程序。</p>
         </div>
         <a class="release-link" data-release-page href="https://github.com/txp666/FluentSerialAssistant/releases/latest" target="_blank" rel="noreferrer">
           <span data-copy="viewRelease">在 GitHub 查看 Release</span>
@@ -204,15 +276,17 @@
           <h3>Windows x64</h3>
           <p data-copy="windowsDescription">Inno Setup 安装包会请求管理员权限，并默认安装到 Windows 的 Program Files 目录。</p>
           <dl><div><dt data-copy="format">格式</dt><dd>EXE</dd></div><div><dt data-copy="size">大小</dt><dd data-asset-size="windows">16.8 MB</dd></div></dl>
-          <a class="button button-download" data-asset="windows" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.10/FluentSerialAssistant-0.1.10-windows-x64-setup.exe" data-copy="downloadWindows">下载 Windows 版</a>
+          <span class="package-includes" data-copy="packageIncludes">GUI + CLI + MCP</span>
+          <a class="button button-download" data-asset="windows" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.11/FluentSerialAssistant-0.1.11-windows-x64-setup.exe" data-copy="downloadWindows">下载 Windows 版</a>
         </article>
 
         <article class="download-card" data-platform="macos">
           <header><span>macOS</span><strong>Apple Silicon</strong></header>
           <h3>macOS arm64</h3>
           <p data-copy="macDescription">打开 DMG，将 Fluent Serial Assistant 拖入“应用程序”文件夹。</p>
-          <dl><div><dt data-copy="format">格式</dt><dd>DMG</dd></div><div><dt data-copy="size">大小</dt><dd data-asset-size="macos">29.1 MB</dd></div></dl>
-          <a class="button button-download" data-asset="macos" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.10/FluentSerialAssistant-0.1.10-macos-arm64.dmg" data-copy="downloadMac">下载 macOS 版</a>
+          <dl><div><dt data-copy="format">格式</dt><dd>DMG</dd></div><div><dt data-copy="size">大小</dt><dd data-asset-size="macos">29.2 MB</dd></div></dl>
+          <span class="package-includes" data-copy="packageIncludes">GUI + CLI + MCP</span>
+          <a class="button button-download" data-asset="macos" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.11/FluentSerialAssistant-0.1.11-macos-arm64.dmg" data-copy="downloadMac">下载 macOS 版</a>
         </article>
 
         <article class="download-card" data-platform="linux">
@@ -221,12 +295,13 @@
           <p data-copy="linuxDescription">适用于 x64 或 64 位 ARM 的 Debian、Ubuntu 及其衍生发行版，可使用 APT 安装。</p>
           <dl>
             <div><dt data-copy="format">格式</dt><dd>DEB</dd></div>
-            <div><dt>x64</dt><dd data-asset-size="linux-x64">28.8 MB</dd></div>
-            <div><dt>arm64</dt><dd data-asset-size="linux-arm64">28.6 MB</dd></div>
+            <div><dt>x64</dt><dd data-asset-size="linux-x64">28.9 MB</dd></div>
+            <div><dt>arm64</dt><dd data-asset-size="linux-arm64">28.7 MB</dd></div>
           </dl>
           <div class="download-card-actions">
-            <a class="button button-download" data-asset="linux-x64" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.10/FluentSerialAssistant-0.1.10-linux-x64.deb" data-copy="downloadLinuxX64">下载 Linux x64 版</a>
-            <a class="button button-download" data-asset="linux-arm64" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.10/FluentSerialAssistant-0.1.10-linux-arm64.deb" data-copy="downloadLinuxArm64">下载 Linux arm64 版</a>
+            <span class="package-includes" data-copy="packageIncludes">GUI + CLI + MCP</span>
+            <a class="button button-download" data-asset="linux-x64" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.11/FluentSerialAssistant-0.1.11-linux-x64.deb" data-copy="downloadLinuxX64">下载 Linux x64 版</a>
+            <a class="button button-download" data-asset="linux-arm64" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.11/FluentSerialAssistant-0.1.11-linux-arm64.deb" data-copy="downloadLinuxArm64">下载 Linux arm64 版</a>
           </div>
         </article>
       </div>
@@ -258,13 +333,14 @@
   <footer class="site-footer section-shell">
     <p><strong>Fluent 串口助手</strong><span data-copy="footerTagline">让每一次串口会话更清楚、更可复用。</span></p>
     <nav aria-label="页脚导航">
+      <a href="#ai-control" data-copy="navAiControl">CLI / MCP</a>
       <a href="#capabilities" data-copy="navCapabilities">核心能力</a>
       <a href="#downloads" data-copy="navDownloads">下载</a>
       <a href="../" data-copy="backToModusignal">返回 modusignal</a>
     </nav>
   </footer>
 
-  <script src="./app.js?v=20260728.1" defer></script>
+  <script src="./app.js?v=20260729.1" defer></script>
 </body>
 
 </html>

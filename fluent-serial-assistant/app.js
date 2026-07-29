@@ -1,28 +1,48 @@
 const REPOSITORY = "txp666/FluentSerialAssistant";
 const RELEASE_API = `https://api.github.com/repos/${REPOSITORY}/releases/latest`;
+const FALLBACK_RELEASE_DATE = "2026-07-29T14:23:19Z";
 
 const copy = {
   skipLink: { zh: "跳到主要内容", en: "Skip to main content" },
-  brandTagline: { zh: "现代串口调试工作台", en: "Modern serial debugging workbench" },
+  brandTagline: { zh: "GUI · CLI · MCP 串口工作台", en: "GUI · CLI · MCP serial workbench" },
+  navAiControl: { zh: "CLI / MCP", en: "CLI / MCP" },
   navCapabilities: { zh: "核心能力", en: "Capabilities" },
   navWorkspace: { zh: "软件界面", en: "Workspace" },
   navDownloads: { zh: "下载", en: "Downloads" },
   backToModusignal: { zh: "返回 modusignal", en: "Back to modusignal" },
   stableRelease: { zh: "最新稳定版", en: "Latest stable" },
-  heroEyebrow: { zh: "跨平台 · 开源 · Fluent Design", en: "Cross-platform · Open source · Fluent Design" },
-  heroTitle: { zh: "<span class=\"hero-title-line\">串口调试</span><span class=\"hero-title-line\">从连接到自动化</span>", en: "<span class=\"hero-title-line\">Serial debugging</span><span class=\"hero-title-line\">from connection to automation</span>" },
-  heroDescription: { zh: "一套专注日常效率的桌面串口工作台。看清每一帧数据，用高性能实时曲线追踪多通道变化，再用宏命令和脚本把重复测试交给软件。", en: "A desktop serial workbench built for daily efficiency. Inspect every frame, track multiple channels with high-performance live plots, then hand repetitive tests to macros and scripts." },
+  heroEyebrow: { zh: "GUI · CLI · MCP · 跨平台", en: "GUI · CLI · MCP · Cross-platform" },
+  heroTitle: { zh: "<span class=\"hero-title-line\">串口调试</span><span class=\"hero-title-line\">现在交给 AI</span>", en: "<span class=\"hero-title-line\">Serial debugging</span><span class=\"hero-title-line\">now speaks AI</span>" },
+  heroDescription: { zh: "GUI 继续掌控串口，机器可读 CLI 与 MCP 安全复用当前会话。让脚本和 AI 扫描端口、连接设备、精确收发、读取结构化记录并打开实时曲线。", en: "The GUI stays in control of the serial port while a machine-readable CLI and MCP safely reuse the active session. Let scripts and AI discover ports, connect devices, exchange exact data, read structured records and open live plots." },
   downloadNow: { zh: "立即下载", en: "Download now" },
   allPlatforms: { zh: "查看全部平台", en: "All platforms" },
+  exploreAiControl: { zh: "了解 CLI / MCP", en: "Explore CLI / MCP" },
   releaseSource: { zh: "下载信息来自 GitHub Releases，页面会自动检查最新稳定版。", en: "Download information comes from GitHub Releases and is refreshed automatically." },
-  visualCaptionLead: { zh: "多标签终端工作台", en: "Multi-tab terminal workbench" },
-  visualCaptionTitle: { zh: "参数、记录和发送区各就各位", en: "Settings, records and sending stay in their place" },
-  trustOneTitle: { zh: "看清数据", en: "See the data" },
-  trustOneDesc: { zh: "文本、HEX、混合显示与自动断帧", en: "Text, HEX, mixed view and automatic framing" },
-  trustTwoTitle: { zh: "组织流程", en: "Organize the flow" },
-  trustTwoDesc: { zh: "常用包、协议模板、宏命令和自动应答", en: "Packets, templates, macros and auto replies" },
-  trustThreeTitle: { zh: "跨平台发布", en: "Cross-platform releases" },
-  trustThreeDesc: { zh: "Windows、macOS 与 Linux 原生构建", en: "Native Windows, macOS and Linux builds" },
+  visualCaptionLead: { zh: "CLI + MCP 已随安装包提供", en: "CLI + MCP included in every package" },
+  visualCaptionTitle: { zh: "复用 GUI 会话，不与串口抢占", en: "Reuse the GUI session without competing for the port" },
+  trustOneTitle: { zh: "GUI 唯一持有串口", en: "The GUI owns the port" },
+  trustOneDesc: { zh: "外部控制复用会话，不重复打开设备", en: "External control reuses sessions instead of reopening devices" },
+  trustTwoTitle: { zh: "CLI 输出稳定 JSON", en: "Stable JSON from the CLI" },
+  trustTwoDesc: { zh: "适合终端、Shell 脚本与自动测试", en: "Built for terminals, shell scripts and automated tests" },
+  trustThreeTitle: { zh: "MCP 提供 12 个工具", en: "12 MCP tools" },
+  trustThreeDesc: { zh: "让 AI 发现并调用完整串口能力", en: "Let AI discover and call the complete serial toolkit" },
+  aiEyebrow: { zh: "新增 · AI 与自动化控制", en: "New · AI and automation control" },
+  aiTitle: { zh: "同一个串口会话，三种操作方式", en: "One serial session, three ways to work" },
+  aiDescription: { zh: "在 GUI 中观察和调整，在 CLI 中编排脚本，在 MCP 客户端中直接让 AI 调用工具。三者共享会话、协议解析、收发记录和实时曲线。", en: "Observe and adjust in the GUI, orchestrate scripts through the CLI, or let AI call tools through an MCP client. All three share sessions, protocol parsing, traffic records and live plots." },
+  cliTitle: { zh: "为终端和自动测试而生", en: "Built for terminals and automated tests" },
+  cliDescription: { zh: "端口扫描、会话选择、连接、文本/HEX 收发、记录读取、协议选择和绘图控制均返回稳定 JSON。", en: "Port discovery, session selection, connection, text/HEX I/O, record retrieval, protocol selection and plot control all return stable JSON." },
+  mcpTitle: { zh: "把串口能力变成 AI 工具", en: "Turn serial capabilities into AI tools" },
+  mcpDescription: { zh: "标准 stdio MCP 服务提供 12 个可发现工具、JSON Schema 参数和结构化结果，业务错误可由模型识别并修正。", en: "The standard stdio MCP server exposes 12 discoverable tools with JSON Schema inputs and structured results, including actionable errors models can correct." },
+  viewAiDocs: { zh: "查看 CLI、MCP 与 IPC 接入文档", en: "Read the CLI, MCP and IPC integration guide" },
+  consoleTitle: { zh: "控制当前 GUI 会话", en: "Control the active GUI session" },
+  consoleCliLabel: { zh: "扫描、发送、读取", en: "Discover, send, read" },
+  consoleMcpLabel: { zh: "一次配置，按需调用", en: "Configure once, call on demand" },
+  flowClients: { zh: "AI 客户端 / 脚本", en: "AI client / script" },
+  flowIpc: { zh: "用户级本地 IPC", en: "User-scoped local IPC" },
+  flowGui: { zh: "Fluent GUI 会话", en: "Fluent GUI session" },
+  flowGuiDetail: { zh: "协议 · 记录 · 曲线", en: "Protocols · records · plots" },
+  flowDevice: { zh: "串口设备", en: "Serial device" },
+  flowDeviceDetail: { zh: "由 GUI 唯一持有", en: "Owned only by the GUI" },
   capabilitiesEyebrow: { zh: "不止是收发窗口", en: "Beyond send and receive" },
   capabilitiesTitle: { zh: "从一次连接，走到完整测试流程", en: "From first connection to a complete test flow" },
   capabilitiesDescription: { zh: "常用功能保持顺手，复杂能力按需展开。无论临时看日志，还是搭建可重复的设备测试，都不需要切换工具。", en: "Everyday actions stay close while advanced tools unfold when needed. Inspect a quick log or build a repeatable device test without switching apps." },
@@ -30,10 +50,10 @@ const copy = {
   featureTerminalDesc: { zh: "独立配置收发编码，支持文本、HEX、混合显示、搜索过滤、时间戳、自动断帧与多标签会话。", en: "Configure receive and send encodings separately, with text, HEX, mixed view, search, timestamps, automatic framing and multi-tab sessions." },
   featureProtocolTitle: { zh: "协议与校验工具", en: "Protocol and checksum tools" },
   featureProtocolDesc: { zh: "用协议模板拆解帧结构，内置 Modbus RTU 与常见 CRC、LRC、XOR、SUM8 计算及发送追加。", en: "Break frames down with protocol templates and use built-in Modbus RTU plus CRC, LRC, XOR and SUM8 calculation and appending." },
-  featureAutomationTitle: { zh: "可复用的自动化", en: "Reusable automation" },
-  featureAutomationDesc: { zh: "宏命令支持多步骤、等待响应、循环和失败中止；JavaScript 脚本可读取记录并控制发送。", en: "Macros support multiple steps, response waits, loops and stop-on-failure; JavaScript can inspect records and control sending." },
+  featureAutomationTitle: { zh: "从宏命令到 AI 工具", en: "From macros to AI tools" },
+  featureAutomationDesc: { zh: "内置宏和 JavaScript 处理桌面自动化；机器可读 CLI 与 MCP 把同一套能力开放给脚本、测试和 AI。", en: "Built-in macros and JavaScript cover desktop automation, while the machine-readable CLI and MCP expose the same capabilities to scripts, tests and AI." },
   featureVisualTitle: { zh: "高性能实时绘图", en: "High-performance live plotting" },
-  featureVisualDesc: { zh: "从分隔值、键值对或 JSON 中提取多通道数字，以高性能实时曲线呈现并导出 CSV；也可逐帧排序和过滤。", en: "Extract multiple channels from delimited values, key/value pairs or JSON, render them in high-performance live plots, export CSV, and sort or filter individual frames." },
+  featureVisualDesc: { zh: "从分隔值、键值对或 JSON 中提取多通道数字，以高性能实时曲线呈现并导出 CSV；CLI/MCP 也可直接打开和配置曲线。", en: "Extract multiple channels from delimited values, key/value pairs or JSON and render high-performance live plots with CSV export; CLI/MCP can open and configure them directly." },
   featureSendTitle: { zh: "面向现场的发送工具", en: "Practical sending tools" },
   featureSendDesc: { zh: "常用包、发送历史、循环发送、自动应答和分块文件发送覆盖调试现场的高频操作。", en: "Saved packets, history, cyclic sending, automatic replies and chunked file transfer cover common field workflows." },
   featureRecordTitle: { zh: "完整记录与恢复", en: "Complete logging and recovery" },
@@ -46,7 +66,8 @@ const copy = {
   workspacePointThree: { zh: "简体中文与 English 可即时切换，无需重启", en: "Switch between Simplified Chinese and English without restarting" },
   workspaceCaption: { zh: "Fluent 串口助手终端工作台", en: "Fluent Serial Assistant terminal workbench" },
   downloadEyebrow: { zh: "最新稳定版", en: "Latest stable" },
-  downloadTitle: { zh: "选择你的平台，开始串口调试", en: "Choose your platform and start debugging" },
+  downloadTitle: { zh: "一次安装，同时获得 GUI、CLI 与 MCP", en: "One install gives you GUI, CLI and MCP" },
+  downloadDescription: { zh: "Windows、macOS 与 Linux 安装包均已包含命令行和 MCP 服务程序。", en: "Windows, macOS and Linux packages all include the command-line and MCP server programs." },
   viewRelease: { zh: "在 GitHub 查看 Release", en: "View release on GitHub" },
   recommended: { zh: "推荐", en: "Recommended" },
   windowsDescription: { zh: "Inno Setup 安装包会请求管理员权限，并默认安装到 Windows 的 Program Files 目录。", en: "The Inno Setup installer requests administrator privileges and installs to Windows Program Files by default." },
@@ -54,6 +75,7 @@ const copy = {
   linuxDescription: { zh: "适用于 x64 或 64 位 ARM 的 Debian、Ubuntu 及其衍生发行版，可使用 APT 安装。", en: "For x64 or 64-bit ARM Debian, Ubuntu and derivatives. Install the matching DEB package with APT." },
   format: { zh: "格式", en: "Format" },
   size: { zh: "大小", en: "Size" },
+  packageIncludes: { zh: "GUI + CLI + MCP", en: "GUI + CLI + MCP" },
   downloadWindows: { zh: "下载 Windows 版", en: "Download for Windows" },
   downloadMac: { zh: "下载 macOS 版", en: "Download for macOS" },
   downloadLinuxX64: { zh: "下载 Linux x64 版", en: "Download Linux x64" },
@@ -96,11 +118,10 @@ function applyLanguage(language) {
   const toggle = document.querySelector("[data-language-toggle]");
   toggle.textContent = currentLanguage === "zh" ? "EN" : "中";
   toggle.setAttribute("aria-label", currentLanguage === "zh" ? "Switch to English" : "切换到中文");
-  if (latestRelease?.published_at) {
-    document.querySelectorAll("[data-release-date]").forEach((element) => {
-      element.textContent = formatReleaseDate(latestRelease.published_at);
-    });
-  }
+  const releaseDate = latestRelease?.published_at || FALLBACK_RELEASE_DATE;
+  document.querySelectorAll("[data-release-date]").forEach((element) => {
+    element.textContent = formatReleaseDate(releaseDate);
+  });
   try { localStorage.setItem("fluent-serial-language", currentLanguage); } catch {}
 }
 
