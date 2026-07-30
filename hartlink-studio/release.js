@@ -77,16 +77,37 @@ export function parseHartLinkReleaseManifest(value) {
   };
 }
 
-export async function loadLatestHartLinkRelease(
+export async function loadLatestHartLinkRelease({
+  fetchImplementation = globalThis.fetch?.bind(globalThis),
   importImplementation = (specifier) => import(specifier),
-) {
+  now = () => Date.now(),
+} = {}) {
+  if (typeof fetchImplementation === "function") {
+    try {
+      const separator = HARTLINK_RELEASE_SOURCE_URL.includes("?") ? "&" : "?";
+      const response = await fetchImplementation(
+        `${HARTLINK_RELEASE_SOURCE_URL}${separator}v=${now()}`,
+        {
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        },
+      );
+      if (!response.ok) {
+        throw new Error(`Unable to load the live release manifest (${response.status})`);
+      }
+      return parseHartLinkReleaseManifest(await response.json());
+    } catch {
+      // Keep the build-time snapshot as a resilient fallback for offline mirrors.
+    }
+  }
+
   if (typeof importImplementation !== "function") {
     throw new Error("Module loading is unavailable");
   }
 
   const separator = HARTLINK_RELEASE_MODULE_PATH.includes("?") ? "&" : "?";
   const module = await importImplementation(
-    `${HARTLINK_RELEASE_MODULE_PATH}${separator}v=${Date.now()}`,
+    `${HARTLINK_RELEASE_MODULE_PATH}${separator}v=${now()}`,
   );
   return parseHartLinkReleaseManifest(module.default);
 }

@@ -53,13 +53,46 @@ test("release manifest parser rejects direct COS download URLs", () => {
   assert.throws(() => parseHartLinkReleaseManifest(directCosManifest), /invalid asset/);
 });
 
-test("latest release loader imports the same-origin release module", async () => {
-  let requestedSpecifier = "";
-  const release = await loadLatestHartLinkRelease(async (specifier) => {
-    requestedSpecifier = specifier;
-    return { default: manifest };
+test("latest release loader fetches the live release manifest without caching", async () => {
+  let requestedUrl = "";
+  let requestedOptions;
+  const release = await loadLatestHartLinkRelease({
+    fetchImplementation: async (url, options) => {
+      requestedUrl = url;
+      requestedOptions = options;
+      return {
+        ok: true,
+        json: async () => manifest,
+      };
+    },
+    importImplementation: async () => {
+      throw new Error("static fallback should not be used");
+    },
+    now: () => 123456,
   });
 
   assert.equal(release.version, "9.8.7");
-  assert.match(requestedSpecifier, /^\/hartlink-studio\/latest-release\.js\?v=\d+$/);
+  assert.equal(
+    requestedUrl,
+    "https://download.modusignal.cn/HARTLinkStudio/ota/latest.json?v=123456",
+  );
+  assert.equal(requestedOptions.cache, "no-store");
+  assert.deepEqual(requestedOptions.headers, { Accept: "application/json" });
+});
+
+test("latest release loader imports the same-origin snapshot when live fetch fails", async () => {
+  let requestedSpecifier = "";
+  const release = await loadLatestHartLinkRelease({
+    fetchImplementation: async () => {
+      throw new Error("network unavailable");
+    },
+    importImplementation: async (specifier) => {
+      requestedSpecifier = specifier;
+      return { default: manifest };
+    },
+    now: () => 123456,
+  });
+
+  assert.equal(release.version, "9.8.7");
+  assert.equal(requestedSpecifier, "/hartlink-studio/latest-release.js?v=123456");
 });
