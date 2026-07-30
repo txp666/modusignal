@@ -6,6 +6,7 @@ const pageUrl = new URL("../fluent-serial-assistant/index.html", import.meta.url
 const scriptUrl = new URL("../fluent-serial-assistant/app.js", import.meta.url);
 const homeUrl = new URL("../pages/home.html", import.meta.url);
 const buildUrl = new URL("../scripts/build.mjs", import.meta.url);
+const headersUrl = new URL("../_headers", import.meta.url);
 
 test("Fluent Serial Assistant page exposes GitHub Release downloads", async () => {
   const [html, script] = await Promise.all([readFile(pageUrl, "utf8"), readFile(scriptUrl, "utf8")]);
@@ -43,7 +44,11 @@ test("Fluent Serial Assistant page exposes GitHub Release downloads", async () =
 });
 
 test("modusignal home and production build include Fluent Serial Assistant", async () => {
-  const [home, build] = await Promise.all([readFile(homeUrl, "utf8"), readFile(buildUrl, "utf8")]);
+  const [home, build, headers] = await Promise.all([
+    readFile(homeUrl, "utf8"),
+    readFile(buildUrl, "utf8"),
+    readFile(headersUrl, "utf8"),
+  ]);
 
   assert.match(home, /href="\.\/fluent-serial-assistant\/"/);
   assert.match(home, /href="\.\/fluent-serial-assistant\/#downloads"/);
@@ -57,4 +62,9 @@ test("modusignal home and production build include Fluent Serial Assistant", asy
   assert.ok(home.lastIndexOf("hartlinkProductDialog") < home.lastIndexOf("fluentSerialCardTitle"));
   assert.ok(home.lastIndexOf("fluentSerialCardTitle") < home.lastIndexOf("architecture-card"));
   assert.match(build, /\["fluent-serial-assistant", "fluent-serial-assistant"\]/);
+  assert.match(build, /injectContentSecurityPolicyHashes/);
+  assert.match(build, /images", "show\.gif/);
+  assert.match(headers, /Content-Security-Policy:/);
+  assert.match(headers, /serial=\(self\), usb=\(self\)/);
+  assert.match(headers, /__INLINE_SCRIPT_HASHES__/);
 });

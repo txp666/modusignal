@@ -1,9 +1,9 @@
 export const HARTLINK_RELEASE_MODULE_PATH = "/hartlink-studio/latest-release.js";
 export const HARTLINK_RELEASE_SOURCE_URL =
-  "https://hartlinkstudio-ota-ap-1257631357.cos.ap-hongkong.myqcloud.com/HARTLinkStudio/ota/latest.json";
+  "https://download.modusignal.cn/HARTLinkStudio/ota/latest.json";
 
 const VERSION_PATTERN = /^\d+\.\d+\.\d+(?:[.-][0-9A-Za-z.-]+)?$/;
-const ASSET_HOST = "hartlinkstudio-ota-ap-1257631357.cos.ap-hongkong.myqcloud.com";
+const ASSET_HOST = "download.modusignal.cn";
 const RELEASE_NOTES_PREFIX = "https://modusignal.cn/hartlink-studio/";
 
 function requireString(value, field) {

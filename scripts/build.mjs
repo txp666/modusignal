@@ -1,4 +1,5 @@
 import { execSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import * as esbuild from "esbuild";
 import {
   cpSync,
@@ -95,15 +96,23 @@ function copyStaticAssets() {
     ["pages", "pages"],
     ["hartlink-studio", "hartlink-studio"],
     ["fluent-serial-assistant", "fluent-serial-assistant"],
-    ["images", "images"],
+    [
+      "images",
+      "images",
+      {
+        // The large README demo is not referenced by the deployed site.
+        filter: (source) => source !== join(projectRoot, "images", "show.gif"),
+      },
+    ],
     ["robots.txt", "robots.txt"],
     ["sitemap.xml", "sitemap.xml"],
     ["logo.ico", "logo.ico"],
     ["LICENSE.txt", "LICENSE.txt"],
     ["CNAME", "CNAME"],
+    ["_headers", "_headers"],
   ];
 
-  for (const [source, target] of copies) {
+  for (const [source, target, options = {}] of copies) {
     const sourcePath = join(projectRoot, source);
     const targetPath = join(siteRoot, target);
 
@@ -111,7 +120,7 @@ function copyStaticAssets() {
       continue;
     }
 
-    cpSync(sourcePath, targetPath, { recursive: true });
+    cpSync(sourcePath, targetPath, { recursive: true, ...options });
   }
 
   writeFileSync(join(siteRoot, ".nojekyll"), "");
@@ -148,6 +157,30 @@ function createProductionIndex(version) {
     );
 
   writeFileSync(join(siteRoot, "index.html"), replaceAssetVersion(html, version));
+}
+
+function injectContentSecurityPolicyHashes() {
+  const htmlFiles = [
+    join(siteRoot, "index.html"),
+    join(siteRoot, "hartlink-studio", "index.html"),
+    join(siteRoot, "fluent-serial-assistant", "index.html"),
+  ];
+  const hashes = [];
+
+  for (const filePath of htmlFiles) {
+    const html = readFileSync(filePath, "utf8");
+    for (const match of html.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)) {
+      if (!match[1].trim()) continue;
+      hashes.push(`'sha256-${createHash("sha256").update(match[1]).digest("base64")}'`);
+    }
+  }
+
+  const headersPath = join(siteRoot, "_headers");
+  const headers = readFileSync(headersPath, "utf8");
+  if (!headers.includes("__INLINE_SCRIPT_HASHES__")) {
+    throw new Error("_headers is missing the CSP hash placeholder");
+  }
+  writeFileSync(headersPath, headers.replace("__INLINE_SCRIPT_HASHES__", hashes.join(" ")));
 }
 
 function createAssetVersionPlugin(version) {
@@ -239,6 +272,7 @@ async function main() {
   await syncHartLinkReleaseManifest();
   injectStaticAssetVersion(version);
   createProductionIndex(version);
+  injectContentSecurityPolicyHashes();
   printBuildSummary();
 
   console.log(`Site built at ${siteRoot} (version ${version})`);

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "hartlink-download",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-30",
+  "workers_dev": false,
+  "routes": [
+    {
+      "pattern": "download.modusignal.cn",
+      "custom_domain": true
+    }
+  ],
+  "vars": {
+    "COS_BUCKET": "hartlinkstudio-ota-ap-1257631357",
+    "COS_REGION": "ap-hongkong",
+    "COS_PREFIX": "HARTLinkStudio/ota",
+    "PUBLIC_HOST": "download.modusignal.cn"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

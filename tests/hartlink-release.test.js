@@ -23,7 +23,7 @@ const manifest = {
       filename: "HARTLinkStudio-9.8.7-windows-x64-setup.exe",
       size: 20_408_351,
       sha256: "354cdcf73bd51130dcd593e92ac46eb9e176f64ad51545af8e6f12dbbbc78eac",
-      url: "https://hartlinkstudio-ota-ap-1257631357.cos.ap-hongkong.myqcloud.com/HARTLinkStudio/ota/releases/v9.8.7/HARTLinkStudio-9.8.7-windows-x64-setup.exe",
+      url: "https://download.modusignal.cn/HARTLinkStudio/ota/releases/v9.8.7/HARTLinkStudio-9.8.7-windows-x64-setup.exe",
     },
   ],
 };
@@ -43,6 +43,14 @@ test("release manifest parser rejects non-modusignal release notes", () => {
     () => parseHartLinkReleaseManifest({ ...manifest, release_notes_url: "https://github.com/example/release" }),
     /modusignal\.cn/,
   );
+});
+
+test("release manifest parser rejects direct COS download URLs", () => {
+  const directCosManifest = structuredClone(manifest);
+  directCosManifest.assets[0].url =
+    "https://hartlinkstudio-ota-ap-1257631357.cos.ap-hongkong.myqcloud.com/HARTLinkStudio/ota/releases/v9.8.7/HARTLinkStudio-9.8.7-windows-x64-setup.exe";
+
+  assert.throws(() => parseHartLinkReleaseManifest(directCosManifest), /invalid asset/);
 });
 
 test("latest release loader imports the same-origin release module", async () => {
