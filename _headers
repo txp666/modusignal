@@ -1,5 +1,4 @@
 /*
-  Cache-Control: public, max-age=0, must-revalidate
   Content-Security-Policy: default-src 'self'; base-uri 'self'; connect-src 'self' https://api.github.com https://download.modusignal.cn https://cloudflareinsights.com wss: ws:; font-src 'self' data:; frame-ancestors 'self'; frame-src 'self'; img-src 'self' data: blob:; object-src 'none'; script-src 'self' https://static.cloudflareinsights.com __INLINE_SCRIPT_HASHES__; script-src-attr 'none'; style-src 'self'; style-src-attr 'unsafe-inline'
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff
