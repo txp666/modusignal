@@ -12,6 +12,21 @@
   --cyan-strong: #008f96;
   --lime: #b9e769;
   --shadow: 0 24px 70px rgba(7, 24, 34, 0.14);
+  --dark-surface: #071822;
+  --dark-surface-soft: #18333d;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ink: #e5edef;
+  --ink-soft: #b7c7ca;
+  --paper: #0b1419;
+  --paper-strong: #141f24;
+  --line: #34474c;
+  --muted: #9aadb2;
+  --cyan: #36cbd1;
+  --cyan-strong: #72dfe1;
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.32);
 }
 
 * {
@@ -144,7 +159,8 @@ p {
 
 .site-nav a,
 .back-link,
-.language-button {
+.language-button,
+.theme-button {
   color: var(--ink-soft);
   font-size: 0.86rem;
   font-weight: 780;
@@ -162,13 +178,20 @@ p {
   gap: 0.8rem;
 }
 
-.language-button {
+.language-button,
+.theme-button {
   min-width: 2.5rem;
   min-height: 2.35rem;
   border: 1px solid var(--line);
   border-radius: 999px;
   background: transparent;
   cursor: pointer;
+}
+
+.theme-button {
+  padding: 0;
+  font-size: 0.95rem;
+  line-height: 1;
 }
 
 .back-link {
@@ -270,12 +293,12 @@ p {
 }
 
 .button-primary {
-  background: var(--ink);
+  background: var(--dark-surface);
   color: #fff;
 }
 
 .button-primary:hover {
-  background: var(--ink-soft);
+  background: var(--dark-surface-soft);
 }
 
 .button-primary small {
@@ -374,7 +397,7 @@ p {
   padding: 0.9rem 1rem;
   border: 1px solid #29424b;
   border-radius: 0.48rem;
-  background: var(--ink);
+  background: var(--dark-surface);
   box-shadow: 0 14px 34px rgba(7, 24, 34, 0.16);
   color: #fff;
   position: relative;
@@ -393,7 +416,7 @@ p {
 .trust-strip {
   border-top: 1px solid var(--line-dark);
   border-bottom: 1px solid var(--line-dark);
-  background: var(--ink);
+  background: var(--dark-surface);
   color: #fff;
 }
 
@@ -524,7 +547,7 @@ p {
 
 .screens-section {
   padding-block: clamp(5.5rem, 10vw, 9rem);
-  background: var(--ink);
+  background: var(--dark-surface);
   color: #fff;
 }
 
@@ -893,7 +916,7 @@ p {
   overflow: hidden;
   border: 1px solid #39525b;
   border-radius: 0.7rem;
-  background: var(--ink);
+  background: var(--dark-surface);
   color: #fff;
   box-shadow: 0 30px 100px rgba(0, 0, 0, 0.5);
 }
@@ -980,6 +1003,7 @@ button:focus-visible {
 .button:active,
 .screen-card:active,
 .language-button:active,
+.theme-button:active,
 .back-link:active {
   transform: translateY(1px) scale(0.99);
 }
@@ -1171,4 +1195,33 @@ button:focus-visible {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+:root[data-theme="dark"] .site-header {
+  background: rgba(11, 20, 25, 0.92);
+}
+
+:root[data-theme="dark"] .site-header.scrolled {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.24);
+}
+
+:root[data-theme="dark"] :is(.release-pill, .button-secondary) {
+  background: rgba(20, 31, 36, 0.82);
+}
+
+:root[data-theme="dark"] .button-secondary:hover {
+  border-color: var(--cyan);
+  background: var(--paper-strong);
+}
+
+:root[data-theme="dark"] .capability-card-featured {
+  background: #183136;
+}
+
+:root[data-theme="dark"] .capability-card li {
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] .site-footer {
+  background: #101b20;
 }

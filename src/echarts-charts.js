@@ -1,10 +1,18 @@
 import * as echarts from "../vendor/echarts.esm.min.js";
 
-const THEME = {
+const DEFAULT_THEME = {
   grid: "#d7dde4",
   text: "#687381",
-  surface: "#fbfcfd",
 };
+
+function getChartTheme() {
+  if (typeof document === "undefined") return DEFAULT_THEME;
+  const styles = getComputedStyle(document.documentElement);
+  return {
+    grid: styles.getPropertyValue("--line").trim() || DEFAULT_THEME.grid,
+    text: styles.getPropertyValue("--muted").trim() || DEFAULT_THEME.text,
+  };
+}
 
 const ECHARTS_SET_OPTION_FLAGS = {
   notMerge: true,
@@ -127,6 +135,8 @@ function initChartMixin(instance) {
   instance.renderFrameId = null;
   instance.categoryCache = [];
   instance.categoryCacheCount = -1;
+  instance.themeChangeHandler = () => instance.scheduleRender();
+  window.addEventListener?.("modusignal:themechange", instance.themeChangeHandler);
 
   instance.ensureChart = function ensureChart() {
     if (!this.host) {
@@ -177,6 +187,7 @@ function initChartMixin(instance) {
       this.chart.dispose();
       this.chart = null;
     }
+    window.removeEventListener?.("modusignal:themechange", this.themeChangeHandler);
     this.pendingRender = false;
     this.zoomListenerBound = false;
   };
@@ -287,6 +298,7 @@ export class EchartsLiveChart {
       this.pendingRender = true;
       return;
     }
+    const theme = getChartTheme();
 
     if (!this.zoomListenerBound) {
       chart.on("dataZoom", () => this.captureZoomWindow());
@@ -322,7 +334,7 @@ export class EchartsLiveChart {
               text: this.title,
               left: 0,
               top: 0,
-              textStyle: { color: THEME.text, fontSize: 13, fontWeight: 600 },
+              textStyle: { color: theme.text, fontSize: 13, fontWeight: 600 },
             }
           : undefined,
         tooltip: {
@@ -339,8 +351,8 @@ export class EchartsLiveChart {
           type: "category",
           boundaryGap: false,
           data: categories,
-          axisLine: { lineStyle: { color: THEME.grid } },
-          axisLabel: { color: THEME.text, show: hasData },
+          axisLine: { lineStyle: { color: theme.grid } },
+          axisLabel: { color: theme.text, show: hasData },
           splitLine: { show: false },
         },
         dataZoom: hasZoom
@@ -360,10 +372,10 @@ export class EchartsLiveChart {
                 endValue,
                 height: 18,
                 bottom: 8,
-                borderColor: "#cbd5df",
+                borderColor: theme.grid,
                 fillerColor: "rgba(15, 118, 110, 0.12)",
                 handleStyle: { color: this.color },
-                textStyle: { color: THEME.text },
+                textStyle: { color: theme.text },
               },
             ]
           : [],
@@ -373,10 +385,10 @@ export class EchartsLiveChart {
           max: yMax,
           axisLine: { show: false },
           axisLabel: {
-            color: THEME.text,
+            color: theme.text,
             formatter: (value) => formatValue(value, 2),
           },
-          splitLine: { lineStyle: { color: THEME.grid, type: "dashed" } },
+          splitLine: { lineStyle: { color: theme.grid, type: "dashed" } },
         },
         graphic: hasData
           ? []
@@ -387,7 +399,7 @@ export class EchartsLiveChart {
                 top: "middle",
                 style: {
                   text: this.emptyText,
-                  fill: THEME.text,
+                  fill: theme.text,
                   fontSize: 14,
                 },
               },
@@ -554,6 +566,7 @@ export class EchartsMultiLiveChart {
       this.pendingRender = true;
       return;
     }
+    const theme = getChartTheme();
 
     if (!this.zoomListenerBound) {
       chart.on("dataZoom", () => this.captureZoomWindow());
@@ -593,12 +606,12 @@ export class EchartsMultiLiveChart {
               text: this.title,
               left: 0,
               top: 0,
-              textStyle: { color: THEME.text, fontSize: 13, fontWeight: 600 },
+              textStyle: { color: theme.text, fontSize: 13, fontWeight: 600 },
             }
           : undefined,
         legend: {
           top: 18,
-          textStyle: { color: THEME.text, fontSize: 12 },
+          textStyle: { color: theme.text, fontSize: 12 },
           data: activeSeries.map((def) => def.name),
         },
         tooltip: {
@@ -613,8 +626,8 @@ export class EchartsMultiLiveChart {
           type: "category",
           boundaryGap: false,
           data: categories,
-          axisLine: { lineStyle: { color: THEME.grid } },
-          axisLabel: { color: THEME.text, show: hasData },
+          axisLine: { lineStyle: { color: theme.grid } },
+          axisLabel: { color: theme.text, show: hasData },
           splitLine: { show: false },
         },
         dataZoom: hasZoom
@@ -628,9 +641,9 @@ export class EchartsMultiLiveChart {
                 endValue,
                 height: 18,
                 bottom: 8,
-                borderColor: "#cbd5df",
+                borderColor: theme.grid,
                 fillerColor: "rgba(15, 118, 110, 0.12)",
-                textStyle: { color: THEME.text },
+                textStyle: { color: theme.text },
               },
             ]
           : [],
@@ -640,10 +653,10 @@ export class EchartsMultiLiveChart {
           max: yMax,
           axisLine: { show: false },
           axisLabel: {
-            color: THEME.text,
+            color: theme.text,
             formatter: (value) => formatValue(value, 2),
           },
-          splitLine: { lineStyle: { color: THEME.grid, type: "dashed" } },
+          splitLine: { lineStyle: { color: theme.grid, type: "dashed" } },
         },
         graphic: hasData
           ? []
@@ -654,7 +667,7 @@ export class EchartsMultiLiveChart {
                 top: "middle",
                 style: {
                   text: this.emptyText,
-                  fill: THEME.text,
+                  fill: theme.text,
                   fontSize: 14,
                 },
               },

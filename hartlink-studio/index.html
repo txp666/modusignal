@@ -8,6 +8,19 @@
   <meta name="keywords" content="HARTLink Studio,HART软件,HART主站,HART调试,HART DD,仪表调试,设备管理" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#071822" />
+  <meta name="color-scheme" content="light dark" />
+  <script>
+    (() => {
+      try {
+        const saved = localStorage.getItem("modusignal-theme");
+        const theme = saved === "light" || saved === "dark"
+          ? saved
+          : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+      } catch {}
+    })();
+  </script>
   <link rel="canonical" href="https://modusignal.cn/hartlink-studio/" />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="zh_CN" />
@@ -50,6 +63,7 @@
       <a href="#downloads" data-copy="navDownloads">下载</a>
     </nav>
     <div class="header-actions">
+      <button class="theme-button" type="button" data-theme-toggle aria-label="切换到深色主题" title="切换到深色主题">☾</button>
       <button class="language-button" type="button" data-language-toggle aria-label="Switch to English">EN</button>
       <a class="back-link" href="../" data-copy="backToModusignal">返回 modusignal</a>
     </div>

@@ -1351,6 +1351,8 @@ Offset 0 → 100, Offset 2 → 200</code></pre>
   "chart.totalPrefix": { zh: "共", en: "total" },
   "num.totalPointsPrefix": { zh: "共", en: "total" },
   "request.copyFailed": { zh: "复制失败，请手动选择模板文本", en: "Copy failed, please manually select template text" },
+  "theme.switchTo.dark": { zh: "切换到深色主题", en: "Switch to dark theme" },
+  "theme.switchTo.light": { zh: "切换到浅色主题", en: "Switch to light theme" },
 };
 
 let currentLang = null;

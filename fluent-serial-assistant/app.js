@@ -94,6 +94,55 @@ const copy = {
 
 let currentLanguage = "zh";
 let latestRelease = null;
+const THEME_STORAGE_KEY = "modusignal-theme";
+const DARK_THEME_QUERY = "(prefers-color-scheme: dark)";
+let currentTheme = "light";
+
+function readStoredTheme() {
+  try {
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    return stored === "light" || stored === "dark" ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+function updateThemeButton() {
+  const button = document.querySelector("[data-theme-toggle]");
+  if (!button) return;
+  const nextTheme = currentTheme === "dark" ? "light" : "dark";
+  const label = currentLanguage === "en"
+    ? `Switch to ${nextTheme} theme`
+    : `切换到${nextTheme === "dark" ? "深色" : "浅色"}主题`;
+  button.textContent = nextTheme === "dark" ? "☾" : "☀";
+  button.setAttribute("aria-label", label);
+  button.setAttribute("aria-pressed", String(currentTheme === "dark"));
+  button.title = label;
+}
+
+function applyTheme(theme) {
+  currentTheme = theme;
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.style.colorScheme = theme;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute(
+    "content",
+    theme === "dark" ? "#0b1419" : "#f7fbfc",
+  );
+  updateThemeButton();
+}
+
+function initTheme() {
+  const mediaQuery = window.matchMedia?.(DARK_THEME_QUERY);
+  applyTheme(readStoredTheme() ?? (mediaQuery?.matches ? "dark" : "light"));
+  document.querySelector("[data-theme-toggle]")?.addEventListener("click", () => {
+    const theme = currentTheme === "dark" ? "light" : "dark";
+    try { localStorage.setItem(THEME_STORAGE_KEY, theme); } catch {}
+    applyTheme(theme);
+  });
+  mediaQuery?.addEventListener?.("change", (event) => {
+    if (!readStoredTheme()) applyTheme(event.matches ? "dark" : "light");
+  });
+}
 
 function formatBytes(bytes) {
   if (!Number.isFinite(bytes)) return "—";
@@ -118,6 +167,7 @@ function applyLanguage(language) {
   const toggle = document.querySelector("[data-language-toggle]");
   toggle.textContent = currentLanguage === "zh" ? "EN" : "中";
   toggle.setAttribute("aria-label", currentLanguage === "zh" ? "Switch to English" : "切换到中文");
+  updateThemeButton();
   const releaseDate = latestRelease?.published_at || FALLBACK_RELEASE_DATE;
   document.querySelectorAll("[data-release-date]").forEach((element) => {
     element.textContent = formatReleaseDate(releaseDate);
@@ -185,5 +235,6 @@ document.querySelector("[data-language-toggle]").addEventListener("click", () =>
 
 let savedLanguage = "zh";
 try { savedLanguage = localStorage.getItem("fluent-serial-language") || "zh"; } catch {}
+initTheme();
 applyLanguage(savedLanguage);
 refreshLatestRelease();

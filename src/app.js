@@ -1,4 +1,5 @@
 import i18n, { initI18n } from "./i18n.js";
+import { initTheme } from "./theme.js";
 import { loadLatestHartLinkRelease } from "../hartlink-studio/release.js";
 import { mountChartCurveSections } from "./debug-curve-section.js";
 import { loadAppPages } from "./page-loader.js";
@@ -130,6 +131,7 @@ let debugCurveController = null;
 let customConfigUi = null;
 let messageDebugController = null;
 let sessionEventController = null;
+let themeController = null;
 
 const state = {
   pageId: "home",
@@ -155,6 +157,7 @@ boot();
 
 async function boot() {
   initI18n();
+  themeController = initTheme(document.getElementById("themeSwitchButton"));
   try {
     await loadAppPages();
     i18n.apply(document.body);
@@ -273,6 +276,7 @@ async function initialize() {
       const next = current === "zh" ? "en" : "zh";
       i18n.setLanguage(next);
       updateLangSwitchButton(langSwitchButton);
+      themeController?.refreshLabel();
       refreshAllDynamicUi();
     });
   }

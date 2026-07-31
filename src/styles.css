@@ -13,6 +13,37 @@
   --red: #b42318;
   --green: #15803d;
   --shadow: 0 18px 44px rgba(18, 28, 45, 0.1);
+  --chrome: rgba(255, 255, 255, 0.86);
+  --chrome-soft: rgba(255, 255, 255, 0.72);
+  --surface-subtle: #fbfcfd;
+  --surface-selected: #f0fbf8;
+  --surface-neutral: #f4f7f8;
+  --line-strong: #b8c2ce;
+  --overlay: rgba(16, 24, 32, 0.45);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b1118;
+  --surface: #151d27;
+  --surface-muted: #1b2531;
+  --line: #344252;
+  --text: #e6edf3;
+  --muted: #9aa9b8;
+  --accent: #2bb3a7;
+  --accent-strong: #5bd0c5;
+  --blue: #6da0ff;
+  --amber: #f3b562;
+  --red: #ff8b82;
+  --green: #67d391;
+  --shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+  --chrome: rgba(15, 22, 30, 0.9);
+  --chrome-soft: rgba(15, 22, 30, 0.82);
+  --surface-subtle: #111923;
+  --surface-selected: #15312f;
+  --surface-neutral: #1a2530;
+  --line-strong: #4b5d70;
+  --overlay: rgba(0, 0, 0, 0.68);
 }
 
 * {
@@ -22,6 +53,10 @@
 html,
 body {
   min-height: 100%;
+}
+
+:root[data-theme="dark"] body {
+  background: radial-gradient(circle at 50% -20%, rgba(43, 179, 167, 0.09), transparent 38%), var(--bg);
 }
 
 body {
@@ -64,7 +99,7 @@ button:disabled {
   grid-column: 1 / -1;
   padding: 0.85rem 1.25rem 1.1rem;
   border-top: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--chrome-soft);
   text-align: center;
 }
 
@@ -93,7 +128,7 @@ button:disabled {
   gap: 1rem;
   padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.86);
+  background: var(--chrome);
   backdrop-filter: blur(14px);
   position: sticky;
   top: 0;
@@ -183,6 +218,15 @@ label {
   border-radius: 0.35rem;
   cursor: pointer;
   color: var(--muted);
+}
+
+.theme-switch {
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0;
+  border-radius: 0.35rem;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .lang-switch:hover {
@@ -2970,4 +3014,119 @@ code {
   to {
     transform: translate3d(-50%, -50%, 0);
   }
+}
+
+/* Components that historically used literal light colors are normalized here for dark mode. */
+:root[data-theme="dark"] :is(
+  .icon-button,
+  .ghost-button,
+  .panel-actions .ghost-button,
+  select,
+  input[type="text"],
+  input[type="search"],
+  input[type="number"],
+  input[type="date"],
+  textarea,
+  output,
+  .device-library-search input,
+  .home-card,
+  .aomaster-product-highlights span,
+  .device-item,
+  .step-sequence-item button,
+  .segmented-option input:checked + span,
+  .preset-row button,
+  .debug-template-card,
+  .chart-settings,
+  .hart-workspace-tabs button.active,
+  .hart-tool-card
+) {
+  background: var(--surface);
+  color: var(--text);
+}
+
+:root[data-theme="dark"] :is(
+  .aomaster-dialog-feature-grid article,
+  .aomaster-dialog-note,
+  .debug-stat,
+  .mqtt-stat,
+  .debug-preview,
+  .protocol-example-card,
+  .protocol-note,
+  .command-preview,
+  .echart-host,
+  .hart-value-card,
+  .hart-quick-config,
+  .hart-workspace-intro
+) {
+  background: var(--surface-subtle);
+}
+
+:root[data-theme="dark"] :is(
+  .hart-workspace-tabs,
+  .hart-card-status
+) {
+  background: var(--surface-neutral);
+}
+
+:root[data-theme="dark"] :is(.home-card:hover, .device-item.active) {
+  background: var(--surface-selected);
+}
+
+:root[data-theme="dark"] :is(
+  .aomaster-dialog-note,
+  .debug-preview,
+  .protocol-note,
+  .command-preview
+) {
+  border-color: var(--line-strong);
+}
+
+:root[data-theme="dark"] :is(
+  .debug-template-card code,
+  .protocol-example-card pre,
+  .chart-settings
+) {
+  border-color: var(--line);
+}
+
+:root[data-theme="dark"] .debug-template-heading span {
+  background: #202d49;
+}
+
+:root[data-theme="dark"] .state-pill,
+:root[data-theme="dark"] .status-dot {
+  background: #18312f;
+  color: var(--accent-strong);
+}
+
+:root[data-theme="dark"] .state-pill.warning,
+:root[data-theme="dark"] .hartlink-version-info[data-state="detecting"] {
+  background: #352917;
+}
+
+:root[data-theme="dark"] .state-pill.connected,
+:root[data-theme="dark"] .hartlink-version-info[data-state="detected"] {
+  background: #173124;
+}
+
+:root[data-theme="dark"] .boot-error {
+  border-color: #8f403b;
+  background: #351b1b;
+  color: var(--red);
+}
+
+:root[data-theme="dark"] :is(
+  .aomaster-dialog::backdrop,
+  .chart-curve-help-dialog::backdrop
+) {
+  background: var(--overlay);
+}
+
+:root[data-theme="dark"] .brand-logo {
+  filter: brightness(0) invert(1);
+  opacity: 0.92;
+}
+
+:root[data-theme="dark"] .microscope-power-frame {
+  background: var(--surface);
 }

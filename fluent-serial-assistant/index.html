@@ -8,6 +8,19 @@
   <meta name="keywords" content="Fluent串口助手,串口助手,串口调试,Serial Port,CLI,MCP,AI,HEX,Modbus RTU,实时曲线,协议模板" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#f7fbfc" />
+  <meta name="color-scheme" content="light dark" />
+  <script>
+    (() => {
+      try {
+        const saved = localStorage.getItem("modusignal-theme");
+        const theme = saved === "light" || saved === "dark"
+          ? saved
+          : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+      } catch {}
+    })();
+  </script>
   <link rel="canonical" href="https://modusignal.cn/fluent-serial-assistant/" />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="zh_CN" />
@@ -55,6 +68,7 @@
       <a href="#downloads" data-copy="navDownloads">下载</a>
     </nav>
     <div class="header-actions">
+      <button class="theme-button" type="button" data-theme-toggle aria-label="切换到深色主题" title="切换到深色主题">☾</button>
       <button class="language-button" type="button" data-language-toggle aria-label="Switch to English">EN</button>
       <a class="back-link" href="../" data-copy="backToModusignal">返回 modusignal</a>
     </div>

@@ -24,6 +24,56 @@ const PRIMARY_DOWNLOADS = {
 };
 
 let latestRelease = null;
+const THEME_STORAGE_KEY = "modusignal-theme";
+const DARK_THEME_QUERY = "(prefers-color-scheme: dark)";
+let currentTheme = "light";
+
+function readStoredTheme() {
+  try {
+    const stored = localStorage.getItem(THEME_STORAGE_KEY);
+    return stored === "light" || stored === "dark" ? stored : null;
+  } catch {
+    return null;
+  }
+}
+
+function updateThemeButton() {
+  const button = document.querySelector("[data-theme-toggle]");
+  if (!button) return;
+  const nextTheme = currentTheme === "dark" ? "light" : "dark";
+  const isEnglish = document.documentElement.lang.startsWith("en");
+  const label = isEnglish
+    ? `Switch to ${nextTheme} theme`
+    : `切换到${nextTheme === "dark" ? "深色" : "浅色"}主题`;
+  button.textContent = nextTheme === "dark" ? "☾" : "☀";
+  button.setAttribute("aria-label", label);
+  button.setAttribute("aria-pressed", String(currentTheme === "dark"));
+  button.title = label;
+}
+
+function applyTheme(theme) {
+  currentTheme = theme;
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.style.colorScheme = theme;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute(
+    "content",
+    theme === "dark" ? "#0b1419" : "#f3f7f6",
+  );
+  updateThemeButton();
+}
+
+function initTheme() {
+  const mediaQuery = window.matchMedia?.(DARK_THEME_QUERY);
+  applyTheme(readStoredTheme() ?? (mediaQuery?.matches ? "dark" : "light"));
+  document.querySelector("[data-theme-toggle]")?.addEventListener("click", () => {
+    const theme = currentTheme === "dark" ? "light" : "dark";
+    try { localStorage.setItem(THEME_STORAGE_KEY, theme); } catch {}
+    applyTheme(theme);
+  });
+  mediaQuery?.addEventListener?.("change", (event) => {
+    if (!readStoredTheme()) applyTheme(event.matches ? "dark" : "light");
+  });
+}
 
 const COPY = {
   zh: {
@@ -284,6 +334,7 @@ function applyLanguage(language) {
   const toggle = document.querySelector("[data-language-toggle]");
   toggle.textContent = language === "en" ? "中文" : "EN";
   toggle.setAttribute("aria-label", language === "en" ? "切换到中文" : "Switch to English");
+  updateThemeButton();
   document.querySelector("[data-screen-carousel]")?.setAttribute("aria-label", language === "en" ? "Software interface carousel" : "软件界面轮播");
   document.querySelectorAll("[data-carousel-dot]").forEach((dot, index) => {
     dot.setAttribute("aria-label", language === "en" ? `Show image ${index + 1}` : `查看第 ${index + 1} 张`);
@@ -436,6 +487,7 @@ function initMotion() {
   motionElements.forEach((element) => observer.observe(element));
 }
 
+initTheme();
 configurePrimaryDownload();
 applyLanguage(initialLanguage());
 void refreshLatestRelease();
