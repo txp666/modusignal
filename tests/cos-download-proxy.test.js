@@ -32,12 +32,26 @@ test("COS authorization follows the V5 HMAC-SHA1 request-signing algorithm", asy
 
 test("download path validation confines requests to the configured OTA prefix", () => {
   assert.equal(isAllowedDownloadPath("/HARTLinkStudio/ota/latest.json"), true);
+  assert.equal(isAllowedDownloadPath("/HARTForgeStudio/ota/latest.json"), true);
   assert.equal(
     isAllowedDownloadPath("/HARTLinkStudio/ota/releases/v0.3.7/HARTLinkStudio-0.3.7-macos-arm64.dmg"),
+    true,
+  );
+  assert.equal(
+    isAllowedDownloadPath("/HARTForgeStudio/ota/releases/v0.1.0/HARTForgeStudio-0.1.0-macos-arm64.dmg"),
     true,
   );
   assert.equal(isAllowedDownloadPath("/HARTLinkStudio/ota/../private.txt"), false);
   assert.equal(isAllowedDownloadPath("/HARTLinkStudio/ota/%2e%2e/private.txt"), false);
   assert.equal(isAllowedDownloadPath("/other-prefix/latest.json"), false);
+  assert.equal(isAllowedDownloadPath("/HARTForgeStudio/private/latest.json"), false);
   assert.equal(isAllowedDownloadPath("/HARTLinkStudio/ota//latest.json"), false);
+  assert.equal(isAllowedDownloadPath("/HARTForgeStudio/ota/latest.json", "HARTLinkStudio/ota"), false);
+  assert.equal(
+    isAllowedDownloadPath(
+      "/HARTForgeStudio/ota/latest.json",
+      "HARTLinkStudio/ota,HARTForgeStudio/ota",
+    ),
+    true,
+  );
 });

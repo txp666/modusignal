@@ -22,7 +22,8 @@ The read-only CAM policy should be limited to these actions and this resource:
       "effect": "allow",
       "action": ["cos:GetObject", "cos:HeadObject"],
       "resource": [
-        "qcs::cos:ap-hongkong:uid/1257631357:hartlinkstudio-ota-ap-1257631357/HARTLinkStudio/ota/*"
+        "qcs::cos:ap-hongkong:uid/1257631357:hartlinkstudio-ota-ap-1257631357/HARTLinkStudio/ota/*",
+        "qcs::cos:ap-hongkong:uid/1257631357:hartlinkstudio-ota-ap-1257631357/HARTForgeStudio/ota/*"
       ]
     }
   ]
@@ -35,8 +36,9 @@ Set the HARTLink-Studio repository variable `HARTLINK_OTA_BASE_URL` to:
 
 ```text
 https://download.modusignal.cn/HARTLinkStudio/ota
+https://download.modusignal.cn/HARTForgeStudio/ota
 ```
 
-Keep `TENCENT_COS_PREFIX` set to `HARTLinkStudio/ota`. The publishing workflow writes to COS with its separate upload credential; the Worker credential must stay read-only.
+Keep each publishing workflow restricted to its product prefix. The Worker accepts only the explicit comma-separated `COS_PREFIXES` value from `wrangler.jsonc`, and its COS credential must stay read-only for those same two prefixes.
 
 After deploying the Worker and publishing a manifest that points at the download domain, change the COS bucket ACL to private read/write. Direct COS URLs should then return `403`, while the Worker URL should continue returning `200` and `206` for range requests.

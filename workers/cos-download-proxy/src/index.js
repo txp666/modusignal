@@ -1,5 +1,5 @@
 const textEncoder = new TextEncoder();
-const DEFAULT_PREFIX = "HARTLinkStudio/ota";
+const DEFAULT_PREFIXES = ["HARTLinkStudio/ota", "HARTForgeStudio/ota"];
 const VERSIONED_CACHE_CONTROL = "public, max-age=31536000, immutable";
 const LATEST_CACHE_CONTROL = "public, max-age=0, s-maxage=60, must-revalidate";
 const PASSTHROUGH_HEADERS = [
@@ -61,27 +61,38 @@ export async function createCosAuthorization({
 }
 
 function normalizedPrefix(value) {
-  const prefix = (value || DEFAULT_PREFIX).replace(/^\/+|\/+$/g, "");
+  const prefix = String(value || "").replace(/^\/+|\/+$/g, "");
   if (!prefix || !/^[A-Za-z0-9._/-]+$/.test(prefix) || prefix.split("/").some((part) => !part || part === "." || part === "..")) {
-    throw new Error("COS_PREFIX is invalid");
+    throw new Error("COS prefix is invalid");
   }
   return prefix;
 }
 
-export function isAllowedDownloadPath(pathname, prefix = DEFAULT_PREFIX) {
-  let configuredPrefix;
+function normalizedPrefixes(value) {
+  const values = value == null || value === ""
+    ? DEFAULT_PREFIXES
+    : Array.isArray(value)
+      ? value
+      : String(value).split(",");
+  if (values.length === 0) throw new Error("COS prefixes are empty");
+  return values.map(normalizedPrefix);
+}
+
+export function isAllowedDownloadPath(pathname, prefixes = DEFAULT_PREFIXES) {
+  let configuredPrefixes;
   try {
-    configuredPrefix = normalizedPrefix(prefix);
+    configuredPrefixes = normalizedPrefixes(prefixes);
   } catch {
     return false;
   }
 
-  if (!/^[A-Za-z0-9._/-]+$/.test(pathname) || pathname.includes("//") || !pathname.startsWith(`/${configuredPrefix}/`)) {
+  if (!/^[A-Za-z0-9._/-]+$/.test(pathname) || pathname.includes("//")) {
     return false;
   }
 
   const parts = pathname.slice(1).split("/");
-  return !parts.some((part) => !part || part === "." || part === "..");
+  return configuredPrefixes.some((prefix) => pathname.startsWith(`/${prefix}/`))
+    && !parts.some((part) => !part || part === "." || part === "..");
 }
 
 function safeResponseHeaders(originResponse, pathname) {
@@ -124,9 +135,9 @@ async function proxyRequest(request, env, ctx) {
   }
 
   const requestUrl = new URL(request.url);
-  const prefix = normalizedPrefix(env.COS_PREFIX);
+  const prefixes = normalizedPrefixes(env.COS_PREFIXES || env.COS_PREFIX);
   const publicHost = (env.PUBLIC_HOST || "download.modusignal.cn").toLowerCase();
-  if (requestUrl.hostname.toLowerCase() !== publicHost || requestUrl.search || !isAllowedDownloadPath(requestUrl.pathname, prefix)) {
+  if (requestUrl.hostname.toLowerCase() !== publicHost || requestUrl.search || !isAllowedDownloadPath(requestUrl.pathname, prefixes)) {
     return plainResponse("Not found", 404);
   }
 

@@ -13,7 +13,7 @@
   "vars": {
     "COS_BUCKET": "hartlinkstudio-ota-ap-1257631357",
     "COS_REGION": "ap-hongkong",
-    "COS_PREFIX": "HARTLinkStudio/ota",
+    "COS_PREFIXES": "HARTLinkStudio/ota,HARTForgeStudio/ota",
     "PUBLIC_HOST": "download.modusignal.cn"
   },
   "observability": {
