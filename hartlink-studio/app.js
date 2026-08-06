@@ -147,6 +147,7 @@ const COPY = {
     macPrimaryLabel: "macOS · Apple Silicon · DMG",
     linuxPrimaryLabel: "Linux x64 · DEB",
     footerTagline: "让每一次 HART 会话都有迹可循。",
+    contactForQuote: "联系 771454616@qq.com 获取报价",
     modusignalOnline: "modusignal 在线调试",
   },
   en: {
@@ -220,6 +221,7 @@ const COPY = {
     macPrimaryLabel: "macOS · Apple Silicon · DMG",
     linuxPrimaryLabel: "Linux x64 · DEB",
     footerTagline: "Make every HART session traceable.",
+    contactForQuote: "Contact 771454616@qq.com for pricing",
     modusignalOnline: "modusignal online tools",
   },
 };
