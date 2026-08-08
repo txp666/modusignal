@@ -32,7 +32,7 @@
   <meta name="twitter:card" content="summary_large_image" />
   <title>HARTLink Studio · 专业 HART 设备工作台</title>
   <link rel="icon" href="../logo.ico" type="image/x-icon" />
-  <link rel="stylesheet" href="./styles.css?v=1.0.2-gallery" />
+  <link rel="stylesheet" href="./styles.css?v=1.0.2-pricing" />
   <script type="application/ld+json" data-release-schema>
     {
       "@context": "https://schema.org",
@@ -41,7 +41,27 @@
       "applicationCategory": "DeveloperApplication",
       "operatingSystem": "Windows, macOS, Linux",
       "description": "跨平台 HART 主站与现场仪表调试软件。",
-      "url": "https://modusignal.cn/hartlink-studio/"
+      "url": "https://modusignal.cn/hartlink-studio/",
+      "offers": [
+        {
+          "@type": "Offer",
+          "name": "基础功能",
+          "price": "0",
+          "priceCurrency": "CNY"
+        },
+        {
+          "@type": "Offer",
+          "name": "DD Pro 永久授权",
+          "price": "3000",
+          "priceCurrency": "CNY"
+        },
+        {
+          "@type": "Offer",
+          "name": "团队版 5 席位",
+          "price": "10000",
+          "priceCurrency": "CNY"
+        }
+      ]
     }
   </script>
 </head>
@@ -60,6 +80,7 @@
     <nav class="site-nav" aria-label="产品页面导航">
       <a href="#capabilities" data-copy="navCapabilities">核心能力</a>
       <a href="#screens" data-copy="navScreens">软件界面</a>
+      <a href="#pricing" data-copy="navPricing">授权价格</a>
       <a href="#downloads" data-copy="navDownloads">下载</a>
     </nav>
     <div class="header-actions">
@@ -99,7 +120,7 @@
           <span>Linux</span>
           <span>HART 5 / 6 / 7</span>
         </div>
-        <p class="hero-note" data-copy="ddLicenseNote">基础 HART 功能可直接使用；DD 解析与设备工作区需要有效许可证。</p>
+        <p class="hero-note" data-copy="ddLicenseNote">基础功能免费；DD 专业版按席位收费，永久授权并免费更新升级维护。</p>
       </div>
 
       <div class="hero-visual">
@@ -234,6 +255,64 @@
       </ol>
     </section>
 
+    <section id="pricing" class="pricing-section">
+      <div class="section-shell">
+        <header class="pricing-heading">
+          <div>
+            <p class="eyebrow" data-copy="pricingEyebrow">简单、长期有效的授权</p>
+            <h2 data-copy="pricingTitle">基础功能免费<br />DD 专业版按席位收费</h2>
+          </div>
+          <p data-copy="pricingDescription">永久授权，更新、升级与维护免费。</p>
+        </header>
+
+        <div class="pricing-grid">
+          <article class="pricing-card pricing-card-free">
+            <header>
+              <span data-copy="pricingCoreName">基础功能</span>
+              <strong data-copy="pricingFreeBadge">免费使用</strong>
+            </header>
+            <p class="pricing-price"><strong>¥0</strong></p>
+            <p data-copy="pricingCoreDescription">连接、扫描、变量读取、通信 Trace 与基础仪表操作可直接使用。</p>
+            <a class="button pricing-button" href="#downloads" data-copy="pricingDownload">下载使用</a>
+          </article>
+
+          <article class="pricing-card pricing-card-featured">
+            <header>
+              <span>DD Pro</span>
+              <strong data-copy="pricingRecommended">专业版</strong>
+            </header>
+            <p class="pricing-price"><strong>¥3000</strong><span data-copy="pricingPerSeat">/ 席位</span></p>
+            <p data-copy="pricingProDescription">永久授权，包含 DD 解析与设备工作区；更新、升级与维护免费。</p>
+            <ul class="pricing-feature-list">
+              <li data-copy="pricingFeatureSemantic">中文语义推测</li>
+              <li data-copy="pricingFeatureMethods">完整的 DD 菜单与方法实现</li>
+            </ul>
+            <a class="button pricing-button pricing-button-primary" href="mailto:771454616@qq.com" data-copy="requestTrialCode">联系 771454616@qq.com 获取体验码</a>
+          </article>
+
+          <article class="pricing-card">
+            <header>
+              <span data-copy="pricingTeamName">团队版</span>
+              <strong data-copy="pricingTeamBadge">5 席位</strong>
+            </header>
+            <p class="pricing-price"><strong>¥10000</strong><span data-copy="pricingFiveSeats">/ 5 席位</span></p>
+            <p data-copy="pricingTeamDescription">包含 DD Pro 全部能力，适合工程团队统一采购，并享受免费更新、升级与维护。</p>
+            <a class="button pricing-button" href="mailto:771454616@qq.com" data-copy="contactPurchase">联系购买</a>
+          </article>
+        </div>
+
+        <div class="enterprise-offer">
+          <div>
+            <p class="eyebrow" data-copy="enterpriseEyebrow">企业与项目授权</p>
+            <h3 data-copy="enterpriseTitle">企业版、离线批量授权、定制兼容</h3>
+          </div>
+          <a class="button button-primary" href="mailto:771454616@qq.com" data-copy="contactForQuote">联系 771454616@qq.com 获取报价</a>
+        </div>
+
+        <p class="pricing-roadmap"><span aria-hidden="true"></span><strong data-copy="pricingRoadmap">持续升级中 · 在线 DD 库设计中</strong></p>
+      </div>
+    </section>
+
     <section id="downloads" class="download-section">
       <div class="section-shell">
         <header class="download-heading">
@@ -285,7 +364,7 @@
       <div class="footer-links">
         <a href="../" data-copy="modusignalOnline">modusignal 在线调试</a>
         <a href="#downloads" data-copy="navDownloads">下载</a>
-        <a href="mailto:771454616@qq.com" data-copy="contactForQuote">联系 771454616@qq.com 获取报价</a>
+        <a href="mailto:771454616@qq.com" data-copy="requestTrialCode">联系 771454616@qq.com 获取体验码</a>
       </div>
       <p class="copyright">© 2026 飞起小鹏</p>
     </div>
@@ -299,7 +378,7 @@
     <img data-image-dialog-image src="./assets/workbench.png?v=1.0.2" alt="" />
   </dialog>
 
-  <script type="module" src="./app.js?v=release-module"></script>
+  <script type="module" src="./app.js?v=release-module-pricing"></script>
 </body>
 
 </html>

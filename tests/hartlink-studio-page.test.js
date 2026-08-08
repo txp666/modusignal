@@ -29,6 +29,13 @@ test("HARTLink Studio product page resolves the latest release dynamically", asy
   assert.match(html, /dd-workspace\.png/);
   assert.doesNotMatch(html, /dd-menu\.png/);
   assert.doesNotMatch(html, /download-footnote|downloadPublished|downloadSource|screensDescription/);
+  assert.match(html, /id="pricing"/);
+  assert.match(html, /<strong>¥3000<\/strong>/);
+  assert.match(html, /<strong>¥10000<\/strong>/);
+  assert.match(html, /中文语义推测/);
+  assert.match(html, /完整的 DD 菜单与方法实现/);
+  assert.match(html, /mailto:771454616@qq\.com/);
+  assert.match(app, /pricingRoadmap: "持续升级中 · 在线 DD 库设计中"/);
 });
 
 test("modusignal home links to the independent HARTLink Studio page", async () => {
