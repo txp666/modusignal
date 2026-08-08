@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="HART 协议中文 Wiki：从 4–20 mA + FSK 原理、回路接线、帧结构和命令体系，到 modusignal 实操与通信排障。内容参考 FieldComm Group 官方资料。" />
+  <meta name="keywords" content="HART Wiki,HART协议,HART通信,4-20mA,Bell 202,HART命令,HART帧,HART接线" />
+  <meta name="robots" content="index, follow" />
+  <meta name="author" content="modusignal" />
+  <meta name="theme-color" content="#0b766d" />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="canonical" href="https://modusignal.cn/hart-wiki/" />
+  <meta property="og:type" content="article" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:site_name" content="modusignal" />
+  <meta property="og:title" content="HART 知识库 · modusignal" />
+  <meta property="og:description" content="一份面向学习、调试与现场排障的 HART 协议中文指南。" />
+  <meta property="og:url" content="https://modusignal.cn/hart-wiki/" />
+  <title>HART 知识库 · modusignal</title>
+  <link rel="icon" href="../logo.ico" type="image/x-icon" />
+  <script src="./theme-init.js?v=1.1.0"></script>
+  <link rel="stylesheet" href="./styles.css?v=1.3.1" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "HART 知识库",
+      "description": "HART 协议原理、接线、帧结构、命令体系、调试流程与排障指南。",
+      "inLanguage": "zh-CN",
+      "dateModified": "2026-08-08",
+      "author": { "@type": "Organization", "name": "modusignal" },
+      "publisher": { "@type": "Organization", "name": "modusignal" },
+      "mainEntityOfPage": "https://modusignal.cn/hart-wiki/"
+    }
+  </script>
+</head>
+
+<body>
+  <a class="skip-link" href="#wikiContent">跳到正文</a>
+
+  <header class="wiki-header">
+    <a class="wiki-brand" href="../" aria-label="返回 modusignal 主页">
+      <img src="../images/modusignal-logo.svg" alt="modusignal" width="1500" height="460" />
+      <span>HART 知识库</span>
+    </a>
+    <label class="header-search">
+      <span aria-hidden="true">⌕</span>
+      <input type="search" placeholder="搜索 HART 知识…" aria-label="搜索 HART 知识库" data-wiki-search />
+      <kbd>/</kbd>
+    </label>
+    <div class="header-actions">
+      <button class="icon-button" type="button" data-theme-toggle aria-label="切换到深色主题">☾</button>
+      <a class="header-link" href="../#hart">打开 HART 调试</a>
+      <button class="menu-button" type="button" data-menu-toggle aria-expanded="false" aria-controls="wikiSidebar">目录</button>
+    </div>
+  </header>
+
+  <div class="wiki-layout">
+    <aside id="wikiSidebar" class="wiki-sidebar" data-wiki-sidebar>
+      <label class="sidebar-search">
+        <span aria-hidden="true">⌕</span>
+        <input type="search" placeholder="搜索 HART 知识…" aria-label="在目录中搜索 HART 知识库" data-wiki-search />
+      </label>
+      <div class="sidebar-search-note" data-search-status>可搜索命令号、术语、故障现象与关键词</div>
+      <nav aria-label="HART Wiki 目录">
+        <p class="nav-label">从这里开始</p>
+        <a class="active" href="#overview" data-section-link><span>01</span>认识 HART</a>
+        <a href="#signal" data-section-link><span>02</span>信号与接线</a>
+        <a href="#frames" data-section-link><span>03</span>帧与通信</a>
+        <a href="#commands" data-section-link><span>04</span>命令速查</a>
+        <a href="#workflow" data-section-link><span>05</span>modusignal 实操</a>
+        <a href="#troubleshooting" data-section-link><span>06</span>排障手册</a>
+        <a href="#glossary" data-section-link><span>07</span>术语表</a>
+        <a href="#sources" data-section-link><span>08</span>官方资料</a>
+      </nav>
+      <div class="sidebar-card">
+        <span class="live-dot" aria-hidden="true"></span>
+        <div>
+          <strong>协议资料状态</strong>
+          <small>核对至 2026-08</small>
+        </div>
+      </div>
+      <p class="sidebar-disclaimer">本页用于学习与调试导航，不替代付费协议规格、设备手册、SIS 程序或现场作业票。</p>
+    </aside>
+
+    <main id="wikiContent" class="wiki-content">
+      <section id="overview" class="hero-section anchor-section">
+        <div class="hero-copy">
+          <p class="eyebrow">HART · Highway Addressable Remote Transducer</p>
+          <h1>让一根 4–20 mA 线上<br /><em>同时流动测量值与设备信息</em></h1>
+          <p class="hero-lede">HART 在传统模拟电流环上叠加双向数字通信。你可以保留稳定的 4–20 mA 主测量值，同时读取诊断、状态、更多变量并配置智能仪表。</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#signal">从信号原理开始</a>
+            <a class="button secondary" href="../#hart">打开在线调试工具</a>
+          </div>
+        </div>
+        <div class="signal-visual" role="img" aria-label="4 到 20 毫安模拟信号上叠加 HART FSK 数字信号">
+          <div class="visual-topline"><span>同一对导线 · 概念示意</span><strong>Analog + Digital</strong></div>
+          <svg viewBox="0 0 640 255" aria-hidden="true">
+            <defs>
+              <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#19a99c" stop-opacity=".28" />
+                <stop offset="1" stop-color="#19a99c" stop-opacity="0" />
+              </linearGradient>
+            </defs>
+            <path class="grid-line" d="M30 48H610M30 112H610M30 176H610M30 232H610" />
+            <text class="axis-label" x="1" y="52">20</text>
+            <text class="axis-label" x="1" y="116">12</text>
+            <text class="axis-label" x="7" y="180">4</text>
+            <text class="axis-label" x="565" y="246">时间 →</text>
+            <path class="analog-area" d="M30 184 C120 174,165 165,230 147 S360 119,430 94 S545 71,610 56 L610 232 L30 232Z" />
+            <path class="analog-line" d="M30 184 C120 174,165 165,230 147 S360 119,430 94 S545 71,610 56" />
+            <polyline class="digital-line" points="30,188.5 32,190.9 34,190.0 36,186.4 38,181.5 40,177.8 42,176.9 44,179.3 46,183.7 48,188.1 50,190.4 52,189.5 54,185.8 56,180.9 58,177.1 60,176.1 62,178.4 64,182.7 66,187.1 68,189.3 70,188.3 72,184.5 74,179.5 76,175.7 78,174.6 80,176.8 82,181.1 84,185.4 86,187.5 88,183.7 90,175.3 92,173.6 94,180.6 96,186.3 98,182.4 100,174.0 102,172.3 104,179.3 106,184.9 108,181.0 110,172.5 112,170.8 114,177.7 116,183.3 118,179.3 120,170.8 122,169.1 124,176.0 126,181.5 128,177.6 130,169.0 132,167.2 134,174.1 136,179.6 138,175.6 140,167.1 142,165.2 144,172.1 146,175.9 148,177.3 150,175.3 152,170.8 154,165.7 156,162.0 158,161.4 160,163.9 162,168.1 164,171.9 166,173.2 168,171.2 170,166.7 172,161.5 174,157.8 176,157.1 178,159.5 180,163.7 182,167.4 184,168.7 186,166.7 188,162.1 190,156.9 192,153.1 194,152.4 196,154.8 198,159.0 200,162.7 202,163.9 204,158.7 206,150.3 208,149.4 210,156.6 212,161.1 214,155.9 216,147.4 218,146.6 220,153.7 222,158.2 224,153.0 226,144.5 228,143.6 230,150.8 232,155.2 234,150.0 236,141.5 238,140.6 240,147.7 242,152.2 244,147.0 246,138.4 248,137.5 250,144.7 252,149.1 254,143.9 256,135.3 258,134.4 260,141.5 262,144.7 264,145.3 266,142.5 268,137.5 270,132.3 272,129.0 274,128.8 276,131.6 278,135.7 280,139.0 282,139.5 284,136.7 286,131.7 288,126.4 290,123.1 292,122.9 294,125.7 296,129.9 298,133.1 300,133.6 302,130.8 304,125.8 306,120.5 308,117.2 310,117.0 312,119.8 314,123.9 316,127.1 318,127.6 320,121.5 322,113.3 324,113.5 326,120.9 328,124.3 330,118.1 332,110.0 334,110.2 336,117.6 338,121.0 340,114.8 342,106.7 344,106.9 346,114.3 348,117.7 350,111.6 352,103.4 354,103.6 356,111.0 358,114.5 360,108.3 362,100.1 364,100.3 366,107.7 368,111.2 370,105.1 372,96.9 374,97.1 376,104.5 378,107.3 380,107.2 382,103.9 384,98.7 386,93.7 388,90.9 390,91.5 392,94.7 394,98.9 396,101.7 398,101.6 400,98.3 402,93.1 404,88.1 406,85.4 408,86.0 410,89.2 412,93.4 414,96.3 416,96.2 418,92.9 420,87.7 422,82.8 424,80.1 426,80.7 428,84.0 430,88.2 432,91.1 434,91.0 436,84.1 438,76.6 440,78.0 442,85.7 444,88.2 446,81.4 448,73.9 450,75.3 452,83.0 454,85.6 456,78.8 458,71.3 460,72.8 462,80.5 464,83.0 466,76.2 468,68.8 470,70.3 472,78.0 474,80.6 476,73.8 478,66.4 480,67.9 482,75.7 484,78.3 486,71.5 488,64.1 490,65.7 492,73.4 494,76.0 496,75.4 498,71.8 500,66.6 502,62.1 504,60.3 506,61.7 508,65.5 510,69.8 512,72.4 514,71.8 516,68.3 518,63.2 520,58.8 522,56.9 524,58.4 526,62.3 528,66.7 530,69.3 532,68.8 534,65.3 536,60.3 538,55.9 540,54.1 542,55.7 544,59.6 546,64.0 548,66.7 550,66.3 552,59.1 554,52.6 556,55.4 558,63.4 560,65.2 562,58.0 564,51.5 566,54.4 568,62.4 570,64.2 572,57.1 574,50.6 576,53.6 578,61.6 580,63.5 582,56.4 584,50.0 586,52.9 588,61.0 590,62.9 592,55.9 594,49.5 596,52.5 598,60.7 600,62.6 602,55.6 604,49.2 606,52.3 608,60.5 610,62.9" />
+          </svg>
+          <div class="visual-legend"><span><i class="analog-key"></i>4–20 mA 基线 · PV</span><span><i class="digital-key"></i>实际回路信号 · FSK 叠加</span></div>
+          <p class="visual-footnote">纵轴单位 mA；FSK 幅度与时间比例为便于观察而放大，不作为波形测量依据。</p>
+        </div>
+        <div class="fact-strip">
+          <article><span>物理层</span><strong>Bell 202 FSK</strong><small>1200 / 2200 Hz</small></article>
+          <article><span>速率</span><strong>1200 bit/s</strong><small>8 data · odd parity · 1 stop</small></article>
+          <article><span>典型更新</span><strong>2–3 次 / 秒</strong><small>视命令与网络而定</small></article>
+          <article><span>当前主版本</span><strong>HART 7</strong><small>小版本以官方变更日志为准</small></article>
+        </div>
+      </section>
+
+      <section class="content-section intro-section">
+        <header class="section-heading">
+          <p class="section-index">先建立全景</p>
+          <h2>HART 解决了什么？</h2>
+          <p>它不是把 4–20 mA “换掉”，而是在成熟的模拟回路上增加一个可互操作的数字通道。</p>
+        </header>
+        <div class="benefit-grid">
+          <article data-searchable><span class="card-icon">PV</span><h3>持续测量</h3><p>主过程变量仍由 4–20 mA 表示；已有控制系统可照常使用模拟输入。</p></article>
+          <article data-searchable><span class="card-icon">+</span><h3>更多上下文</h3><p>数字通道可承载状态、诊断、SV / TV / QV、设备标识与配置参数。</p></article>
+          <article data-searchable><span class="card-icon">↔</span><h3>双向维护</h3><p>主站可读取参数，也可在权限和安全流程允许时写入量程、阻尼、标签或执行校准。</p></article>
+        </div>
+        <div class="layer-stack" aria-label="HART 协议分层概览">
+          <div><span>应用层</span><strong>Universal · Common Practice · Device-specific Commands</strong><small>定义命令内容、数据类型、状态与响应</small></div>
+          <div><span>网络 / 数据链路</span><strong>寻址 · 主从访问 · 帧 · 时序 · 错误检测</strong><small>让同一链路上的设备有序、可靠地交换消息</small></div>
+          <div><span>物理层</span><strong>4–20 mA 上的 Bell 202 FSK</strong><small>有线 HART；HART-IP 与 WirelessHART 使用不同承载</small></div>
+        </div>
+        <aside class="source-note"><strong>官方定义</strong><p>FieldComm Group 是 HART 协议的开发者、所有者与标准组织；公开网页提供技术概述，完整一致性要求以官方规格包为准。</p><a href="https://www.fieldcommgroup.org/hart-specifications" target="_blank" rel="noreferrer">查看 HART Protocol Specifications ↗</a></aside>
+      </section>
+
+      <section id="signal" class="content-section anchor-section">
+        <header class="section-heading split-heading">
+          <div><p class="section-index">02 · 信号与接线</p><h2>先让回路正确，再谈通信</h2></div>
+          <span class="difficulty-pill">现场基础</span>
+        </header>
+        <div class="two-column">
+          <div class="prose-card" data-searchable>
+            <h3>FSK 为什么不扰动模拟量？</h3>
+            <p>HART 有线数字信号采用 Bell 202 FSK：逻辑 1 与逻辑 0 由不同频率表示。FSK 信号的平均值为零，因此数字通信叠加在电流环上时，不改变 4–20 mA 模拟信号的直流平均值。</p>
+            <div class="frequency-pair">
+              <div><span>逻辑 1 · Mark</span><strong>1200 Hz</strong></div>
+              <div><span>逻辑 0 · Space</span><strong>2200 Hz</strong></div>
+            </div>
+          </div>
+          <div class="prose-card caution-card" data-searchable>
+            <h3>“250 Ω”是常见起点，不是盲目规则</h3>
+            <p>通信器需要在回路阻抗上检测交流信号。约 250 Ω 常见于实验接线，但最终应核对电源余量、仪表最低工作电压、回路总阻抗、隔离栅与厂商手册。</p>
+            <p class="formula"><span>电压余量</span><code>V<sub>supply</sub> − I<sub>loop</sub> × R<sub>total</sub> ≥ V<sub>device,min</sub></code></p>
+          </div>
+        </div>
+
+        <div class="wiring-card">
+          <div class="wiring-heading"><div><p class="section-index">典型点对点回路</p><h3>通信器并联接入，回路由外部电源供电</h3></div><span>示意图 · 接线前断电确认</span></div>
+          <div class="loop-diagram" role="img" aria-label="24伏外部电源、HART仪表和约250欧负载串联成闭合回路，HART通信器可并联在负载两端，也可并联在仪表HART端子两端；图中虚线表示备选接法">
+            <svg class="loop-svg" viewBox="0 0 900 350" aria-hidden="true">
+              <defs>
+                <marker id="currentArrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                  <path d="M0 0L8 4L0 8Z" />
+                </marker>
+                <pattern id="loopGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+                  <path d="M24 0H0V24" />
+                </pattern>
+              </defs>
+
+              <rect class="loop-canvas" x="1" y="1" width="898" height="348" rx="20" />
+              <rect class="loop-grid" x="1" y="1" width="898" height="348" rx="20" />
+              <path class="loop-main-wire" d="M206 112H350M590 112H706V236H590M370 236H206V224" />
+              <path class="loop-current-arrow" d="M244 80H314" marker-end="url(#currentArrow)" />
+              <text class="loop-current-label" x="244" y="66">4–20 mA</text>
+              <text class="loop-current-note" x="244" y="99">模拟量 + HART FSK</text>
+
+              <g class="loop-component loop-supply">
+                <rect class="loop-component-shell" x="54" y="62" width="152" height="210" rx="18" />
+                <rect class="loop-component-accent" x="54" y="62" width="6" height="210" rx="3" />
+                <text class="loop-component-kicker" x="80" y="92">LOOP POWER</text>
+                <text class="loop-component-title" x="80" y="139">24 VDC</text>
+                <text class="loop-component-subtitle" x="80" y="164">外部回路电源</text>
+                <path class="loop-power-icon" d="M92 197H116M104 185V209M140 185V209" />
+                <circle cx="206" cy="112" r="8" />
+                <circle cx="206" cy="224" r="8" />
+                <text class="loop-terminal-label" x="180" y="117">+</text>
+                <text class="loop-terminal-label" x="180" y="229">−</text>
+              </g>
+
+              <g class="loop-component loop-device">
+                <rect class="loop-component-shell" x="350" y="38" width="240" height="148" rx="18" />
+                <rect class="loop-component-accent" x="350" y="38" width="240" height="6" rx="3" />
+                <text class="loop-component-kicker" x="380" y="73">FIELD DEVICE</text>
+                <text class="loop-component-title" x="392" y="112">HART 仪表</text>
+                <text class="loop-component-subtitle" x="392" y="137">两线制变送器</text>
+                <g class="loop-wave-icon"><path d="M516 137c8-24 16 24 24 0s16 24 24 0" /></g>
+                <circle cx="350" cy="112" r="8" />
+                <circle cx="590" cy="112" r="8" />
+                <text class="loop-terminal-label" x="371" y="104">+</text>
+                <text class="loop-terminal-label" x="565" y="104">−</text>
+              </g>
+
+              <g class="loop-component loop-load">
+                <rect class="loop-component-shell" x="370" y="202" width="220" height="68" rx="16" />
+                <text class="loop-component-kicker" x="394" y="226">LOOP LOAD</text>
+                <text class="loop-component-title loop-load-title" x="394" y="251">≈ 250 Ω</text>
+                <text class="loop-component-subtitle" x="520" y="251">串联负载</text>
+                <circle cx="370" cy="236" r="8" />
+                <circle cx="590" cy="236" r="8" />
+              </g>
+
+              <path class="loop-modem-wire" d="M370 236V316H394M566 316H590V236" />
+              <path class="loop-alt-wire" d="M350 112V176H326V316H394M566 316H622V176H590V112" />
+              <circle class="loop-tap" cx="370" cy="236" r="5" />
+              <circle class="loop-tap" cx="590" cy="236" r="5" />
+              <g class="loop-component loop-modem">
+                <rect class="loop-component-shell" x="394" y="286" width="172" height="58" rx="15" />
+                <circle class="loop-modem-status" cx="420" cy="315" r="6" />
+                <text class="loop-component-title loop-modem-title" x="438" y="313">HARTLink</text>
+                <text class="loop-component-subtitle" x="438" y="332">通信器 · 两种并联位置</text>
+              </g>
+
+              <g class="loop-route-label">
+                <rect x="720" y="174" width="164" height="124" rx="14" />
+                <text class="loop-route-kicker" x="744" y="211">接线要点</text>
+                <circle class="loop-route-dot loop-route-dot-main" cx="746" cy="233" r="4" />
+                <text x="758" y="237">三者串联成回路</text>
+                <circle class="loop-route-dot loop-route-dot-branch" cx="746" cy="258" r="4" />
+                <text x="758" y="262">实线：跨负载两端</text>
+                <circle class="loop-route-dot loop-route-dot-alt" cx="746" cy="283" r="4" />
+                <text x="758" y="287">虚线：跨仪表端子</text>
+              </g>
+            </svg>
+          </div>
+          <div class="diagram-legend" aria-label="接线图图例">
+            <span><i class="legend-main"></i>青色：闭合的 4–20 mA 主回路</span>
+            <span><i class="legend-branch"></i>琥珀色：通信器并联支路；虚线为备选接法</span>
+            <span><i class="legend-usb"></i>USB 仅给通信器供电，不给现场回路供电</span>
+          </div>
+          <div class="check-grid">
+            <article data-searchable><span>01</span><div><strong>确认供电</strong><p>USB 通信器通常不会给 4–20 mA 回路供电。</p></div></article>
+            <article data-searchable><span>02</span><div><strong>确认极性</strong><p>检查电源、仪表端子和电流方向。</p></div></article>
+            <article data-searchable><span>03</span><div><strong>确认负载</strong><p>阻抗过低可能让 FSK 信号难以检测，过高会吃掉电压余量。</p></div></article>
+            <article data-searchable><span>04</span><div><strong>确认现场条件</strong><p>危险区、本安回路和 SIS 设备必须遵守批准的作业程序。</p></div></article>
+          </div>
+        </div>
+
+        <div class="topology-section">
+          <div class="subsection-heading"><div><p class="section-index">拓扑选择</p><h3>点对点与多点，不只是设备数量不同</h3></div><p>多点更适合远程监测；需要快速模拟量更新的控制回路通常优先点对点。</p></div>
+          <div class="topology-grid">
+            <article class="topology-card" data-searchable>
+              <div class="topology-card-heading"><span>01</span><div><strong>点对点 Point-to-point</strong><small>一个回路 · 一台现场设备</small></div></div>
+              <div class="topology-visual point-visual" aria-label="点对点拓扑：电源、地址0仪表和负载串联">
+                <span>24 V</span><i></i><span>仪表<br><b>Addr 0</b></span><i></i><span>AI / 负载</span>
+              </div>
+              <ul><li>4–20 mA 继续表示主过程变量</li><li>数字通信用于身份、变量、状态与配置</li><li>最容易核对电压余量和故障位置</li></ul>
+            </article>
+            <article class="topology-card multidrop-card" data-searchable>
+              <div class="topology-card-heading"><span>02</span><div><strong>多点 Multi-drop</strong><small>共享链路 · 唯一轮询地址</small></div></div>
+              <div class="topology-visual multidrop-visual" aria-label="多点拓扑：主站通过共享总线连接三个不同轮询地址的现场设备">
+                <span class="master-node">主站</span><i class="bus-line"></i>
+                <div><span>仪表 <b>A1</b></span><span>仪表 <b>A2</b></span><span>仪表 <b>A3</b></span></div>
+              </div>
+              <ul><li>接入前先为每台设备配置不同地址</li><li>回路电流模式与地址范围按协议修订和设备实现核对</li><li>设备电容和轮询数量会影响距离与更新率</li></ul>
+            </article>
+          </div>
+          <aside class="topology-note"><strong>不要把“最多 15 台”当成所有修订的固定规则</strong><p>官方 HART 7.1 应用指南以经典多点网络的 15 台设备为例；现代设备的地址能力、回路电流模式和主机支持可能不同。设计时应同时核对设备 HART 修订、I/O 通道架构和厂商手册。</p><a href="https://www.fieldcommgroup.org/sites/default/files/imce_files/technology/documents/HART_ApplicationGuide_r7.1.pdf" target="_blank" rel="noreferrer">查看官方 Application Guide ↗</a></aside>
+        </div>
+      </section>
+
+      <section id="frames" class="content-section anchor-section">
+        <header class="section-heading split-heading">
+          <div><p class="section-index">03 · 帧与通信</p><h2>一帧 HART 消息里有什么？</h2><p>先看懂边界、地址、命令和校验，原始 Trace 就不再是一串陌生 HEX。</p></div>
+          <span class="difficulty-pill">协议基础</span>
+        </header>
+
+        <div class="frame-ribbon" aria-label="HART 帧字段顺序">
+          <div class="preamble"><span>Preamble</span><strong>FF … FF</strong><small>同步载波</small></div>
+          <div class="delimiter"><span>Delimiter</span><strong>1 byte</strong><small>方向 / 地址格式</small></div>
+          <div class="address"><span>Address</span><strong>1 / 5 bytes</strong><small>短地址 / 长地址</small></div>
+          <div class="command"><span>Command</span><strong>1 byte</strong><small>或 Cmd 31 扩展</small></div>
+          <div class="count"><span>Byte count</span><strong>1 byte</strong><small>后续字节数</small></div>
+          <div class="status"><span>Status</span><strong>响应 2 bytes</strong><small>响应码 / 设备状态</small></div>
+          <div class="data"><span>Data</span><strong>0…n bytes</strong><small>命令负载</small></div>
+          <div class="checksum"><span>Checksum</span><strong>1 byte</strong><small>XOR</small></div>
+        </div>
+        <div class="frame-scope" data-searchable>
+          <span><strong>请求帧</strong>不含 Status；Byte Count 仅表示请求 Data 的字节数。</span>
+          <span><strong>响应帧</strong>包含 2 个 Status 字节；Byte Count 包含 Status 与响应 Data。</span>
+        </div>
+
+        <div class="frame-details">
+          <article data-searchable><span>01</span><div><h3>前导码 Preamble</h3><p>连续 <code>0xFF</code> 帮助接收端建立载波同步。常见请求使用 5 个；设备身份响应会报告其要求，主站应按设备要求处理。</p></div></article>
+          <article data-searchable><span>02</span><div><h3>短帧与长帧</h3><p>发现设备时常用短地址发送 Cmd 0；取得设备身份后，后续事务通常使用由设备类型与唯一标识组成的长地址。</p></div></article>
+          <article data-searchable><span>03</span><div><h3>状态字节</h3><p>响应帧在 Byte Count 后带两个状态字节。第一字节可能是通信错误摘要或命令响应码，第二字节为设备状态；不能只看是否“有回包”。</p></div></article>
+          <article data-searchable><span>04</span><div><h3>XOR 校验</h3><p>从 Delimiter 开始到 Data 最后一个字节逐字节异或，不包含 Preamble 和 Checksum 自身。它能发现多类传输错误，但不是加密或身份认证。</p></div></article>
+        </div>
+
+        <div class="timing-grid">
+          <article data-searchable><span>字符格式</span><strong>1 + 8 + 1 + 1 = 11 bit</strong><small>Start + Data + Odd parity + Stop</small></article>
+          <article data-searchable><span>字符时间</span><strong>约 9.167 ms</strong><small>11 bit ÷ 1200 bit/s</small></article>
+          <article data-searchable><span>起始检测</span><strong>FF FF + Delimiter</strong><small>官方建议请求使用 5 个 0xFF 前导码</small></article>
+        </div>
+
+        <div class="example-card" data-searchable>
+          <div class="example-copy"><p class="section-index">可验证示例</p><h3>主站以短地址 0 发送 Cmd 0</h3><p>下面示例使用 5 字节前导码、Primary Master、无数据请求。末字节 <code>82</code> 是 <code>02 XOR 80 XOR 00 XOR 00</code>。</p></div>
+          <div class="hex-panel">
+            <div class="hex-heading"><span>TX · 1200 8O1</span><button type="button" data-copy-target="#cmd0Frame">复制 HEX</button></div>
+            <code id="cmd0Frame"><i>FF FF FF FF FF</i> <b>02</b> <strong>80</strong> <em>00</em> <u>00</u> <mark>82</mark></code>
+            <div class="hex-legend"><span><i></i>Preamble</span><span><b></b>Delimiter</span><span><strong></strong>Address</span><span><em></em>Cmd</span><span><u></u>Count</span><span><mark></mark>XOR</span></div>
+          </div>
+          <div class="checksum-tool">
+            <div><p class="section-index">动手验证</p><h3>XOR 校验器</h3><p>输入从 Delimiter 到 Data 末字节的 HEX；不要包含前导码和已有校验字节。</p></div>
+            <label><span>参与校验的字节</span><input type="text" value="02 80 00 00" spellcheck="false" data-checksum-input /></label>
+            <div class="checksum-result"><span>Checksum</span><output data-checksum-result>82</output><small data-checksum-status>4 bytes · XOR 结果</small></div>
+          </div>
+        </div>
+
+        <div class="protocol-lab-grid">
+          <article class="cmd0-response-card" data-searchable>
+            <div class="lab-heading"><p class="section-index">响应拆解</p><h3>Cmd 0 返回的不是一个 ID，而是一组身份能力</h3><p>下面展示完整响应帧的逻辑顺序。具体身份数据长度与扩展字段随 HART 修订变化，应以 Byte Count 和设备报告值为准。</p></div>
+            <div class="response-token-row" aria-label="命令0响应帧字段顺序">
+              <span class="token-preamble"><b>FF × N</b><small>Preamble</small></span>
+              <span><b>Delimiter</b><small>响应 · 地址格式</small></span>
+              <span><b>Address</b><small>短 / 长地址</small></span>
+              <span class="token-command"><b>00</b><small>Command 0</small></span>
+              <span><b>Byte Count</b><small>Status + Data</small></span>
+              <span class="token-status"><b>RC</b><small>响应码</small></span>
+              <span class="token-status"><b>DS</b><small>设备状态</small></span>
+              <span class="token-data"><b>Identity Data</b><small>修订相关</small></span>
+              <span><b>XOR</b><small>Checksum</small></span>
+            </div>
+            <div class="identity-field-grid">
+              <div><span>厂商与设备类型</span><strong>Manufacturer ID · Expanded Device Type</strong></div>
+              <div><span>链路能力</span><strong>请求前导码数量 · Physical Signaling</strong></div>
+              <div><span>修订信息</span><strong>HART · Device · Software · Hardware Revision</strong></div>
+              <div><span>唯一身份</span><strong>Device ID，用于建立后续长地址</strong></div>
+              <div><span>设备能力</span><strong>Flags · Profile · 支持的 Device Variables</strong></div>
+              <div><span>扩展身份</span><strong>随协议修订增加的计数器与标识字段</strong></div>
+            </div>
+            <aside><strong>解析顺序</strong><span>先验 Byte Count → 再判断 RC → 再读取 Device Status → 最后按设备 HART 修订解释 Identity Data。不要用固定长度硬切所有设备。</span></aside>
+          </article>
+
+          <article class="status-decoder-card" data-searchable>
+            <div class="lab-heading"><p class="section-index">动手验证</p><h3>基础设备状态字节解码器</h3><p>输入响应中的第二个 Status 字节。默认 <code>0x90</code> 表示设备故障，同时还有更多状态可读。</p></div>
+            <div class="status-first-byte"><span>Status[0]</span><strong><b>bit 7 = 1</b> 通信错误摘要</strong><strong><b>bit 7 = 0</b> 命令响应码 0…127</strong></div>
+            <label class="status-input"><span>Device Status · HEX</span><input type="text" value="90" maxlength="4" spellcheck="false" data-status-byte-input /></label>
+            <div class="status-readout"><output data-status-byte-output>0x90</output><code data-status-binary>1001 0000</code><small data-status-summary>设备故障 · 有更多状态可读</small></div>
+            <div class="status-bit-list">
+              <div data-status-mask="80"><i>7</i><span>0x80</span><strong>设备故障</strong><small>Device Malfunction</small></div>
+              <div data-status-mask="40"><i>6</i><span>0x40</span><strong>配置已改变</strong><small>Configuration Changed</small></div>
+              <div data-status-mask="20"><i>5</i><span>0x20</span><strong>冷启动</strong><small>Cold Start</small></div>
+              <div data-status-mask="10"><i>4</i><span>0x10</span><strong>有更多状态可读</strong><small>More Status Available</small></div>
+              <div data-status-mask="08"><i>3</i><span>0x08</span><strong>模拟输出固定</strong><small>Analog Output Fixed</small></div>
+              <div data-status-mask="04"><i>2</i><span>0x04</span><strong>模拟输出饱和</strong><small>Analog Output Saturated</small></div>
+              <div data-status-mask="02"><i>1</i><span>0x02</span><strong>非主变量越限</strong><small>Non-primary Variable Out of Limits</small></div>
+              <div data-status-mask="01"><i>0</i><span>0x01</span><strong>主变量越限</strong><small>Primary Variable Out of Limits</small></div>
+            </div>
+            <p class="status-followup"><strong>More Status Available 被置位：</strong>继续读取 Cmd 48，并按设备修订、EDD / FDI 和厂商文档解释附加状态。</p>
+          </article>
+        </div>
+
+        <div class="address-grid">
+          <article data-searchable><h3>主站角色</h3><p>传统有线 HART 支持 Primary Master 与 Secondary Master。两个主站都必须遵守介质访问与时序规则，不能把串口请求无节制地并发发送。</p></article>
+          <article data-searchable><h3>轮询地址</h3><p>地址 0 常用于点对点设备。多点模式下多个现场设备共享一对导线并以不同轮询地址通信；可用范围与回路电流行为取决于协议版本和设备实现。</p></article>
+          <article data-searchable><h3>Burst 模式</h3><p>Burst 是可选能力：设备可周期性发布某个命令的响应，无需主站每次发起。主站和 I/O 系统也必须支持正确接收与配置。</p></article>
+        </div>
+      </section>
+
+      <section id="commands" class="content-section anchor-section">
+        <header class="section-heading split-heading">
+          <div><p class="section-index">04 · 命令速查</p><h2>从身份建立到变量、配置与状态</h2><p>Universal Commands 是兼容设备必须按适用修订实现的共同基础；Common Practice Commands 在设备支持时必须按统一定义实现；厂商特有功能使用 Device-specific Commands。</p></div>
+          <a class="text-link" href="https://www.fieldcommgroup.org/hart-specifications" target="_blank" rel="noreferrer">官方命令规格 ↗</a>
+        </header>
+
+        <div class="command-groups">
+          <article class="command-group"><span>01</span><div><strong>Universal</strong><small>所有兼容现场设备的共同基础</small></div></article>
+          <article class="command-group"><span>02</span><div><strong>Common Practice</strong><small>可选能力，支持时必须采用标准定义</small></div></article>
+          <article class="command-group"><span>03</span><div><strong>Device-specific</strong><small>由厂商与具体设备定义，通常需 DD / FDI 或设备手册</small></div></article>
+        </div>
+
+        <div class="table-wrap">
+          <table class="command-table">
+            <thead><tr><th>命令</th><th>用途</th><th>你会得到什么</th><th>建议场景</th></tr></thead>
+            <tbody>
+              <tr class="command-section-row"><th colspan="4"><span>01</span>发现与身份</th></tr>
+              <tr data-searchable><td><code>Cmd 0</code><span>Universal</span></td><td><strong>读取唯一标识</strong></td><td>设备类型、修订、唯一 ID、前导码要求等身份信息</td><td>发现设备后的第一步；建立长地址</td></tr>
+              <tr data-searchable><td><code>Cmd 11</code><span>Universal · Legacy Tag</span></td><td><strong>按短 Tag 读取唯一标识</strong></td><td>匹配 8 字符 Tag 的设备身份</td><td>旧式 Tag 发现流程；已知 Tag、未知地址时</td></tr>
+              <tr data-searchable><td><code>Cmd 20</code><span>Universal · HART 6+</span></td><td><strong>读取 Long Tag</strong></td><td>最长 32 字符的设备标签</td><td>现代资产命名、匹配与审计</td></tr>
+              <tr data-searchable><td><code>Cmd 21</code><span>Universal · HART 6+</span></td><td><strong>按 Long Tag 读取唯一标识</strong></td><td>匹配长标签的设备身份与唯一地址信息</td><td>已知 Long Tag、未知地址时建立通信</td></tr>
+              <tr data-searchable><td><code>Cmd 22</code><span class="write-pill">Universal · 写</span></td><td><strong>写入 Long Tag</strong></td><td>更新设备的 32 字符资产标签</td><td>资产命名变更；写后必须 Cmd 20 回读</td></tr>
+
+              <tr class="command-section-row"><th colspan="4"><span>02</span>过程量与设备变量</th></tr>
+              <tr data-searchable><td><code>Cmd 1</code><span>Universal</span></td><td><strong>读取 PV</strong></td><td>Primary Variable 的工程单位码与浮点值</td><td>轻量、持续的主变量轮询</td></tr>
+              <tr data-searchable><td><code>Cmd 2</code><span>Universal</span></td><td><strong>读取回路电流与百分比</strong></td><td>电流值和量程百分比</td><td>核对模拟输出与数字测量</td></tr>
+              <tr data-searchable><td><code>Cmd 3</code><span>Universal</span></td><td><strong>读取动态变量与电流</strong></td><td>回路电流、PV 及设备提供的 SV / TV / QV</td><td>一次事务获取多变量概览</td></tr>
+              <tr data-searchable><td><code>Cmd 8</code><span>Universal</span></td><td><strong>读取动态变量分类</strong></td><td>PV / SV / TV / QV 对应的 Device Variable Classification</td><td>理解变量语义，避免只按槽位猜测测量类型</td></tr>
+              <tr data-searchable><td><code>Cmd 9</code><span>Universal · HART 6+</span></td><td><strong>按编号读取设备变量及状态</strong></td><td>指定变量的值、单位、状态与分类相关数据</td><td>需要变量级状态时</td></tr>
+
+              <tr class="command-section-row"><th colspan="4"><span>03</span>回路、标签与设备信息</th></tr>
+              <tr data-searchable><td><code>Cmd 6 / 7</code><span class="write-pill">Universal · 读 / 写</span></td><td><strong>写轮询地址 / 读回路配置</strong></td><td>轮询地址与回路电流模式等配置</td><td>点对点切换多点前；按设备修订解析</td></tr>
+              <tr data-searchable><td><code>Cmd 12 / 13</code><span>Universal</span></td><td><strong>读取 Message / Tag 等</strong></td><td>维护文本、短标签、描述符、日期等</td><td>设备辨识与维护记录</td></tr>
+              <tr data-searchable><td><code>Cmd 14 / 15</code><span>Universal</span></td><td><strong>读取传感器与输出信息</strong></td><td>传感器范围、量程、单位、阻尼、传递函数等</td><td>配置前先做只读核对</td></tr>
+              <tr data-searchable><td><code>Cmd 16 / 19</code><span class="write-pill">Universal · 读 / 写</span></td><td><strong>读取 / 写入最终装配号</strong></td><td>Final Assembly Number</td><td>制造、返修或整机追溯；不要把它当唯一设备 ID</td></tr>
+              <tr data-searchable><td><code>Cmd 17 / 18</code><span class="write-pill">Universal · 写</span></td><td><strong>写 Message / Tag 等</strong></td><td>Message、短 Tag、描述符与日期</td><td>维护信息更新；先保存原值并在写后回读</td></tr>
+
+              <tr class="command-section-row"><th colspan="4"><span>04</span>状态与确认</th></tr>
+              <tr data-searchable><td><code>Cmd 38</code><span class="write-pill">Universal · HART 7 · 写</span></td><td><strong>复位 Configuration Changed 标志</strong></td><td>确认主站已处理配置变更状态</td><td>先更新缓存并完成审计；不是清除实际配置</td></tr>
+              <tr data-searchable><td><code>Cmd 48</code><span>Universal · HART 7</span></td><td><strong>读取附加设备状态</strong></td><td>更细的诊断状态字节</td><td>设备报告 More Status Available 时</td></tr>
+
+              <tr class="command-section-row common-section"><th colspan="4"><span>05</span>Common Practice 示例</th></tr>
+              <tr data-searchable><td><code>Cmd 33</code><span>Common Practice</span></td><td><strong>读取最多四个设备变量</strong></td><td>按变量代码请求的多变量值与单位</td><td>设备支持时高效读取指定变量</td></tr>
+              <tr data-searchable><td><code>Cmd 40</code><span>Common Practice · 写</span></td><td><strong>进入 / 退出固定电流模式</strong></td><td>用于回路测试的固定模拟输出</td><td>仅在隔离、安全确认后执行</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <aside class="warning-note"><strong>写命令不是“读取的下一步”</strong><p>修改量程、单位、地址、固定电流或校准会影响控制、报警与联锁。先保存当前值，确认设备状态与写保护，并在回读验证前把输出视为不可信。</p></aside>
+      </section>
+
+      <section id="workflow" class="content-section anchor-section">
+        <header class="section-heading split-heading">
+          <div><p class="section-index">05 · modusignal 实操</p><h2>一次可靠会话的推荐顺序</h2><p>先用只读命令确认链路与设备身份，再逐步增加变量读取和配置操作。</p></div>
+          <a class="button primary compact" href="../#hart">进入 HART 工作台</a>
+        </header>
+        <ol class="workflow-list">
+          <li data-searchable><span>01</span><div><h3>搭建并检查回路</h3><p>确认外部供电、极性、负载、电压余量与现场许可；将 HART 通信器并联到合适位置。</p><small>不要假设 USB 会给回路供电</small></div></li>
+          <li data-searchable><span>02</span><div><h3>连接串口</h3><p>选择 HARTLink 或兼容接口。标准有线 HART 串口参数为 <code>1200 baud · 8O1</code>。</p><small>8 数据位 · 奇校验 · 1 停止位</small></div></li>
+          <li data-searchable><span>03</span><div><h3>搜索与建立身份</h3><p>先尝试地址 0 的 Cmd 0；未知地址时扫描。收到身份后使用长地址继续通信。</p><small>先身份，后参数</small></div></li>
+          <li data-searchable><span>04</span><div><h3>读取变量与状态</h3><p>用 Cmd 1 读取 PV，或 Cmd 3 读取动态变量；同时检查响应码、设备状态与工程单位。</p><small>“收到响应”不等于“命令成功”</small></div></li>
+          <li data-searchable><span>05</span><div><h3>配置前先读后写</h3><p>记录原值，预览请求，确认影响范围后执行写操作；随后重新读取对应参数独立验证。</p><small>保留原始 TX / RX 与变更记录</small></div></li>
+        </ol>
+        <div class="tool-links">
+          <a href="../#hart"><span>浏览器工具</span><strong>modusignal HART 调试</strong><small>快速连接、扫描、命令与曲线</small></a>
+          <a href="../hartlink-studio/"><span>桌面工作台</span><strong>HARTLink Studio</strong><small>结构化 Trace、设置、校准与 DD</small></a>
+          <a href="#troubleshooting"><span>通信异常</span><strong>继续看排障手册</strong><small>从物理层逐层定位</small></a>
+        </div>
+      </section>
+
+      <section id="troubleshooting" class="content-section anchor-section">
+        <header class="section-heading"><p class="section-index">06 · 排障手册</p><h2>从物理层往上查，不要先猜命令</h2><p>大多数 HART 问题可以沿“回路 → 串口 → 帧 → 地址 → 命令 → 设备状态”的顺序快速收敛。</p></header>
+        <div class="troubleshooting-list">
+          <details data-searchable open><summary><span>完全没有响应</span><small>超时 · RX 空白 · 搜索不到设备</small></summary><div><ol><li>用万用表确认回路电流与仪表供电。</li><li>确认通信器并联位置与回路阻抗，不要只检查 USB。</li><li>核对串口是否为 1200 8O1，且没有被其他软件占用。</li><li>先试地址 0，再扫描可能的轮询地址。</li><li>若有示波器，检查是否存在主站 FSK 信号及设备回波。</li></ol></div></details>
+          <details data-searchable><summary><span>能看到字节，但校验或帧解析失败</span><small>Checksum · Parity · Framing · Gap</small></summary><div><ol><li>确认奇校验而不是常见的 8N1。</li><li>检查是否误把通信器封装、时间戳或换行符当作 HART 原始字节。</li><li>校验范围从 Delimiter 到 Data 末字节，不包含 Preamble。</li><li>检查接地、隔离、噪声与过长支线；保存原始 HEX 便于比对。</li></ol></div></details>
+          <details data-searchable><summary><span>Cmd 0 成功，后续命令失败</span><small>长地址 · 修订 · 前导码 · 不支持</small></summary><div><ol><li>从 Cmd 0 响应正确组合长地址，不要继续盲用短地址。</li><li>使用设备报告的前导码数量。</li><li>根据设备 HART 修订选择命令；可选命令不一定实现。</li><li>解析响应码和设备状态，区分“不支持”“忙”“写保护”和通信错误。</li></ol></div></details>
+          <details data-searchable><summary><span>数值不合理或单位为空</span><small>Float · Unit Code · Variable mapping</small></summary><div><ol><li>HART 浮点通常按网络字节序解析，先检查字节偏移。</li><li>工程单位来自 Common Tables 的 Unit Code，不应凭数值猜单位。</li><li>确认读到的是 PV 还是某个 Device Variable，并检查分类与状态。</li><li>核对缩放/偏移是否由调试工具额外应用。</li></ol></div></details>
+          <details data-searchable><summary><span>写入后设备行为异常</span><small>量程 · 固定电流 · 地址 · 校准</small></summary><div><ol><li>立即停止重复写入，读取设备状态与相关参数。</li><li>检查是否仍处于固定电流或校准模式。</li><li>按变更记录恢复原值，并重新读取确认。</li><li>涉及控制或安全功能时，按现场 MOC / SIS 程序升级处理。</li></ol></div></details>
+        </div>
+      </section>
+
+      <section id="glossary" class="content-section anchor-section">
+        <header class="section-heading"><p class="section-index">07 · 术语表</p><h2>常见缩写，一次说清</h2></header>
+        <dl class="glossary-grid">
+          <div data-searchable><dt>PV</dt><dd><strong>Primary Variable</strong><span>主过程变量，通常映射到 4–20 mA。</span></dd></div>
+          <div data-searchable><dt>SV / TV / QV</dt><dd><strong>Secondary / Tertiary / Quaternary</strong><span>第二、第三、第四动态变量。</span></dd></div>
+          <div data-searchable><dt>FSK</dt><dd><strong>Frequency Shift Keying</strong><span>以不同频率表示数字状态的频移键控。</span></dd></div>
+          <div data-searchable><dt>DD / EDD</dt><dd><strong>Device Description</strong><span>用 EDDL 描述设备参数、菜单、方法与命令语义。</span></dd></div>
+          <div data-searchable><dt>FDI</dt><dd><strong>Field Device Integration</strong><span>现代设备集成包技术，可包含 UID、EDD 等内容。</span></dd></div>
+          <div data-searchable><dt>Burst</dt><dd><strong>周期发布模式</strong><span>现场设备主动重复发布某个命令的响应。</span></dd></div>
+          <div data-searchable><dt>Polling Address</dt><dd><strong>轮询地址</strong><span>主站在共享链路上选择现场设备使用的短地址。</span></dd></div>
+          <div data-searchable><dt>HART-IP</dt><dd><strong>HART over IP</strong><span>在 IP 网络上保留 HART 应用层语义的通信技术。</span></dd></div>
+        </dl>
+      </section>
+
+      <section id="sources" class="content-section sources-section anchor-section">
+        <header class="section-heading"><p class="section-index">08 · 官方资料</p><h2>继续深入，从一手资料开始</h2><p>以下链接均来自 FieldComm Group。公开指南适合学习和选型；开发合规产品时需取得并遵循对应修订的完整规格。</p></header>
+        <div class="source-list">
+          <a href="https://www.fieldcommgroup.org/technologies/hart/hart-technology-explained" target="_blank" rel="noreferrer" data-searchable><span>技术概览</span><div><strong>HART Technology Explained</strong><p>双通道、FSK、1200 bit/s 与典型更新率的官方介绍。</p></div><b>↗</b></a>
+          <a href="https://www.fieldcommgroup.org/hart-specifications" target="_blank" rel="noreferrer" data-searchable><span>规范索引</span><div><strong>HART Protocol Specifications</strong><p>协议规格、数据链路、命令、Common Tables 与测试规格入口。</p></div><b>↗</b></a>
+          <a href="https://www.fieldcommgroup.org/technologies/hart/HART-resources" target="_blank" rel="noreferrer" data-searchable><span>资料中心</span><div><strong>HART Resources</strong><p>Application Guide、技术概览、HART-IP 与 WirelessHART 资料。</p></div><b>↗</b></a>
+          <a href="https://www.fieldcommgroup.org/sites/default/files/imce_files/technology/documents/HART_ApplicationGuide_r7.1.pdf" target="_blank" rel="noreferrer" data-searchable><span>应用指南</span><div><strong>HART Application Guide</strong><p>系统规划、I/O、现场应用、Burst 与多点模式等实践内容。</p></div><b>PDF</b></a>
+          <a href="https://support.fieldcommgroup.org/support/solutions/articles/8000056458-change-log-for-the-hart-protocol-specifications" target="_blank" rel="noreferrer" data-searchable><span>版本记录</span><div><strong>Protocol Specification Change Log</strong><p>核对协议小版本、发布时间与各规格更新内容。</p></div><b>↗</b></a>
+          <a href="https://support.fieldcommgroup.org/support/solutions/articles/8000040648-how-is-character-time-calculated-" target="_blank" rel="noreferrer" data-searchable><span>时序说明</span><div><strong>How is Character Time calculated?</strong><p>11-bit 字符、1200 baud、8O1、前导码和关键链路时序。</p></div><b>↗</b></a>
+        </div>
+        <div class="version-note"><strong>版本说明</strong><p>截至 2026-08，FieldComm Group 变更日志已记录 HART Protocol Specification Release 7.10（2026-04）；部分官网规格索引页面仍可能显示 7.9。工程项目应以采购或会员工作区中目标修订的正式文件为准。</p></div>
+      </section>
+    </main>
+  </div>
+
+  <footer class="wiki-footer">
+    <a href="../"><img src="../images/modusignal-logo.svg" alt="modusignal" width="1500" height="460" /></a>
+    <p>HART® 是 FieldComm Group 的注册商标。本站与 FieldComm Group 无隶属关系。</p>
+    <div><a href="../#hart">在线调试</a><a href="../hartlink-studio/">桌面软件</a><a href="#overview">返回顶部 ↑</a></div>
+  </footer>
+
+  <script type="module" src="./app.js?v=1.3.1"></script>
+</body>
+
+</html>

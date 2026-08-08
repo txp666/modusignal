@@ -258,6 +258,12 @@ async function initialize() {
     },
   });
   await transportController.setTransport(state.transportId);
+  const requestedPageId = window.location.hash.slice(1);
+  if (DEVICE_PAGE_IDS.includes(requestedPageId)) {
+    selectDevice(requestedPageId);
+  } else if (requestedPageId === "request") {
+    navigateToPage("request");
+  }
   deviceNavigationUi.updatePage();
   safeUpdateDeviceUi();
   void chartController.init();

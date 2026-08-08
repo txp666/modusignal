@@ -14,5 +14,8 @@
 /hartlink-studio/assets/*
   Cache-Control: public, max-age=31536000, immutable
 
+/hart-wiki/*
+  Cache-Control: public, max-age=86400
+
 /fluent-serial-assistant/assets/*
   Cache-Control: public, max-age=31536000, immutable

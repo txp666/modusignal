@@ -1271,6 +1271,11 @@ button:focus-visible {
   color: var(--text);
   padding: 0.55rem 0.6rem;
   text-align: left;
+  text-decoration: none;
+}
+
+.device-icon.wiki-icon {
+  background: var(--accent);
 }
 
 .device-item.active {

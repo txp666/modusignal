@@ -94,6 +94,7 @@ function injectStaticAssetVersion(version) {
 function copyStaticAssets() {
   const copies = [
     ["pages", "pages"],
+    ["hart-wiki", "hart-wiki"],
     ["hartlink-studio", "hartlink-studio"],
     ["fluent-serial-assistant", "fluent-serial-assistant"],
     [
@@ -162,6 +163,7 @@ function createProductionIndex(version) {
 function injectContentSecurityPolicyHashes() {
   const htmlFiles = [
     join(siteRoot, "index.html"),
+    join(siteRoot, "hart-wiki", "index.html"),
     join(siteRoot, "hartlink-studio", "index.html"),
     join(siteRoot, "fluent-serial-assistant", "index.html"),
   ];

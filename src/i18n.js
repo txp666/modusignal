@@ -20,6 +20,8 @@ const TRANSLATIONS = {
   "nav.homeDesc": { zh: "项目概览 / GitHub / 请求设备", en: "Overview / GitHub / Request Device" },
   "nav.requestDevice": { zh: "请求新设备", en: "Request New Device" },
   "nav.requestDeviceDesc": { zh: "提交协议和 UI 需求", en: "Submit protocol & UI requirements" },
+  "nav.hartWiki": { zh: "HART 知识库", en: "HART Wiki" },
+  "nav.hartWikiDesc": { zh: "原理 / 接线 / 命令 / 排障", en: "Basics / Wiring / Commands / Troubleshooting" },
   "nav.deviceLibrary": { zh: "设备库", en: "Device Library" },
   "nav.notConnected": { zh: "未连接", en: "Not Connected" },
   "nav.connected": { zh: "已连接", en: "Connected" },
