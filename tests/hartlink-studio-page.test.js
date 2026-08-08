@@ -34,7 +34,10 @@ test("HARTLink Studio product page resolves the latest release dynamically", asy
   assert.match(html, /<strong>¥10000<\/strong>/);
   assert.match(html, /中文语义推测/);
   assert.match(html, /完整的 DD 菜单与方法实现/);
-  assert.match(html, /mailto:771454616@qq\.com/);
+  assert.equal((html.match(/mailto:771454616@qq\.com/g) || []).length, 1);
+  assert.equal((html.match(/771454616@qq\.com/g) || []).length, 2);
+  assert.match(html, /data-copy="enterpriseDescription"/);
+  assert.doesNotMatch(html, /data-copy="requestTrialCode"|data-copy="contactPurchase"/);
   assert.match(app, /pricingRoadmap: "持续升级中 · 在线 DD 库设计中"/);
 });
 

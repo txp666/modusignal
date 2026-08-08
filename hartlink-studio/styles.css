@@ -794,8 +794,8 @@ p {
 .pricing-card {
   display: grid;
   align-content: start;
-  min-height: 24rem;
-  padding: 1.45rem;
+  min-height: 20.5rem;
+  padding: 1.35rem;
   border: 1px solid var(--line);
   border-radius: 0.8rem;
   background: var(--paper-strong);
@@ -849,7 +849,7 @@ p {
   display: flex;
   align-items: baseline;
   gap: 0.45rem;
-  margin-top: 2.2rem;
+  margin-top: 1.75rem;
 }
 
 .pricing-price strong {
@@ -930,7 +930,7 @@ p {
   align-items: center;
   gap: 2rem;
   margin-top: 1rem;
-  padding: 1.65rem;
+  padding: 1.4rem 1.55rem;
   border: 1px solid var(--line);
   border-radius: 0.8rem;
   background: var(--paper-strong);
@@ -943,6 +943,13 @@ p {
 .enterprise-offer h3 {
   font-size: clamp(1.25rem, 2vw, 1.7rem);
   letter-spacing: -0.03em;
+}
+
+.enterprise-description {
+  margin-top: 0.45rem;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.6;
 }
 
 .pricing-roadmap {
@@ -1396,7 +1403,7 @@ button:focus-visible {
   .pricing-card,
   .pricing-card:last-child {
     grid-column: auto;
-    min-height: 21rem;
+    min-height: 18.5rem;
   }
 
   .enterprise-offer .button {
