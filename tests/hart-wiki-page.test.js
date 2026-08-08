@@ -4,6 +4,7 @@ import test from "node:test";
 
 const pageUrl = new URL("../hart-wiki/index.html", import.meta.url);
 const scriptUrl = new URL("../hart-wiki/app.js", import.meta.url);
+const commandFramesUrl = new URL("../hart-wiki/command-frames.js", import.meta.url);
 const styleUrl = new URL("../hart-wiki/styles.css", import.meta.url);
 const mainPageUrl = new URL("../index.html", import.meta.url);
 const hartPageUrl = new URL("../pages/devices/hart.html", import.meta.url);
@@ -11,9 +12,10 @@ const buildUrl = new URL("../scripts/build.mjs", import.meta.url);
 const sitemapUrl = new URL("../sitemap.xml", import.meta.url);
 
 test("HART Wiki presents a sourced protocol learning path", async () => {
-  const [html, script, styles] = await Promise.all([
+  const [html, script, commandFrames, styles] = await Promise.all([
     readFile(pageUrl, "utf8"),
     readFile(scriptUrl, "utf8"),
+    readFile(commandFramesUrl, "utf8"),
     readFile(styleUrl, "utf8"),
   ]);
 
@@ -47,10 +49,15 @@ test("HART Wiki presents a sourced protocol learning path", async () => {
   assert.match(html, /多点 Multi-drop/);
   assert.match(html, /Cmd 0 返回的不是一个 ID/);
   assert.match(html, /data-status-byte-input/);
+  assert.match(html, /data-command-frame-select/);
+  assert.match(html, /请求怎么组帧，响应从哪里开始解析/);
   assert.match(html, /More Status Available/);
   assert.match(script, /applySearch/);
   assert.match(script, /updateChecksum/);
   assert.match(script, /updateStatusByte/);
+  assert.match(script, /renderCommandFrame/);
+  assert.match(commandFrames, /HART_COMMAND_FRAMES/);
+  assert.match(commandFrames, /definition\(55, "写入设备变量阻尼值"/);
   assert.match(script, /IntersectionObserver/);
   assert.match(styles, /\.loop-svg/);
   assert.match(styles, /@media \(max-width: 700px\)/);

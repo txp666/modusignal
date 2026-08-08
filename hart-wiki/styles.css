@@ -2009,6 +2009,420 @@ kbd {
   color: var(--amber);
 }
 
+.command-frame-explorer {
+  margin-top: 1.5rem;
+  padding: 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--paper);
+}
+
+.command-frame-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(15rem, 21rem);
+  align-items: end;
+  gap: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.command-frame-heading > div {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.command-frame-heading > div > span {
+  color: var(--teal);
+  font: 800 0.6rem/1.2 "SFMono-Regular", Consolas, monospace;
+  letter-spacing: 0.08em;
+}
+
+.command-frame-heading h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.command-frame-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.command-frame-heading label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 800;
+}
+
+.command-frame-heading select {
+  width: 100%;
+  min-height: 2.65rem;
+  padding: 0 2.4rem 0 0.75rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.45rem;
+  background: var(--paper-soft);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 750;
+}
+
+.frame-envelope {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.8rem;
+}
+
+.frame-envelope > div {
+  display: grid;
+  gap: 0.38rem;
+  min-width: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 0.45rem;
+  background: var(--paper-soft);
+}
+
+.frame-envelope span {
+  color: var(--muted);
+  font: 800 0.56rem/1.2 "SFMono-Regular", Consolas, monospace;
+  letter-spacing: 0.06em;
+}
+
+.frame-envelope code {
+  overflow-x: auto;
+  color: var(--ink-soft);
+  font-size: 0.58rem;
+  white-space: nowrap;
+}
+
+.command-frame-result {
+  margin-top: 0.8rem;
+}
+
+.command-frame-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0.5rem 0.5rem 0 0;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.command-frame-selected > div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.command-frame-selected > div:first-child span {
+  color: var(--mint);
+  font: 850 0.72rem/1 "SFMono-Regular", Consolas, monospace;
+}
+
+.command-frame-selected h3 {
+  margin: 0;
+  color: inherit;
+  font-size: 0.88rem;
+}
+
+.command-frame-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.35rem;
+}
+
+.command-frame-meta span {
+  padding: 0.3rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--paper) 18%, transparent);
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--paper) 74%, transparent);
+  font-size: 0.54rem;
+}
+
+.command-frame-lanes {
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 0.5rem 0.5rem;
+  overflow: hidden;
+}
+
+.command-frame-lane {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.85rem 0.95rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.command-frame-lane:last-child {
+  border-bottom: 0;
+}
+
+.command-frame-lane > div {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.command-frame-lane strong {
+  color: var(--teal-strong);
+  font-size: 0.7rem;
+}
+
+.command-frame-lane.rx strong {
+  color: var(--amber);
+}
+
+.command-frame-lane small {
+  color: var(--muted);
+  font-size: 0.54rem;
+}
+
+.command-frame-lane > code {
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 0.35rem;
+  background: var(--paper-soft);
+  color: var(--ink-soft);
+  font-size: 0.62rem;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.command-frame-lane button {
+  padding: 0.42rem 0.55rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 0.35rem;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.58rem;
+  font-weight: 800;
+}
+
+.command-frame-lane button:hover {
+  border-color: var(--teal);
+  color: var(--teal-strong);
+}
+
+.frame-data-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.frame-data-panel {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.frame-data-panel h4 {
+  margin: 0;
+  padding: 0.65rem 0.8rem;
+  background: var(--paper-soft);
+  color: var(--muted);
+  font: 850 0.6rem/1.2 "SFMono-Regular", Consolas, monospace;
+  letter-spacing: 0.05em;
+}
+
+.frame-field-table > div {
+  display: grid;
+  grid-template-columns: 4.7rem 6.5rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.55rem;
+  padding: 0.65rem 0.8rem;
+  border-top: 1px solid var(--line);
+}
+
+.frame-field-table code {
+  color: var(--teal-strong);
+  font-size: 0.62rem;
+  font-weight: 850;
+}
+
+.frame-field-table span {
+  color: var(--ink);
+  font-size: 0.62rem;
+  font-weight: 750;
+}
+
+.frame-field-table p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.62rem;
+}
+
+.command-parse-rule {
+  display: grid;
+  grid-template-columns: 7rem minmax(0, 1fr);
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border-left: 3px solid var(--amber);
+  border-radius: 0.4rem;
+  background: var(--amber-soft);
+}
+
+.command-parse-rule strong {
+  color: var(--amber);
+  font-size: 0.66rem;
+}
+
+.command-parse-rule p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.64rem;
+}
+
+.command-frame-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 1rem;
+  margin-top: 0.8rem;
+  color: var(--muted);
+  font-size: 0.58rem;
+}
+
+.command-frame-legend b {
+  color: var(--ink);
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+
+.command-guides-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.command-guides-heading > div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.command-guides-heading span,
+.command-guide-number {
+  color: var(--teal);
+  font: 800 0.6rem/1.2 "SFMono-Regular", Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.command-guides-heading h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.command-guides-heading p {
+  max-width: 24rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-align: right;
+}
+
+.command-guides {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.command-guides article {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 1.1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.7rem;
+  background: var(--paper);
+}
+
+.command-guides article h3 {
+  margin: 0;
+  font-size: 0.84rem;
+}
+
+.command-guides article p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.command-sequence {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.32rem;
+}
+
+.command-sequence code {
+  min-width: 1.8rem;
+  padding: 0.34rem 0.42rem;
+  border: 1px solid color-mix(in srgb, var(--teal) 28%, var(--line));
+  border-radius: 0.32rem;
+  background: var(--teal-soft);
+  color: var(--teal-strong);
+  font-size: 0.62rem;
+  font-weight: 850;
+  text-align: center;
+}
+
+.command-sequence code.command-write {
+  border-color: color-mix(in srgb, var(--amber) 32%, var(--line));
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.command-sequence i {
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-style: normal;
+}
+
+.command-scope-note {
+  display: grid;
+  grid-template-columns: 12rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.9rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--teal);
+  border-radius: 0.55rem;
+  background: var(--teal-soft);
+}
+
+.command-scope-note strong {
+  color: var(--teal-strong);
+  font-size: 0.75rem;
+}
+
+.command-scope-note p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+}
+
+.command-scope-note a {
+  color: var(--teal-strong);
+  font-size: 0.66rem;
+  font-weight: 850;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 .warning-note {
   grid-template-columns: 12rem 1fr;
   border-left-color: var(--amber);
@@ -2499,6 +2913,7 @@ kbd {
   .two-column,
   .address-grid,
   .command-groups,
+  .command-guides,
   .tool-links,
   .glossary-grid,
   .frame-scope,
@@ -2511,11 +2926,66 @@ kbd {
 
   .layer-stack > div,
   .source-note,
+  .command-scope-note,
   .warning-note,
   .version-note,
   .topology-note {
     grid-template-columns: 1fr;
     gap: 0.4rem;
+  }
+
+  .command-guides-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .command-frame-heading,
+  .frame-envelope,
+  .frame-data-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .command-frame-heading {
+    align-items: stretch;
+  }
+
+  .command-frame-selected {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .command-frame-meta {
+    justify-content: flex-start;
+  }
+
+  .command-frame-lane {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .command-frame-lane > div {
+    grid-column: 1 / -1;
+  }
+
+  .frame-field-table > div {
+    grid-template-columns: 4.4rem minmax(0, 1fr);
+  }
+
+  .frame-field-table p {
+    grid-column: 1 / -1;
+  }
+
+  .command-parse-rule {
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
+  }
+
+  .command-guides-heading p {
+    max-width: none;
+    text-align: left;
+  }
+
+  .command-scope-note a {
+    margin-top: 0.2rem;
   }
 
   .layer-stack small,

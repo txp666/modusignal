@@ -1,3 +1,5 @@
+import { HART_COMMAND_FRAMES } from "./command-frames.js?v=1.4.0";
+
 const root = document.documentElement;
 const themeToggle = document.querySelector("[data-theme-toggle]");
 const menuToggle = document.querySelector("[data-menu-toggle]");
@@ -16,6 +18,9 @@ const statusByteOutput = document.querySelector("[data-status-byte-output]");
 const statusBinary = document.querySelector("[data-status-binary]");
 const statusSummary = document.querySelector("[data-status-summary]");
 const statusBitRows = [...document.querySelectorAll("[data-status-mask]")];
+const commandFrameExplorer = document.querySelector("[data-command-frame-explorer]");
+const commandFrameSelect = document.querySelector("[data-command-frame-select]");
+const commandFrameResult = document.querySelector("[data-command-frame-result]");
 
 function syncThemeButton() {
   if (!themeToggle) return;
@@ -165,6 +170,105 @@ function updateStatusByte() {
 
 statusByteInput?.addEventListener("input", updateStatusByte);
 updateStatusByte();
+
+function hexByte(value) {
+  return Number(value).toString(16).toUpperCase().padStart(2, "0");
+}
+
+function exampleDataBytes(value) {
+  if (!value) return [];
+  return value.trim().split(/\s+/).map((byte) => Number.parseInt(byte, 16));
+}
+
+function buildRequestExample(definition) {
+  const data = exampleDataBytes(definition.requestExample);
+  const shortAddress = definition.address === "short" || definition.address === "discovery";
+  const header = shortAddress
+    ? [0x02, 0x80]
+    : [0x82, 0x92, 0x34, 0x56, 0x78, 0x9a];
+  const body = [...header, definition.command, data.length, ...data];
+  const checksum = body.reduce((result, byte) => result ^ byte, 0);
+  return [...Array(5).fill(0xff), ...body, checksum].map(hexByte).join(" ");
+}
+
+function buildResponseTemplate(definition) {
+  const shortAddress = definition.address === "short" || definition.address === "discovery";
+  const header = shortAddress ? "06 A0" : "86 A0 A1 A2 A3 A4";
+  const byteCount = Number.isInteger(definition.responseLength)
+    ? hexByte(definition.responseLength + 2)
+    : "BC";
+  const data = definition.responseLength === 0 ? "" : " DATA";
+  return `FF × N ${header} ${hexByte(definition.command)} ${byteCount} RC DS${data} CS`;
+}
+
+function renderFrameFields(title, fields) {
+  return `<section class="frame-data-panel"><h4>${title}</h4><div class="frame-field-table">${fields.map((field) => `
+    <div><code>${field.offset}</code><span>${field.type}</span><p>${field.description}</p></div>`).join("")}</div></section>`;
+}
+
+function renderCommandFrame(command) {
+  if (!commandFrameResult) return;
+  const definition = HART_COMMAND_FRAMES.find((entry) => entry.command === Number(command)) ?? HART_COMMAND_FRAMES[0];
+  const addressLabel = definition.address === "short"
+    ? "短地址帧"
+    : definition.address === "discovery"
+      ? "发现阶段可用短地址"
+      : "建立身份后使用长地址";
+  const requestSize = Number.isInteger(definition.requestLength) ? `${definition.requestLength} byte` : `${definition.requestLength} bytes`;
+  const responseSize = Number.isInteger(definition.responseLength) ? `${definition.responseLength} bytes` : `${definition.responseLength}`;
+  const requestExample = buildRequestExample(definition);
+  const responseTemplate = buildResponseTemplate(definition);
+
+  commandFrameResult.innerHTML = `
+    <header class="command-frame-selected">
+      <div><span>Cmd ${definition.command}</span><h3>${definition.label}</h3></div>
+      <div class="command-frame-meta"><span>${definition.category}</span><span>${addressLabel}</span><span>TX Data ${requestSize}</span><span>RX Data ${responseSize}</span></div>
+    </header>
+    <div class="command-frame-lanes">
+      <div class="command-frame-lane tx"><div><strong>发送示例</strong><small>${definition.address === "long" ? "示例长地址：Type 0x1234 · ID 0x56789A" : "示例短地址：Primary Master · Polling Address 0"}</small></div><code data-frame-copy-source="tx">${requestExample}</code><button type="button" data-frame-copy="tx">复制</button></div>
+      <div class="command-frame-lane rx"><div><strong>响应模板</strong><small>BC 包含 RC、DS 与 Response Data；实际字段以收到的 Byte Count 为界</small></div><code data-frame-copy-source="rx">${responseTemplate}</code><button type="button" data-frame-copy="rx">复制</button></div>
+    </div>
+    <div class="frame-data-grid">
+      ${renderFrameFields("Request Data", definition.requestFields)}
+      ${renderFrameFields("Response Data", definition.responseFields)}
+    </div>
+    <aside class="command-parse-rule"><strong>解析与验证</strong><p>${definition.verify}</p></aside>`;
+
+  commandFrameResult.querySelectorAll("[data-frame-copy]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const source = commandFrameResult.querySelector(`[data-frame-copy-source="${button.dataset.frameCopy}"]`);
+      const original = button.textContent;
+      try {
+        await navigator.clipboard.writeText(source?.textContent?.trim() ?? "");
+        button.textContent = "已复制";
+      } catch {
+        button.textContent = "复制失败";
+      }
+      setTimeout(() => { button.textContent = original; }, 1500);
+    });
+  });
+}
+
+if (commandFrameExplorer && commandFrameSelect && commandFrameResult) {
+  const groups = new Map();
+  HART_COMMAND_FRAMES.forEach((definition) => {
+    if (!groups.has(definition.category)) groups.set(definition.category, []);
+    groups.get(definition.category).push(definition);
+  });
+  groups.forEach((definitions, label) => {
+    const group = document.createElement("optgroup");
+    group.label = label;
+    definitions.forEach((definition) => {
+      const option = document.createElement("option");
+      option.value = String(definition.command);
+      option.textContent = `Cmd ${definition.command} · ${definition.label}`;
+      group.append(option);
+    });
+    commandFrameSelect.append(group);
+  });
+  commandFrameSelect.addEventListener("change", () => renderCommandFrame(commandFrameSelect.value));
+  renderCommandFrame(commandFrameSelect.value || 0);
+}
 
 const observedSections = sectionLinks
   .map((link) => document.querySelector(link.getAttribute("href")))
