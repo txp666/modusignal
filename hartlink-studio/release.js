@@ -4,7 +4,16 @@ export const HARTLINK_RELEASE_SOURCE_URL =
 
 const VERSION_PATTERN = /^\d+\.\d+\.\d+(?:[.-][0-9A-Za-z.-]+)?$/;
 const ASSET_HOST = "download.modusignal.cn";
-const RELEASE_NOTES_PREFIX = "https://modusignal.cn/hartlink-studio/";
+const RELEASE_NOTES_LOCATIONS = [
+  {
+    origin: "https://modusignal.cn",
+    pathnamePrefix: "/hartlink-studio/",
+  },
+  {
+    origin: "https://git.zhangshu.tech",
+    pathnamePrefix: "/zhangshu/hartlink-studio/-/releases/",
+  },
+];
 
 function requireString(value, field) {
   if (typeof value !== "string" || !value.trim()) {
@@ -32,8 +41,23 @@ export function parseHartLinkReleaseManifest(value) {
   }
 
   const releaseNotesUrl = requireString(value.release_notes_url, "release_notes_url");
-  if (!releaseNotesUrl.startsWith(RELEASE_NOTES_PREFIX)) {
-    throw new Error("HARTLink Studio release notes must use modusignal.cn");
+  let parsedReleaseNotesUrl;
+  try {
+    parsedReleaseNotesUrl = new URL(releaseNotesUrl);
+  } catch {
+    throw new Error("HARTLink Studio release notes URL is invalid");
+  }
+  const trustedReleaseNotesLocation = RELEASE_NOTES_LOCATIONS.some(
+    ({ origin, pathnamePrefix }) =>
+      parsedReleaseNotesUrl.origin === origin &&
+      parsedReleaseNotesUrl.pathname.startsWith(pathnamePrefix),
+  );
+  if (
+    parsedReleaseNotesUrl.username ||
+    parsedReleaseNotesUrl.password ||
+    !trustedReleaseNotesLocation
+  ) {
+    throw new Error("HARTLink Studio release notes must use a trusted release page");
   }
   if (!Array.isArray(value.assets) || value.assets.length === 0) {
     throw new Error("HARTLink Studio release manifest has no assets");

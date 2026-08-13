@@ -38,10 +38,32 @@ test("release manifest parser exposes validated current assets", () => {
   assert.match(formatReleaseAssetSize(asset.size), /MB$/);
 });
 
-test("release manifest parser rejects non-modusignal release notes", () => {
+test("release manifest parser accepts the official GitLab release page", () => {
+  const release = parseHartLinkReleaseManifest({
+    ...manifest,
+    release_notes_url:
+      "https://git.zhangshu.tech/zhangshu/hartlink-studio/-/releases/v9.8.7",
+  });
+
+  assert.equal(
+    release.releaseNotesUrl,
+    "https://git.zhangshu.tech/zhangshu/hartlink-studio/-/releases/v9.8.7",
+  );
+});
+
+test("release manifest parser rejects untrusted release notes", () => {
   assert.throws(
     () => parseHartLinkReleaseManifest({ ...manifest, release_notes_url: "https://github.com/example/release" }),
-    /modusignal\.cn/,
+    /trusted release page/,
+  );
+  assert.throws(
+    () =>
+      parseHartLinkReleaseManifest({
+        ...manifest,
+        release_notes_url:
+          "https://git.zhangshu.tech/other/hartlink-studio/-/releases/v9.8.7",
+      }),
+    /trusted release page/,
   );
 });
 
