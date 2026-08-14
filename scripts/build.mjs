@@ -17,6 +17,12 @@ import {
   HARTLINK_RELEASE_SOURCE_URL,
   parseHartLinkReleaseManifest,
 } from "../hartlink-studio/release.js";
+import {
+  patchHtmlAssetUrls,
+  patchRelativeModuleSpecifier,
+  replaceAssetVersion,
+  validateAssetVersion,
+} from "./asset-version.mjs";
 
 const projectRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const siteRoot = join(projectRoot, "_site");
@@ -24,33 +30,18 @@ const distDir = join(siteRoot, "dist");
 
 function resolveVersion() {
   if (process.env.ASSET_VERSION?.trim()) {
-    return process.env.ASSET_VERSION.trim();
+    return validateAssetVersion(process.env.ASSET_VERSION);
   }
 
   try {
-    return execSync("git rev-parse --short HEAD", { cwd: projectRoot, stdio: ["ignore", "pipe", "ignore"] })
-      .toString()
-      .trim();
+    return validateAssetVersion(
+      execSync("git rev-parse --short HEAD", { cwd: projectRoot, stdio: ["ignore", "pipe", "ignore"] })
+        .toString()
+        .trim(),
+    );
   } catch {
     return "dev";
   }
-}
-
-function replaceAssetVersion(content, version) {
-  return content.replaceAll("__ASSET_VERSION__", version);
-}
-
-function patchHtmlAssetUrls(content, version) {
-  return content.replace(
-    /((?:src|href)=["'])(\.[^"']+\.(?:css|gif|html|ico|jpeg|jpg|js|png|svg|webp))(?:\?v=[^"']*)?(["'])/g,
-    `$1$2?v=${version}$3`,
-  );
-}
-
-function patchRelativeModuleSpecifier(content, version) {
-  return content
-    .replace(/(from\s+)(["'])(\.[^"']+\.js)(?:\?v=[^"']*)?\2/g, `$1$2$3?v=${version}$2`)
-    .replace(/(import\s*\(\s*)(["'])(\.[^"']+\.js)(?:\?v=[^"']*)?\2/g, `$1$2$3?v=${version}$2`);
 }
 
 function walkFilesWithExtensions(dir, extensions) {
@@ -78,16 +69,18 @@ function walkFilesWithExtensions(dir, extensions) {
 }
 
 function injectStaticAssetVersion(version) {
-  const pagesRoot = join(siteRoot, "pages");
+  const roots = [join(siteRoot, "pages"), join(siteRoot, "hartlink-studio")];
 
-  for (const filePath of walkFilesWithExtensions(pagesRoot, [".html"])) {
-    const content = readFileSync(filePath, "utf8");
-    writeFileSync(filePath, patchHtmlAssetUrls(replaceAssetVersion(content, version), version));
-  }
+  for (const root of roots) {
+    for (const filePath of walkFilesWithExtensions(root, [".html"])) {
+      const content = readFileSync(filePath, "utf8");
+      writeFileSync(filePath, patchHtmlAssetUrls(content, version));
+    }
 
-  for (const filePath of walkFilesWithExtensions(pagesRoot, [".js"])) {
-    const content = readFileSync(filePath, "utf8");
-    writeFileSync(filePath, patchRelativeModuleSpecifier(replaceAssetVersion(content, version), version));
+    for (const filePath of walkFilesWithExtensions(root, [".js"])) {
+      const content = readFileSync(filePath, "utf8");
+      writeFileSync(filePath, patchRelativeModuleSpecifier(content, version));
+    }
   }
 }
 
@@ -190,7 +183,7 @@ function createAssetVersionPlugin(version) {
     name: "asset-version",
     setup(build) {
       build.onLoad({ filter: /version\.js$/ }, () => ({
-        contents: `export const ASSET_VERSION = "${version}";\n`,
+        contents: `export const ASSET_VERSION = ${JSON.stringify(validateAssetVersion(version))};\n`,
         loader: "js",
       }));
     },
@@ -271,8 +264,8 @@ async function main() {
 
   await bundleApp(version);
   copyStaticAssets();
-  await syncHartLinkReleaseManifest();
   injectStaticAssetVersion(version);
+  await syncHartLinkReleaseManifest();
   createProductionIndex(version);
   injectContentSecurityPolicyHashes();
   printBuildSummary();

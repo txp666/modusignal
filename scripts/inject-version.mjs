@@ -2,6 +2,7 @@ import { execSync } from "node:child_process";
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { patchRelativeModuleSpecifier, replaceAssetVersion, validateAssetVersion } from "./asset-version.mjs";
 
 const projectRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const targetRoot = process.argv.includes("--root")
@@ -10,29 +11,18 @@ const targetRoot = process.argv.includes("--root")
 
 function resolveVersion() {
   if (process.env.ASSET_VERSION?.trim()) {
-    return process.env.ASSET_VERSION.trim();
+    return validateAssetVersion(process.env.ASSET_VERSION);
   }
 
   try {
-    return execSync("git rev-parse --short HEAD", { cwd: projectRoot, stdio: ["ignore", "pipe", "ignore"] })
-      .toString()
-      .trim();
+    return validateAssetVersion(
+      execSync("git rev-parse --short HEAD", { cwd: projectRoot, stdio: ["ignore", "pipe", "ignore"] })
+        .toString()
+        .trim(),
+    );
   } catch {
     return "dev";
   }
-}
-
-function patchRelativeModuleSpecifier(specifier, version) {
-  return specifier.replace(/(from\s+)(["'])(\.[^"']+\.js)(?:\?v=[^"']*)?\2/g, `$1$2$3?v=${version}$2`);
-}
-
-function patchImportLines(content, version) {
-  let patched = patchRelativeModuleSpecifier(content, version);
-  patched = patched.replace(
-    /(import\s*\(\s*)(["'])(\.[^"']+\.js)(?:\?v=[^"']*)?\2/g,
-    `$1$2$3?v=${version}$2`,
-  );
-  return patched;
 }
 
 function walkJsFiles(dir) {
@@ -53,10 +43,6 @@ function walkJsFiles(dir) {
   }
 
   return files;
-}
-
-function replaceAssetVersion(content, version) {
-  return content.replaceAll("__ASSET_VERSION__", version);
 }
 
 function injectIntoTree(root, version) {
@@ -90,7 +76,7 @@ function injectIntoTree(root, version) {
 
   const versionPath = join(root, "src", "version.js");
   if (existsSync(versionPath)) {
-    writeFileSync(versionPath, `export const ASSET_VERSION = "${version}";\n`);
+    writeFileSync(versionPath, `export const ASSET_VERSION = ${JSON.stringify(version)};\n`);
   }
 
   const srcDir = join(root, "src");
@@ -104,7 +90,7 @@ function injectIntoTree(root, version) {
     }
 
     const content = readFileSync(filePath, "utf8");
-    writeFileSync(filePath, patchImportLines(replaceAssetVersion(content, version), version));
+    writeFileSync(filePath, patchRelativeModuleSpecifier(content, version));
   }
 }
 
