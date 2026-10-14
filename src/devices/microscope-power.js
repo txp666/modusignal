@@ -6,6 +6,7 @@ export function getMicroScopePowerProfile() {
   return {
     id: MICROSCOPE_POWER_DEVICE_ID,
     name: "MicroScope Power",
+    image: "./images/microscope-power-device.jpg",
     type: i18n("microscopePower.profile.type"),
     protocolStatus: "ready",
     defaultTransportId: "serial",

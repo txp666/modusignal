@@ -80,7 +80,7 @@
 | HART | 串口 | 1200 8O1 | 设备搜索、通用命令、PV/SV/TV/QV |
 | WebSocket | WebSocket | — | JSON / HEX / Modbus 报文调试 |
 | MQTT | MQTT over WS | — | 发布订阅、QoS、保留消息、统计 |
-| MicroScope Power | WebUSB | VID `0xCAFE`, PID `0x4011` | RP2040 小电流波形采集、游标、校准、CSV/PNG 导出 |
+| MicroScope Power | WebUSB | VID `0xCAFE`, PID `0x4012` | RP2040 小电流波形采集、游标、校准、CSV/PNG 导出 |
 | 自定义设备 | 任意 | — | 模板 + 解析规则，无需写代码 |
 
 普通设备切换时通讯方式和参数会跟着自动切换。MicroScope Power 这类独立 WebUSB 工具会在设备页内部保留自己的连接和采集控制。
@@ -152,9 +152,15 @@ Firefox 和 Safari 没有 Web Serial / WebUSB，串口和 WebUSB 设备用不了
 
 ## MicroScope Power WebUSB 上位机
 
-MicroScope Power 页面嵌入了 `pages/devices/microscope-power/` 下的浏览器上位机。它直接通过 WebUSB 连接 RP2040 固件（`VID 0xCAFE`、`PID 0x4011`），页面内自带采样率、假信号/ADC 模式、曲线缩放平移、游标、校准、CSV/PNG 导出。
+MicroScope Power 页面嵌入了 `pages/devices/microscope-power/` 下的浏览器上位机。它直接通过 WebUSB 连接 RP2040 固件（`VID 0xCAFE`、`PID 0x4012`），页面内自带采样率、ADS8866 ADC 采集、曲线缩放平移、游标、校准、CSV/PNG 导出。
 
-使用时通过 `localhost` 或 HTTPS 用 Chrome / Edge 打开站点，在设备库选择 **MicroScope Power**，再在内嵌上位机里点击 **连接设备**。这里没有打包原项目的 Pico 固件、SDK 和构建产物，只集成浏览器上位机源码。
+使用时通过 `localhost` 或 HTTPS 用 Chrome / Edge 打开站点，在设备库选择 **MicroScope Power**，再在内嵌上位机里点击 **连接设备**。这里没有打包原项目的 Pico 固件、SDK 和构建产物，上位机源码和回归测试只在此仓库维护，MicroScope-Power 仓库仅保留固件。采集工具栏保持单行，电流读数、游标、零点偏移和 CSV 都使用 µA。
+
+网页已同步 MicroScope-Power 的采集可靠性优化：USB 命令确认与超时处理、精确窗口统计与包络、按设备时间戳绘图及导出、丢帧断点和 ADC/时序诊断。连续帧按相邻设备时间戳估算采样间隔，时序延迟不会在每帧末尾画出空白；真正丢帧仍显示断点。切换采样率会清空旧缓存并开始新采集段。保留了本站的固件更新检查；新增回归测试随 `npm test` 运行。
+
+**显示设置 → 低通滤波** 提供一阶数字低通，默认关闭。可选择 10 Hz 至 20 kHz 的常用截止频率，或自定义 1–45000 Hz；超出实际采样率 45% 时显示受限后的有效频率。滤波按设备时间轴估算的采样间隔作用于每个样本，曲线、游标、统计和低通 CSV 使用同一结果，缩放和平移不会改变截止频率。低通 CSV 另含原始电流与实际截止频率列，并可独立导出原始 CSV。归零仍使用原始 ADC 数据。降低截止频率会衰减短脉冲、增加响应延迟，数字滤波不能消除已经混叠或饱和造成的信息损失。
+
+曲线支持左键拖框同时放大时间轴和电流轴，右键拖动平移，双击恢复最新波形与自动 Y 轴。滚轮仍可缩放时间轴，Ctrl/Alt + 滚轮缩放电流轴；启用游标后，左键单击设置 A/B，拖动仍用于框选。
 
 ## AOMaster 寄存器表
 
@@ -227,7 +233,7 @@ Not what it's for: long-running data acquisition, plant monitoring, anything you
 | HART | Serial | 1200 8O1 | Device search, universal commands, PV/SV/TV/QV |
 | WebSocket | WebSocket | — | JSON / HEX / Modbus message debug |
 | MQTT | MQTT over WS | — | Pub / sub, QoS, retain, message stats |
-| MicroScope Power | WebUSB | VID `0xCAFE`, PID `0x4011` | RP2040 current waveform capture, cursors, calibration, CSV/PNG export |
+| MicroScope Power | WebUSB | VID `0xCAFE`, PID `0x4012` | RP2040 current waveform capture, cursors, calibration, CSV/PNG export |
 | Custom | any | — | Template + parser, no code |
 
 Switching regular devices also switches the transport and its defaults. Standalone WebUSB tools, such as MicroScope Power, keep their own connection and capture controls inside the device page.
@@ -323,9 +329,15 @@ Devices and transports are kept separate. Adding a new device is usually: a driv
 
 ## MicroScope Power WebUSB host
 
-The MicroScope Power page embeds the browser host from `pages/devices/microscope-power/`. It talks directly to the RP2040 firmware over WebUSB (`VID 0xCAFE`, `PID 0x4011`) and keeps its own controls for sample rate, fake/ADC source mode, chart zoom/pan, cursors, calibration, and CSV/PNG export.
+The MicroScope Power page embeds the browser host from `pages/devices/microscope-power/`. It talks directly to the RP2040 firmware over WebUSB (`VID 0xCAFE`, `PID 0x4012`) and keeps its own controls for sample rate, ADS8866 ADC capture, chart zoom/pan, cursors, calibration, and CSV/PNG export.
 
-Use Chrome or Edge from `localhost` or HTTPS, then choose **MicroScope Power** in the device library and click **Connect device** inside the embedded host. The Pico firmware, SDK, and build outputs from the source project are not bundled here; only the browser host files are integrated.
+Use Chrome or Edge from `localhost` or HTTPS, then choose **MicroScope Power** in the device library and click **Connect device** inside the embedded host. The Pico firmware, SDK, and build outputs from the source project are not bundled here; this repository is the sole home for the browser host and its regression tests, while MicroScope-Power contains the firmware. The capture toolbar stays on one row; readings, cursors, zero offsets, and CSV data use µA.
+
+The host includes MicroScope-Power capture reliability improvements: acknowledged USB commands with timeouts, exact window statistics and envelopes, device timestamps for plotting and export, discontinuities for dropped frames, and ADC/timing diagnostics. Consecutive frames use their measured start-time interval, so timing delays do not produce an empty strip at every frame boundary; genuine dropped frames still break the trace. Changing the sample rate clears the buffer and starts a new capture segment. The site-specific firmware update checker is retained; regression tests run with `npm test`.
+
+**Display settings → Low-pass filter** provides a first-order digital low-pass, off by default. Choose a preset from 10 Hz to 20 kHz or a custom cutoff from 1 to 45000 Hz; the effective cutoff is limited to 45% of the measured sample rate. Filtering uses sample intervals estimated from device timestamps, before plot aggregation. The waveform, cursors, statistics, and filtered CSV share the same results; zooming and panning do not change the filter. Filtered CSV includes raw current and effective cutoff columns, and raw CSV remains separately available. Zero calibration always uses raw ADC data. Lower cutoffs attenuate short pulses and delay the response; digital filtering cannot recover information lost through aliasing or saturation.
+
+Drag with the left button to box-zoom both time and current; drag with the right button to pan. Double-click restores the latest waveform and automatic Y scale. The wheel still zooms time, while Ctrl/Alt + wheel zooms current. With cursors enabled, a left click places A/B and a left drag still box-zooms.
 
 ## AOMaster register map
 

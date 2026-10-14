@@ -1,3 +1,49 @@
+// Every sample contributes to a pixel bucket. The indexed source answers large
+// buckets without scanning their entire contents or missing narrow transients.
+export function aggregateVisibleBuckets(source, columns) {
+  const buckets = [];
+  const samplesPerColumn = source.visibleSamples / columns;
+  for (let x = 0; x < columns && source.visibleSamples > 0; x += 1) {
+    const start = Math.floor(x * samplesPerColumn);
+    const end = Math.min(source.visibleSamples, Math.max(start + 1, Math.floor((x + 1) * samplesPerColumn)));
+    if (source.readVisibleAggregate) {
+      buckets.push(source.readVisibleAggregate(start, end));
+      continue;
+    }
+    let min = Infinity;
+    let max = -Infinity;
+    let sum = 0;
+    for (let i = start; i < end; i += 1) {
+      const sample = source.readVisibleSample(i);
+      min = Math.min(min, sample);
+      max = Math.max(max, sample);
+      sum += sample;
+    }
+    buckets.push({ min, max, sum, count: end - start });
+  }
+  return buckets;
+}
+
+export function aggregateTimeBuckets(source, columns) {
+  if (!source.timeSegments) {
+    return aggregateVisibleBuckets(source, columns).map((bucket, x) => ({ ...bucket, x, segment: 0 }));
+  }
+  const buckets = [];
+  const span = Math.max(1e-9, source.timeEnd - source.timeStart);
+  source.timeSegments.forEach(({ startOffset, endOffset }, segment) => {
+    const firstX = Math.max(0, Math.floor((source.readVisibleTime(startOffset) - source.timeStart) / span * columns + 1e-9));
+    const lastX = Math.min(columns - 1, Math.floor((source.readVisibleTime(endOffset - 1) - source.timeStart) / span * columns + 1e-9));
+    for (let x = firstX; x <= lastX; x += 1) {
+      const start = Math.max(startOffset, source.timeToOffset(source.timeStart + x / columns * span));
+      const end = Math.min(endOffset, source.timeToOffset(source.timeStart + (x + 1) / columns * span));
+      if (end <= start) continue;
+      const values = source.readVisibleAggregate(start, end);
+      buckets.push({ ...values, x, segment });
+    }
+  });
+  return buckets;
+}
+
 export class WavePlot {
   constructor(canvas) {
     this.canvas = canvas;
@@ -6,6 +52,7 @@ export class WavePlot {
     this.height = 0;
     this.dpr = 1;
     this.metrics = null;
+    this.selectionBox = null;
     this.resize();
   }
 
@@ -47,6 +94,7 @@ export class WavePlot {
       visibleSamples: source.visibleSamples,
       yMin: source.yRange.min,
       yMax: source.yRange.max,
+      source,
     };
 
     ctx.fillStyle = "#f8fafc";
@@ -64,7 +112,32 @@ export class WavePlot {
 
     this.drawWaveform(ctx, padLeft, padTop, plotWidth, plotHeight, source);
     this.drawCursors(ctx, padLeft, padTop, plotWidth, plotHeight, source);
+    this.drawSelectionBox(ctx, padLeft, padTop, plotWidth, plotHeight);
     this.drawAxes(ctx, padLeft, padTop, plotWidth, plotHeight, source);
+  }
+
+  setSelectionBox(box) {
+    this.selectionBox = box ? { ...box } : null;
+  }
+
+  drawSelectionBox(ctx, x, y, width, height) {
+    if (!this.selectionBox) return;
+    const { x1, y1, x2, y2 } = this.selectionBox;
+    const left = x + Math.min(x1, x2) * width;
+    const top = y + Math.min(y1, y2) * height;
+    const boxWidth = Math.abs(x2 - x1) * width;
+    const boxHeight = Math.abs(y2 - y1) * height;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x, y, width, height);
+    ctx.clip();
+    ctx.fillStyle = "rgba(37, 99, 235, 0.16)";
+    ctx.fillRect(left, top, boxWidth, boxHeight);
+    ctx.strokeStyle = "#2563eb";
+    ctx.lineWidth = Math.max(1, this.dpr);
+    ctx.setLineDash([4 * this.dpr, 3 * this.dpr]);
+    ctx.strokeRect(left, top, boxWidth, boxHeight);
+    ctx.restore();
   }
 
   drawWaveform(ctx, x0, y0, width, height, source) {
@@ -74,42 +147,18 @@ export class WavePlot {
     ctx.clip();
 
     const columns = Math.max(1, Math.floor(width));
-    const samplesPerColumn = source.visibleSamples / columns;
-    const maxReadsPerColumn = source.showEnvelope ? 64 : 16;
-    const meanPoints = [];
+    const cacheKey = source.dataKey === undefined ? null : `${source.dataKey}:${columns}`;
+    if (cacheKey === null || this.bucketCache?.key !== cacheKey) {
+      this.bucketCache = { key: cacheKey, buckets: aggregateTimeBuckets(source, columns) };
+    }
+    const pointSegments = [];
 
     if (source.showEnvelope) {
       ctx.strokeStyle = "rgba(29, 78, 216, 0.18)";
       ctx.lineWidth = Math.max(1, this.dpr);
     }
 
-    for (let x = 0; x < columns; x += 1) {
-      const start = Math.floor(x * samplesPerColumn);
-      const end = Math.max(start + 1, Math.floor((x + 1) * samplesPerColumn));
-      const countInBucket = Math.max(1, end - start);
-      const step = Math.max(1, Math.ceil(countInBucket / maxReadsPerColumn));
-      let min = Infinity;
-      let max = -Infinity;
-      let sum = 0;
-      let count = 0;
-
-      for (let i = start; i < end && i < source.visibleSamples; i += step) {
-        const sample = source.readVisibleSample(i);
-        if (sample < min) min = sample;
-        if (sample > max) max = sample;
-        sum += sample;
-        count += 1;
-      }
-
-      const lastIndex = Math.min(source.visibleSamples - 1, end - 1);
-      if (lastIndex >= start && ((lastIndex - start) % step) !== 0) {
-        const sample = source.readVisibleSample(lastIndex);
-        if (sample < min) min = sample;
-        if (sample > max) max = sample;
-        sum += sample;
-        count += 1;
-      }
-
+    for (const { x, segment, min, max, sum, count } of this.bucketCache.buckets) {
       const px = x0 + x + 0.5;
       if (source.showEnvelope && count > 0) {
         const yMin = this.valueToY(min, y0, height, source.yRange);
@@ -121,15 +170,16 @@ export class WavePlot {
       }
 
       if (count > 0) {
-        meanPoints.push({
+        (pointSegments[segment] ||= []).push({
           x: px,
           y: this.valueToY(sum / count, y0, height, source.yRange),
         });
       }
     }
 
-    const displayPoints = source.smoothDisplay ? this.smoothPoints(meanPoints, 3) : meanPoints;
-    if (displayPoints.length > 0) {
+    for (const points of pointSegments) {
+      if (!points?.length) continue;
+      const displayPoints = source.smoothDisplay ? this.smoothPoints(points, 3) : points;
       ctx.strokeStyle = "#1d4ed8";
       ctx.lineWidth = Math.max(1.4, 1.4 * this.dpr);
       ctx.beginPath();
@@ -203,8 +253,8 @@ export class WavePlot {
 
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
-    const seconds = source.visibleSamples / Math.max(1, source.sampleRate);
-    const offset = source.viewOffsetSamples / Math.max(1, source.sampleRate);
+    const seconds = source.timeEnd !== undefined ? source.timeEnd - source.timeStart : source.visibleSamples / Math.max(1, source.sampleRate);
+    const offset = source.offsetSeconds ?? source.viewOffsetSamples / Math.max(1, source.sampleRate);
     const label = source.viewOffsetSamples > 0
       ? `${this.formatSeconds(seconds)}，距最新 ${this.formatSeconds(offset)}`
       : `${this.formatSeconds(seconds)}，最新`;
@@ -221,7 +271,10 @@ export class WavePlot {
         return;
       }
 
-      const px = x + (cursor.sampleOffset / Math.max(1, source.visibleSamples - 1)) * width;
+      const ratio = source.readVisibleTime
+        ? (source.readVisibleTime(cursor.sampleOffset) - source.timeStart) / Math.max(1e-9, source.timeEnd - source.timeStart)
+        : cursor.sampleOffset / Math.max(1, source.visibleSamples - 1);
+      const px = x + ratio * width;
       ctx.strokeStyle = color;
       ctx.lineWidth = Math.max(1, this.dpr);
       ctx.beginPath();
@@ -257,15 +310,15 @@ export class WavePlot {
 
   formatMicroamps(value) {
     if (Math.abs(value) >= 10000) {
-      return `${Math.round(value)} uA`;
+      return `${Math.round(value)} µA`;
     }
     if (Math.abs(value) >= 1000) {
-      return `${value.toFixed(1)} uA`;
+      return `${value.toFixed(1)} µA`;
     }
     if (Math.abs(value) >= 10) {
-      return `${value.toFixed(1)} uA`;
+      return `${value.toFixed(1)} µA`;
     }
-    return `${value.toFixed(3)} uA`;
+    return `${value.toFixed(3)} µA`;
   }
 
   formatMilliamps(value) {
@@ -298,18 +351,16 @@ export class WavePlot {
     if (ratio === null) {
       return null;
     }
+    const source = this.metrics.source;
+    if (source?.timeToOffset) {
+      return Math.min(source.visibleSamples - 1, source.timeToOffset(source.timeStart + ratio * (source.timeEnd - source.timeStart)));
+    }
     return Math.round(ratio * Math.max(0, this.metrics.visibleSamples - 1));
   }
 
   clientXToPlotRatio(clientX) {
-    if (!this.metrics) {
-      return null;
-    }
-
-    const rect = this.canvas.getBoundingClientRect();
-    const x = (clientX - rect.left) * this.metrics.dpr;
-    const rel = Math.max(0, Math.min(this.metrics.plotWidth, x - this.metrics.padLeft));
-    return rel / this.metrics.plotWidth;
+    const geometry = this.getPlotGeometry();
+    return geometry ? Math.max(0, Math.min(1, (clientX - geometry.left) / geometry.width)) : null;
   }
 
   clientYToValue(clientY) {
@@ -317,11 +368,36 @@ export class WavePlot {
       return null;
     }
 
-    const rect = this.canvas.getBoundingClientRect();
-    const y = (clientY - rect.top) * this.metrics.dpr;
-    const rel = Math.max(0, Math.min(this.metrics.plotHeight, y - this.metrics.padTop));
-    const normalized = 1 - rel / this.metrics.plotHeight;
+    const geometry = this.getPlotGeometry();
+    const normalized = 1 - Math.max(0, Math.min(1, (clientY - geometry.top) / geometry.height));
     return this.metrics.yMin + normalized * (this.metrics.yMax - this.metrics.yMin);
+  }
+
+  getPlotGeometry() {
+    if (!this.metrics) return null;
+    const rect = this.canvas.getBoundingClientRect();
+    // The canvas bitmap can exceed CSS size on a small viewport, so dpr alone
+    // does not always describe the actual client-to-bitmap mapping.
+    const scaleX = rect.width > 0 && this.width > 0 ? this.width / rect.width : this.metrics.dpr;
+    const scaleY = rect.height > 0 && this.height > 0 ? this.height / rect.height : this.metrics.dpr;
+    return {
+      left: rect.left + (this.metrics.padLeft || 0) / scaleX,
+      top: (rect.top || 0) + (this.metrics.padTop || 0) / scaleY,
+      width: this.metrics.plotWidth / scaleX,
+      height: this.metrics.plotHeight / scaleY,
+    };
+  }
+
+  clientPointToPlot(clientX, clientY, geometry = this.getPlotGeometry(), clamp = false) {
+    if (!geometry) return null;
+    let x = (clientX - geometry.left) / geometry.width;
+    let y = (clientY - geometry.top) / geometry.height;
+    const inside = x >= 0 && x <= 1 && y >= 0 && y <= 1;
+    if (clamp) {
+      x = Math.max(0, Math.min(1, x));
+      y = Math.max(0, Math.min(1, y));
+    }
+    return { x, y, inside };
   }
 
   sampleOffsetToClientX(sampleOffset) {
@@ -329,8 +405,11 @@ export class WavePlot {
       return null;
     }
 
-    const rect = this.canvas.getBoundingClientRect();
-    const rel = (sampleOffset / Math.max(1, this.metrics.visibleSamples - 1)) * this.metrics.plotWidth;
-    return rect.left + (this.metrics.padLeft + rel) / this.metrics.dpr;
+    const geometry = this.getPlotGeometry();
+    const source = this.metrics.source;
+    const ratio = source?.readVisibleTime
+      ? (source.readVisibleTime(sampleOffset) - source.timeStart) / Math.max(1e-9, source.timeEnd - source.timeStart)
+      : sampleOffset / Math.max(1, this.metrics.visibleSamples - 1);
+    return geometry.left + ratio * geometry.width;
   }
 }

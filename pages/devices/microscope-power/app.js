@@ -4,9 +4,12 @@ import {
   USB_CONFIG,
   WAVE_FRAME,
   WaveFrameParser,
-  commandLine,
 } from "./protocol.js?v=__ASSET_VERSION__";
+import { CommandTransport } from "./commands.js?v=__ASSET_VERSION__";
+import { CaptureTimeline } from "./timeline.js?v=__ASSET_VERSION__";
 import { WavePlot } from "./plot.js?v=__ASSET_VERSION__";
+import { SampleStatistics } from "./statistics.js?v=__ASSET_VERSION__";
+import { LowPassMeasurements } from "./lowpass.js?v=__ASSET_VERSION__";
 
 const SAMPLE_BUFFER_SECONDS = 120;
 const MAX_SAMPLE_RATE = 100000;
@@ -14,7 +17,6 @@ const SAMPLE_CAPACITY = SAMPLE_BUFFER_SECONDS * MAX_SAMPLE_RATE;
 const DRAW_INTERVAL_MS = 33;
 const STATS_INTERVAL_MS = 100;
 const MIN_VISIBLE_SAMPLES = 2;
-const MAX_STATS_SCAN = 50000;
 const ADS_REF_MV = 2500;
 const FRONTEND_GAIN = 50;
 const RANGE_LOW_OHM = 1;
@@ -51,7 +53,11 @@ const dom = {
   manualRangeSelect: document.querySelector("#manualRangeSelect"),
   gridToggle: document.querySelector("#gridToggle"),
   envelopeToggle: document.querySelector("#envelopeToggle"),
-  smoothToggle: document.querySelector("#smoothToggle"),
+  lowpassToggle: document.querySelector("#lowpassToggle"),
+  lowpassCutoffSelect: document.querySelector("#lowpassCutoffSelect"),
+  lowpassCutoffInput: document.querySelector("#lowpassCutoffInput"),
+  lowpassCustomField: document.querySelector("#lowpassCustomField"),
+  filterStateValue: document.querySelector("#filterStateValue"),
   cursorToggle: document.querySelector("#cursorToggle"),
   yMinInput: document.querySelector("#yMinInput"),
   yMaxInput: document.querySelector("#yMaxInput"),
@@ -60,8 +66,8 @@ const dom = {
   panUpBtn: document.querySelector("#panUpBtn"),
   panDownBtn: document.querySelector("#panDownBtn"),
   resetYBtn: document.querySelector("#resetYBtn"),
-  zeroLowCodeInput: document.querySelector("#zeroLowCodeInput"),
-  zeroHighCodeInput: document.querySelector("#zeroHighCodeInput"),
+  zeroLowUaInput: document.querySelector("#zeroLowUaInput"),
+  zeroHighUaInput: document.querySelector("#zeroHighUaInput"),
   senseLowOhmInput: document.querySelector("#senseLowOhmInput"),
   senseHighOhmInput: document.querySelector("#senseHighOhmInput"),
   largeRangeValue: document.querySelector("#largeRangeValue"),
@@ -70,6 +76,7 @@ const dom = {
   applyCalBtn: document.querySelector("#applyCalBtn"),
   clearBtn: document.querySelector("#clearBtn"),
   exportCsvBtn: document.querySelector("#exportCsvBtn"),
+  exportRawCsvBtn: document.querySelector("#exportRawCsvBtn"),
   exportPngBtn: document.querySelector("#exportPngBtn"),
   clearLogBtn: document.querySelector("#clearLogBtn"),
   logOutput: document.querySelector("#logOutput"),
@@ -85,19 +92,18 @@ const dom = {
   seqValue: document.querySelector("#seqValue"),
   droppedValue: document.querySelector("#droppedValue"),
   usbRateValue: document.querySelector("#usbRateValue"),
-  codeValue: document.querySelector("#codeValue"),
+  currentValue: document.querySelector("#currentValue"),
   avgValue: document.querySelector("#avgValue"),
   minMaxValue: document.querySelector("#minMaxValue"),
   ppValue: document.querySelector("#ppValue"),
   rmsValue: document.querySelector("#rmsValue"),
+  rawRmsValue: document.querySelector("#rawRmsValue"),
   rippleValue: document.querySelector("#rippleValue"),
-  iavgValue: document.querySelector("#iavgValue"),
-  iminMaxValue: document.querySelector("#iminMaxValue"),
-  ippValue: document.querySelector("#ippValue"),
   metricNow: document.querySelector("#metricNow"),
   metricAvg: document.querySelector("#metricAvg"),
   metricPp: document.querySelector("#metricPp"),
   metricRms: document.querySelector("#metricRms"),
+  metricRmsLabel: document.querySelector("#metricRmsLabel"),
   cursorAValue: document.querySelector("#cursorAValue"),
   cursorBValue: document.querySelector("#cursorBValue"),
   cursorTimeValue: document.querySelector("#cursorTimeValue"),
@@ -106,10 +112,21 @@ const dom = {
 
 const ringBuffer = new Uint16Array(SAMPLE_CAPACITY);
 const rangeBuffer = new Uint8Array(SAMPLE_CAPACITY);
+const timeline = new CaptureTimeline(SAMPLE_CAPACITY);
+const sampleStatistics = new SampleStatistics(ringBuffer, rangeBuffer);
+const lowpassMeasurements = new LowPassMeasurements(sampleStatistics, timeline);
+let windowStatsCache = null;
 const plot = new WavePlot(document.querySelector("#waveCanvas"));
 
 let device = null;
 let reading = false;
+let commandTransport = null;
+let actionBusy = false;
+let acceptFrames = false;
+let statusPollPending = false;
+let nextStatusPollAt = 0;
+let adcReadErrors = 0;
+let timingOverruns = 0;
 let writeIndex = 0;
 let availableSamples = 0;
 let totalSamplesWritten = 0;
@@ -117,6 +134,10 @@ let sampleRate = 100000;
 let lastSeq = null;
 let droppedFrames = 0;
 let currentRangeOhm = RANGE_HIGH_OHM;
+const zeroInputSenseOhms = {
+  [RANGE_LOW_OHM]: DEFAULT_CALIBRATION.senseLowOhm,
+  [RANGE_HIGH_OHM]: DEFAULT_CALIBRATION.senseHighOhm,
+};
 let autoRange = true;
 let bytesReceived = 0;
 let bytesWindowStart = performance.now();
@@ -124,17 +145,20 @@ let bytesAtWindowStart = 0;
 let lastStats = emptyStats();
 let state = "IDLE";
 let lastCheckedFirmwareVersion = "";
+let firmwareCheckGeneration = 0;
 
 let visibleSeconds = 2;
 let viewOffsetSamples = 0;
 let displayPaused = false;
 let autoScale = true;
 let showGrid = true;
-let showEnvelope = false;
-let smoothDisplay = true;
+let showEnvelope = true;
+let lowpassEnabled = false;
+let lowpassCutoffHz = 1000;
 let cursorEnabled = false;
 let nextCursorName = "a";
 let activeDrag = null;
+let plotClockRevision = 0;
 let lastDrawAt = 0;
 let lastStatsUiAt = 0;
 const cursors = {
@@ -179,15 +203,27 @@ function appendLog(text) {
 function setConnectedUi(connected) {
   dom.connectionLabel.textContent = connected ? "已连接" : "未连接";
   dom.connectionLabel.classList.toggle("connected", connected);
-  dom.connectBtn.disabled = connected;
+  dom.connectBtn.disabled = connected || actionBusy;
   dom.disconnectBtn.disabled = !connected;
-  dom.bootloaderBtn.disabled = !connected;
-  dom.startBtn.disabled = !connected;
-  dom.stopBtn.disabled = !connected;
-  dom.zeroNowBtn.disabled = !connected;
-  dom.applyCalBtn.disabled = !connected;
-  dom.autoRangeToggle.disabled = !connected;
-  setRangeUiEnabled(connected);
+  for (const control of [dom.bootloaderBtn, dom.startBtn, dom.stopBtn,
+    dom.zeroNowBtn, dom.applyCalBtn, dom.autoRangeToggle, dom.sampleRateSelect]) {
+    control.disabled = !connected || actionBusy;
+  }
+  setRangeUiEnabled(connected && !actionBusy);
+}
+
+async function runDeviceAction(action) {
+  if (actionBusy) return;
+  actionBusy = true;
+  setConnectedUi(Boolean(device?.opened));
+  try {
+    await action();
+  } catch (error) {
+    appendLog(error.message);
+  } finally {
+    actionBusy = false;
+    setConnectedUi(Boolean(device?.opened));
+  }
 }
 
 function setState(nextState) {
@@ -203,10 +239,13 @@ async function connectDevice() {
 
   try {
     device = await navigator.usb.requestDevice({
-      filters: [{ vendorId: USB_CONFIG.vendorId }],
+      filters: [{ vendorId: USB_CONFIG.vendorId, productId: USB_CONFIG.productId }],
     });
 
     await device.open();
+    // A USB bus reset clears stale endpoint replies from an earlier browser
+    // session; it does not reboot the RP2040 or reset the output setpoint.
+    await device.reset();
     if (!device.configuration) {
       await device.selectConfiguration(1);
     }
@@ -220,13 +259,23 @@ async function connectDevice() {
       index: USB_CONFIG.interfaceNumber,
     });
 
+    const connectedDevice = device;
+    commandTransport = new CommandTransport({
+      transferOut: (payload) => connectedDevice.transferOut(USB_CONFIG.endpointOut, payload),
+      onInvalidated: (error) => {
+        appendLog(error.message);
+        cleanupDevice(connectedDevice);
+      },
+    });
     resetCaptureState();
     setConnectedUi(true);
     setState("IDLE");
     appendLog(`已连接设备 VID=0x${USB_CONFIG.vendorId.toString(16)} PID=0x${USB_CONFIG.productId.toString(16)}`);
     reading = true;
-    readLoop();
-    sendCommand("GET_STATUS").catch((err) => appendLog(err.message));
+    readLoop(connectedDevice);
+    await sendCommand("GET_STATUS");
+    acceptFrames = state === "RUNNING";
+    nextStatusPollAt = performance.now() + 2000;
   } catch (err) {
     appendLog(`连接失败：${err.message}`);
     await cleanupDevice();
@@ -241,33 +290,35 @@ async function disconnectDevice() {
   await cleanupDevice();
 }
 
-async function cleanupDevice() {
+async function cleanupDevice(expectedDevice = device) {
+  if (expectedDevice !== device) return;
+  const closingDevice = device;
+  device = null;
   reading = false;
+  acceptFrames = false;
+  commandTransport?.disconnect();
+  commandTransport = null;
+  parser.reset();
+  setConnectedUi(false);
+  setState("IDLE");
+  dom.firmwareValue.textContent = "-";
+  lastCheckedFirmwareVersion = "";
+  firmwareCheckGeneration += 1;
+  setFirmwareUpdateStatus("等待设备");
 
-  if (device) {
+  if (closingDevice?.opened) {
     try {
-      if (device.opened) {
-        await device.controlTransferOut({
+        await closingDevice.controlTransferOut({
           requestType: "class",
           recipient: "interface",
           request: 0x22,
           value: 0,
           index: USB_CONFIG.interfaceNumber,
         });
-        await device.releaseInterface(USB_CONFIG.interfaceNumber);
-        await device.close();
-      }
-    } catch {
-    }
+    } catch {}
+    try { await closingDevice.releaseInterface(USB_CONFIG.interfaceNumber); } catch {}
+    try { await closingDevice.close(); } catch {}
   }
-
-  device = null;
-  parser.reset();
-  setConnectedUi(false);
-  setState("IDLE");
-  dom.firmwareValue.textContent = "-";
-  lastCheckedFirmwareVersion = "";
-  setFirmwareUpdateStatus("等待设备");
 }
 
 function setFirmwareUpdateStatus(text, href = "", highlight = false) {
@@ -358,10 +409,12 @@ async function checkFirmwareUpdate(localVersion) {
     return;
   }
   lastCheckedFirmwareVersion = version;
+  const generation = ++firmwareCheckGeneration;
   setFirmwareUpdateStatus("检查中...");
 
   try {
     const release = await fetchLatestFirmwareRelease();
+    if (generation !== firmwareCheckGeneration) return;
     if (!release) {
       setFirmwareUpdateStatus("无发布版本", FIRMWARE_RELEASES_URL);
       return;
@@ -395,6 +448,7 @@ async function checkFirmwareUpdate(localVersion) {
       setFirmwareUpdateStatus("本地较新", releaseUrl);
     }
   } catch (err) {
+    if (generation !== firmwareCheckGeneration) return;
     if (err.status === 404) {
       setFirmwareUpdateStatus("无法公开检查", FIRMWARE_RELEASES_URL);
       appendLog("固件发布仓库或 Release API 未公开，网页无法自动检查。");
@@ -407,17 +461,25 @@ async function checkFirmwareUpdate(localVersion) {
 }
 
 async function startCapture() {
+  if (state === "RUNNING") await stopCapture();
   await applyCalibration(false);
   await sendCommand(`SRATE ${dom.sampleRateSelect.value}`);
-  await sendCommand("START");
   resetCaptureState();
   sampleRate = Number(dom.sampleRateSelect.value);
+  acceptFrames = true;
+  try {
+    await sendCommand("START");
+  } catch (error) {
+    acceptFrames = false;
+    throw error;
+  }
   setState("RUNNING");
   appendLog("开始采集。");
 }
 
 async function stopCapture() {
   await sendCommand("STOP");
+  acceptFrames = false;
   setState("IDLE");
   appendLog("采集已停止。");
 }
@@ -444,40 +506,40 @@ async function enterBootloader() {
 }
 
 async function sendCommand(text) {
-  if (!device || !device.opened) {
+  if (!device?.opened || !commandTransport) {
     throw new Error("设备未连接");
   }
 
-  const payload = new TextEncoder().encode(commandLine(text));
-  await device.transferOut(USB_CONFIG.endpointOut, payload);
+  return commandTransport.send(text);
 }
 
-async function readLoop() {
-  while (reading && device && device.opened) {
+async function readLoop(readDevice) {
+  while (reading && device === readDevice && readDevice.opened) {
     try {
-      const result = await device.transferIn(USB_CONFIG.endpointIn, 2048);
-      if (result.status !== "ok" || !result.data) {
-        continue;
-      }
+      const result = await readDevice.transferIn(USB_CONFIG.endpointIn, 2048);
+      if (device !== readDevice) return;
+      if (result.status !== "ok" || !result.data) throw new Error(`USB 接收失败：${result.status}`);
 
       const bytes = new Uint8Array(result.data.buffer, result.data.byteOffset, result.data.byteLength);
       bytesReceived += bytes.length;
       parser.push(bytes);
     } catch (err) {
-      if (reading) {
+      if (reading && device === readDevice) {
         appendLog(`读取中断：${err.message}`);
       }
       break;
     }
   }
 
-  if (reading) {
-    await cleanupDevice();
+  if (reading && device === readDevice) {
+    await cleanupDevice(readDevice);
   }
 }
 
 function handleText(text) {
-  appendLog(text);
+  if (!statusPollPending || !text.startsWith("STATUS ")) appendLog(text);
+  commandTransport?.handleText(text);
+  if (text === "ERR FAULT") setState("FAULT");
 
   if (text.startsWith("STATUS ")) {
     const fields = Object.fromEntries(
@@ -493,115 +555,88 @@ function handleText(text) {
       dom.firmwareValue.textContent = fields.fw;
       checkFirmwareUpdate(fields.fw);
     }
-    if (fields.srate) sampleRate = Number(fields.srate);
-    if (fields.dropped) droppedFrames = Number(fields.dropped);
-    if (fields.range) {
-      currentRangeOhm = Number(fields.range) === RANGE_HIGH_OHM ? RANGE_HIGH_OHM : RANGE_LOW_OHM;
-      dom.manualRangeSelect.value = String(currentRangeOhm);
-    }
-    if (fields.zero1) dom.zeroLowCodeInput.value = fields.zero1;
-    if (fields.zero10) dom.zeroHighCodeInput.value = fields.zero10;
-    if (fields.zero && !fields.zero1 && !fields.zero10) {
-      zeroInputForRange(currentRangeOhm).value = fields.zero;
-    }
-    if (fields.sense1_mohm) {
-      dom.senseLowOhmInput.value = formatInputNumber(Number(fields.sense1_mohm) / 1000);
-    }
-    if (fields.sense10_mohm) {
-      dom.senseHighOhmInput.value = formatInputNumber(Number(fields.sense10_mohm) / 1000);
-    }
-    if (fields.auto_range) {
-      autoRange = fields.auto_range === "1";
-      dom.autoRangeToggle.checked = autoRange;
-      setRangeUiEnabled(device && device.opened);
+    adcReadErrors = Number(fields.adc_errors || 0);
+    timingOverruns = Number(fields.timing_overruns || 0);
+    // Background diagnostics must not replace calibration values being edited.
+    if (!statusPollPending) {
+      if (fields.srate && availableSamples === 0) {
+        sampleRate = Number(fields.srate);
+        dom.sampleRateSelect.value = String(sampleRate);
+      }
+      if (fields.range) {
+        currentRangeOhm = Number(fields.range) === RANGE_HIGH_OHM ? RANGE_HIGH_OHM : RANGE_LOW_OHM;
+        dom.manualRangeSelect.value = String(currentRangeOhm);
+      }
+      if (fields.sense1_mohm) {
+        dom.senseLowOhmInput.value = formatInputNumber(Number(fields.sense1_mohm) / 1000);
+      }
+      if (fields.sense10_mohm) {
+        dom.senseHighOhmInput.value = formatInputNumber(Number(fields.sense10_mohm) / 1000);
+      }
+      const cal = calibration();
+      if (fields.zero1) cal.zeroLowCode = Number(fields.zero1);
+      if (fields.zero10) cal.zeroHighCode = Number(fields.zero10);
+      if (fields.zero && !fields.zero1 && !fields.zero10) {
+        if (currentRangeOhm === RANGE_HIGH_OHM) cal.zeroHighCode = Number(fields.zero);
+        else cal.zeroLowCode = Number(fields.zero);
+      }
+      syncZeroInputs(cal);
+      if (fields.auto_range) {
+        autoRange = fields.auto_range === "1";
+        dom.autoRangeToggle.checked = autoRange;
+        setRangeUiEnabled(device?.opened && !actionBusy);
+      }
     }
   }
 }
 
 function handleFrame(frame) {
-  if (frame.magic !== WAVE_FRAME.magic || frame.count !== WAVE_FRAME.sampleCount) {
+  if (!acceptFrames || frame.magic !== WAVE_FRAME.magic || frame.count !== WAVE_FRAME.sampleCount) {
     return;
   }
 
+  if ((frame.flags & FRAME_FLAGS.streamStart) ||
+      (availableSamples > 0 && sampleRate !== frame.sampleRate)) {
+    resetCaptureState();
+    droppedFrames = frame.seq;
+  }
   sampleRate = frame.sampleRate;
 
   if (lastSeq !== null) {
     const delta = (frame.seq - lastSeq) & 0xffff;
+    if (delta === 0) return;
     if (delta > 1) {
       droppedFrames += delta - 1;
     }
   }
   lastSeq = frame.seq;
 
-  if (frame.flags & FRAME_FLAGS.overflow) {
-    droppedFrames += 1;
-  }
-
   currentRangeOhm = frame.flags & FRAME_FLAGS.range10Ohm ? RANGE_HIGH_OHM : RANGE_LOW_OHM;
   autoRange = Boolean(frame.flags & FRAME_FLAGS.autoRange);
-  dom.autoRangeToggle.checked = autoRange;
-  dom.manualRangeSelect.value = String(currentRangeOhm);
-  setRangeUiEnabled(device && device.opened);
+  if (!actionBusy) {
+    dom.autoRangeToggle.checked = autoRange;
+    dom.manualRangeSelect.value = String(currentRangeOhm);
+  }
+  setRangeUiEnabled(device?.opened && !actionBusy);
 
+  timeline.append(frame, totalSamplesWritten, {
+    legacyTimingOverruns: timingOverruns > 0 && adcReadErrors === 0,
+  });
   lastStats = appendSamples(frame.samples, currentRangeOhm);
 }
 
 function appendSamples(samples, rangeOhm) {
-  const cal = calibration();
-  let sum = 0;
-  let sumSq = 0;
-  let min = Infinity;
-  let max = -Infinity;
-  let last = 0;
-  let codeSum = 0;
-  let codeMin = 65535;
-  let codeMax = 0;
-  let lastCode = 0;
-
-  for (const sample of samples) {
-    const currentUa = codeToMicroamps(sample, rangeOhm, cal);
-    ringBuffer[writeIndex] = sample;
-    rangeBuffer[writeIndex] = rangeOhm === RANGE_HIGH_OHM ? RANGE_HIGH_OHM : RANGE_LOW_OHM;
-    writeIndex = (writeIndex + 1) % SAMPLE_CAPACITY;
-    availableSamples = Math.min(SAMPLE_CAPACITY, availableSamples + 1);
-    totalSamplesWritten += 1;
-    sum += currentUa;
-    sumSq += currentUa * currentUa;
-    if (currentUa < min) min = currentUa;
-    if (currentUa > max) max = currentUa;
-    last = currentUa;
-    codeSum += sample;
-    if (sample < codeMin) codeMin = sample;
-    if (sample > codeMax) codeMax = sample;
-    lastCode = sample;
-  }
+  sampleStatistics.append(samples, rangeOhm);
+  writeIndex = sampleStatistics.writeIndex;
+  availableSamples = sampleStatistics.available;
+  totalSamplesWritten = sampleStatistics.totalWritten;
 
   if (displayPaused) {
     viewOffsetSamples += samples.length;
-    clampViewOffset();
+    if (!activeDrag) clampViewOffset();
   }
 
-  const avg = sum / samples.length;
-  const rms = Math.sqrt(Math.max(0, (sumSq / samples.length) - avg * avg));
-  const pp = max - min;
-
-  return {
-    last,
-    avg,
-    min,
-    max,
-    pp,
-    rms,
-    ppPercent: Math.abs(avg) > 1e-12 ? Math.abs(pp / avg) * 100 : 0,
-    lastCode,
-    avgCode: codeSum / samples.length,
-    minCode: codeMin,
-    maxCode: codeMax,
-    ppCode: codeMax - codeMin,
-    rangeOhm,
-    count: samples.length,
-    scannedCount: samples.length,
-  };
+  return sampleStatistics.query(totalSamplesWritten - samples.length, samples.length, statisticsConversion(calibration()));
 }
 
 function getOldestSerial() {
@@ -629,20 +664,23 @@ function readRangeByBufferOffset(offsetFromOldest) {
 }
 
 function getVisibleWindow() {
-  const requestedSamples = Math.max(MIN_VISIBLE_SAMPLES, Math.round(sampleRate * visibleSeconds));
-  const visibleSamples = Math.min(availableSamples, requestedSamples);
-  const maxOffset = Math.max(0, availableSamples - visibleSamples);
+  const maxOffset = Math.max(0, availableSamples - MIN_VISIBLE_SAMPLES);
   viewOffsetSamples = Math.max(0, Math.min(maxOffset, viewOffsetSamples));
   const endOffset = availableSamples - viewOffsetSamples;
-  const startOffset = Math.max(0, endOffset - visibleSamples);
-  const count = Math.max(0, endOffset - startOffset);
   const oldestSerial = getOldestSerial();
+  const endSerial = oldestSerial + endOffset - 1;
+  const endTime = timeline.timeAfter(endSerial);
+  const startSerial = availableSamples > 0
+    ? timeline.lowerBound(endTime - visibleSeconds, oldestSerial, endSerial + 1)
+    : oldestSerial;
+  const startOffset = startSerial - oldestSerial;
+  const count = Math.max(0, endOffset - startOffset);
 
   return {
     startOffset,
     count,
-    startSerial: oldestSerial + startOffset,
-    endSerial: oldestSerial + endOffset - 1,
+    startSerial,
+    endSerial,
   };
 }
 
@@ -654,19 +692,23 @@ function readVisibleRange(offset, windowInfo = getVisibleWindow()) {
   return readRangeByBufferOffset(windowInfo.startOffset + offset);
 }
 
-function readVisibleCurrent(offset, windowInfo = getVisibleWindow()) {
+function readVisibleCurrent(offset, windowInfo = getVisibleWindow(), cal = calibration()) {
   const code = readVisibleSample(offset, windowInfo);
   const rangeOhm = readVisibleRange(offset, windowInfo);
-  return codeToMicroamps(code, rangeOhm);
+  return codeToMicroamps(code, rangeOhm, cal);
 }
 
 function calibration() {
   return {
-    zeroLowCode: Math.round(clampNumber(Number(dom.zeroLowCodeInput.value), 0, 65535, DEFAULT_CALIBRATION.zeroLowCode)),
-    zeroHighCode: Math.round(clampNumber(Number(dom.zeroHighCodeInput.value), 0, 65535, DEFAULT_CALIBRATION.zeroHighCode)),
-    senseLowOhm: clampNumber(Number(dom.senseLowOhmInput.value), 0.001, 1000000, DEFAULT_CALIBRATION.senseLowOhm),
-    senseHighOhm: clampNumber(Number(dom.senseHighOhmInput.value), 0.001, 1000000, DEFAULT_CALIBRATION.senseHighOhm),
+    zeroLowCode: zeroOffsetCode(RANGE_LOW_OHM),
+    zeroHighCode: zeroOffsetCode(RANGE_HIGH_OHM),
+    senseLowOhm: normalizedSenseOhms(dom.senseLowOhmInput.value, DEFAULT_CALIBRATION.senseLowOhm),
+    senseHighOhm: normalizedSenseOhms(dom.senseHighOhmInput.value, DEFAULT_CALIBRATION.senseHighOhm),
   };
+}
+
+function normalizedSenseOhms(value, fallback) {
+  return Math.round(clampNumber(Number(value), 0.001, 1000000, fallback) * 1000) / 1000;
 }
 
 function clampNumber(value, min, max, fallback) {
@@ -685,11 +727,34 @@ function zeroCodeForRange(rangeOhm, cal = calibration()) {
 }
 
 function zeroInputForRange(rangeOhm) {
-  return rangeOhm === RANGE_HIGH_OHM ? dom.zeroHighCodeInput : dom.zeroLowCodeInput;
+  return rangeOhm === RANGE_HIGH_OHM ? dom.zeroHighUaInput : dom.zeroLowUaInput;
+}
+
+function microampsPerSenseCode(senseOhm) {
+  return (ADS_REF_MV * 1000) / (65536 * FRONTEND_GAIN * senseOhm);
+}
+
+function zeroOffsetCode(rangeOhm) {
+  const scale = microampsPerSenseCode(zeroInputSenseOhms[rangeOhm]);
+  return Math.round(clampNumber(Number(zeroInputForRange(rangeOhm).value) / scale, 0, 65535, 0));
+}
+
+function syncZeroInputs(cal) {
+  for (const rangeOhm of [RANGE_LOW_OHM, RANGE_HIGH_OHM]) {
+    const senseOhm = senseOhmForRange(rangeOhm, cal);
+    const scale = microampsPerSenseCode(senseOhm);
+    const input = zeroInputForRange(rangeOhm);
+    const code = Math.round(clampNumber(zeroCodeForRange(rangeOhm, cal), 0, 65535, 0));
+    const precision = Math.min(12, Math.max(3, Math.ceil(-Math.log10(scale))));
+    input.value = (code * scale).toFixed(precision).replace(/\.?0+$/, "");
+    input.max = String(65535 * scale);
+    input.step = String(10 ** -precision);
+    zeroInputSenseOhms[rangeOhm] = senseOhm;
+  }
 }
 
 function microampsPerCode(rangeOhm = currentRangeOhm, cal = calibration()) {
-  return (ADS_REF_MV * 1000) / (65536 * FRONTEND_GAIN * senseOhmForRange(rangeOhm, cal));
+  return microampsPerSenseCode(senseOhmForRange(rangeOhm, cal));
 }
 
 function codeToMicroamps(code, rangeOhm = currentRangeOhm, cal = calibration()) {
@@ -697,7 +762,48 @@ function codeToMicroamps(code, rangeOhm = currentRangeOhm, cal = calibration()) 
 }
 
 function formatUa(value) {
-  return `${value.toFixed(3)} uA`;
+  return `${value.toFixed(3)} µA`;
+}
+
+function formatHertz(value) {
+  return value >= 1000 ? `${Number((value / 1000).toFixed(3))} kHz` : `${Number(value.toFixed(3))} Hz`;
+}
+
+function effectiveLowpassCutoff() {
+  const measured = availableSamples > 0 ? lowpassMeasurements.effectiveCutoffHz : 0;
+  return measured > 0 ? measured : Math.min(lowpassCutoffHz, sampleRate * 0.45);
+}
+
+function syncLowpassControls() {
+  const custom = dom.lowpassCutoffSelect.value === "custom";
+  dom.lowpassCutoffSelect.disabled = !lowpassEnabled;
+  dom.lowpassCustomField.hidden = !custom;
+  dom.lowpassCutoffInput.disabled = !lowpassEnabled || !custom;
+  dom.exportRawCsvBtn.hidden = !lowpassEnabled;
+  dom.exportCsvBtn.textContent = lowpassEnabled ? "低通 CSV" : "导出 CSV";
+  const effective = effectiveLowpassCutoff();
+  dom.filterStateValue.textContent = lowpassEnabled
+    ? `${formatHertz(effective)}${effective + 1e-6 < lowpassCutoffHz ? "（受采样率限制）" : ""}`
+    : "关闭，原始数据";
+  dom.filterStateValue.title = lowpassEnabled
+    ? `一阶低通，目标截止频率 ${formatHertz(lowpassCutoffHz)}；按设备时间轴计算，频率不超过实际采样率的 45%。`
+    : "曲线、统计与导出使用原始数据。";
+}
+
+function refreshLowpassView() {
+  windowStatsCache = null;
+  const source = buildPlotSource();
+  plot.draw(source);
+  updateViewLabels(source);
+  updateCursorPanel(source);
+  updateStats(lastSeq, source.stats, source.rawStats);
+}
+
+function applyLowpassCutoff() {
+  const input = dom.lowpassCutoffSelect.value === "custom" ? dom.lowpassCutoffInput.value : dom.lowpassCutoffSelect.value;
+  lowpassCutoffHz = clampNumber(Number(input), 1, 45000, lowpassCutoffHz);
+  dom.lowpassCutoffInput.value = String(lowpassCutoffHz);
+  refreshLowpassView();
 }
 
 function formatInputNumber(value) {
@@ -707,75 +813,24 @@ function formatInputNumber(value) {
   return value.toFixed(6).replace(/\.?0+$/, "");
 }
 
-function computeWindowStats(windowInfo) {
-  if (windowInfo.count <= 0) {
-    return emptyStats();
-  }
+function statisticsConversion(cal) {
+  return [RANGE_LOW_OHM, RANGE_HIGH_OHM].map((rangeOhm) => ({
+    zero: zeroCodeForRange(rangeOhm, cal),
+    scale: microampsPerCode(rangeOhm, cal),
+  }));
+}
 
-  const statsStep = Math.max(1, Math.ceil(windowInfo.count / MAX_STATS_SCAN));
-  const quantileStep = Math.max(statsStep, Math.ceil(windowInfo.count / 5000));
-  const displaySamples = [];
-  let min = 65535;
-  let max = 0;
-  let sum = 0;
-  let codeCount = 0;
-  let currentMin = Infinity;
-  let currentMax = -Infinity;
-  let currentSum = 0;
-  let currentSumSq = 0;
+function statisticsKey(windowInfo, cal) {
+  return `${sampleStatistics.generation}:${windowInfo.startSerial}:${windowInfo.count}`
+    + `:${cal.zeroLowCode}:${cal.zeroHighCode}:${cal.senseLowOhm}:${cal.senseHighOhm}`;
+}
 
-  for (let i = 0; i < windowInfo.count; i += statsStep) {
-    const sample = readVisibleSample(i, windowInfo);
-    const rangeOhm = readVisibleRange(i, windowInfo);
-    const currentUa = codeToMicroamps(sample, rangeOhm);
-    if (sample < min) min = sample;
-    if (sample > max) max = sample;
-    sum += sample;
-    codeCount += 1;
-    if (currentUa < currentMin) currentMin = currentUa;
-    if (currentUa > currentMax) currentMax = currentUa;
-    currentSum += currentUa;
-    currentSumSq += currentUa * currentUa;
-    if ((i % quantileStep) === 0) {
-      displaySamples.push(currentUa);
-    }
-  }
-
-  const lastOffset = windowInfo.count - 1;
-  const lastCode = readVisibleSample(lastOffset, windowInfo);
-  const lastRange = readVisibleRange(lastOffset, windowInfo);
-  const currentLast = codeToMicroamps(lastCode, lastRange);
-
-  if (codeCount === 0) {
-    return emptyStats();
-  }
-
-  displaySamples.sort((a, b) => a - b);
-  const q05 = displaySamples[Math.floor((displaySamples.length - 1) * 0.05)] ?? currentMin;
-  const q95 = displaySamples[Math.floor((displaySamples.length - 1) * 0.95)] ?? currentMax;
-  const avgUa = currentSum / codeCount;
-  const rmsUa = Math.sqrt(Math.max(0, (currentSumSq / codeCount) - avgUa * avgUa));
-  const ppUa = currentMax - currentMin;
-
-  return {
-    last: currentLast,
-    avg: avgUa,
-    min: currentMin,
-    max: currentMax,
-    pp: ppUa,
-    rms: rmsUa,
-    ppPercent: Math.abs(avgUa) > 1e-12 ? Math.abs(ppUa / avgUa) * 100 : 0,
-    lastCode,
-    avgCode: sum / codeCount,
-    minCode: min,
-    maxCode: max,
-    ppCode: max - min,
-    rangeOhm: currentRangeOhm,
-    displayMin: q05,
-    displayMax: q95,
-    count: windowInfo.count,
-    scannedCount: codeCount,
-  };
+function computeWindowStats(windowInfo, conversion, key, measurements = sampleStatistics) {
+  if (windowInfo.count <= 0) return emptyStats();
+  if (windowStatsCache?.key === key) return windowStatsCache.stats;
+  const stats = measurements.query(windowInfo.startSerial, windowInfo.count, conversion);
+  windowStatsCache = { key, stats };
+  return stats;
 }
 
 function yRangeFromStats(stats) {
@@ -785,8 +840,8 @@ function yRangeFromStats(stats) {
     return { min, max };
   }
 
-  const displayMin = Number.isFinite(stats.displayMin) ? stats.displayMin : stats.min;
-  const displayMax = Number.isFinite(stats.displayMax) ? stats.displayMax : stats.max;
+  const displayMin = stats.min;
+  const displayMax = stats.max;
 
   if (displayMin === displayMax) {
     const center = displayMin;
@@ -806,10 +861,25 @@ function yRangeFromStats(stats) {
 }
 
 function buildPlotSource() {
-  const windowInfo = getVisibleWindow();
-  const stats = computeWindowStats(windowInfo);
-  const yRange = yRangeFromStats(stats);
+  if (activeDrag && !dragCaptureIsRetained(activeDrag)) cancelPlotDrag();
+  const frozenView = activeDrag;
+  const windowInfo = frozenView
+    ? { ...frozenView.currentWindowInfo, startOffset: frozenView.currentWindowInfo.startSerial - getOldestSerial() }
+    : getVisibleWindow();
+  const cal = calibration();
+  const conversion = statisticsConversion(cal);
+  const requestedCutoffHz = lowpassCutoffHz;
+  const lowpass = lowpassEnabled ? lowpassMeasurements.sync(requestedCutoffHz) : null;
+  const measurements = lowpass?.statistics || sampleStatistics;
+  const dataKey = statisticsKey(windowInfo, cal) + (lowpass ? `:lowpass:${lowpassCutoffHz}:${lowpass.revision}` : ":raw")
+    + (frozenView ? `:clock:${frozenView.currentClock.revision}` : "");
+  const stats = computeWindowStats(windowInfo, conversion, dataKey, measurements);
+  const rawStats = lowpass ? sampleStatistics.query(windowInfo.startSerial, windowInfo.count, conversion) : stats;
+  const yRange = activeDrag ? activeDrag.currentYRange : yRangeFromStats(stats);
   const cursorViews = getCursorViews(windowInfo);
+  const clock = frozenView?.currentClock || timeline;
+  const timeStart = frozenView ? frozenView.currentTimeStart : windowInfo.count ? timeline.timeAt(windowInfo.startSerial) : 0;
+  const timeEnd = frozenView ? frozenView.currentTimeEnd : windowInfo.count ? timeline.timeAfter(windowInfo.endSerial) : visibleSeconds;
 
   return {
     available: availableSamples,
@@ -818,37 +888,59 @@ function buildPlotSource() {
     viewOffsetSamples,
     showGrid,
     showEnvelope,
-    smoothDisplay,
+    smoothDisplay: false,
     cursorEnabled,
     cursors: cursorViews,
     yRange,
     stats,
+    rawStats,
+    lowpassEnabled,
     windowInfo,
-    readVisibleSample: (offset) => readVisibleCurrent(offset, windowInfo),
-    readVisibleCode: (offset) => readVisibleSample(offset, windowInfo),
+    dataKey,
+    timeStart,
+    timeEnd,
+    offsetSeconds: windowInfo.count ? timeline.timeAt(totalSamplesWritten - 1) - timeline.timeAt(windowInfo.endSerial) : 0,
+    timeSegments: frozenView ? frozenView.currentClock.timeSegments
+      : lowpass ? lowpass.segments(windowInfo.startSerial, windowInfo.count) : timeline.segments(windowInfo.startSerial, windowInfo.count),
+    readVisibleTime: (offset) => clock.timeAt(windowInfo.startSerial + offset),
+    timeToOffset: (time) => clock.lowerBound(time, windowInfo.startSerial, windowInfo.endSerial + 1) - windowInfo.startSerial,
+    readVisibleAggregate: (start, end) => {
+      const first = Math.max(0, Math.min(windowInfo.count, Math.floor(start)));
+      const stop = Math.max(first, Math.min(windowInfo.count, Math.floor(end)));
+      return measurements.query(windowInfo.startSerial + first, stop - first, conversion);
+    },
+    readVisibleSample: (offset) => codeToMicroamps(measurements.codes[(windowInfo.startSerial + offset) % SAMPLE_CAPACITY], readVisibleRange(offset, windowInfo), cal),
+    readRawSample: (offset) => readVisibleCurrent(offset, windowInfo, cal),
+    readFilterCutoff: (offset) => Math.min(requestedCutoffHz, 0.45 / (lowpass ? lowpass.samplePeriodAt(windowInfo.startSerial + offset) : 1 / sampleRate)),
     readVisibleRange: (offset) => readVisibleRange(offset, windowInfo),
   };
 }
 
-function updateStats(seq = lastSeq, stats = lastStats) {
+function updateStats(seq = lastSeq, stats = null, rawStats = null) {
+  if (!stats) {
+    const source = buildPlotSource();
+    stats = source.stats;
+    rawStats = source.rawStats;
+  }
+  rawStats ||= stats;
   dom.sampleRateValue.textContent = `${sampleRate} SPS`;
-  dom.modeValue.textContent = "ADS8866 ADC";
+  dom.modeValue.textContent = `ADS8866 ADC${adcReadErrors ? ` · 读取超时 ${adcReadErrors}` : ""}${timingOverruns ? ` · 时序超限 ${timingOverruns}` : ""}`;
   dom.rangeValue.textContent = `${currentRangeOhm} Ω${autoRange ? " 自动" : " 手动"}`;
   dom.seqValue.textContent = seq === null ? "-" : String(seq);
   dom.droppedValue.textContent = String(droppedFrames);
-  dom.codeValue.textContent = formatUa(stats.last);
-  dom.avgValue.textContent = stats.count > 0 ? formatUa(stats.avg) : "0.000 uA";
+  dom.currentValue.textContent = formatUa(stats.last);
+  dom.avgValue.textContent = stats.count > 0 ? formatUa(stats.avg) : "0.000 µA";
   dom.minMaxValue.textContent = `${formatUa(stats.min)} / ${formatUa(stats.max)}`;
   dom.ppValue.textContent = formatUa(Math.abs(stats.pp));
   dom.rmsValue.textContent = formatUa(stats.rms);
+  dom.rawRmsValue.textContent = formatUa(rawStats.rms);
   dom.rippleValue.textContent = `${stats.ppPercent.toFixed(4)} %`;
-  dom.iavgValue.textContent = String(Math.round(stats.lastCode));
-  dom.iminMaxValue.textContent = `${Math.round(stats.minCode)} / ${Math.round(stats.maxCode)}`;
-  dom.ippValue.textContent = `${microampsPerCode(currentRangeOhm).toFixed(6)} uA/code`;
   dom.metricNow.textContent = formatUa(stats.last);
-  dom.metricAvg.textContent = stats.count > 0 ? formatUa(stats.avg) : "0.000 uA";
+  dom.metricAvg.textContent = stats.count > 0 ? formatUa(stats.avg) : "0.000 µA";
   dom.metricPp.textContent = formatUa(Math.abs(stats.pp));
   dom.metricRms.textContent = formatUa(stats.rms);
+  dom.metricRmsLabel.textContent = lowpassEnabled ? "低通 RMS" : "RMS 噪声";
+  syncLowpassControls();
   updateRangeReadouts();
 }
 
@@ -863,11 +955,7 @@ function rangeTextForRange(rangeOhm, cal) {
   const zero = zeroCodeForRange(rangeOhm, cal);
   const lowUa = -zero * uaPerCode;
   const highUa = (65535 - zero) * uaPerCode;
-  const maxAbsUa = Math.max(Math.abs(lowUa), Math.abs(highUa));
-  if (maxAbsUa >= 1000) {
-    return `${(lowUa / 1000).toFixed(3)} .. ${(highUa / 1000).toFixed(3)} mA`;
-  }
-  return `${lowUa.toFixed(2)} .. ${highUa.toFixed(2)} uA`;
+  return `${lowUa.toFixed(2)} .. ${highUa.toFixed(2)} µA`;
 }
 
 function updateUsbRate() {
@@ -884,11 +972,13 @@ function updateUsbRate() {
 
 function updateViewLabels(source) {
   const windowSeconds = source.visibleSamples > 0
-    ? source.visibleSamples / Math.max(1, sampleRate)
+    ? source.timeEnd - source.timeStart
     : visibleSeconds;
-  const offsetSeconds = viewOffsetSamples / Math.max(1, sampleRate);
+  const offsetSeconds = source.offsetSeconds;
   const followText = viewOffsetSamples === 0 ? "跟随最新" : `回看 ${formatSeconds(offsetSeconds)}`;
-  dom.viewLabel.textContent = `窗口 ${formatSeconds(windowSeconds)}，${followText}，Y ${source.yRange.min.toFixed(3)}..${source.yRange.max.toFixed(3)} uA`;
+  const processing = lowpassEnabled ? `，低通 ${formatHertz(effectiveLowpassCutoff())}` : "";
+  dom.viewLabel.textContent = `窗口 ${formatSeconds(windowSeconds)}，${followText}${processing}，Y ${source.yRange.min.toFixed(3)}..${source.yRange.max.toFixed(3)} µA`;
+  dom.viewLabel.title = dom.viewLabel.textContent;
 }
 
 function updateCursorPanel(source) {
@@ -896,11 +986,12 @@ function updateCursorPanel(source) {
   const a = cursorInfoFromView(views.a, source);
   const b = cursorInfoFromView(views.b, source);
 
-  dom.cursorAValue.textContent = a ? `${a.timeText}, ${formatUa(a.currentUa)}, ${a.code} code` : "-";
-  dom.cursorBValue.textContent = b ? `${b.timeText}, ${formatUa(b.currentUa)}, ${b.code} code` : "-";
+  dom.cursorAValue.textContent = a ? `${a.timeText}, ${formatUa(a.currentUa)}` : "-";
+  dom.cursorBValue.textContent = b ? `${b.timeText}, ${formatUa(b.currentUa)}` : "-";
 
   if (!cursorEnabled) {
     dom.cursorLabel.textContent = "游标未启用";
+    dom.cursorLabel.title = dom.cursorLabel.textContent;
     dom.cursorTimeValue.textContent = "-";
     dom.cursorDeltaValue.textContent = "-";
     return;
@@ -908,18 +999,19 @@ function updateCursorPanel(source) {
 
   if (!a || !b) {
     dom.cursorLabel.textContent = "点击曲线设置 A/B 游标";
+    dom.cursorLabel.title = dom.cursorLabel.textContent;
     dom.cursorTimeValue.textContent = "-";
     dom.cursorDeltaValue.textContent = "-";
     return;
   }
 
-  const dt = Math.abs(b.serial - a.serial) / Math.max(1, sampleRate);
+  const dt = Math.abs(b.time - a.time);
   const frequency = dt > 0 ? 1 / dt : 0;
-  const dCode = b.code - a.code;
   const dCurrent = b.currentUa - a.currentUa;
-  dom.cursorLabel.textContent = `A-B: ΔT ${formatSeconds(dt)}，ΔCode ${dCode}`;
+  dom.cursorLabel.textContent = `A-B: ΔT ${formatSeconds(dt)}，ΔI ${formatUa(dCurrent)}`;
+  dom.cursorLabel.title = dom.cursorLabel.textContent;
   dom.cursorTimeValue.textContent = `${formatSeconds(dt)} / ${frequency.toFixed(2)} Hz`;
-  dom.cursorDeltaValue.textContent = `${dCode} code / ${formatUa(dCurrent)}`;
+  dom.cursorDeltaValue.textContent = formatUa(dCurrent);
 }
 
 function cursorInfoFromView(view, source) {
@@ -929,11 +1021,11 @@ function cursorInfoFromView(view, source) {
 
   const serial = source.windowInfo.startSerial + view.sampleOffset;
   const currentUa = source.readVisibleSample(view.sampleOffset);
-  const code = source.readVisibleCode(view.sampleOffset);
-  const t = (serial - source.windowInfo.startSerial) / Math.max(1, sampleRate);
+  const time = source.readVisibleTime(view.sampleOffset);
+  const t = time - source.timeStart;
   return {
     serial,
-    code,
+    time,
     currentUa,
     timeText: formatSeconds(t),
   };
@@ -970,10 +1062,15 @@ function formatSeconds(seconds) {
 }
 
 function resetCaptureState() {
+  cancelPlotDrag(false);
+  timeline.reset();
   writeIndex = 0;
   availableSamples = 0;
   totalSamplesWritten = 0;
   rangeBuffer.fill(0);
+  sampleStatistics.reset();
+  lowpassMeasurements.reset();
+  windowStatsCache = null;
   lastSeq = null;
   droppedFrames = 0;
   bytesReceived = 0;
@@ -991,8 +1088,7 @@ function resetCaptureState() {
 
 async function applyCalibration(logResult = true) {
   const cal = calibration();
-  dom.zeroLowCodeInput.value = String(cal.zeroLowCode);
-  dom.zeroHighCodeInput.value = String(cal.zeroHighCode);
+  syncZeroInputs(cal);
   dom.senseLowOhmInput.value = String(cal.senseLowOhm);
   dom.senseHighOhmInput.value = String(cal.senseHighOhm);
 
@@ -1012,9 +1108,14 @@ async function applyCalibration(logResult = true) {
 }
 
 async function zeroNow() {
+  if (availableSamples === 0) throw new Error("请先采集空载数据，再进行归零。");
   const rangeOhm = currentRangeOhm;
   const zero = Math.round(codeAverageForRange(rangeOhm));
-  zeroInputForRange(rangeOhm).value = String(clampNumber(zero, 0, 65535, 0));
+  if (!Number.isFinite(zero)) throw new Error("没有当前量程的有效数据，请先采集后归零。");
+  const cal = calibration();
+  if (rangeOhm === RANGE_HIGH_OHM) cal.zeroHighCode = zero;
+  else cal.zeroLowCode = zero;
+  syncZeroInputs(cal);
   await applyCalibration();
 }
 
@@ -1025,28 +1126,24 @@ function codeAverageForRange(rangeOhm) {
 
   const windowInfo = getVisibleWindow();
   if (windowInfo.count <= 0) {
-    return lastStats.avgCode || 0;
+    return NaN;
   }
 
-  const step = Math.max(1, Math.ceil(windowInfo.count / MAX_STATS_SCAN));
-  let sum = 0;
-  let count = 0;
-  for (let i = 0; i < windowInfo.count; i += step) {
-    if (readVisibleRange(i, windowInfo) !== rangeOhm) {
-      continue;
-    }
-    sum += readVisibleSample(i, windowInfo);
-    count += 1;
-  }
-
-  return count > 0 ? sum / count : (lastStats.avgCode || 0);
+  const ranges = sampleStatistics.queryRaw(windowInfo.startSerial, windowInfo.count);
+  const raw = ranges[rangeOhm === RANGE_HIGH_OHM ? 1 : 0];
+  return raw.count > 0 ? raw.sum / raw.count : NaN;
 }
 
 function clearBuffer() {
+  cancelPlotDrag(false);
+  timeline.reset();
   writeIndex = 0;
   availableSamples = 0;
   totalSamplesWritten = 0;
   rangeBuffer.fill(0);
+  sampleStatistics.reset();
+  lowpassMeasurements.reset();
+  windowStatsCache = null;
   viewOffsetSamples = 0;
   displayPaused = false;
   cursors.a.serial = null;
@@ -1070,7 +1167,7 @@ function syncTimeWindowInput() {
   if (document.activeElement === dom.timeWindowSelect) {
     return;
   }
-  dom.timeWindowSelect.value = formatInputNumber(visibleSeconds);
+  dom.timeWindowSelect.value = Number(visibleSeconds.toPrecision(4)).toString();
 }
 
 function setVisibleSecondsPreservingAnchor(seconds, anchorSerial = null, anchorRatio = 0.5) {
@@ -1135,16 +1232,31 @@ function togglePauseView() {
 }
 
 function syncPauseButton() {
-  dom.pauseViewBtn.textContent = displayPaused ? "继续显示" : "暂停显示";
+  dom.pauseViewBtn.textContent = displayPaused ? "继续" : "暂停";
 }
 
 function clampViewOffset() {
-  const visibleSamples = Math.min(
-    availableSamples,
-    Math.max(MIN_VISIBLE_SAMPLES, Math.round(sampleRate * visibleSeconds)),
-  );
-  const maxOffset = Math.max(0, availableSamples - visibleSamples);
+  const maxOffset = availableSamples > 0 ? totalSamplesWritten - 1 - earliestViewEndSerial() : 0;
   viewOffsetSamples = Math.max(0, Math.min(maxOffset, viewOffsetSamples));
+}
+
+function earliestViewEndSerial() {
+  const oldest = getOldestSerial();
+  if (availableSamples <= MIN_VISIBLE_SAMPLES) return totalSamplesWritten - 1;
+  const targetTime = timeline.timeAt(oldest) + visibleSeconds;
+  let end = Math.max(oldest + MIN_VISIBLE_SAMPLES - 1,
+    timeline.lowerBound(targetTime, oldest, totalSamplesWritten) - 1);
+  if (end < totalSamplesWritten - 1 && timeline.timeAfter(end) + 1e-12 < targetTime) end += 1;
+  return Math.min(totalSamplesWritten - 1, end);
+}
+
+function setViewEndTime(time) {
+  const oldest = getOldestSerial();
+  const end = Math.max(earliestViewEndSerial(), Math.min(totalSamplesWritten - 1,
+    timeline.lowerBound(time, oldest, totalSamplesWritten) - 1));
+  viewOffsetSamples = Math.max(0, totalSamplesWritten - end - 1);
+  displayPaused = true;
+  syncPauseButton();
 }
 
 function setManualYEnabled(enabled) {
@@ -1190,18 +1302,6 @@ function setRangeUiEnabled(connected) {
   dom.manualRangeSelect.disabled = !connected || dom.autoRangeToggle.checked;
 }
 
-function setCursorAtClientX(clientX, cursorName = nextCursorName) {
-  const windowInfo = getVisibleWindow();
-  const offset = plot.clientXToSampleOffset(clientX);
-  if (offset === null || windowInfo.count <= 0) {
-    return;
-  }
-
-  const safeOffset = Math.max(0, Math.min(windowInfo.count - 1, offset));
-  cursors[cursorName].serial = windowInfo.startSerial + safeOffset;
-  nextCursorName = cursorName === "a" ? "b" : "a";
-}
-
 function nearestCursor(clientX) {
   if (!cursorEnabled) {
     return null;
@@ -1231,25 +1331,154 @@ function nearestCursor(clientX) {
   return bestDistance <= 12 ? best : null;
 }
 
-function exportCsv() {
+function dragCaptureIsRetained(drag) {
+  return drag.generation === sampleStatistics.generation &&
+    drag.windowInfo.startSerial >= getOldestSerial() && drag.windowInfo.endSerial < totalSamplesWritten &&
+    drag.currentWindowInfo.startSerial >= getOldestSerial() && drag.currentWindowInfo.endSerial < totalSamplesWritten;
+}
+
+function capturePlotClock(windowInfo, timeSegments) {
+  const frameSize = timeline.frameSize;
+  const firstFrame = Math.floor(windowInfo.startSerial / frameSize) * frameSize;
+  const entries = [];
+  for (let serial = firstFrame; serial <= windowInfo.endSerial; serial += frameSize) {
+    const frame = timeline.frameAt(serial);
+    entries.push({ startSerial: frame.startSerial, time: frame.time, period: frame.period });
+  }
+  const frameAt = (serial) => entries[Math.floor((serial - firstFrame) / frameSize)];
+  const timeAt = (serial) => {
+    const frame = frameAt(serial);
+    return frame ? frame.time + (serial - frame.startSerial) * frame.period : NaN;
+  };
+  return {
+    revision: ++plotClockRevision,
+    timeSegments: timeSegments.map((segment) => ({ ...segment })),
+    timeAt,
+    timeAfter: (serial) => {
+      const frame = frameAt(serial);
+      return frame ? frame.time + (serial - frame.startSerial + 1) * frame.period : NaN;
+    },
+    lowerBound: (time, start, end) => {
+      let lo = start;
+      let hi = end;
+      while (lo < hi) {
+        const mid = Math.floor((lo + hi) / 2);
+        if (timeAt(mid) + 1e-12 < time) lo = mid + 1;
+        else hi = mid;
+      }
+      return lo;
+    },
+  };
+}
+
+function cancelPlotDrag(restore = true) {
+  const drag = activeDrag;
+  activeDrag = null;
+  plot.setSelectionBox(null);
+  plot.canvas.classList.toggle("is-panning", false);
+  if (!drag) return;
+  if (restore && drag.generation === sampleStatistics.generation) {
+    visibleSeconds = drag.previous.visibleSeconds;
+    displayPaused = drag.previous.displayPaused;
+    viewOffsetSamples = displayPaused ? Math.max(0, totalSamplesWritten - drag.windowInfo.endSerial - 1) : 0;
+    clampViewOffset();
+    autoScale = drag.previous.autoScale;
+    dom.autoScaleToggle.checked = autoScale;
+    dom.yMinInput.value = drag.previous.yMin;
+    dom.yMaxInput.value = drag.previous.yMax;
+    setManualYEnabled(!autoScale);
+    syncPauseButton();
+    syncTimeWindowInput();
+  }
+  if (plot.canvas.hasPointerCapture(drag.pointerId)) plot.canvas.releasePointerCapture(drag.pointerId);
+}
+
+function redrawPlotInteraction() {
+  const source = buildPlotSource();
+  plot.draw(source);
+  updateViewLabels(source);
+}
+
+function movePlotDrag(event) {
+  const drag = activeDrag;
+  if (!drag || event.pointerId !== drag.pointerId) return;
+  if (!dragCaptureIsRetained(drag)) {
+    cancelPlotDrag();
+    return;
+  }
+  if (event.clientX === drag.lastX && event.clientY === drag.lastY) return;
+  drag.lastX = event.clientX;
+  drag.lastY = event.clientY;
+  const dx = event.clientX - drag.startX;
+  const dy = event.clientY - drag.startY;
+  drag.moved ||= Math.hypot(dx, dy) >= 4;
+  drag.endPoint = plot.clientPointToPlot(event.clientX, event.clientY, drag.geometry, true);
+  if (!drag.moved) return;
+  if (drag.type === "box") {
+    plot.setSelectionBox({ x1: drag.startPoint.x, y1: drag.startPoint.y, x2: drag.endPoint.x, y2: drag.endPoint.y });
+  } else {
+    const timeShift = dx / drag.geometry.width * (drag.timeEnd - drag.timeStart);
+    setViewEndTime(drag.timeEnd - timeShift);
+    drag.currentWindowInfo = { ...getVisibleWindow() };
+    drag.currentTimeStart = timeline.timeAt(drag.currentWindowInfo.startSerial);
+    drag.currentTimeEnd = timeline.timeAfter(drag.currentWindowInfo.endSerial);
+    const segments = lowpassEnabled ? lowpassMeasurements.segments(drag.currentWindowInfo.startSerial, drag.currentWindowInfo.count)
+      : timeline.segments(drag.currentWindowInfo.startSerial, drag.currentWindowInfo.count);
+    drag.currentClock = capturePlotClock(drag.currentWindowInfo, segments);
+    const shift = dy / drag.geometry.height * (drag.startYRange.max - drag.startYRange.min);
+    drag.currentYRange = { min: drag.startYRange.min + shift, max: drag.startYRange.max + shift };
+    setManualYRange(drag.currentYRange.min, drag.currentYRange.max);
+  }
+  redrawPlotInteraction();
+}
+
+function applySelectionBox(drag) {
+  const { startPoint: first, endPoint: last, geometry } = drag;
+  if (!last || Math.abs(last.x - first.x) * geometry.width < 6 || Math.abs(last.y - first.y) * geometry.height < 6) return false;
+  const span = drag.timeEnd - drag.timeStart;
+  const leftTime = drag.timeStart + Math.min(first.x, last.x) * span;
+  const rightTime = drag.timeStart + Math.max(first.x, last.x) * span;
+  const firstSerial = drag.windowInfo.startSerial + drag.source.timeToOffset(leftTime);
+  const endExclusive = Math.min(drag.windowInfo.endSerial + 1,
+    drag.windowInfo.startSerial + drag.source.timeToOffset(rightTime));
+  if (endExclusive - firstSerial < MIN_VISIBLE_SAMPLES) return false;
+  // Fit the real retained points, including device-time gaps. Nominal SPS must
+  // not shift a selected region or enlarge a two-point selection.
+  visibleSeconds = Math.min(maxVisibleSeconds(), drag.initialClock.timeAfter(endExclusive - 1) - drag.initialClock.timeAt(firstSerial));
+  drag.selectedSerials = { first: firstSerial, endExclusive };
+  viewOffsetSamples = Math.max(0, totalSamplesWritten - endExclusive);
+  displayPaused = true;
+  const ySpan = drag.startYRange.max - drag.startYRange.min;
+  setManualYRange(drag.startYRange.max - Math.max(first.y, last.y) * ySpan,
+    drag.startYRange.max - Math.min(first.y, last.y) * ySpan);
+  syncPauseButton();
+  syncTimeWindowInput();
+  return true;
+}
+
+function exportCsv(rawOnly = false) {
   const source = buildPlotSource();
   if (source.visibleSamples <= 0) {
     appendLog("没有可导出的波形数据。");
     return;
   }
 
-  const rows = ["index,time_s,range_ohm,adc_code,current_uA"];
+  const filtered = source.lowpassEnabled && !rawOnly;
+  const rows = [filtered
+    ? "index,time_s,range_ohm,current_uA,raw_current_uA,lowpass_cutoff_hz"
+    : "index,time_s,range_ohm,current_uA"];
   for (let i = 0; i < source.visibleSamples; i += 1) {
-    const code = source.readVisibleCode(i);
     const rangeOhm = source.readVisibleRange(i);
-    const currentUa = source.readVisibleSample(i);
-    const time = i / Math.max(1, sampleRate);
-    rows.push(`${i},${time.toFixed(9)},${rangeOhm},${code},${currentUa.toFixed(6)}`);
+    const currentUa = rawOnly ? source.readRawSample(i) : source.readVisibleSample(i);
+    const time = source.readVisibleTime(i) - source.timeStart;
+    const rawFields = filtered ? `,${source.readRawSample(i).toFixed(6)},${source.readFilterCutoff(i).toFixed(6)}` : "";
+    rows.push(`${i},${time.toFixed(9)},${rangeOhm},${currentUa.toFixed(6)}${rawFields}`);
   }
 
   const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" });
-  downloadBlob(blob, `pico-power-scope-${timestampForFile()}.csv`);
-  appendLog(`已导出当前窗口 CSV：${source.visibleSamples} 点。`);
+  const mode = filtered ? `lowpass-${lowpassCutoffHz}Hz-` : "";
+  downloadBlob(blob, `pico-power-scope-${mode}${timestampForFile()}.csv`);
+  appendLog(`已导出当前窗口${filtered ? "低通" : "原始"} CSV：${source.visibleSamples} 点。`);
 }
 
 function exportPng() {
@@ -1279,6 +1508,14 @@ function timestampForFile() {
 
 function animationLoop(now = performance.now()) {
   updateUsbRate();
+  if (device?.opened && !actionBusy && !statusPollPending && now >= nextStatusPollAt) {
+    const pollDevice = device;
+    statusPollPending = true;
+    nextStatusPollAt = now + 2000;
+    sendCommand("GET_STATUS").catch((error) => {
+      if (device === pollDevice) appendLog(error.message);
+    }).finally(() => { statusPollPending = false; });
+  }
 
   if (now - lastDrawAt >= DRAW_INTERVAL_MS) {
     const source = buildPlotSource();
@@ -1287,7 +1524,7 @@ function animationLoop(now = performance.now()) {
 
     if (now - lastStatsUiAt >= STATS_INTERVAL_MS) {
       updateCursorPanel(source);
-      updateStats(lastSeq, source.stats.count > 0 ? source.stats : lastStats);
+      updateStats(lastSeq, source.stats.count > 0 ? source.stats : lastStats, source.rawStats);
       lastStatsUiAt = now;
     }
 
@@ -1297,16 +1534,17 @@ function animationLoop(now = performance.now()) {
   requestAnimationFrame(animationLoop);
 }
 
-dom.connectBtn.addEventListener("click", () => connectDevice());
+dom.connectBtn.addEventListener("click", () => runDeviceAction(connectDevice));
 dom.disconnectBtn.addEventListener("click", () => disconnectDevice());
-dom.bootloaderBtn.addEventListener("click", () => enterBootloader().catch((err) => appendLog(err.message)));
-dom.startBtn.addEventListener("click", () => startCapture().catch((err) => appendLog(err.message)));
-dom.stopBtn.addEventListener("click", () => stopCapture().catch((err) => appendLog(err.message)));
-dom.applyCalBtn.addEventListener("click", () => applyCalibration().catch((err) => appendLog(err.message)));
-dom.zeroNowBtn.addEventListener("click", () => zeroNow().catch((err) => appendLog(err.message)));
+dom.bootloaderBtn.addEventListener("click", () => runDeviceAction(enterBootloader));
+dom.startBtn.addEventListener("click", () => runDeviceAction(startCapture));
+dom.stopBtn.addEventListener("click", () => runDeviceAction(stopCapture));
+dom.applyCalBtn.addEventListener("click", () => runDeviceAction(applyCalibration));
+dom.zeroNowBtn.addEventListener("click", () => runDeviceAction(zeroNow));
 dom.pauseViewBtn.addEventListener("click", () => togglePauseView());
 dom.clearBtn.addEventListener("click", () => clearBuffer());
 dom.exportCsvBtn.addEventListener("click", () => exportCsv());
+dom.exportRawCsvBtn.addEventListener("click", () => exportCsv(true));
 dom.exportPngBtn.addEventListener("click", () => exportPng());
 dom.clearLogBtn.addEventListener("click", () => {
   dom.logOutput.textContent = "";
@@ -1323,15 +1561,28 @@ dom.panUpBtn.addEventListener("click", () => panYByFraction(-0.2));
 dom.panDownBtn.addEventListener("click", () => panYByFraction(0.2));
 dom.resetYBtn.addEventListener("click", () => resetYScale());
 
-dom.sampleRateSelect.addEventListener("change", () => {
-  sampleRate = Number(dom.sampleRateSelect.value);
-  visibleSeconds = clampNumber(visibleSeconds, minVisibleSeconds(), maxVisibleSeconds(), 2);
-  clampViewOffset();
-  syncTimeWindowInput();
-  if (device && device.opened) {
-    sendCommand(`SRATE ${sampleRate}`).catch((err) => appendLog(err.message));
+dom.sampleRateSelect.addEventListener("change", () => runDeviceAction(async () => {
+  const requestedRate = Number(dom.sampleRateSelect.value);
+  const restart = state === "RUNNING";
+  try {
+    if (restart) await stopCapture();
+    await sendCommand(`SRATE ${requestedRate}`);
+    resetCaptureState();
+    sampleRate = requestedRate;
+    if (restart) {
+      acceptFrames = true;
+      await sendCommand("START");
+      setState("RUNNING");
+    }
+    visibleSeconds = clampNumber(visibleSeconds, minVisibleSeconds(), maxVisibleSeconds(), 2);
+    syncTimeWindowInput();
+    appendLog("采样率已确认，已开始新的采集段。");
+  } catch (error) {
+    acceptFrames = Boolean(device?.opened) && state === "RUNNING";
+    dom.sampleRateSelect.value = String(sampleRate);
+    throw error;
   }
-});
+}));
 
 dom.timeWindowSelect.addEventListener("change", () => {
   setVisibleSecondsFromInput(Number(dom.timeWindowSelect.value));
@@ -1342,42 +1593,58 @@ dom.autoScaleToggle.addEventListener("change", () => {
   setManualYEnabled(!autoScale);
 });
 
-dom.autoRangeToggle.addEventListener("change", () => {
-  autoRange = dom.autoRangeToggle.checked;
-  setRangeUiEnabled(device && device.opened);
-  if (device && device.opened) {
-    sendCommand(`SET_AUTO_RANGE ${autoRange ? 1 : 0}`).catch((err) => appendLog(err.message));
+dom.autoRangeToggle.addEventListener("change", () => runDeviceAction(async () => {
+  const requested = dom.autoRangeToggle.checked;
+  try {
+    await sendCommand(`SET_AUTO_RANGE ${requested ? 1 : 0}`);
+    autoRange = requested;
+  } finally {
+    dom.autoRangeToggle.checked = autoRange;
   }
-});
+}));
 
-dom.manualRangeSelect.addEventListener("change", () => {
-  currentRangeOhm = Number(dom.manualRangeSelect.value) === RANGE_HIGH_OHM ? RANGE_HIGH_OHM : RANGE_LOW_OHM;
-  if (device && device.opened && !dom.autoRangeToggle.checked) {
-    sendCommand(`SET_RANGE ${currentRangeOhm}`).catch((err) => appendLog(err.message));
+dom.manualRangeSelect.addEventListener("change", () => runDeviceAction(async () => {
+  const requested = Number(dom.manualRangeSelect.value) === RANGE_HIGH_OHM ? RANGE_HIGH_OHM : RANGE_LOW_OHM;
+  try {
+    if (!dom.autoRangeToggle.checked) {
+      await sendCommand(`SET_RANGE ${requested}`);
+      currentRangeOhm = requested;
+    }
+  } finally {
+    dom.manualRangeSelect.value = String(currentRangeOhm);
   }
-});
+}));
 
-dom.zeroLowCodeInput.addEventListener("change", () => {
+dom.zeroLowUaInput.addEventListener("change", () => {
   const cal = calibration();
-  dom.zeroLowCodeInput.value = String(Math.round(cal.zeroLowCode));
+  syncZeroInputs(cal);
   updateRangeReadouts();
 });
 
-dom.zeroHighCodeInput.addEventListener("change", () => {
+dom.zeroHighUaInput.addEventListener("change", () => {
   const cal = calibration();
-  dom.zeroHighCodeInput.value = String(Math.round(cal.zeroHighCode));
+  syncZeroInputs(cal);
   updateRangeReadouts();
 });
+
+for (const input of [dom.senseLowOhmInput, dom.senseHighOhmInput]) {
+  input.addEventListener("input", () => {
+    syncZeroInputs(calibration());
+    updateRangeReadouts();
+  });
+}
 
 dom.senseLowOhmInput.addEventListener("change", () => {
   const cal = calibration();
   dom.senseLowOhmInput.value = String(cal.senseLowOhm);
+  syncZeroInputs(cal);
   updateRangeReadouts();
 });
 
 dom.senseHighOhmInput.addEventListener("change", () => {
   const cal = calibration();
   dom.senseHighOhmInput.value = String(cal.senseHighOhm);
+  syncZeroInputs(cal);
   updateRangeReadouts();
 });
 
@@ -1389,8 +1656,19 @@ dom.envelopeToggle.addEventListener("change", () => {
   showEnvelope = dom.envelopeToggle.checked;
 });
 
-dom.smoothToggle.addEventListener("change", () => {
-  smoothDisplay = dom.smoothToggle.checked;
+dom.lowpassToggle.addEventListener("change", () => {
+  lowpassEnabled = dom.lowpassToggle.checked;
+  refreshLowpassView();
+});
+
+dom.lowpassCutoffSelect.addEventListener("change", () => {
+  if (dom.lowpassCutoffSelect.value === "custom") dom.lowpassCutoffInput.value = String(lowpassCutoffHz);
+  applyLowpassCutoff();
+});
+
+dom.lowpassCutoffInput.addEventListener("change", () => {
+  dom.lowpassCutoffSelect.value = "custom";
+  applyLowpassCutoff();
 });
 
 dom.cursorToggle.addEventListener("change", () => {
@@ -1411,6 +1689,7 @@ dom.yMaxInput.addEventListener("change", () => {
 
 plot.canvas.addEventListener("wheel", (event) => {
   event.preventDefault();
+  cancelPlotDrag();
 
   if (event.ctrlKey || event.altKey) {
     const factor = Math.exp(Math.max(-0.5, Math.min(0.5, event.deltaY * 0.0015)));
@@ -1429,66 +1708,107 @@ plot.canvas.addEventListener("wheel", (event) => {
 }, { passive: false });
 
 plot.canvas.addEventListener("pointerdown", (event) => {
-  plot.canvas.setPointerCapture(event.pointerId);
-
-  if (cursorEnabled) {
-    const cursorName = nearestCursor(event.clientX) || nextCursorName;
-    setCursorAtClientX(event.clientX, cursorName);
-    activeDrag = { type: "cursor", cursorName };
-    return;
-  }
-
+  if (activeDrag || event.isPrimary === false || ![0, 2].includes(event.button)) return;
   const source = buildPlotSource();
+  plot.draw(source);
+  const geometry = plot.getPlotGeometry();
+  const point = plot.clientPointToPlot(event.clientX, event.clientY, geometry);
+  if (source.visibleSamples <= 0 || !point?.inside) return;
+  event.preventDefault();
+  const clock = capturePlotClock(source.windowInfo, source.timeSegments);
+  const frozenSource = {
+    ...source,
+    readVisibleTime: (offset) => clock.timeAt(source.windowInfo.startSerial + offset),
+    timeToOffset: (time) => clock.lowerBound(time, source.windowInfo.startSerial, source.windowInfo.endSerial + 1) - source.windowInfo.startSerial,
+  };
   activeDrag = {
-    type: "pan",
+    type: event.button === 2 ? "pan" : "box",
+    pointerId: event.pointerId,
+    generation: sampleStatistics.generation,
     startX: event.clientX,
     startY: event.clientY,
-    startOffset: viewOffsetSamples,
-    startYRange: source.yRange,
+    lastX: event.clientX, lastY: event.clientY,
+    startPoint: point, endPoint: point, geometry, source: frozenSource,
+    initialClock: clock, currentClock: clock,
+    clickCursorName: cursorEnabled ? nearestCursor(event.clientX) || nextCursorName : null,
+    windowInfo: { ...source.windowInfo },
+    currentWindowInfo: { ...source.windowInfo },
+    timeStart: source.timeStart, timeEnd: source.timeEnd,
+    currentTimeStart: source.timeStart, currentTimeEnd: source.timeEnd,
+    startYRange: { ...source.yRange }, currentYRange: { ...source.yRange }, moved: false,
+    previous: { visibleSeconds, displayPaused, autoScale, yMin: dom.yMinInput.value, yMax: dom.yMaxInput.value },
   };
+  // Freeze the gesture's serial endpoint while acquisition continues. Every
+  // new frame advances the offset, preserving the same captured samples.
+  displayPaused = true;
+  viewOffsetSamples = Math.max(0, totalSamplesWritten - source.windowInfo.endSerial - 1);
+  if (activeDrag.type === "pan") visibleSeconds = source.timeEnd - source.timeStart;
+  syncPauseButton();
+  plot.canvas.classList.toggle("is-panning", activeDrag.type === "pan");
+  plot.canvas.setPointerCapture(event.pointerId);
 });
 
 plot.canvas.addEventListener("pointermove", (event) => {
-  if (!activeDrag) {
-    return;
-  }
-
-  if (activeDrag.type === "cursor") {
-    setCursorAtClientX(event.clientX, activeDrag.cursorName);
-    return;
-  }
-
-  if (activeDrag.type === "pan" && plot.metrics) {
-    const dx = event.clientX - activeDrag.startX;
-    const dy = event.clientY - activeDrag.startY;
-    const visibleSamples = Math.max(1, plot.metrics.visibleSamples);
-    const samplesPerCssPx = visibleSamples / Math.max(1, plot.metrics.plotWidth / plot.metrics.dpr);
-    viewOffsetSamples = activeDrag.startOffset + Math.round(dx * samplesPerCssPx);
-    clampViewOffset();
-    displayPaused = viewOffsetSamples > 0;
-    syncPauseButton();
-
-    if (Math.abs(dy) >= 2) {
-      const valuePerCssPx = (activeDrag.startYRange.max - activeDrag.startYRange.min)
-        / Math.max(1, plot.metrics.plotHeight / plot.metrics.dpr);
-      const shift = dy * valuePerCssPx;
-      setManualYRange(activeDrag.startYRange.min + shift, activeDrag.startYRange.max + shift);
-    }
-  }
+  movePlotDrag(event);
 });
 
 plot.canvas.addEventListener("pointerup", (event) => {
-  if (plot.canvas.hasPointerCapture(event.pointerId)) {
-    plot.canvas.releasePointerCapture(event.pointerId);
-  }
+  if (!activeDrag || event.pointerId !== activeDrag.pointerId) return;
+  movePlotDrag(event);
+  const drag = activeDrag;
+  if (!drag) return;
   activeDrag = null;
+  plot.setSelectionBox(null);
+  plot.canvas.classList.toggle("is-panning", false);
+  const applied = drag.type === "box" && drag.moved && applySelectionBox(drag);
+  if (applied) {
+    // Selection addresses come from the frozen clock. Once the gesture ends,
+    // fit those exact samples to the finalized live device timestamps.
+    const { first, endExclusive } = drag.selectedSerials;
+    visibleSeconds = Math.min(maxVisibleSeconds(), timeline.timeAfter(endExclusive - 1) - timeline.timeAt(first));
+  }
+  if ((!drag.moved || drag.type === "box") && !applied) {
+    activeDrag = drag;
+    cancelPlotDrag();
+    if (drag.type === "box" && !drag.moved && cursorEnabled) {
+      // A click sets A/B; a drag always belongs to rectangle selection, even
+      // when it starts directly on a cursor line.
+      const cursorName = drag.clickCursorName || nextCursorName;
+      const offset = Math.min(drag.windowInfo.count - 1,
+        drag.source.timeToOffset(drag.timeStart + drag.startPoint.x * (drag.timeEnd - drag.timeStart)));
+      cursors[cursorName].serial = drag.windowInfo.startSerial + offset;
+      nextCursorName = cursorName === "a" ? "b" : "a";
+    }
+  }
+  if (plot.canvas.hasPointerCapture(event.pointerId)) plot.canvas.releasePointerCapture(event.pointerId);
+  syncTimeWindowInput();
+  redrawPlotInteraction();
 });
 
-plot.canvas.addEventListener("pointercancel", () => {
-  activeDrag = null;
+plot.canvas.addEventListener("pointercancel", (event) => {
+  if (activeDrag?.pointerId !== event.pointerId) return;
+  cancelPlotDrag();
+  redrawPlotInteraction();
+});
+
+plot.canvas.addEventListener("lostpointercapture", (event) => {
+  if (activeDrag?.pointerId !== event.pointerId) return;
+  cancelPlotDrag();
+  redrawPlotInteraction();
+});
+
+plot.canvas.addEventListener("contextmenu", (event) => {
+  event.preventDefault();
+});
+
+window.addEventListener?.("blur", () => {
+  if (!activeDrag) return;
+  cancelPlotDrag();
+  redrawPlotInteraction();
 });
 
 plot.canvas.addEventListener("dblclick", () => {
+  cancelPlotDrag(false);
   showLatest();
   resetYScale();
 });

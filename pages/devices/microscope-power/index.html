@@ -11,8 +11,8 @@
     <main class="app-shell">
       <header class="topbar">
         <div class="brand-block">
-          <h1>Pico 电流波形采集</h1>
-          <span>ADS8866 / WebUSB</span>
+          <h1>MicroScope Power</h1>
+          <span>电流波形采集</span>
         </div>
         <div class="device-actions">
           <span id="connectionLabel" class="connection-chip">未连接</span>
@@ -23,40 +23,34 @@
       </header>
 
       <section class="quickbar" aria-label="采集与视图控制">
-        <div class="field">
-          <label for="sampleRateSelect">采样率</label>
-          <select id="sampleRateSelect">
-            <option value="10000">10 kSPS</option>
-            <option value="20000">20 kSPS</option>
-            <option value="50000">50 kSPS</option>
-            <option value="100000" selected>100 kSPS</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="timeWindowSelect">窗口 s</label>
-          <input id="timeWindowSelect" type="number" min="0.00002" max="120" step="0.001" value="2">
-        </div>
-        <div class="button-strip capture-strip">
-          <button id="startBtn" type="button" class="run-action" disabled>开始采集</button>
-          <button id="stopBtn" type="button" class="stop-action" disabled>停止</button>
-        </div>
-        <div class="button-strip common-strip">
-          <button id="zeroNowBtn" type="button" disabled>归零</button>
-          <button id="clearBtn" type="button">清屏</button>
-        </div>
-        <div class="button-strip view-strip" aria-label="曲线控制">
-          <button id="zoomInBtn" type="button">放大</button>
-          <button id="zoomOutBtn" type="button">缩小</button>
-          <button id="panLeftBtn" type="button">左移</button>
-          <button id="panRightBtn" type="button">右移</button>
-          <button id="latestBtn" type="button">最新</button>
-          <button id="pauseViewBtn" type="button">暂停显示</button>
+        <div class="capture-controls" aria-label="采集控制">
+          <div class="field">
+            <label for="sampleRateSelect">采样率</label>
+            <select id="sampleRateSelect">
+              <option value="10000">10 kSPS</option>
+              <option value="20000">20 kSPS</option>
+              <option value="50000">50 kSPS</option>
+              <option value="100000" selected>100 kSPS</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="timeWindowSelect">时间窗口（s）</label>
+            <input id="timeWindowSelect" type="number" min="0.00002" max="120" step="0.001" value="2">
+          </div>
+          <div class="button-strip capture-strip">
+            <button id="startBtn" type="button" class="run-action" disabled>开始</button>
+            <button id="stopBtn" type="button" class="stop-action" disabled>停止</button>
+          </div>
+          <div class="button-strip common-strip">
+            <button id="zeroNowBtn" type="button" disabled>归零</button>
+            <button id="clearBtn" type="button">清屏</button>
+          </div>
         </div>
         <div class="metric-strip" aria-label="关键读数">
-          <div><span>当前</span><strong id="metricNow">0.000 uA</strong></div>
-          <div><span>平均</span><strong id="metricAvg">0.000 uA</strong></div>
-          <div><span>峰峰</span><strong id="metricPp">0.000 uA</strong></div>
-          <div><span>RMS</span><strong id="metricRms">0.000 uA</strong></div>
+          <div><span>当前</span><strong id="metricNow">0.000 µA</strong></div>
+          <div><span>平均</span><strong id="metricAvg">0.000 µA</strong></div>
+          <div><span>峰峰值</span><strong id="metricPp">0.000 µA</strong></div>
+          <div><span id="metricRmsLabel">RMS 噪声</span><strong id="metricRms">0.000 µA</strong></div>
         </div>
       </section>
 
@@ -67,9 +61,17 @@
               <strong>波形视图</strong>
               <span id="viewLabel">窗口 2.000 s，跟随最新</span>
             </div>
+            <div class="button-strip view-strip" aria-label="曲线控制">
+              <button id="zoomInBtn" type="button" title="放大时间轴" aria-label="放大时间轴">＋</button>
+              <button id="zoomOutBtn" type="button" title="缩小时间轴" aria-label="缩小时间轴">−</button>
+              <button id="panLeftBtn" type="button" title="向左移动" aria-label="向左移动">←</button>
+              <button id="panRightBtn" type="button" title="向右移动" aria-label="向右移动">→</button>
+              <button id="latestBtn" type="button">最新</button>
+              <button id="pauseViewBtn" type="button">暂停</button>
+            </div>
             <span id="cursorLabel" class="cursor-chip">游标未启用</span>
           </div>
-          <canvas id="waveCanvas"></canvas>
+          <canvas id="waveCanvas" aria-label="电流波形：左键框选放大，右键拖动平移，双击恢复" title="左键框选放大 · 右键拖动平移 · 双击恢复"></canvas>
         </section>
 
         <aside class="side-panel" aria-label="折叠设置与统计">
@@ -86,22 +88,49 @@
             </div>
           </details>
 
-          <details class="side-section" open>
-            <summary>显示</summary>
+          <details class="side-section">
+            <summary>显示设置</summary>
+            <div class="toggle-grid single">
+              <label><input id="lowpassToggle" type="checkbox">低通滤波</label>
+            </div>
+            <div class="range-grid filter-controls">
+              <div class="field">
+                <label for="lowpassCutoffSelect">截止频率</label>
+                <select id="lowpassCutoffSelect" disabled>
+                  <option value="10">10 Hz</option>
+                  <option value="30">30 Hz</option>
+                  <option value="100">100 Hz</option>
+                  <option value="300">300 Hz</option>
+                  <option value="1000" selected>1 kHz</option>
+                  <option value="3000">3 kHz</option>
+                  <option value="10000">10 kHz</option>
+                  <option value="20000">20 kHz</option>
+                  <option value="custom">自定义</option>
+                </select>
+              </div>
+              <div id="lowpassCustomField" class="field" hidden>
+                <label for="lowpassCutoffInput">自定义 Hz</label>
+                <input id="lowpassCutoffInput" type="number" min="1" max="45000" step="1" value="1000" disabled>
+              </div>
+            </div>
+            <div class="stat-list filter-status">
+              <div class="stat"><span>滤波状态</span><strong id="filterStateValue">关闭，原始数据</strong></div>
+            </div>
+            <p class="setting-note">截止频率越低，降噪越强，短脉冲峰值也会降低。</p>
+            <p class="setting-note plot-gesture-note">左键框选放大，右键拖动平移，双击恢复；启用游标后左键单击设置 A/B。</p>
             <div class="toggle-grid">
               <label><input id="autoScaleToggle" type="checkbox" checked>自动 Y 轴</label>
               <label><input id="gridToggle" type="checkbox" checked>网格</label>
-              <label><input id="smoothToggle" type="checkbox" checked>平滑</label>
-              <label><input id="envelopeToggle" type="checkbox">包络</label>
+              <label><input id="envelopeToggle" type="checkbox" checked>包络</label>
               <label><input id="cursorToggle" type="checkbox">游标</label>
             </div>
             <div class="range-grid">
               <div class="field">
-                <label for="yMinInput">Y 最小 uA</label>
+                <label for="yMinInput">Y 最小 µA</label>
                 <input id="yMinInput" type="number" step="0.001" value="-100" disabled>
               </div>
               <div class="field">
-                <label for="yMaxInput">Y 最大 uA</label>
+                <label for="yMaxInput">Y 最大 µA</label>
                 <input id="yMaxInput" type="number" step="0.001" value="100" disabled>
               </div>
             </div>
@@ -137,11 +166,11 @@
                 </div>
                 <div class="range-readout">
                   <span>范围</span>
-                  <strong id="largeRangeValue">0.000..50.00 mA</strong>
+                  <strong id="largeRangeValue">0.000 .. 50000.000 µA</strong>
                 </div>
                 <div class="field">
-                  <label for="zeroLowCodeInput">零点 code</label>
-                  <input id="zeroLowCodeInput" type="number" min="0" max="65535" step="1" value="0">
+                  <label for="zeroLowUaInput">零点偏移（µA）</label>
+                  <input id="zeroLowUaInput" type="number" min="0" step="0.001" value="0">
                 </div>
               </section>
               <section class="range-config-card">
@@ -152,11 +181,11 @@
                 </div>
                 <div class="range-readout">
                   <span>范围</span>
-                  <strong id="smallRangeValue">0.000..5.000 mA</strong>
+                  <strong id="smallRangeValue">0.000 .. 5000.000 µA</strong>
                 </div>
                 <div class="field">
-                  <label for="zeroHighCodeInput">零点 code</label>
-                  <input id="zeroHighCodeInput" type="number" min="0" max="65535" step="1" value="0">
+                  <label for="zeroHighUaInput">零点偏移（µA）</label>
+                  <input id="zeroHighUaInput" type="number" min="0" step="0.001" value="0">
                 </div>
               </section>
             </div>
@@ -168,15 +197,13 @@
           <details class="side-section">
             <summary>数据</summary>
             <div class="stat-list">
-              <div class="stat highlight"><span>当前电流</span><strong id="codeValue">0.000 uA</strong></div>
-              <div class="stat"><span>平均电流</span><strong id="avgValue">0.000 uA</strong></div>
-              <div class="stat"><span>最小 / 最大</span><strong id="minMaxValue">0.000 / 0.000 uA</strong></div>
-              <div class="stat"><span>峰峰值</span><strong id="ppValue">0.000 uA</strong></div>
-              <div class="stat"><span>RMS 噪声</span><strong id="rmsValue">0.000 uA</strong></div>
+              <div class="stat highlight"><span>当前电流</span><strong id="currentValue">0.000 µA</strong></div>
+              <div class="stat"><span>平均电流</span><strong id="avgValue">0.000 µA</strong></div>
+              <div class="stat"><span>最小 / 最大</span><strong id="minMaxValue">0.000 / 0.000 µA</strong></div>
+              <div class="stat"><span>峰峰值</span><strong id="ppValue">0.000 µA</strong></div>
+              <div class="stat"><span>RMS 噪声</span><strong id="rmsValue">0.000 µA</strong></div>
+              <div class="stat"><span>原始 RMS</span><strong id="rawRmsValue">0.000 µA</strong></div>
               <div class="stat"><span>峰峰 / 平均</span><strong id="rippleValue">0.000 %</strong></div>
-              <div class="stat"><span>当前 code</span><strong id="iavgValue">0</strong></div>
-              <div class="stat"><span>最小 / 最大 code</span><strong id="iminMaxValue">0 / 0</strong></div>
-              <div class="stat"><span>分辨率</span><strong id="ippValue">0.000 uA/code</strong></div>
               <div class="stat"><span>帧序号</span><strong id="seqValue">-</strong></div>
               <div class="stat"><span>信号源</span><strong id="modeValue">ADS8866 ADC</strong></div>
             </div>
@@ -188,7 +215,7 @@
               <div class="stat"><span>光标 A</span><strong id="cursorAValue">-</strong></div>
               <div class="stat"><span>光标 B</span><strong id="cursorBValue">-</strong></div>
               <div class="stat"><span>ΔT / 频率</span><strong id="cursorTimeValue">-</strong></div>
-              <div class="stat"><span>ΔCode / ΔI</span><strong id="cursorDeltaValue">-</strong></div>
+              <div class="stat"><span>ΔI</span><strong id="cursorDeltaValue">-</strong></div>
             </div>
           </details>
 
@@ -196,6 +223,7 @@
             <summary>导出</summary>
             <div class="button-strip compact-buttons">
               <button id="exportCsvBtn" type="button">导出 CSV</button>
+              <button id="exportRawCsvBtn" type="button" hidden>原始 CSV</button>
               <button id="exportPngBtn" type="button">保存图片</button>
             </div>
           </details>

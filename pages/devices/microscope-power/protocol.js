@@ -29,6 +29,9 @@ export const FRAME_FLAGS = Object.freeze({
   overflow: 1 << 1,
   range10Ohm: 1 << 2,
   autoRange: 1 << 3,
+  streamStart: 1 << 4,
+  gapBefore: 1 << 5,
+  timingOverrun: 1 << 6,
 });
 
 export const SAMPLE_RATES = Object.freeze([10000, 20000, 50000, 100000]);
@@ -40,7 +43,8 @@ export const DEFAULT_CALIBRATION = Object.freeze({
   senseHighOhm: 10,
 });
 
-const textDecoder = new TextDecoder("utf-8", { fatal: false });
+const MAX_TEXT_LINE_BYTES = 1024;
+const PARSER_CHUNK_BYTES = 4096;
 
 function concatBytes(a, b) {
   if (!a.length) return b.slice();
@@ -62,23 +66,35 @@ function findMagic(bytes) {
 export class WaveFrameParser {
   constructor({ onFrame, onText }) {
     this.buffer = new Uint8Array(0);
+    this.textLine = "";
+    this.discardTextLine = false;
     this.onFrame = onFrame;
     this.onText = onText;
   }
 
   reset() {
     this.buffer = new Uint8Array(0);
+    this.textLine = "";
+    this.discardTextLine = false;
   }
 
   push(chunk) {
-    this.buffer = concatBytes(this.buffer, chunk);
+    // Bound retained garbage even when a caller hands us a very large transfer.
+    for (let offset = 0; offset < chunk.length; offset += PARSER_CHUNK_BYTES) {
+      this.buffer = concatBytes(this.buffer, chunk.subarray(offset, offset + PARSER_CHUNK_BYTES));
+      this.drain();
+    }
+  }
 
-    while (this.buffer.length >= 2) {
+  drain() {
+    while (this.buffer.length) {
       const magicIndex = findMagic(this.buffer);
 
       if (magicIndex < 0) {
-        this.emitText(this.buffer);
-        this.buffer = new Uint8Array(0);
+        // A trailing 0x5a may be the first byte of the next binary frame.
+        const retained = this.buffer[this.buffer.length - 1] === WAVE_FRAME.magicLo ? 1 : 0;
+        this.emitText(this.buffer.subarray(0, this.buffer.length - retained));
+        this.buffer = this.buffer.slice(this.buffer.length - retained);
         return;
       }
 
@@ -87,21 +103,29 @@ export class WaveFrameParser {
         this.buffer = this.buffer.slice(magicIndex);
       }
 
-      if (this.buffer.length < WAVE_FRAME.bytes) {
+      if (this.buffer.length < WAVE_FRAME.offsets.samples) {
         return;
       }
 
-      const frameBytes = this.buffer.slice(0, WAVE_FRAME.bytes);
-      const view = new DataView(frameBytes.buffer, frameBytes.byteOffset, frameBytes.byteLength);
+      const view = new DataView(this.buffer.buffer, this.buffer.byteOffset, this.buffer.byteLength);
       const count = view.getUint16(WAVE_FRAME.offsets.count, true);
+      const sampleRate = view.getUint32(WAVE_FRAME.offsets.sampleRate, true);
 
-      if (count !== WAVE_FRAME.sampleCount) {
+      if (count !== WAVE_FRAME.sampleCount || !SAMPLE_RATES.includes(sampleRate)) {
         this.buffer = this.buffer.slice(1);
         continue;
       }
 
-      this.onFrame(this.parseFrame(frameBytes));
+      if (this.buffer.length < WAVE_FRAME.bytes) {
+        return;
+      }
+
+      const frameBytes = this.buffer.subarray(0, WAVE_FRAME.bytes);
       this.buffer = this.buffer.slice(WAVE_FRAME.bytes);
+      // A complete frame is also a clean boundary after malformed input.
+      this.textLine = "";
+      this.discardTextLine = false;
+      this.onFrame?.(this.parseFrame(frameBytes));
     }
   }
 
@@ -110,9 +134,21 @@ export class WaveFrameParser {
       return;
     }
 
-    const text = textDecoder.decode(bytes).replace(/\0/g, "").trim();
-    if (text) {
-      this.onText(text);
+    // The command protocol is ASCII, and USB transfers are not line boundaries.
+    for (const byte of bytes) {
+      if (byte === 10) {
+        const line = this.discardTextLine ? "" : this.textLine.trim();
+        this.textLine = "";
+        this.discardTextLine = false;
+        if (line) this.onText(line);
+      } else if (byte === 13) {
+        continue;
+      } else if (byte < 32 || byte > 126 || this.textLine.length >= MAX_TEXT_LINE_BYTES) {
+        this.textLine = "";
+        this.discardTextLine = true;
+      } else if (!this.discardTextLine) {
+        this.textLine += String.fromCharCode(byte);
+      }
     }
   }
 

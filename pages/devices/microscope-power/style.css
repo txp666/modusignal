@@ -41,7 +41,7 @@ input {
 }
 
 button {
-  min-height: 32px;
+  min-height: 36px;
   border: 1px solid transparent;
   border-radius: 6px;
   padding: 0 11px;
@@ -64,7 +64,7 @@ button:disabled {
 select,
 input {
   width: 100%;
-  min-height: 32px;
+  min-height: 36px;
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 0 9px;
@@ -95,9 +95,10 @@ label {
 .app-shell {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
-  gap: 8px;
+  gap: 12px;
   height: 100vh;
-  padding: 10px;
+  min-width: 0;
+  padding: 12px;
 }
 
 .topbar,
@@ -115,8 +116,9 @@ label {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  min-height: 48px;
-  padding: 7px 10px;
+  flex-wrap: wrap;
+  min-height: 54px;
+  padding: 10px 14px;
 }
 
 .brand-block {
@@ -130,7 +132,7 @@ label {
   margin: 0;
   color: #111827;
   font-size: 20px;
-  line-height: 1.1;
+  line-height: 1.2;
   letter-spacing: 0;
   white-space: nowrap;
 }
@@ -139,8 +141,7 @@ label {
   color: var(--muted);
   font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: 0;
 }
 
 .device-actions,
@@ -195,26 +196,43 @@ label {
 }
 
 .quickbar {
-  display: grid;
-  grid-template-columns: 128px 112px auto auto minmax(330px, 1fr) minmax(380px, 1.15fr);
+  display: flex;
   align-items: end;
-  gap: 8px;
-  min-height: 58px;
-  padding: 8px;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
+}
+
+.capture-controls {
+  display: contents;
+}
+
+.capture-controls > .field {
+  flex: 0 0 108px;
+}
+
+.capture-controls > .field:nth-child(2) {
+  flex-basis: 100px;
+}
+
+.capture-controls .button-strip {
+  flex-wrap: nowrap;
+  flex: 0 0 auto;
+  gap: 6px;
 }
 
 .field {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
 }
 
 .capture-strip button {
-  min-width: 92px;
+  min-width: 48px;
 }
 
 .common-strip button {
-  min-width: 70px;
+  min-width: 48px;
   color: var(--text);
   background: var(--surface-3);
   border-color: var(--border);
@@ -226,8 +244,10 @@ label {
 }
 
 .view-strip {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
 }
 
 .view-strip button,
@@ -247,18 +267,20 @@ label {
 
 .metric-strip {
   display: grid;
+  flex: 1 1 0;
+  min-width: 0;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
 }
 
 .metric-strip div {
   display: grid;
-  gap: 2px;
+  gap: 4px;
   min-width: 0;
-  min-height: 42px;
+  min-height: 54px;
   border: 1px solid var(--border-soft);
   border-radius: 6px;
-  padding: 5px 8px;
+  padding: 7px 8px;
   background: var(--surface-2);
 }
 
@@ -274,14 +296,15 @@ label {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 14px;
+  font-size: clamp(12px, 1.08vw, 17px);
+  font-variant-numeric: tabular-nums;
   letter-spacing: 0;
 }
 
 .workbench {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) 336px;
+  gap: 12px;
   min-height: 0;
 }
 
@@ -294,24 +317,27 @@ label {
 }
 
 .plot-toolbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 254px 180px;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
-  min-height: 42px;
+  min-height: 48px;
   border-bottom: 1px solid var(--border);
-  padding: 0 10px;
+  padding: 8px 12px;
   background: #fbfcfe;
 }
 
-.plot-toolbar div {
+.plot-toolbar > div:first-child {
   display: flex;
   align-items: baseline;
+  flex-wrap: nowrap;
   min-width: 0;
-  gap: 10px;
+  gap: 6px 10px;
 }
 
 .plot-toolbar strong {
+  flex: 0 0 auto;
+  white-space: nowrap;
   color: #22314a;
   font-size: 13px;
 }
@@ -323,6 +349,34 @@ label {
   overflow-wrap: anywhere;
 }
 
+#viewLabel {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.plot-toolbar .view-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 32px) repeat(2, 48px);
+  justify-self: end;
+  gap: 6px;
+}
+
+.plot-toolbar .view-strip button {
+  width: 100%;
+  padding: 0;
+}
+
+.plot-toolbar .cursor-chip {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 28px;
+}
+
 #waveCanvas {
   display: block;
   width: 100%;
@@ -331,15 +385,22 @@ label {
   background: var(--surface-2);
   cursor: crosshair;
   touch-action: none;
+  user-select: none;
+}
+
+#waveCanvas.is-panning {
+  cursor: grabbing;
 }
 
 .side-panel {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  min-width: 0;
   min-height: 0;
   overflow: auto;
   padding-right: 2px;
+  scrollbar-gutter: stable;
 }
 
 .side-section {
@@ -351,8 +412,8 @@ label {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 36px;
-  padding: 0 10px;
+  min-height: 42px;
+  padding: 0 12px;
   color: #22314a;
   background: #fbfcfe;
   font-size: 13px;
@@ -385,23 +446,23 @@ label {
 .range-grid,
 .compact-buttons,
 .log-header {
-  padding: 8px;
+  padding: 12px;
 }
 
 .stat-list {
   display: grid;
-  gap: 5px;
+  gap: 8px;
 }
 
 .stat {
   display: grid;
-  grid-template-columns: minmax(86px, 1fr) minmax(0, 1.35fr);
+  grid-template-columns: minmax(78px, 0.85fr) minmax(0, 1.4fr);
   align-items: center;
   gap: 8px;
-  min-height: 28px;
+  min-height: 32px;
   border: 1px solid transparent;
   border-radius: 6px;
-  padding: 0 8px;
+  padding: 6px 8px;
   background: var(--surface-2);
 }
 
@@ -416,6 +477,7 @@ label {
   overflow-wrap: anywhere;
   text-align: right;
   font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
   letter-spacing: 0;
 }
 
@@ -453,7 +515,7 @@ label {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 32px;
+  min-height: 36px;
   border: 1px solid var(--border-soft);
   border-radius: 6px;
   color: var(--text);
@@ -464,21 +526,49 @@ label {
 .range-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 7px;
+  gap: 10px;
+}
+
+.range-grid > .field:only-child {
+  grid-column: 1 / -1;
+}
+
+.filter-controls > .field:first-child {
+  grid-column: 1 / -1;
+}
+
+.filter-controls:has(> .field:not([hidden]):nth-child(2)) > .field:first-child {
+  grid-column: auto;
+}
+
+.filter-controls > [hidden] {
+  display: none;
+}
+
+.filter-status {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.setting-note {
+  margin: 8px 12px 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .range-card-list {
   display: grid;
-  gap: 8px;
-  padding: 0 8px 8px;
+  gap: 12px;
+  padding: 0 12px 12px;
 }
 
 .range-config-card {
   display: grid;
-  gap: 7px;
+  gap: 10px;
   border: 1px solid var(--border-soft);
   border-radius: 7px;
-  padding: 8px;
+  padding: 12px;
   background: var(--surface-2);
 }
 
@@ -544,17 +634,32 @@ label {
   white-space: pre-wrap;
 }
 
-@media (max-width: 1280px) {
-  .quickbar {
-    grid-template-columns: 128px 112px auto auto 1fr;
+@media (max-width: 1150px) {
+  .brand-block {
+    flex-wrap: wrap;
+    gap: 4px 12px;
   }
 
-  .metric-strip {
-    grid-column: 1 / -1;
+  .workbench {
+    grid-template-columns: minmax(0, 1fr) 296px;
   }
+
+  .plot-toolbar {
+    grid-template-columns: minmax(0, 1fr) 254px;
+    gap: 8px;
+  }
+
+  .plot-toolbar .cursor-chip {
+    grid-column: 1 / -1;
+    min-height: 20px;
+    border: 0;
+    padding: 0;
+    background: transparent;
+  }
+
 }
 
-@media (max-width: 980px) {
+@media (max-width: 1000px) {
   body {
     overflow: auto;
   }
@@ -564,9 +669,22 @@ label {
     min-height: 100vh;
   }
 
-  .quickbar,
+  .quickbar {
+    display: grid;
+    grid-template-columns: 108px 100px auto auto;
+    gap: 10px;
+  }
+
+  .metric-strip {
+    grid-column: 1 / -1;
+  }
+
+  .metric-strip strong {
+    font-size: 16px;
+  }
+
   .workbench {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .plot-panel {
@@ -575,44 +693,85 @@ label {
   }
 
   .side-panel {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
     overflow: visible;
+    padding-right: 0;
+    scrollbar-gutter: auto;
   }
 }
 
-@media (max-width: 700px) {
+@media (max-width: 620px) {
+  .app-shell {
+    gap: 10px;
+    padding: 8px;
+  }
+
   .topbar,
-  .brand-block,
-  .device-actions {
-    align-items: stretch;
-    flex-direction: column;
+  .quickbar {
+    padding: 12px;
   }
 
   .brand-block {
-    gap: 4px;
+    align-items: flex-start;
+    flex-direction: column;
   }
 
-  .device-actions > *,
-  .capture-strip button {
+  .device-actions {
+    gap: 8px;
     width: 100%;
   }
 
-  .view-strip,
+  .quickbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .capture-strip,
+  .common-strip {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-column: 1 / -1;
+  }
+
+  .capture-strip button,
+  .common-strip button {
+    min-width: 0;
+  }
+
   .metric-strip,
-  .range-grid,
-  .toggle-grid,
-  .compact-buttons {
-    grid-template-columns: 1fr;
+  .side-panel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .side-panel {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .plot-toolbar {
-    align-items: flex-start;
-    flex-direction: column;
-    padding: 8px 10px;
+    grid-template-columns: minmax(0, 1fr);
   }
 
-  .plot-toolbar div {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 2px;
+  .plot-toolbar .view-strip {
+    justify-self: start;
+  }
+
+  .plot-panel {
+    min-height: 360px;
+  }
+}
+
+@media (max-height: 700px) and (min-width: 1001px) {
+  body {
+    overflow: auto;
+  }
+
+  .app-shell {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .plot-panel {
+    min-height: 360px;
   }
 }

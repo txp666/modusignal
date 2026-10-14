@@ -20,7 +20,7 @@ modusignal 是一个静态在线设备/信号调试平台。它通过浏览器�
 - `hart`：HART 通用设备，支持搜索、通用命令与 PV/SV/TV/QV 轮询，默认串口
 - `websocket`：WebSocket 消息调试，快捷发送与 JSON 解析，默认 WebSocket，图标 `images/websocket.png`
 - `mqtt`：MQTT 消息调试，主题发布/订阅、QoS/retain 与 JSON 解析，默认 MQTT，图标 `images/mqtt.png`
-- `microscope-power`：MicroScope Power / RP2040 小电流波形采集上位机，独立 WebUSB 页面，`VID 0xCAFE`、`PID 0x4011`
+- `microscope-power`：MicroScope Power / RP2040 小电流波形采集上位机，独立 WebUSB 页面，`VID 0xCAFE`、`PID 0x4012`
 - `custom`：自定义设备，使用本地保存的模板和解析配置，默认串口
 
 各设备 profile 可声明：
@@ -43,7 +43,7 @@ pages/
   home.html / request.html
   devices/aomaster.html · modbus.html · hart.html · websocket.html · mqtt.html · custom.html
   devices/microscope-power.html（嵌入 MicroScope Power 独立上位机）
-  devices/microscope-power/（WebUSB + Canvas 上位机静态源码）
+  devices/microscope-power/（WebUSB + Canvas 上位机静态源码；commands/statistics/timeline 分别处理命令确认、窗口统计和设备时间轴）
   shared/workbench.html（监测面板 + 收发调试 + 曲线配置折叠区）
 
 src/page-loader.js
@@ -85,6 +85,9 @@ src/devices/aomaster.js
 
 src/devices/microscope-power.js
   MicroScope Power profile。registry 中 `standalone: true`，不走共享传输 session、共享 workbench 或统一遥测解析。
+  上位机只在 modusignal 的 pages/devices/microscope-power/ 维护，MicroScope-Power 仓库仅保留固件。保留本站固件更新检查与 `__ASSET_VERSION__` 资源版本占位符；UI 和 CSV 采用 µA，校准偏移由网页换算为设备协议的 ADC 整数码。回归测试位于 tests/microscope-power/，由 `npm test` 统一执行。
+  `lowpass.js` 在原始 ADC 样本上按设备时间轴执行可选一阶低通，Float64 缓存及统计索引保留小纹波；上一帧采样间隔确定后局部重算，频率变化才重算保留历史。低通曲线、游标、统计及 CSV 共享滤波数据，归零和原始 CSV 始终读原始采样。不得将像素平滑当成按 Hz 设置的滤波，也不得跨缺口或量程切换传播滤波状态。
+  Canvas 左键拖框缩放 X/Y，右键拖动平移，游标启用时左键单击设置 A/B。手势期间按可见帧元数据冻结时间坐标，轴、像素桶与框选使用同一时钟快照；取消、失去捕获与新采集必须清理选框。
 
 src/devices/modbus-device.js
   通用 Modbus RTU profile、读写命令与回包解析
@@ -247,7 +250,7 @@ export const MY_DEVICE_MQTT_TRANSPORT_DEFAULTS = {
 | HART | serial | 1200 8O1 | 1000 |
 | WebSocket 调试 | websocket | ws://127.0.0.1:8080 | 0（可配置心跳轮询） |
 | MQTT 调试 | mqtt | wss://broker.emqx.io:8084/mqtt · modusignal/rx · modusignal/tx | 0（可配置心跳轮询） |
-| MicroScope Power | standalone WebUSB | VID 0xCAFE · PID 0x4011 | 页面内部控制 |
+| MicroScope Power | standalone WebUSB | VID 0xCAFE · PID 0x4012 | 页面内部控制 |
 
 ## 添加设备 UI
 
