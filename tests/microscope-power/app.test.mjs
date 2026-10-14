@@ -7,6 +7,7 @@ import { CommandTransport } from "../../pages/devices/microscope-power/commands.
 import { CaptureTimeline } from "../../pages/devices/microscope-power/timeline.js";
 import { SampleStatistics } from "../../pages/devices/microscope-power/statistics.js";
 import { LowPassMeasurements } from "../../pages/devices/microscope-power/lowpass.js";
+import { EnergyStatistics } from "../../pages/devices/microscope-power/energy.js";
 import { WavePlot, aggregateTimeBuckets } from "../../pages/devices/microscope-power/plot.js";
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
@@ -92,13 +93,14 @@ function appHarness(t, { fetch: fetchRelease } = {}) {
     sampleRateSelect: "100000", manualRangeSelect: "10", zeroLowUaInput: "0", zeroHighUaInput: "0",
     senseLowOhmInput: "1", senseHighOhmInput: "10", yMinInput: "-100", yMaxInput: "100",
     lowpassCutoffSelect: "1000", lowpassCutoffInput: "1000",
+    measurementVoltageInput: "",
   };
   function element(id) {
     if (!elements.has(id)) {
       const listeners = new Map();
       const capturedPointers = new Set();
       elements.set(id, {
-        value: defaults[id] ?? "", checked: id === "autoRangeToggle", textContent: "", disabled: false,
+        value: defaults[id] ?? "", checked: ["autoRangeToggle", "useDeviceVoltageToggle"].includes(id), textContent: "", disabled: false,
         classList: { toggle(name, enabled) { this[name] = enabled; } }, addEventListener: (type, callback) => listeners.set(type, callback),
         trigger: (type, event = {}) => listeners.get(type)?.(event),
         getBoundingClientRect() { return this.rect ?? { width: 800, height: 400, left: 0, top: 0 }; },
@@ -114,7 +116,7 @@ function appHarness(t, { fetch: fetchRelease } = {}) {
     return elements.get(id);
   }
   const sandbox = {
-    ...protocol, CommandTransport, CaptureTimeline, SampleStatistics, LowPassMeasurements, WavePlot,
+    ...protocol, CommandTransport, CaptureTimeline, SampleStatistics, LowPassMeasurements, EnergyStatistics, WavePlot,
     TextEncoder, TextDecoder, Uint16Array, Uint8Array, DataView, ArrayBuffer, Blob,
     window: globalThis.window, console,
     fetch: async (url, options) => {
@@ -419,7 +421,8 @@ test("complete app startup renders and START only enters RUNNING after a complet
   assert.equal(app.element("connectBtn").disabled, false);
   const device = new UsbDevice();
   await app.connect(device);
-  device.onCommand = (command) => command === "START" ? undefined : "OK\n";
+  const respond = device.onCommand;
+  device.onCommand = (command) => command === "START" ? undefined : respond(command);
   const action = app.element("startBtn").trigger("click");
   await tick();
   assert.equal(device.writes.at(-1), "START");
@@ -481,7 +484,8 @@ test("START ERR and USB stall never advertise successful capture", async (t) => 
       const app = appHarness(t);
       const device = new UsbDevice();
       await app.connect(device);
-      device.onCommand = (command) => command === "START" ? outcome : "OK\n";
+      const respond = device.onCommand;
+      device.onCommand = (command) => command === "START" ? outcome : respond(command);
       await app.element("startBtn").trigger("click");
       assert.notEqual(app.state().state, "RUNNING");
       assert.equal(app.state().acceptFrames, false);
@@ -852,6 +856,323 @@ test("low-pass zero calibration still uses the raw ADC mean", async (t) => {
   assert.notEqual(Math.round(app.evaluate("buildPlotSource().stats.avgCode")), 550);
   await app.element("zeroNowBtn").trigger("click");
   assert.ok(device.writes.includes("SET_ZERO_CODE_RANGE 1 550"));
+});
+
+function energySnapshot(app) {
+  return app.evaluate("energyStatistics.snapshot(measurementVoltageV)");
+}
+
+function closeEnergy(actual, expected, label) {
+  const tolerance = Math.max(1e-12, Math.abs(expected) * 1e-10);
+  assert.ok(Number.isFinite(actual) && Math.abs(actual - expected) <= tolerance,
+    `${label}: expected ${expected}, received ${actual}`);
+}
+
+function setEnergyVoltage(app, value) {
+  app.element("measurementVoltageInput").value = value;
+  app.element("measurementVoltageInput").trigger("change");
+}
+
+async function energyCapture(t, voltage = "3.3") {
+  const app = appHarness(t);
+  const device = new UsbDevice();
+  await app.connect(device);
+  if (voltage !== null) setEnergyVoltage(app, voltage);
+  await app.element("startBtn").trigger("click");
+  return { app, device };
+}
+
+test("energy requires an explicitly entered voltage rather than a guessed supply voltage", async (t) => {
+  const { app, device } = await energyCapture(t, null);
+  assert.equal(app.element("measurementVoltageInput").value, "");
+  assert.equal(app.evaluate("measurementVoltageV"), null);
+  device.emit(frame(0, 100000, 100000, protocol.FRAME_FLAGS.streamStart, 100));
+  await tick();
+  app.evaluate("updateEnergyStats()");
+  const snapshot = energySnapshot(app);
+  assert.equal(snapshot.count, 256);
+  assert.equal(snapshot.energyJoules, null);
+  assert.equal(snapshot.averageWatts, null);
+  assert.equal(snapshot.lastWatts, null);
+  for (const id of ["metricPower", "metricEnergy", "powerNowValue", "powerAvgValue", "energyJValue", "energyWhValue"]) {
+    assert.doesNotMatch(app.element(id).textContent, /\d+(?:\.\d+)?\s*(?:J|Wh|W)\b/,
+      "an unset voltage must not present a numerical power or energy estimate");
+  }
+});
+
+test("constant raw current integrates in SI units and revises provisional frame duration from device timestamps", async (t) => {
+  const { app, device } = await energyCapture(t);
+  const currentUa = 100 * 50000 / 65536;
+  device.emit(frame(0, 100000, 100000, protocol.FRAME_FLAGS.streamStart, 100));
+  await tick();
+  let snapshot = energySnapshot(app);
+  closeEnergy(snapshot.durationSeconds, 0.00256, "first frame duration");
+  closeEnergy(snapshot.chargeMicroampSeconds, currentUa * 0.00256, "first frame charge");
+  closeEnergy(snapshot.energyJoules, currentUa * 1e-6 * 3.3 * 0.00256, "first frame joules");
+  device.emit(frame(1, 103500, 100000, protocol.FRAME_FLAGS.timingOverrun, 100));
+  await tick();
+  app.evaluate("updateEnergyStats()");
+  snapshot = energySnapshot(app);
+  assert.equal(snapshot.count, 512);
+  closeEnergy(snapshot.durationSeconds, 0.007, "two measured frame durations");
+  closeEnergy(snapshot.chargeMicroampSeconds, currentUa * 0.007, "corrected charge");
+  closeEnergy(snapshot.energyJoules, currentUa * 1e-6 * 3.3 * 0.007, "corrected joules");
+  closeEnergy(snapshot.averageWatts, currentUa * 1e-6 * 3.3, "average watts");
+  closeEnergy(snapshot.lastWatts, currentUa * 1e-6 * 3.3, "instantaneous watts");
+  assert.equal(snapshot.gapCount, 0);
+  for (const id of ["metricPower", "powerNowValue", "powerAvgValue"]) assert.match(app.element(id).textContent, /W\b/);
+  assert.match(app.element("energyJValue").textContent, /J\b/);
+  assert.match(app.element("energyWhValue").textContent, /Wh\b/);
+});
+
+test("energy uses raw acquisition rather than the low-pass curve or the displayed window", async (t) => {
+  const { app, device } = await energyCapture(t);
+  device.emit(frame(0, 100000, 100000, protocol.FRAME_FLAGS.streamStart, 100));
+  device.emit(frame(1, 103500, 100000, protocol.FRAME_FLAGS.timingOverrun, 1000));
+  await tick();
+  app.evaluate("updateEnergyStats()");
+  const before = energySnapshot(app);
+  const powerBefore = app.element("metricPower").textContent;
+  const expectedCharge = (100 + 1000) * 50000 / 65536 * 0.0035;
+  closeEnergy(before.chargeMicroampSeconds, expectedCharge, "raw step charge");
+  closeEnergy(before.energyJoules, expectedCharge * 3.3e-6, "raw step energy");
+  app.element("lowpassCutoffSelect").value = "10";
+  app.element("lowpassCutoffSelect").trigger("change");
+  app.element("lowpassToggle").checked = true;
+  app.element("lowpassToggle").trigger("change");
+  assert.notEqual(app.evaluate("buildPlotSource().stats.avg"), before.chargeMicroampSeconds / before.durationSeconds);
+  app.element("pauseViewBtn").trigger("click");
+  app.element("panLeftBtn").trigger("click");
+  app.element("zoomInBtn").trigger("click");
+  if (!app.evaluate("displayPaused")) app.element("pauseViewBtn").trigger("click");
+  app.evaluate("updateEnergyStats()");
+  assert.deepEqual(energySnapshot(app), before, "view-only controls cannot replay, trim or filter the integral");
+  assert.equal(app.element("metricPower").textContent, powerBefore, "power is independent of the displayed/filtered curve");
+  device.emit(frame(2, 107000, 100000, protocol.FRAME_FLAGS.timingOverrun, 200));
+  await tick();
+  const after = energySnapshot(app);
+  assert.equal(app.evaluate("displayPaused"), true);
+  assert.equal(after.count, 768, "pausing the display still receives and integrates new samples");
+  closeEnergy(after.chargeMicroampSeconds, (100 + 1000 + 200) * 50000 / 65536 * 0.0035, "paused raw charge");
+});
+
+test("a real missing-data gap is excluded from energy rather than bridged with a guessed current", async (t) => {
+  const { app, device } = await energyCapture(t);
+  device.emit(frame(0, 100000, 100000, protocol.FRAME_FLAGS.streamStart, 100));
+  device.emit(frame(2, 120000, 100000, protocol.FRAME_FLAGS.gapBefore, 200));
+  await tick();
+  app.evaluate("updateEnergyStats()");
+  const snapshot = energySnapshot(app);
+  assert.equal(snapshot.count, 512);
+  assert.equal(snapshot.gapCount, 1);
+  closeEnergy(snapshot.missingSeconds, 0.01744, "missing interval");
+  closeEnergy(snapshot.durationSeconds, 0.00512, "captured interval only");
+  closeEnergy(snapshot.energyJoules, (100 + 200) * 50000 / 65536 * 0.00256 * 3.3e-6,
+    "only actual frame samples contribute energy");
+  assert.match(app.element("energyGapValue").textContent, /1/);
+});
+
+test("resetting energy preserves raw waveform history and starts from only subsequent frames", async (t) => {
+  const { app, device } = await energyCapture(t);
+  device.emit(frame(0, 100000, 100000, protocol.FRAME_FLAGS.streamStart, 100));
+  device.emit(frame(1, 103500, 100000, protocol.FRAME_FLAGS.timingOverrun, 100));
+  await tick();
+  const retained = app.state().availableSamples;
+  const rawPoint = app.evaluate("buildPlotSource().readRawSample(0)");
+  app.element("resetEnergyBtn").trigger("click");
+  assert.equal(energySnapshot(app).count, 0);
+  assert.ok([null, 0].includes(energySnapshot(app).energyJoules), "no pre-reset energy survives");
+  assert.equal(app.state().availableSamples, retained);
+  assert.equal(app.evaluate("buildPlotSource().readRawSample(0)"), rawPoint);
+  device.emit(frame(2, 107000, 100000, protocol.FRAME_FLAGS.timingOverrun, 200));
+  await tick();
+  const snapshot = energySnapshot(app);
+  assert.equal(snapshot.count, 256, "retained pre-reset frames are not replayed into energy");
+  closeEnergy(snapshot.durationSeconds, 0.0035, "new frame duration");
+  closeEnergy(snapshot.energyJoules, 200 * 50000 / 65536 * 0.0035 * 3.3e-6, "new frame energy");
+  assert.equal(app.state().availableSamples, retained + 256);
+});
+
+test("changing the entered voltage starts a new estimate instead of retroactively rescaling earlier energy", async (t) => {
+  const { app, device } = await energyCapture(t);
+  device.emit(frame(0, 100000, 100000, protocol.FRAME_FLAGS.streamStart, 100));
+  await tick();
+  assert.ok(energySnapshot(app).energyJoules > 0);
+  setEnergyVoltage(app, "5");
+  assert.equal(app.evaluate("measurementVoltageV"), 5);
+  assert.equal(energySnapshot(app).count, 0);
+  assert.ok([null, 0].includes(energySnapshot(app).energyJoules), "new voltage has no accumulated energy yet");
+  assert.equal(app.state().availableSamples, 256);
+  device.emit(frame(1, 102560, 100000, 0, 200));
+  await tick();
+  const snapshot = energySnapshot(app);
+  assert.equal(snapshot.count, 256);
+  closeEnergy(snapshot.energyJoules, 200 * 50000 / 65536 * 0.00256 * 5e-6, "new voltage energy");
+  setEnergyVoltage(app, "");
+  assert.equal(app.evaluate("measurementVoltageV"), null);
+  assert.equal(energySnapshot(app).energyJoules, null);
+  assert.equal(energySnapshot(app).count, 0);
+});
+
+test("STOP and disconnect preserve the completed energy estimate without integrating wall time or late frames", async (t) => {
+  const { app, device } = await energyCapture(t);
+  device.emit(frame(0, 100000, 100000, protocol.FRAME_FLAGS.streamStart, 100));
+  await tick();
+  const before = energySnapshot(app);
+  await app.element("stopBtn").trigger("click");
+  device.emit(frame(1, 102560, 100000, 0, 200));
+  await tick();
+  app.evaluate("updateEnergyStats()");
+  assert.deepEqual(energySnapshot(app), before, "STOP ignores any delayed data after its acknowledgement");
+  await app.element("disconnectBtn").trigger("click");
+  device.emit(frame(2, 105120, 100000, 0, 300));
+  await tick();
+  app.evaluate("animationLoop(5000); updateEnergyStats()");
+  assert.equal(app.state().connected, false);
+  assert.deepEqual(energySnapshot(app), before, "disconnected rendering cannot accumulate elapsed wall time");
+});
+
+test("a fresh stream and clearing capture discard previous energy and gap totals", async (t) => {
+  const { app, device } = await energyCapture(t);
+  device.emit(frame(0, 100000, 100000, protocol.FRAME_FLAGS.streamStart, 100));
+  device.emit(frame(2, 120000, 100000, protocol.FRAME_FLAGS.gapBefore, 200));
+  await tick();
+  assert.equal(energySnapshot(app).gapCount, 1);
+  device.emit(frame(0, 900000, 100000, protocol.FRAME_FLAGS.streamStart, 300));
+  await tick();
+  let snapshot = energySnapshot(app);
+  assert.equal(snapshot.count, 256);
+  assert.equal(snapshot.gapCount, 0);
+  closeEnergy(snapshot.energyJoules, 300 * 50000 / 65536 * 0.00256 * 3.3e-6, "fresh stream energy");
+  app.element("clearBtn").trigger("click");
+  assert.equal(app.state().availableSamples, 0);
+  assert.equal(energySnapshot(app).count, 0);
+  assert.ok([null, 0].includes(energySnapshot(app).energyJoules), "clearing capture removes its energy");
+  device.emit(frame(1, 902560, 100000, 0, 400));
+  await tick();
+  snapshot = energySnapshot(app);
+  assert.equal(snapshot.count, 256);
+  closeEnergy(snapshot.energyJoules, 400 * 50000 / 65536 * 0.00256 * 3.3e-6, "post-clear energy");
+});
+
+test("zeroing and editing current calibration reset energy while preserving waveform samples", async (t) => {
+  const { app, device } = await energyCapture(t);
+  device.emit(frame(0, 100000, 100000, protocol.FRAME_FLAGS.streamStart, 100));
+  await tick();
+  assert.ok(energySnapshot(app).energyJoules > 0);
+  await app.element("zeroNowBtn").trigger("click");
+  assert.equal(app.evaluate("calibration().zeroLowCode"), 100);
+  assert.equal(energySnapshot(app).count, 0);
+  assert.equal(app.state().availableSamples, 256);
+  device.emit(frame(1, 102560, 100000, 0, 200));
+  await tick();
+  closeEnergy(energySnapshot(app).energyJoules, 100 * 50000 / 65536 * 0.00256 * 3.3e-6, "zero-compensated energy");
+  app.element("senseLowOhmInput").value = "2";
+  app.element("senseLowOhmInput").trigger("change");
+  assert.equal(energySnapshot(app).count, 0);
+  assert.equal(app.state().availableSamples, 512);
+  device.emit(frame(2, 105120, 100000, 0, 200));
+  await tick();
+  assert.equal(energySnapshot(app).count, 256);
+  closeEnergy(energySnapshot(app).energyJoules, 100 * 50000 / 65536 / 2 * 0.00256 * 3.3e-6,
+    "new calibration applies only to subsequent integration");
+});
+
+test("device voltage is captured per frame so a later measurement cannot rescale earlier energy", async (t) => {
+  const { app, device } = await energyCapture(t, null);
+  assert.equal(app.element("useDeviceVoltageToggle").checked, true);
+  device.emit("STATUS state=RUNNING srate=100000 range=1 auto_range=0 vout_mv=3300 vout_t_us=100000\n");
+  device.emit(frame(0, 100000, 100000, protocol.FRAME_FLAGS.streamStart, 100));
+  await tick();
+  const currentUa = 100 * 50000 / 65536;
+  const first = energySnapshot(app);
+  closeEnergy(first.energyJoules, currentUa * 0.00256 * 3.3e-6, "first measured-voltage energy");
+  device.emit("STATUS state=RUNNING srate=100000 range=1 auto_range=0 vout_mv=3100 vout_t_us=102560\n");
+  device.emit(frame(1, 102560, 100000, 0, 100));
+  await tick();
+  app.evaluate("updateEnergyStats()");
+  const second = energySnapshot(app);
+  assert.equal(second.count, 512);
+  closeEnergy(second.energyDurationSeconds, 0.00512, "both frames have voltage coverage");
+  closeEnergy(second.voltageMissingSeconds, 0, "no voltage samples were missing");
+  closeEnergy(second.energyJoules, currentUa * 0.00256 * (3.3 + 3.1) * 1e-6,
+    "sum of individually captured frame voltage and charge");
+  closeEnergy(second.lastWatts, currentUa * 3.1e-6, "latest power uses latest measured voltage");
+  assert.ok(Math.abs(second.energyJoules - currentUa * 0.00512 * 3.1e-6) > 1e-9,
+    "latest voltage must not be applied to all historical current");
+});
+
+test("energy summary CSV states SI units and its manual voltage/raw-current estimate sources", async (t) => {
+  const { app, device } = await energyCapture(t);
+  device.emit(frame(0, 100000, 100000, protocol.FRAME_FLAGS.streamStart, 100));
+  await tick();
+  app.element("exportEnergyBtn").trigger("click");
+  const csv = await app.downloads.at(-1).text();
+  const [header, row, ...extraRows] = csv.trim().split(/\r?\n/);
+  assert.equal(extraRows.length, 0, "a cumulative summary contains one snapshot row");
+  const fields = header.replace(/^\uFEFF/, "").split(",");
+  assert.deepEqual(fields, ["voltage_source", "current_source", "estimated", "voltage_V", "power_now_W",
+    "power_average_W", "energy_J", "energy_Wh", "duration_s", "energy_duration_s", "sample_count", "gap_count",
+    "missing_s", "voltage_missing_s"]);
+  const cells = row.split(",");
+  assert.equal(cells.length, fields.length);
+  const summary = Object.fromEntries(fields.map((field, index) => [field, cells[index]]));
+  assert.equal(summary.voltage_source, "manual_constant");
+  assert.equal(summary.current_source, "raw_calibrated");
+  assert.equal(summary.estimated, "true");
+  assert.equal(Number(summary.voltage_V), 3.3);
+  assert.equal(Number(summary.sample_count), 256);
+  assert.equal(Number(summary.gap_count), 0);
+  const snapshot = energySnapshot(app);
+  for (const [field, expected] of [["power_now_W", snapshot.lastWatts], ["power_average_W", snapshot.averageWatts],
+    ["energy_J", snapshot.energyJoules], ["energy_Wh", snapshot.energyJoules / 3600],
+    ["duration_s", snapshot.durationSeconds], ["energy_duration_s", snapshot.energyDurationSeconds],
+    ["missing_s", 0], ["voltage_missing_s", 0]]) {
+    closeEnergy(Number(summary[field]), expected, `CSV ${field}`);
+  }
+});
+
+test("voltage selection survives timer rollover and never applies a future voltage to queued frames", async (t) => {
+  const { app, device } = await energyCapture(t, null);
+  device.emit("STATUS state=RUNNING vout_mv=3300 vout_t_us=4294965000\n");
+  device.emit(frame(0, 4294966000, 100000, protocol.FRAME_FLAGS.streamStart, 100));
+  device.emit("STATUS state=RUNNING vout_mv=3100 vout_t_us=3000\n");
+  device.emit(frame(1, 1264, 100000, 0, 100));
+  device.emit(frame(2, 3824, 100000, 0, 100));
+  await tick();
+  const stats = energySnapshot(app);
+  closeEnergy(stats.energyJoules, 100 * 50000 / 65536 * 0.00256 * (3.3 + 3.3 + 3.1) * 1e-6,
+    "the queued second frame uses the older valid voltage");
+  assert.equal(stats.voltageMissingCount, 0);
+});
+
+test("expired voltage excludes energy coverage while a genuine zero-volt measurement remains valid", async (t) => {
+  const { app, device } = await energyCapture(t, null);
+  device.emit("STATUS state=RUNNING vout_mv=3300 vout_t_us=1000000\n");
+  device.emit(frame(0, 2600001, 100000, protocol.FRAME_FLAGS.streamStart, 100));
+  await tick();
+  let stats = energySnapshot(app);
+  assert.equal(stats.energyJoules, null);
+  assert.equal(stats.voltageMissingCount, 256);
+  device.emit("STATUS state=RUNNING vout_mv=0 vout_t_us=2602561\n");
+  device.emit(frame(1, 2602561, 100000, 0, 100));
+  await tick();
+  stats = energySnapshot(app);
+  assert.equal(stats.energyJoules, 0);
+  closeEnergy(stats.energyDurationSeconds, 0.00256, "zero volts still cover the new frame");
+  closeEnergy(stats.voltageMissingSeconds, 0.00256, "expired interval stays excluded");
+});
+
+test("background refresh preserves manual voltage entry and rejects empty telemetry fields", async (t) => {
+  const app = appHarness(t);
+  const input = app.element("measurementVoltageInput");
+  input.value = "3.3";
+  app.evaluate("document.activeElement = dom.measurementVoltageInput; updateEnergyStats()");
+  assert.equal(input.value, "3.3", "typing must not be cleared by the 100 ms UI refresh");
+  input.trigger("change");
+  assert.equal(app.evaluate("measurementVoltageV"), 3.3);
+  app.evaluate("recordDeviceVoltage({vout_mv:'',vout_t_us:'0'})");
+  assert.equal(app.evaluate("deviceVoltageHistory.length"), 0);
 });
 
 test("firmware update check survives the upstream sync and links the UF2 asset once per version", async (t) => {

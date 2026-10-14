@@ -10,6 +10,7 @@ import { CaptureTimeline } from "./timeline.js?v=__ASSET_VERSION__";
 import { WavePlot } from "./plot.js?v=__ASSET_VERSION__";
 import { SampleStatistics } from "./statistics.js?v=__ASSET_VERSION__";
 import { LowPassMeasurements } from "./lowpass.js?v=__ASSET_VERSION__";
+import { EnergyStatistics } from "./energy.js?v=__ASSET_VERSION__";
 
 const SAMPLE_BUFFER_SECONDS = 120;
 const MAX_SAMPLE_RATE = 100000;
@@ -19,6 +20,7 @@ const STATS_INTERVAL_MS = 100;
 const MIN_VISIBLE_SAMPLES = 2;
 const ADS_REF_MV = 2500;
 const FRONTEND_GAIN = 50;
+const VOLTAGE_MAX_AGE_US = 1500000;
 const RANGE_LOW_OHM = 1;
 const RANGE_HIGH_OHM = 10;
 const FIRMWARE_RELEASE_API_URL = "https://api.github.com/repos/txp666/MicroScope-Power/releases/latest";
@@ -104,6 +106,20 @@ const dom = {
   metricPp: document.querySelector("#metricPp"),
   metricRms: document.querySelector("#metricRms"),
   metricRmsLabel: document.querySelector("#metricRmsLabel"),
+  measurementVoltageInput: document.querySelector("#measurementVoltageInput"),
+  useDeviceVoltageToggle: document.querySelector("#useDeviceVoltageToggle"),
+  voltageSourceValue: document.querySelector("#voltageSourceValue"),
+  metricPower: document.querySelector("#metricPower"),
+  metricEnergy: document.querySelector("#metricEnergy"),
+  powerNowValue: document.querySelector("#powerNowValue"),
+  powerAvgValue: document.querySelector("#powerAvgValue"),
+  energyJValue: document.querySelector("#energyJValue"),
+  energyWhValue: document.querySelector("#energyWhValue"),
+  energyDurationValue: document.querySelector("#energyDurationValue"),
+  energyGapValue: document.querySelector("#energyGapValue"),
+  energyCoverageValue: document.querySelector("#energyCoverageValue"),
+  resetEnergyBtn: document.querySelector("#resetEnergyBtn"),
+  exportEnergyBtn: document.querySelector("#exportEnergyBtn"),
   cursorAValue: document.querySelector("#cursorAValue"),
   cursorBValue: document.querySelector("#cursorBValue"),
   cursorTimeValue: document.querySelector("#cursorTimeValue"),
@@ -115,6 +131,12 @@ const rangeBuffer = new Uint8Array(SAMPLE_CAPACITY);
 const timeline = new CaptureTimeline(SAMPLE_CAPACITY);
 const sampleStatistics = new SampleStatistics(ringBuffer, rangeBuffer);
 const lowpassMeasurements = new LowPassMeasurements(sampleStatistics, timeline);
+const energyStatistics = new EnergyStatistics();
+let measurementVoltageV = null;
+let energyCalibrationKey = null;
+let energyLastReceivedAt = -Infinity;
+let useDeviceVoltage = true;
+let deviceVoltageHistory = [];
 let windowStatsCache = null;
 const plot = new WavePlot(document.querySelector("#waveCanvas"));
 
@@ -275,7 +297,7 @@ async function connectDevice() {
     readLoop(connectedDevice);
     await sendCommand("GET_STATUS");
     acceptFrames = state === "RUNNING";
-    nextStatusPollAt = performance.now() + 2000;
+    nextStatusPollAt = performance.now() + (useDeviceVoltage && deviceVoltageHistory.length > 0 ? 500 : 2000);
   } catch (err) {
     appendLog(`连接失败：${err.message}`);
     await cleanupDevice();
@@ -299,12 +321,14 @@ async function cleanupDevice(expectedDevice = device) {
   commandTransport?.disconnect();
   commandTransport = null;
   parser.reset();
+  deviceVoltageHistory = [];
   setConnectedUi(false);
   setState("IDLE");
   dom.firmwareValue.textContent = "-";
   lastCheckedFirmwareVersion = "";
   firmwareCheckGeneration += 1;
   setFirmwareUpdateStatus("等待设备");
+  updateEnergyStats();
 
   if (closingDevice?.opened) {
     try {
@@ -464,6 +488,7 @@ async function startCapture() {
   if (state === "RUNNING") await stopCapture();
   await applyCalibration(false);
   await sendCommand(`SRATE ${dom.sampleRateSelect.value}`);
+  if (useDeviceVoltage && deviceVoltageHistory.length > 0) await sendCommand("GET_STATUS");
   resetCaptureState();
   sampleRate = Number(dom.sampleRateSelect.value);
   acceptFrames = true;
@@ -481,6 +506,7 @@ async function stopCapture() {
   await sendCommand("STOP");
   acceptFrames = false;
   setState("IDLE");
+  updateEnergyStats();
   appendLog("采集已停止。");
 }
 
@@ -550,6 +576,8 @@ function handleText(text) {
         .filter((pair) => pair.length === 2),
     );
 
+    recordDeviceVoltage(fields);
+
     if (fields.state) setState(fields.state);
     if (fields.fw) {
       dom.firmwareValue.textContent = fields.fw;
@@ -581,6 +609,9 @@ function handleText(text) {
         else cal.zeroLowCode = Number(fields.zero);
       }
       syncZeroInputs(cal);
+      if (energyCalibrationKey !== null && energyCalibrationKey !== energyCalibrationSignature(calibration())) {
+        resetEnergyStats();
+      }
       if (fields.auto_range) {
         autoRange = fields.auto_range === "1";
         dom.autoRangeToggle.checked = autoRange;
@@ -622,6 +653,12 @@ function handleFrame(frame) {
   timeline.append(frame, totalSamplesWritten, {
     legacyTimingOverruns: timingOverruns > 0 && adcReadErrors === 0,
   });
+  const cal = calibration();
+  const key = energyCalibrationSignature(cal);
+  if (energyCalibrationKey !== key) resetEnergyStats();
+  const conversion = statisticsConversion(cal)[currentRangeOhm === RANGE_HIGH_OHM ? 1 : 0];
+  energyStatistics.append(frame.samples, conversion, timeline.frameAt(totalSamplesWritten), voltageForFrame(frame));
+  energyLastReceivedAt = performance.now();
   lastStats = appendSamples(frame.samples, currentRangeOhm);
 }
 
@@ -763,6 +800,114 @@ function codeToMicroamps(code, rangeOhm = currentRangeOhm, cal = calibration()) 
 
 function formatUa(value) {
   return `${value.toFixed(3)} µA`;
+}
+
+function energyCalibrationSignature(cal) {
+  return `${cal.zeroLowCode}:${cal.zeroHighCode}:${cal.senseLowOhm}:${cal.senseHighOhm}`;
+}
+
+function recordDeviceVoltage(fields) {
+  if (fields.vout_mv === undefined || fields.vout_t_us === undefined) return;
+  if (!/^\d+$/.test(fields.vout_mv) || !/^\d+$/.test(fields.vout_t_us) ||
+      fields.vout_age_us !== undefined && !/^\d+$/.test(fields.vout_age_us)) return;
+  const mv = Number(fields.vout_mv);
+  const tUs = Number(fields.vout_t_us);
+  if (!Number.isFinite(mv) || mv < 0 || mv > 6600 || !Number.isInteger(tUs) || tUs < 0 || tUs > 0xffffffff) return;
+  const ageUs = Number(fields.vout_age_us || 0);
+  if (!Number.isFinite(ageUs) || ageUs < 0 || ageUs > VOLTAGE_MAX_AGE_US) return;
+  const previous = deviceVoltageHistory.at(-1);
+  if (previous && previous.tUs === tUs) return;
+  deviceVoltageHistory.push({ volts: mv / 1000, tUs, receivedAt: performance.now() - ageUs / 1000 });
+  if (deviceVoltageHistory.length > 64) deviceVoltageHistory.shift();
+  updateEnergyStats();
+}
+
+function voltageForFrame(frame) {
+  if (!useDeviceVoltage) return measurementVoltageV;
+  // Device timestamps select the latest known voltage preceding this frame,
+  // even when USB has queued older current frames or the 32-bit timer rolls over.
+  for (let i = deviceVoltageHistory.length - 1; i >= 0; i -= 1) {
+    const voltage = deviceVoltageHistory[i];
+    const ageUs = ((frame.t0Us >>> 0) - voltage.tUs) >>> 0;
+    if (ageUs <= VOLTAGE_MAX_AGE_US) return voltage.volts;
+  }
+  return null;
+}
+
+function recentDeviceVoltage() {
+  const latest = deviceVoltageHistory.at(-1);
+  return latest && performance.now() - latest.receivedAt <= VOLTAGE_MAX_AGE_US / 1000 ? latest : null;
+}
+
+function resetEnergyStats() {
+  energyStatistics.reset();
+  energyCalibrationKey = energyCalibrationSignature(calibration());
+  energyLastReceivedAt = -Infinity;
+  updateEnergyStats();
+}
+
+function formatPower(watts) {
+  if (!Number.isFinite(watts)) return "—";
+  const magnitude = Math.abs(watts);
+  if (magnitude < 0.001) return `${(watts * 1e6).toFixed(3)} µW`;
+  if (magnitude < 1) return `${(watts * 1000).toFixed(3)} mW`;
+  return `${watts.toFixed(3)} W`;
+}
+
+function formatEnergy(joules) {
+  if (!Number.isFinite(joules)) return "—";
+  const magnitude = Math.abs(joules);
+  if (magnitude > 0 && magnitude < 0.001) return `${(joules * 1e6).toFixed(3)} µJ`;
+  if (magnitude < 1) return `${(joules * 1000).toFixed(3)} mJ`;
+  return `${joules.toFixed(3)} J`;
+}
+
+function currentEnergyPower(stats) {
+  return device?.opened && state === "RUNNING" && performance.now() - energyLastReceivedAt <= 1500 && (!useDeviceVoltage || recentDeviceVoltage())
+    ? stats.lastWatts : null;
+}
+
+function updateEnergyStats() {
+  const stats = energyStatistics.snapshot(measurementVoltageV);
+  const voltage = recentDeviceVoltage();
+  dom.useDeviceVoltageToggle.checked = useDeviceVoltage;
+  dom.measurementVoltageInput.readOnly = useDeviceVoltage && deviceVoltageHistory.length > 0;
+  if (useDeviceVoltage) {
+    if (document.activeElement !== dom.measurementVoltageInput) {
+      dom.measurementVoltageInput.value = voltage ? voltage.volts.toFixed(3) : "";
+    }
+    dom.voltageSourceValue.textContent = voltage ? "实测输出 · 约 2 Hz" : deviceVoltageHistory.length ? "实测电压已过期" : "等待设备／可手动填写";
+  } else {
+    dom.voltageSourceValue.textContent = measurementVoltageV === null ? "请填写供电电压" : `手动恒压 · ${measurementVoltageV} V`;
+  }
+  const power = formatPower(currentEnergyPower(stats));
+  const energy = formatEnergy(stats.energyJoules);
+  dom.metricPower.textContent = power;
+  dom.powerNowValue.textContent = power;
+  dom.powerAvgValue.textContent = formatPower(stats.averageWatts);
+  dom.metricEnergy.textContent = energy;
+  dom.energyJValue.textContent = energy;
+  dom.energyWhValue.textContent = stats.energyJoules === null ? "—" : `${(stats.energyJoules / 3.6).toFixed(6)} mWh`;
+  dom.energyDurationValue.textContent = formatSeconds(stats.durationSeconds);
+  dom.energyGapValue.textContent = `${stats.gapCount} 次 · ${formatSeconds(stats.missingSeconds)}`;
+  dom.energyCoverageValue.textContent = formatSeconds(stats.voltageMissingSeconds);
+  dom.metricEnergy.title = `自本次开始或重置以来的估算能量，电压有效覆盖 ${formatSeconds(stats.energyDurationSeconds)}`;
+}
+
+function applyMeasurementVoltage() {
+  const input = dom.measurementVoltageInput.value.trim();
+  const voltage = input === "" ? null : Number(input);
+  const valid = voltage === null || Number.isFinite(voltage) && voltage >= 0.01 && voltage <= 6;
+  if (!valid) {
+    appendLog("请输入 0.01～6 V 的供电电压。");
+    dom.measurementVoltageInput.value = measurementVoltageV === null ? "" : String(measurementVoltageV);
+    return;
+  }
+  if (useDeviceVoltage || voltage !== measurementVoltageV) {
+    useDeviceVoltage = false;
+    measurementVoltageV = voltage;
+    resetEnergyStats();
+  }
 }
 
 function formatHertz(value) {
@@ -940,6 +1085,7 @@ function updateStats(seq = lastSeq, stats = null, rawStats = null) {
   dom.metricPp.textContent = formatUa(Math.abs(stats.pp));
   dom.metricRms.textContent = formatUa(stats.rms);
   dom.metricRmsLabel.textContent = lowpassEnabled ? "低通 RMS" : "RMS 噪声";
+  updateEnergyStats();
   syncLowpassControls();
   updateRangeReadouts();
 }
@@ -1082,6 +1228,7 @@ function resetCaptureState() {
   cursors.b.serial = null;
   nextCursorName = "a";
   lastStats = emptyStats();
+  resetEnergyStats();
   syncPauseButton();
   updateStats(null, lastStats);
 }
@@ -1091,6 +1238,7 @@ async function applyCalibration(logResult = true) {
   syncZeroInputs(cal);
   dom.senseLowOhmInput.value = String(cal.senseLowOhm);
   dom.senseHighOhmInput.value = String(cal.senseHighOhm);
+  resetEnergyStats();
 
   if (device && device.opened) {
     await sendCommand(`SET_SENSE_MOHM_RANGE 1 ${Math.round(cal.senseLowOhm * 1000)}`);
@@ -1150,6 +1298,7 @@ function clearBuffer() {
   cursors.b.serial = null;
   nextCursorName = "a";
   lastStats = emptyStats();
+  resetEnergyStats();
   syncPauseButton();
   updateStats(null, lastStats);
   appendLog("本地波形缓存已清空。");
@@ -1481,6 +1630,34 @@ function exportCsv(rawOnly = false) {
   appendLog(`已导出当前窗口${filtered ? "低通" : "原始"} CSV：${source.visibleSamples} 点。`);
 }
 
+function exportEnergyCsv() {
+  const stats = energyStatistics.snapshot(measurementVoltageV);
+  if (stats.count === 0) {
+    appendLog("没有可导出的功率与能量统计。");
+    return;
+  }
+  const voltage = useDeviceVoltage ? recentDeviceVoltage()?.volts ?? null : measurementVoltageV;
+  const fields = {
+    voltage_source: useDeviceVoltage ? "measured_voltage_hold" : "manual_constant",
+    current_source: "raw_calibrated",
+    estimated: "true",
+    voltage_V: voltage,
+    power_now_W: currentEnergyPower(stats),
+    power_average_W: stats.averageWatts,
+    energy_J: stats.energyJoules,
+    energy_Wh: stats.energyJoules === null ? null : stats.energyJoules / 3600,
+    duration_s: stats.durationSeconds,
+    energy_duration_s: stats.energyDurationSeconds,
+    sample_count: stats.count,
+    gap_count: stats.gapCount,
+    missing_s: stats.missingSeconds,
+    voltage_missing_s: stats.voltageMissingSeconds,
+  };
+  const csv = `${Object.keys(fields).join(",")}\n${Object.values(fields).map((value) => value === null ? "" : String(value)).join(",")}\n`;
+  downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8" }), `pico-power-energy-${timestampForFile()}.csv`);
+  appendLog("已导出本次功率与能量统计 CSV。");
+}
+
 function exportPng() {
   plot.canvas.toBlob((blob) => {
     if (!blob) {
@@ -1511,7 +1688,7 @@ function animationLoop(now = performance.now()) {
   if (device?.opened && !actionBusy && !statusPollPending && now >= nextStatusPollAt) {
     const pollDevice = device;
     statusPollPending = true;
-    nextStatusPollAt = now + 2000;
+    nextStatusPollAt = now + (useDeviceVoltage && deviceVoltageHistory.length > 0 ? 500 : 2000);
     sendCommand("GET_STATUS").catch((error) => {
       if (device === pollDevice) appendLog(error.message);
     }).finally(() => { statusPollPending = false; });
@@ -1545,6 +1722,18 @@ dom.pauseViewBtn.addEventListener("click", () => togglePauseView());
 dom.clearBtn.addEventListener("click", () => clearBuffer());
 dom.exportCsvBtn.addEventListener("click", () => exportCsv());
 dom.exportRawCsvBtn.addEventListener("click", () => exportCsv(true));
+dom.measurementVoltageInput.addEventListener("change", () => applyMeasurementVoltage());
+dom.useDeviceVoltageToggle.addEventListener("change", () => {
+  useDeviceVoltage = dom.useDeviceVoltageToggle.checked;
+  if (!useDeviceVoltage) {
+    const voltage = Number(dom.measurementVoltageInput.value);
+    measurementVoltageV = Number.isFinite(voltage) && voltage >= 0.01 && voltage <= 6 ? voltage : null;
+  }
+  nextStatusPollAt = 0;
+  resetEnergyStats();
+});
+dom.resetEnergyBtn.addEventListener("click", () => resetEnergyStats());
+dom.exportEnergyBtn.addEventListener("click", () => exportEnergyCsv());
 dom.exportPngBtn.addEventListener("click", () => exportPng());
 dom.clearLogBtn.addEventListener("click", () => {
   dom.logOutput.textContent = "";
@@ -1619,18 +1808,21 @@ dom.zeroLowUaInput.addEventListener("change", () => {
   const cal = calibration();
   syncZeroInputs(cal);
   updateRangeReadouts();
+  resetEnergyStats();
 });
 
 dom.zeroHighUaInput.addEventListener("change", () => {
   const cal = calibration();
   syncZeroInputs(cal);
   updateRangeReadouts();
+  resetEnergyStats();
 });
 
 for (const input of [dom.senseLowOhmInput, dom.senseHighOhmInput]) {
   input.addEventListener("input", () => {
     syncZeroInputs(calibration());
     updateRangeReadouts();
+    resetEnergyStats();
   });
 }
 
@@ -1639,6 +1831,7 @@ dom.senseLowOhmInput.addEventListener("change", () => {
   dom.senseLowOhmInput.value = String(cal.senseLowOhm);
   syncZeroInputs(cal);
   updateRangeReadouts();
+  resetEnergyStats();
 });
 
 dom.senseHighOhmInput.addEventListener("change", () => {
@@ -1646,6 +1839,7 @@ dom.senseHighOhmInput.addEventListener("change", () => {
   dom.senseHighOhmInput.value = String(cal.senseHighOhm);
   syncZeroInputs(cal);
   updateRangeReadouts();
+  resetEnergyStats();
 });
 
 dom.gridToggle.addEventListener("change", () => {

@@ -885,6 +885,8 @@ const TRANSLATIONS = {
   "microscopePower.title": { zh: "MicroScope Power 上位机", en: "MicroScope Power Host" },
   "microscopePower.desc": { zh: "RP2040 WebUSB 电流波形采集、曲线查看、游标测量、校准与导出。", en: "RP2040 WebUSB current waveform acquisition, chart view, cursor measurement, calibration and export." },
   "microscopePower.openStandalone": { zh: "独立打开", en: "Open Standalone" },
+  "microscopePower.productOverview": { zh: "产品介绍", en: "Product Overview" },
+  "microscopePower.openHardware": { zh: "立创开源", en: "Open Hardware" },
   "microscopePower.profile.type": { zh: "WebUSB 电流波形采集", en: "WebUSB Current Waveform Capture" },
 
   // 日志曲线格式

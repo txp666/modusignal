@@ -152,6 +152,8 @@ Firefox 和 Safari 没有 Web Serial / WebUSB，串口和 WebUSB 设备用不了
 
 ## MicroScope Power WebUSB 上位机
 
+硬件、电路与外壳介绍见 [MicroScope Power 立创开源项目](https://oshwhub.com/txp666/project_iupheygc)，固件源码见 [MicroScope-Power](https://github.com/txp666/MicroScope-Power)。
+
 MicroScope Power 页面嵌入了 `pages/devices/microscope-power/` 下的浏览器上位机。它直接通过 WebUSB 连接 RP2040 固件（`VID 0xCAFE`、`PID 0x4012`），页面内自带采样率、ADS8866 ADC 采集、曲线缩放平移、游标、校准、CSV/PNG 导出。
 
 使用时通过 `localhost` 或 HTTPS 用 Chrome / Edge 打开站点，在设备库选择 **MicroScope Power**，再在内嵌上位机里点击 **连接设备**。这里没有打包原项目的 Pico 固件、SDK 和构建产物，上位机源码和回归测试只在此仓库维护，MicroScope-Power 仓库仅保留固件。采集工具栏保持单行，电流读数、游标、零点偏移和 CSV 都使用 µA。
@@ -161,6 +163,8 @@ MicroScope Power 页面嵌入了 `pages/devices/microscope-power/` 下的浏览�
 **显示设置 → 低通滤波** 提供一阶数字低通，默认关闭。可选择 10 Hz 至 20 kHz 的常用截止频率，或自定义 1–45000 Hz；超出实际采样率 45% 时显示受限后的有效频率。滤波按设备时间轴估算的采样间隔作用于每个样本，曲线、游标、统计和低通 CSV 使用同一结果，缩放和平移不会改变截止频率。低通 CSV 另含原始电流与实际截止频率列，并可独立导出原始 CSV。归零仍使用原始 ADC 数据。降低截止频率会衰减短脉冲、增加响应延迟，数字滤波不能消除已经混叠或饱和造成的信息损失。
 
 曲线支持左键拖框同时放大时间轴和电流轴，右键拖动平移，双击恢复最新波形与自动 Y 轴。滚轮仍可缩放时间轴，Ctrl/Alt + 滚轮缩放电流轴；启用游标后，左键单击设置 A/B，拖动仍用于框选。
+
+**功率与能量**：固件 0.2.2 起上传输出端实测电压，上位机约每 0.5 秒读取一次，以最近的有效电压和原始校准电流计算功率、累计能量与平均功率。电压为低速检测，功率与能量均标为估算；电压过期或丢失的采样时段不补算。旧固件可手动填入负载端供电电压。滤波、视图缩放和暂停显示不会影响累计；重新采集、清屏、校准、手动电压或电压模式改变会重新统计，亦可独立重置和导出统计 CSV。保留有符号电流，避免将零点负噪声截断为正向能量。
 
 ## AOMaster 寄存器表
 
@@ -329,6 +333,8 @@ Devices and transports are kept separate. Adding a new device is usually: a driv
 
 ## MicroScope Power WebUSB host
 
+Find the hardware, circuit and enclosure details on the [MicroScope Power OSHWHub project](https://oshwhub.com/txp666/project_iupheygc), and firmware sources in [MicroScope-Power](https://github.com/txp666/MicroScope-Power).
+
 The MicroScope Power page embeds the browser host from `pages/devices/microscope-power/`. It talks directly to the RP2040 firmware over WebUSB (`VID 0xCAFE`, `PID 0x4012`) and keeps its own controls for sample rate, ADS8866 ADC capture, chart zoom/pan, cursors, calibration, and CSV/PNG export.
 
 Use Chrome or Edge from `localhost` or HTTPS, then choose **MicroScope Power** in the device library and click **Connect device** inside the embedded host. The Pico firmware, SDK, and build outputs from the source project are not bundled here; this repository is the sole home for the browser host and its regression tests, while MicroScope-Power contains the firmware. The capture toolbar stays on one row; readings, cursors, zero offsets, and CSV data use µA.
@@ -338,6 +344,8 @@ The host includes MicroScope-Power capture reliability improvements: acknowledge
 **Display settings → Low-pass filter** provides a first-order digital low-pass, off by default. Choose a preset from 10 Hz to 20 kHz or a custom cutoff from 1 to 45000 Hz; the effective cutoff is limited to 45% of the measured sample rate. Filtering uses sample intervals estimated from device timestamps, before plot aggregation. The waveform, cursors, statistics, and filtered CSV share the same results; zooming and panning do not change the filter. Filtered CSV includes raw current and effective cutoff columns, and raw CSV remains separately available. Zero calibration always uses raw ADC data. Lower cutoffs attenuate short pulses and delay the response; digital filtering cannot recover information lost through aliasing or saturation.
 
 Drag with the left button to box-zoom both time and current; drag with the right button to pan. Double-click restores the latest waveform and automatic Y scale. The wheel still zooms time, while Ctrl/Alt + wheel zooms current. With cursors enabled, a left click places A/B and a left drag still box-zooms.
+
+**Power and energy**: firmware 0.2.2 adds measured output-voltage telemetry. The host polls it about every 0.5 seconds and combines the latest valid voltage with raw calibrated current to estimate power, accumulated energy and average power. Voltage is sampled at a lower rate, so these readings are estimates; expired voltage and missing current intervals are excluded. Older firmware can use a manually entered load voltage. Filtering and plot navigation do not affect accumulation. Starting a capture, clearing data, calibration, changing manual voltage or changing voltage mode resets the statistics; they can also be reset separately and exported as CSV. Signed current is preserved to avoid biasing zero-input noise toward positive energy.
 
 ## AOMaster register map
 

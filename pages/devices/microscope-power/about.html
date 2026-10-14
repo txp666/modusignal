@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="MicroScope Power 开源便携式可调电源与电流波形分析仪，用于观察单片机休眠、唤醒与活动电流，配合 ModuSignal WebUSB 上位机使用。">
+    <title>MicroScope Power · 产品介绍 | ModuSignal</title>
+    <link rel="stylesheet" href="./about.css?v=__ASSET_VERSION__">
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="../../../index.html?v=__ASSET_VERSION__">ModuSignal</a>
+        <nav aria-label="项目导航">
+          <a href="https://oshwhub.com/txp666/project_iupheygc" target="_blank" rel="noopener noreferrer">立创开源</a>
+          <a href="https://github.com/txp666/MicroScope-Power" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a class="button button-small" href="./index.html?v=__ASSET_VERSION__">打开上位机</a>
+        </nav>
+      </div>
+    </header>
+    <main class="container">
+      <section class="hero" aria-labelledby="product-title">
+        <div>
+          <p class="eyebrow">开源硬件 · 浏览器采集</p>
+          <h1 id="product-title">MicroScope Power</h1>
+          <p class="headline">可调供电与电流波形，<br>放在一台小仪器里。</p>
+          <p class="lead">给单片机和传感器供电，观察休眠、唤醒与活动电流。OLED 和旋钮用于本地设定，ModuSignal 用于查看波形、游标测量和数据导出。</p>
+          <div class="hero-actions">
+            <a class="button" href="./index.html?v=__ASSET_VERSION__">打开 WebUSB 上位机</a>
+            <a class="button button-secondary" href="https://oshwhub.com/txp666/project_iupheygc" target="_blank" rel="noopener noreferrer">查看开源项目</a>
+          </div>
+        </div>
+        <figure class="device-photo">
+          <img src="../../../images/microscope-power-device.jpg?v=__ASSET_VERSION__" width="640" height="305" alt="MicroScope Power 整机实拍，包含 OLED、供电接口与旋钮">
+          <figcaption>设备实拍</figcaption>
+        </figure>
+      </section>
+
+      <section aria-label="主要配置">
+        <div class="spec-grid">
+          <div><strong>100 <span>kSPS</span></strong><p>最高采样配置</p></div>
+          <div><strong>约 0.8–5 <span>V</span></strong><p>标称可调供电范围</p></div>
+          <div><strong>16 <span>bit</span></strong><p>ADS8866 外部 ADC</p></div>
+          <div><strong>1 Ω / 10 Ω</strong><p>两档电流采样前端</p></div>
+        </div>
+        <p class="spec-note">采样率是配置目标，实际间隔以设备时间戳为准；负载端电压受 USB 输入、LDO 压差和串联采样电阻的压降影响。</p>
+      </section>
+
+      <section class="section" aria-labelledby="observe-title">
+        <div class="section-heading">
+          <p class="eyebrow">从供电到数据</p>
+          <h2 id="observe-title">查看一段完整的电流过程</h2>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card">
+            <h3>观察休眠与唤醒</h3>
+            <p>对照电流平台、活动尖峰和回到休眠的过程。µA / mA 双轴同步显示，左键框选放大，右键平移，A/B 游标比较时间与电流。</p>
+          </article>
+          <article class="feature-card">
+            <h3>选择测量带宽</h3>
+            <p>一阶数字低通支持截止频率选择和自定义 Hz，保留原始数据与 CSV。截止频率越低，短脉冲峰值越小，边沿响应也越慢。</p>
+          </article>
+          <article class="feature-card">
+            <h3>估算功率与能量</h3>
+            <p>结合设备上传的输出电压与原始电流估算功率、累计能量。电压低速更新，过期电压和数据缺口不补算；旧固件可手动填写电压。</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section hardware-section" aria-labelledby="hardware-title">
+        <div class="section-heading">
+          <p class="eyebrow">硬件组成</p>
+          <h2 id="hardware-title">双量程前端，共用一条采样链</h2>
+        </div>
+        <div class="hardware-grid">
+          <div>
+            <p>两颗 INA296A3 分别读取 1 Ω 和 10 Ω 电阻的压差，TMUX1119 选择一路放大器输出，再经 OPA320 驱动 ADS8866。RP2040 负责采集、USB 通信和本地界面。</p>
+            <p class="current-path">VREG → 1 Ω → 10 Ω → VOUT → 负载</p>
+            <p>两只采样电阻始终串联，量程切换选择的是信号。使用时先设置并确认负载端电压，再开始采集。</p>
+          </div>
+          <div class="range-panel">
+            <table>
+              <caption>基于标称参数的理论量程</caption>
+              <thead><tr><th scope="col">通道</th><th scope="col">正向理论满量程</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">1 Ω 大量程</th><td>约 50 mA</td></tr>
+                <tr><th scope="row">10 Ω 小量程</th><td>约 5 mA</td></tr>
+              </tbody>
+            </table>
+            <p>按 2.5 V 参考、50 V/V 增益和标称电阻计算。理论量程、ADC 码宽及显示小数位不代表整机测量精度。</p>
+          </div>
+        </div>
+        <div class="local-control">
+          <strong>OLED + 旋转编码器</strong>
+          <p>DAC60501 设置 TPS7A90 的模拟稳压环路。设备可在本地调压和显示输出端读回电压，采集期间暂停本地调压。</p>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="source-title">
+        <div class="section-heading">
+          <p class="eyebrow">复刻与修改</p>
+          <h2 id="source-title">硬件、固件与网页源码</h2>
+        </div>
+        <div class="source-grid">
+          <a href="https://oshwhub.com/txp666/project_iupheygc" target="_blank" rel="noopener noreferrer"><strong>立创开源项目 <span aria-hidden="true">↗</span></strong><span>原理图、PCB 与项目介绍</span></a>
+          <a href="https://github.com/txp666/MicroScope-Power" target="_blank" rel="noopener noreferrer"><strong>MicroScope-Power <span aria-hidden="true">↗</span></strong><span>RP2040 固件、硬件及外壳资料</span></a>
+          <a href="https://github.com/txp666/modusignal" target="_blank" rel="noopener noreferrer"><strong>ModuSignal <span aria-hidden="true">↗</span></strong><span>WebUSB 上位机源码与离线包</span></a>
+        </div>
+      </section>
+    </main>
+    <footer class="container">MicroScope Power · 使用 Chrome / Edge，通过 HTTPS 或 localhost 连接 WebUSB。</footer>
+  </body>
+</html>

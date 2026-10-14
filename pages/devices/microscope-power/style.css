@@ -173,6 +173,19 @@ label {
   background: #eaf7f1;
 }
 
+.product-link {
+  color: var(--muted);
+  font-size: 12px;
+  text-decoration: none;
+  white-space: nowrap;
+  padding: 0 6px;
+}
+
+.product-link:hover {
+  color: var(--blue);
+  text-decoration: underline;
+}
+
 .primary-action,
 .run-action {
   background: var(--green);
@@ -213,6 +226,10 @@ label {
 
 .capture-controls > .field:nth-child(2) {
   flex-basis: 100px;
+}
+
+.capture-controls > .voltage-field {
+  flex-basis: 96px;
 }
 
 .capture-controls .button-strip {
@@ -269,7 +286,7 @@ label {
   display: grid;
   flex: 1 1 0;
   min-width: 0;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -299,6 +316,13 @@ label {
   font-size: clamp(12px, 1.08vw, 17px);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0;
+}
+
+.energy-note {
+  margin: 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .workbench {
@@ -671,7 +695,7 @@ label {
 
   .quickbar {
     display: grid;
-    grid-template-columns: 108px 100px auto auto;
+    grid-template-columns: 108px 100px 96px auto auto;
     gap: 10px;
   }
 

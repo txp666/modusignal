@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Pico 电流波形采集上位机</title>
+    <title>MicroScope Power · 电流与功耗分析</title>
     <link rel="icon" href="data:,">
     <link rel="stylesheet" href="./style.css?v=__ASSET_VERSION__">
   </head>
@@ -15,6 +15,7 @@
           <span>电流波形采集</span>
         </div>
         <div class="device-actions">
+          <a class="product-link" href="./about.html?v=__ASSET_VERSION__" target="_blank" rel="noreferrer">产品介绍</a>
           <span id="connectionLabel" class="connection-chip">未连接</span>
           <button id="connectBtn" type="button" class="primary-action">连接设备</button>
           <button id="disconnectBtn" type="button" class="secondary-action" disabled>断开</button>
@@ -37,6 +38,10 @@
             <label for="timeWindowSelect">时间窗口（s）</label>
             <input id="timeWindowSelect" type="number" min="0.00002" max="120" step="0.001" value="2">
           </div>
+          <div class="field voltage-field">
+            <label for="measurementVoltageInput">供电电压（V）</label>
+            <input id="measurementVoltageInput" type="number" min="0.01" max="6" step="0.01" placeholder="如 3.3" title="填入负载端实际供电电压，用于估算功率和能量；改变此值会重新统计">
+          </div>
           <div class="button-strip capture-strip">
             <button id="startBtn" type="button" class="run-action" disabled>开始</button>
             <button id="stopBtn" type="button" class="stop-action" disabled>停止</button>
@@ -51,6 +56,8 @@
           <div><span>平均</span><strong id="metricAvg">0.000 µA</strong></div>
           <div><span>峰峰值</span><strong id="metricPp">0.000 µA</strong></div>
           <div><span id="metricRmsLabel">RMS 噪声</span><strong id="metricRms">0.000 µA</strong></div>
+          <div><span>功率估算</span><strong id="metricPower">—</strong></div>
+          <div><span>能量估算</span><strong id="metricEnergy">—</strong></div>
         </div>
       </section>
 
@@ -85,6 +92,28 @@
               <div class="stat"><span>当前量程</span><strong id="rangeValue">10 Ω</strong></div>
               <div class="stat"><span>USB 速率</span><strong id="usbRateValue">0 kB/s</strong></div>
               <div class="stat"><span>丢帧</span><strong id="droppedValue">0</strong></div>
+            </div>
+          </details>
+
+          <details class="side-section">
+            <summary>功率与能量</summary>
+            <div class="toggle-grid single">
+              <label><input id="useDeviceVoltageToggle" type="checkbox" checked>自动读取输出电压</label>
+            </div>
+            <div class="stat-list">
+              <div class="stat"><span>电压来源</span><strong id="voltageSourceValue">等待设备／可手动填写</strong></div>
+              <div class="stat"><span>当前功率</span><strong id="powerNowValue">—</strong></div>
+              <div class="stat"><span>累计平均功率</span><strong id="powerAvgValue">—</strong></div>
+              <div class="stat highlight"><span>累计能量</span><strong id="energyJValue">—</strong></div>
+              <div class="stat"><span>能量（mWh）</span><strong id="energyWhValue">—</strong></div>
+              <div class="stat"><span>有效采样时长</span><strong id="energyDurationValue">0.000 s</strong></div>
+              <div class="stat"><span>数据间断</span><strong id="energyGapValue">0 次</strong></div>
+              <div class="stat"><span>电压缺失时长</span><strong id="energyCoverageValue">0.000 s</strong></div>
+            </div>
+            <p class="energy-note">电压约每 0.5 秒更新，P = V × 原始电流，能量为估算值；电压过期或数据间断不补算。旧固件可手动填写电压。开始采集、清屏、手动电压或校准变更会重新计数。</p>
+            <div class="button-strip compact-buttons">
+              <button id="resetEnergyBtn" type="button">重置统计</button>
+              <button id="exportEnergyBtn" type="button">统计 CSV</button>
             </div>
           </details>
 
