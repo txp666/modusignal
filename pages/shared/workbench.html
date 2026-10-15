@@ -30,13 +30,13 @@
         </div>
         <div class="chart-block">
           <div class="chart-block-heading">
-            <strong data-i18n="workbench.realtimeOutput">实时输出</strong>
+            <strong data-i18n="workbench.realtimeOutput">输出指令回读</strong>
             <span id="actualChartValue" data-i18n="workbench.noData">暂无数据</span>
           </div>
-          <div id="actualChart" class="echart-host line-host" data-i18n-aria-label="workbench.realtimeOutputAria" aria-label="实时输出曲线"></div>
+          <div id="actualChart" class="echart-host line-host" data-i18n-aria-label="workbench.realtimeOutputAria" aria-label="输出指令回读曲线"></div>
         </div>
         <div class="chart-meta">
-          <span data-i18n="workbench.pollReadback">轮询回读设备实际值</span><span>; total <span id="dualChartPointCount">3000</span> points · show <span id="dualChartVisiblePointCount">240</span> points · ECharts</span>
+          <span data-i18n="workbench.pollReadback">轮询固件输出指令值，非模拟量实测</span><span>; total <span id="dualChartPointCount">3000</span> points · show <span id="dualChartVisiblePointCount">240</span> points · ECharts</span>
         </div>
       </div>
     </div>
@@ -53,7 +53,7 @@
 
       <div id="chartCurveConfigBody" class="chart-curve-panel-body">
         <div id="chartCurveAomasterSection" class="chart-curve-section" hidden>
-          <p class="chart-curve-section-note" data-i18n="workbench.aomasterDualMode">双曲线模式：设定预览与轮询回读的实际输出；波形参数在设备页配置。</p>
+          <p class="chart-curve-section-note" data-i18n="workbench.aomasterDualMode">双曲线模式：理想设定预览与固件输出指令回读。默认 50 ms 轮询不能还原 50 Hz 波形；输出频率、抖动和幅值需用示波器或采集设备测量。</p>
         </div>
 
         <div id="chartCurveModbusSection" class="chart-curve-section" hidden></div>

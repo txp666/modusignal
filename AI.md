@@ -80,8 +80,8 @@ src/device-registry.js
   DEVICE_REGISTRY：设备 id、pagePath、profile、createCommand、parseTelemetry、standalone；新增设备主要改此文件
 
 src/devices/aomaster.js
-  AOMaster profile、Modbus RTU 命令构造、实际输出回读解析
-  Fixed protocol contract: FC03 polls 0x0000..0x0006 (7 holding registers); 0x0000 is type (0=current, 1=voltage), 0x0006 is read-only ACTUAL, raw analog values are divided by 1000, and the actual-output chart Y axis follows the response type (4..20 mA or 0..10 V). Step mode writes 0x0007+ sequence values before the header registers.
+  AOMaster profile、Modbus RTU 命令构造、固件输出指令回读解析
+  Fixed protocol contract: FC03 polls 0x0000..0x0006 (7 holding registers); 0x0000 is type (0=current, 1=voltage), 0x0006 is read-only ACTUAL (last requested firmware output, not analog measurement or DAC completion confirmation), raw analog values are divided by 1000, and the readback chart Y axis follows the response type (4..20 mA or 0..10 V). Periodic waveforms use 20..65535 ms periods; period 0 restores the 1000 ms default, matching firmware. Step dwell remains 1..65535 ms, loop count 0 means infinite, and step mode writes 0x0007+ sequence values before the header registers. Default 50 ms polling cannot reconstruct 50 Hz output.
 
 src/devices/microscope-power.js
   MicroScope Power profile。registry 中 `standalone: true`，不走共享传输 session、共享 workbench 或统一遥测解析。

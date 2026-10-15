@@ -80,13 +80,14 @@
           </label>
           <label>
             <span data-i18n="aomaster.wavePeriod">周期/时长 (ms)</span>
-            <input id="wavePeriodMs" type="number" min="1" max="65535" step="1" value="1000" />
+            <input id="wavePeriodMs" type="number" min="20" max="65535" step="1" value="1000" aria-describedby="wavePeriodHint" />
           </label>
           <label id="waveDutyField">
             <span data-i18n="aomaster.waveDuty">占空比 (%)</span>
             <input id="waveDuty" type="number" min="1" max="99" step="1" value="50" />
           </label>
         </div>
+        <p id="wavePeriodHint" class="field-hint" data-i18n="aomaster.wavePeriodHint">周期范围 20–65535 ms，步进 1 ms；设定频率 = 1000 ÷ 周期，最高 50 Hz。</p>
         <div class="preset-row" aria-label="波形快速设定">
           <button type="button" data-wave-preset="min-max" data-i18n="aomaster.wavePreset.full">全量程</button>
           <button type="button" data-wave-preset="mid" data-i18n="aomaster.wavePreset.mid">中间段</button>
@@ -133,7 +134,7 @@
     <div class="panel-heading split">
       <div>
         <h2 data-i18n="aomaster.commParams">通讯参数</h2>
-        <p data-i18n="aomaster.commDesc">寄存器：0x0000 类型（0=电流，1=电压），0x0001 波形，0x0006 只读 ACTUAL；轮询读取 0x0000~0x0006 共 7 个寄存器。</p>
+        <p data-i18n="aomaster.commDesc">寄存器：0x0000 类型（0=电流，1=电压），0x0001 波形，0x0006 只读 ACTUAL（固件输出指令值，非模拟量实测）；轮询读取 0x0000~0x0006 共 7 个寄存器。</p>
       </div>
       <div class="panel-actions">
         <button id="resetAomasterConfig" class="ghost-button" type="button" data-i18n="common.resetDefault">恢复默认</button>

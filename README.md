@@ -174,14 +174,16 @@ MicroScope Power 页面嵌入了 `pages/devices/microscope-power/` 下的浏览�
 | 0x0001 | R/W | 波形：0=恒定 1=阶跃 2=斜坡 3=方波 4=三角 5=正弦 |
 | 0x0002 | R/W | 设定值 / 低值 |
 | 0x0003 | R/W | 高值 / 阶跃保持时间 |
-| 0x0004 | R/W | 周期（ms）/ 循环次数 |
+| 0x0004 | R/W | 周期 20–65535 ms / 阶跃循环次数（0=无限） |
 | 0x0005 | R/W | 占空比 × 10 |
-| 0x0006 | R | 实际输出（回读） |
+| 0x0006 | R | 固件输出指令值（回读，非模拟量实测） |
 | 0x0007+ | R/W | 步进序列值 |
 
-上位机用 `01 03 00 00 00 07 04 08` 读取 `0x0000..0x0006`。回包必须包含全部 7 个寄存器；`0x0000` 选择电流/电压单位，`0x0006` 是实际输出回读值。模拟量原始值按 1000 缩放：原始值 `10600` 在电压模式表示 `10.600 V`，在电流模式表示 `10.600 mA`。实际输出曲线的 Y 轴会随回包类型切换为 `0..10 V` 或 `4..20 mA`。
+上位机用 `01 03 00 00 00 07 04 08` 读取 `0x0000..0x0006`。回包必须包含全部 7 个寄存器；`0x0000` 选择电流/电压单位，`0x0006` 是固件最近请求输出的指令值，不能证明 DAC 已发送成功或模拟输出已到达该值。模拟量原始值按 1000 缩放：原始值 `10600` 在电压模式表示 `10.600 V`，在电流模式表示 `10.600 mA`。回读曲线的 Y 轴会随回包类型切换为 `0..10 V` 或 `4..20 mA`。
 
-默认轮询周期 50ms，阶跃模式先写 `0x0007+` 序列值，再写头部寄存器。
+斜坡、方波、三角波和正弦波周期限制为 `20..65535 ms`，以 1 ms 步进，设定频率为 `1000 / 周期(ms)`，最高 50 Hz；周期 `0` 与固件一致恢复为默认 `1000 ms`，其余超出范围的输入在预览及发送前统一限幅。阶跃单步保持范围仍为 `1..65535 ms`，循环次数 `0` 表示无限循环，先写 `0x0007+` 序列值，再写头部寄存器。
+
+默认轮询周期 50 ms（约 20 点/秒），用于低速指令值回读，不能还原 50 Hz 波形。设定预览是理想数学曲线；频率、抖动、幅值及模拟输出建立时间需通过示波器或采集设备验证。
 
 ## 自定义设备
 
@@ -355,18 +357,22 @@ Drag with the left button to box-zoom both time and current; drag with the right
 | 0x0001 | R/W | Waveform: 0=const 1=step 2=ramp 3=square 4=triangle 5=sine | enum |
 | 0x0002 | R/W | Setpoint / low value; step count in step mode | mV or uA |
 | 0x0003 | R/W | High value; step dwell in step mode | mV/uA or ms |
-| 0x0004 | R/W | Period (ms); loop count in step mode | ms / count |
+| 0x0004 | R/W | Period 20–65535 ms; step loop count (0=infinite) | ms / count |
 | 0x0005 | R/W | Duty cycle | permille |
-| 0x0006 | R   | Actual output (readback) | mV or uA |
+| 0x0006 | R   | Firmware output command (not analog measurement) | mV or uA |
 | 0x0007..0x0016 | R/W | Step sequence values, max 16 points | mV or uA |
 
-Raw analog values are scaled by 1000: voltage uses mV (`10600` = `10.600 V`), current uses uA (`10600` = `10.600 mA`). The web UI polls registers `0x0000..0x0006` in one Modbus RTU read so the response contains both signal type and actual output:
+Raw analog values are scaled by 1000: voltage uses mV (`10600` = `10.600 V`), current uses uA (`10600` = `10.600 mA`). The web UI polls registers `0x0000..0x0006` in one Modbus RTU read so the response contains both signal type and output command readback:
 
 ```text
 01 03 00 00 00 07 04 08
 ```
 
-The response must include all seven registers. Register `0x0000` selects the engineering unit (`0=current`, `1=voltage`), and register `0x0006` is plotted as the actual output. The actual-output chart Y axis follows the response type: `4..20 mA` for current and `0..10 V` for voltage. Default poll interval is 50 ms. In step mode the step sequence is written first, then the header.
+The response must include all seven registers. Register `0x0000` selects the engineering unit (`0=current`, `1=voltage`). Register `0x0006` reports the firmware's most recent requested output, not confirmation of a completed DAC transfer or an analog measurement. The readback chart Y axis follows the response type: `4..20 mA` for current and `0..10 V` for voltage.
+
+Ramp, square, triangle and sine periods are limited to `20..65535 ms` in 1 ms steps before preview and transmission. Period `0` restores the `1000 ms` default, matching the firmware; other out-of-range values are clamped. Configured frequency is `1000 / period(ms)`, up to 50 Hz. Step dwell remains `1..65535 ms`, with loop count `0` meaning infinite; the sequence is written before the header.
+
+Default 50 ms polling (about 20 points/s) provides low-rate command readback and cannot reconstruct a 50 Hz waveform. The setpoint preview is an ideal mathematical curve; verify output frequency, jitter, amplitude and settling time with a scope or acquisition device.
 
 ## Custom device
 

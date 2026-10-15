@@ -20,6 +20,8 @@ export const AOMASTER_REGISTERS = {
 
 export const AOMASTER_POLL_REGISTER_COUNT = AOMASTER_REGISTERS.ACTUAL - AOMASTER_REGISTERS.SIGNAL_TYPE + 1;
 export const AOMASTER_MAX_STEP_SEQUENCE = 16;
+export const AOMASTER_MIN_WAVE_PERIOD_MS = 20;
+export const AOMASTER_MAX_WAVE_PERIOD_MS = 65535;
 const AOMASTER_PREVIEW_CYCLES = 10;
 
 export const AOMASTER_MODES = {
@@ -134,6 +136,7 @@ export function normalizeAomasterWaveState(state = {}, mode = "current") {
     ? merged.waveform
     : "constant";
   const stepSequence = normalizeStepSequence(merged.stepSequence, normalizedMode);
+  const periodMs = Math.trunc(toFiniteNumber(merged.wavePeriodMs, DEFAULT_AOMASTER_WAVE_STATE.wavePeriodMs));
 
   return {
     mode: normalizedMode,
@@ -141,7 +144,7 @@ export function normalizeAomasterWaveState(state = {}, mode = "current") {
     setpoint: clampWaveValue(normalizedMode, merged.setpoint, modeConfig.presets.mid),
     waveLow: clampWaveValue(normalizedMode, merged.waveLow, modeConfig.min),
     waveHigh: clampWaveValue(normalizedMode, merged.waveHigh, modeConfig.max),
-    wavePeriodMs: clamp(Math.trunc(toFiniteNumber(merged.wavePeriodMs, DEFAULT_AOMASTER_WAVE_STATE.wavePeriodMs)), 1, 65535),
+    wavePeriodMs: clamp(periodMs === 0 ? DEFAULT_AOMASTER_WAVE_STATE.wavePeriodMs : periodMs, AOMASTER_MIN_WAVE_PERIOD_MS, AOMASTER_MAX_WAVE_PERIOD_MS),
     waveDuty: clamp(toFiniteNumber(merged.waveDuty, DEFAULT_AOMASTER_WAVE_STATE.waveDuty), 1, 99),
     stepSequence,
     stepDwellMs: clamp(Math.trunc(toFiniteNumber(merged.stepDwellMs, DEFAULT_AOMASTER_WAVE_STATE.stepDwellMs)), 1, 65535),

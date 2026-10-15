@@ -96,7 +96,7 @@ const TRANSLATIONS = {
   "home.aomasterMore": { zh: "查看产品介绍", en: "Product Intro" },
   "home.aomasterDebug": { zh: "打开调试页", en: "Open Debug Page" },
   "home.aomasterClose": { zh: "关闭产品介绍", en: "Close Product Intro" },
-  "home.aomasterIntro": { zh: "AOMaster 面向传感器、仪表和采集模块调试，可在现场直接旋钮设定输出，也可以通过 modusignal 在浏览器里下发恒定值、阶跃、斜坡、方波、三角波和正弦波，并轮询回读实际输出曲线。", en: "AOMaster is built for sensor, instrument and acquisition-module debugging. Set output directly with the on-device knob, or use modusignal in the browser to send constant, step, ramp, square, triangle and sine outputs while polling actual output curves." },
+  "home.aomasterIntro": { zh: "AOMaster 面向传感器、仪表和采集模块调试，可在现场直接旋钮设定输出，也可以通过 modusignal 在浏览器里下发恒定值、阶跃、斜坡、方波、三角波和正弦波，并轮询回读固件输出指令值。", en: "AOMaster is built for sensor, instrument and acquisition-module debugging. Set output directly with the on-device knob, or use modusignal in the browser to send constant, step, ramp, square, triangle and sine outputs while polling firmware output command values." },
   "home.aomasterFeatureOutput": { zh: "模拟量输出", en: "Analog Output" },
   "home.aomasterFeatureOutputDesc": { zh: "覆盖 0-10 V 电压与 4-20 mA 电流，适合 PLC、采集卡、变送器输入端调试。", en: "Covers 0-10 V voltage and 4-20 mA current output for PLC, DAQ and transmitter input debugging." },
   "home.aomasterFeatureWave": { zh: "波形发生", en: "Waveform Generation" },
@@ -188,13 +188,13 @@ const TRANSLATIONS = {
   "workbench.noSetpoint": { zh: "暂无设定", en: "No setpoint" },
   "workbench.setpointPreview": { zh: "设定预览", en: "Setpoint Preview" },
   "workbench.setpointPreviewAria": { zh: "设定预览曲线", en: "Setpoint Preview Chart" },
-  "workbench.realtimeOutput": { zh: "实时输出", en: "Real-time Output" },
-  "workbench.realtimeOutputAria": { zh: "实时输出曲线", en: "Real-time Output Chart" },
-  "workbench.pollReadback": { zh: "轮询回读设备实际值", en: "Polling readback of actual device value" },
+  "workbench.realtimeOutput": { zh: "输出指令回读", en: "Output Command Readback" },
+  "workbench.realtimeOutputAria": { zh: "输出指令回读曲线", en: "Output Command Readback Chart" },
+  "workbench.pollReadback": { zh: "轮询固件输出指令值，非模拟量实测", en: "Polled firmware output command, not analog measurement" },
   "workbench.chartConfig": { zh: "曲线配置", en: "Chart Config" },
   "workbench.chartSummaryDefault": { zh: "—", en: "—" },
   "workbench.protocolHelp": { zh: "协议说明", en: "Protocol Help" },
-  "workbench.aomasterDualMode": { zh: "双曲线模式：设定预览与轮询回读的实际输出；波形参数在设备页配置。", en: "Dual-chart mode: setpoint preview and polled actual output; waveform params configured on device page." },
+  "workbench.aomasterDualMode": { zh: "双曲线模式：理想设定预览与固件输出指令回读。默认 50 ms 轮询不能还原 50 Hz 波形；输出频率、抖动和幅值需用示波器或采集设备测量。", en: "Dual charts: ideal setpoint preview and firmware output command readback. Default 50 ms polling cannot reconstruct a 50 Hz waveform; measure frequency, jitter and amplitude with a scope or acquisition device." },
   "workbench.showCurves": { zh: "显示曲线", en: "Show Curves" },
   "workbench.totalPoints": { zh: "曲线总点数", en: "Total Points" },
   "workbench.totalPointsTitle": { zh: "手动设置曲线总采样点数，点数越高历史越长", en: "Manually set total sample points; higher count means longer history" },
@@ -293,6 +293,7 @@ const TRANSLATIONS = {
   "aomaster.waveLow": { zh: "低值", en: "Low" },
   "aomaster.waveHigh": { zh: "高值", en: "High" },
   "aomaster.wavePeriod": { zh: "周期/时长 (ms)", en: "Period (ms)" },
+  "aomaster.wavePeriodHint": { zh: "周期范围 20–65535 ms，步进 1 ms；设定频率 = 1000 ÷ 周期，最高 50 Hz。", en: "Period: 20–65535 ms in 1 ms steps; configured frequency = 1000 / period, up to 50 Hz." },
   "aomaster.waveDuty": { zh: "占空比 (%)", en: "Duty (%)" },
   "aomaster.wavePreset.full": { zh: "全量程", en: "Full Range" },
   "aomaster.wavePreset.mid": { zh: "中间段", en: "Mid Range" },
@@ -309,7 +310,7 @@ const TRANSLATIONS = {
   "aomaster.driverCmdPreview": { zh: "驱动命令预览", en: "Driver Command Preview" },
   "aomaster.sendSetting": { zh: "发送设定", en: "Send Setting" },
   "aomaster.commParams": { zh: "通讯参数", en: "Communication Params" },
-  "aomaster.commDesc": { zh: "寄存器：0x0000 类型（0=电流，1=电压），0x0001 波形，0x0006 只读 ACTUAL；轮询读取 0x0000~0x0006 共 7 个寄存器，根据类型判断单位。阶跃时 0x0002 点数、0x0003 保持(ms)、0x0004 循环、0x0007+ 序列值。", en: "Registers: 0x0000 type (0=current, 1=voltage), 0x0001 waveform, 0x0006 read-only ACTUAL; polling reads 0x0000~0x0006 (7 registers) and uses type to select units. Step: 0x0002 count, 0x0003 dwell(ms), 0x0004 loops, 0x0007+ sequence." },
+  "aomaster.commDesc": { zh: "寄存器：0x0000 类型（0=电流，1=电压），0x0001 波形，0x0006 只读 ACTUAL（固件输出指令值，非模拟量实测）；轮询读取 0x0000~0x0006 共 7 个寄存器，根据类型判断单位。阶跃时 0x0002 点数、0x0003 保持(ms)、0x0004 循环、0x0007+ 序列值。", en: "Registers: 0x0000 type (0=current, 1=voltage), 0x0001 waveform, 0x0006 read-only ACTUAL (firmware output command, not analog measurement); polling reads 0x0000~0x0006 (7 registers) and uses type to select units. Step: 0x0002 count, 0x0003 dwell(ms), 0x0004 loops, 0x0007+ sequence." },
   "aomaster.slaveId": { zh: "从站地址", en: "Slave ID" },
   "aomaster.pollInterval": { zh: "回读轮询 (ms)", en: "Readback Poll (ms)" },
   "aomaster.pollIntervalTitle": { zh: "大于 0 时可在监测面板手动开始轮询，默认 50", en: "When > 0, polling can be manually started in the monitor panel; default 50" },
@@ -318,7 +319,7 @@ const TRANSLATIONS = {
   "aomaster.mode.voltage": { zh: "电压", en: "Voltage" },
 
   // AOMaster 自定义仪表
-  "aomaster.actualOutput": { zh: "实际输出", en: "Actual Output" },
+  "aomaster.actualOutput": { zh: "输出指令回读", en: "Output Command Readback" },
   "aomaster.infiniteLoop": { zh: "无限循环", en: "Infinite Loop" },
   "aomaster.defaultNoPoll": { zh: "默认不轮询", en: "Default, no polling" },
   "aomaster.pollSummaryLabel": { zh: "轮询间隔", en: "Poll Interval" },
@@ -839,11 +840,11 @@ const TRANSLATIONS = {
   // ===== 图表相关 (app.js) =====
   "chart.realTimeChart": { zh: "实时曲线", en: "Real-time Chart" },
   "chart.setpointPreview": { zh: "设定预览", en: "Setpoint Preview" },
-  "chart.realTimeOutput": { zh: "实时输出", en: "Real-time Output" },
+  "chart.realTimeOutput": { zh: "输出指令回读", en: "Output Command Readback" },
   "chart.hartVariableChart": { zh: "HART 变量曲线", en: "HART Variable Chart" },
   "chart.emptyText": { zh: "连接设备并开启轮询后显示实时曲线", en: "Connect device and start polling to see real-time chart" },
   "chart.emptySetpoint": { zh: "调整设定值以预览曲线", en: "Adjust setpoint to preview chart" },
-  "chart.emptyActual": { zh: "连接设备并开启轮询后显示实时输出", en: "Connect device and start polling to see actual output" },
+  "chart.emptyActual": { zh: "连接设备并开启轮询后显示输出指令回读", en: "Connect device and start polling to see output command readback" },
   "chart.emptyWs": { zh: "连接设备并接收 WebSocket 消息后显示多曲线", en: "Connect device and receive WebSocket messages to see multi-curve" },
   "chart.emptySerial": { zh: "连接设备并接收串口数据后显示多曲线", en: "Connect device and receive serial data to see multi-curve" },
   "chart.emptyModbus": { zh: "连接设备并开始轮询后显示多曲线", en: "Connect device and start polling to see multi-curve" },
@@ -869,7 +870,7 @@ const TRANSLATIONS = {
   "chart.modbusPayload": { zh: "单曲线 · Modbus RTU 载荷", en: "Single Curve · Modbus RTU Payload" },
   "chart.multiCurveCount": { zh: "{count} 条 {mode} 曲线", en: "{count} {mode} curves" },
   "chart.modbusCurveCount": { zh: "{count} 条 Modbus 曲线", en: "{count} Modbus curves" },
-  "chart.aomasterDesc": { zh: "ECharts 曲线预览设定波形，并跟踪轮询回读的实际输出；保留 {total} 个采样点，当前显示 {visible} 个。", en: "ECharts charts preview set waveform and track actual polled output; {total} sample points retained, {visible} displayed." },
+  "chart.aomasterDesc": { zh: "ECharts 曲线预览设定波形，并跟踪固件输出指令回读，非模拟量实测；保留 {total} 个采样点，当前显示 {visible} 个。", en: "ECharts charts preview the set waveform and track firmware output command readback, not analog measurements; {total} sample points retained, {visible} displayed." },
   "chart.hartDesc": { zh: "HART PV/SV/TV/QV 卡片与多曲线同步显示；保留 {total} 个采样点，当前显示 {visible} 个。", en: "HART PV/SV/TV/QV cards and multi-curve sync; {total} sample points retained, {visible} displayed." },
   "chart.modbusMultiDesc": { zh: "Modbus 多曲线；保留 {total} 个采样点，当前显示 {visible} 个。", en: "Modbus multi-curve; {total} sample points retained, {visible} displayed." },
   "chart.modbusSingleDesc": { zh: "Modbus 读回包自动解析寄存器数值；保留 {total} 个采样点，当前显示 {visible} 个。", en: "Modbus auto-parses register values from response; {total} sample points retained, {visible} displayed." },
@@ -1019,30 +1020,30 @@ const TRANSLATIONS = {
 
   // ===== 曲线帮助 HTML =====
   "curve.help.html.aomaster": {
-    zh: `<p>AOMaster 监测面板显示<strong>双曲线</strong>：上方为设定预览，下方为轮询回读的实际输出。</p>
+    zh: `<p>AOMaster 监测面板显示<strong>双曲线</strong>：上方为设定预览，下方为固件输出指令回读，非模拟量实测。</p>
       <div class="protocol-example-grid">
         <article class="protocol-example-card">
           <h3>设定预览</h3>
           <p>根据当前波形参数（恒定、阶跃、方波、锯齿等）在本地生成预览曲线，不依赖设备回包。</p>
         </article>
         <article class="protocol-example-card">
-          <h3>实时输出</h3>
-          <p>轮询读取寄存器 <code>0x0000~0x0006</code> 共 7 个寄存器，用 <code>0x0000</code> 的类型判断电流/电压，再取 <code>0x0006</code> 的实际输出值；原始值按 1000 缩放，实际输出曲线的 Y 轴按回包类型切换为 4~20 mA 或 0~10 V。</p>
+          <h3>输出指令回读</h3>
+          <p>轮询读取寄存器 <code>0x0000~0x0006</code> 共 7 个寄存器，用 <code>0x0000</code> 的类型判断电流/电压，再取 <code>0x0006</code> 的固件输出指令值，而非模拟量实测值；原始值按 1000 缩放，指令回读曲线的 Y 轴按回包类型切换为 4~20 mA 或 0~10 V。</p>
         </article>
       </div>
       <div class="protocol-note">
         <strong>采样：</strong>
         <span>曲线总点数与显示点数在监测面板底部设置；点数越高历史越长，显示点数决定当前窗口宽度。</span>
       </div>`,
-    en: `<p>The AOMaster monitor panel displays <strong>dual charts</strong>: the upper chart shows the setpoint preview, and the lower chart shows the actual output from polling readback.</p>
+    en: `<p>The AOMaster monitor panel displays <strong>dual charts</strong>: the upper chart shows the setpoint preview, and the lower chart shows firmware output command readback, not analog measurements.</p>
       <div class="protocol-example-grid">
         <article class="protocol-example-card">
           <h3>Setpoint Preview</h3>
           <p>Generates a local preview curve based on current waveform parameters (constant, step, square, sawtooth, etc.), independent of device response.</p>
         </article>
         <article class="protocol-example-card">
-          <h3>Real-time Output</h3>
-          <p>Polls registers <code>0x0000~0x0006</code> (7 registers), uses <code>0x0000</code> to select current/voltage units, then plots the actual output from <code>0x0006</code>. Raw values are scaled by 1000. The actual-output Y axis follows the response type: 4~20 mA or 0~10 V.</p>
+          <h3>Output Command Readback</h3>
+          <p>Polls registers <code>0x0000~0x0006</code> (7 registers), uses <code>0x0000</code> to select current/voltage units, then plots the firmware output command from <code>0x0006</code>, not an analog measurement. Raw values are scaled by 1000. The command-readback Y axis follows the response type: 4~20 mA or 0~10 V.</p>
         </article>
       </div>
       <div class="protocol-note">
