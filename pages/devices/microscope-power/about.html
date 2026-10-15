@@ -67,6 +67,25 @@
         </div>
       </section>
 
+      <section class="section" aria-labelledby="test-title">
+        <div class="section-heading">
+          <p class="eyebrow">实测示例</p>
+          <h2 id="test-title">XIAO Sense Plus 的完整电流过程</h2>
+          <p class="spec-note">以 XIAO nRF52840 Sense Plus 为负载，固定 1 Ω 大量程，记录 CPU、指示灯、传感器、蓝牙广播及休眠的电流变化。</p>
+        </div>
+        <figure class="device-photo">
+          <a href="../../../images/microscope-power-xiao-test.png?v=__ASSET_VERSION__" target="_blank" rel="noopener noreferrer">
+            <img src="../../../images/microscope-power-xiao-test.png?v=__ASSET_VERSION__" width="1600" height="744" loading="lazy" alt="XIAO Sense Plus 固定 1 Ω 实测曲线，标注 CPU、RGB、IMU、PDM、BLE、电池采样、Flash 和休眠阶段">
+          </a>
+          <figcaption>2026 年 10 月 15 日实测 · 100 kSPS 配置 · 低通关闭 · 点图查看原图</figcaption>
+        </figure>
+        <div class="local-control">
+          <strong>本次实测结果</strong>
+          <p>CPU 平均约 <strong>6.33 mA</strong>，BLE 广播平均约 <strong>261 µA</strong>，休眠平均约 <strong>5.82 µA</strong>，最大采样值为 <strong>27.62 mA</strong>。主要阶段的切换时间与程序安排对应。</p>
+        </div>
+        <p class="spec-note">以上为本次被测板卡的整板读数，测量精度需通过参考负载校验。</p>
+      </section>
+
       <section class="section hardware-section" aria-labelledby="hardware-title">
         <div class="section-heading">
           <p class="eyebrow">硬件组成</p>
