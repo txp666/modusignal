@@ -1,0 +1,413 @@
+/* Shared internal pages. Scoped to the workspace to leave the home layout intact. */
+.workspace .workspace-heading {
+  margin: 0 0 1.5rem;
+  padding: 0.15rem 0 1.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.workspace-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.65rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.workspace-breadcrumb button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.75rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-strong);
+  font: inherit;
+}
+
+.workspace-breadcrumb button:hover { text-decoration: underline; }
+.workspace-title-row { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; }
+.workspace-title-row h1 { margin: 0; font-size: clamp(1.6rem, 2.4vw, 2rem); line-height: 1.2; font-weight: 600; letter-spacing: -0.03em; }
+.workspace-title-row p { margin: 0.65rem 0 0; max-width: 48rem; color: var(--muted); line-height: 1.6; font-size: 0.9rem; }
+.workspace-transport { flex-shrink: 0; padding: 0.4rem 0.65rem; border: 1px solid var(--line); border-radius: 0.35rem; color: var(--muted); font: 500 0.75rem ui-monospace, monospace; }
+
+.workspace .device-shell.active {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  align-items: start;
+  gap: 1.25rem;
+  min-height: 0;
+}
+
+.workspace .device-shell .device-page.active {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  gap: 1.25rem;
+}
+
+.workspace .device-workbench-column {
+  width: 100%;
+  min-width: 0;
+  align-self: start;
+  gap: 1.25rem;
+}
+
+.workspace .device-shell.standalone { grid-template-columns: minmax(0, 1fr); }
+.app-shell.standalone-device .workspace .workspace-heading { display:none; }
+.workspace .hart-page.hart-workspace-expanded { grid-column: 1 / -1; }
+.workspace .device-shell .panel { padding: 1.25rem; border-radius: 0.5rem; }
+.workspace .panel-heading { gap: 0.75rem; margin-bottom: 1rem; }
+.workspace .panel-heading h2 { font-size: 1.05rem; font-weight: 650; line-height: 1.4; }
+.workspace .panel-heading p { margin-top: 0.4rem; line-height: 1.65; font-weight: 400; }
+.workspace .device-shell .panel-heading.split { align-items: flex-start; }
+.workspace .device-shell .panel-heading.split > div:first-child { flex: 1 1 12rem; min-width: 0; }
+.workspace .panel-actions { flex-wrap: wrap; gap: 0.4rem; }
+.workspace .panel-actions button { min-height: 2.75rem; }
+.workspace .device-shell label { gap: 0.4rem; font-size: 0.8rem; font-weight: 500; line-height: 1.5; }
+.workspace .device-shell :is(input[type="text"], input[type="number"], input[type="date"], select) { min-height: 2.75rem; font-size: 0.85rem; }
+.workspace .device-shell :is(input, select, textarea) { min-width: 0; max-width: 100%; }
+.workspace .device-shell :is(.config-grid, .config-grid.compact, .settings-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; }
+.workspace .device-page .config-grid label:has(#modbusFunctionCode, #hartCommand, #hartPollMode) { grid-column: 1 / -1; }
+.workspace .device-page .config-grid label:has(#mqttPublishTopic) { grid-column: 1 / -1; }
+.workspace .device-page label:has(#mqttPublishRetain) { justify-items: start; align-content: start; }
+.workspace #mqttPublishRetain { width: 1.15rem; height: 1.15rem; margin: 0.6rem 0; }
+.workspace .device-page .subsection-heading { align-items: flex-start; flex-wrap: wrap; gap: 0.4rem; }
+.workspace .device-shell .command-preview { padding: 0.85rem; background: var(--surface-muted); }
+.workspace .device-shell .command-preview code { overflow-wrap: anywhere; }
+.workspace .device-shell .preset-row button { min-height: 2.75rem; }
+
+.workspace .device-shell .chart-panel { flex: none; }
+.workspace .chart-panel .poll-actions { align-items: center; }
+.workspace .chart-panel .poll-actions .icon-button { border: 1px solid var(--line); background: var(--surface); color: var(--text); }
+.workspace .chart-panel .chart-view { min-height: 0; }
+.workspace .chart-panel .dual-chart-stack { grid-template-columns: minmax(0, 1fr); }
+.workspace .chart-panel .chart-block { width: 100%; min-width: 0; }
+.workspace .chart-panel .echart-host.line-host { flex: none; min-height: 0; height: 16rem; }
+.workspace .chart-panel .dual-chart-stack .echart-host.line-host { height: 12rem; }
+.workspace .chart-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.4rem 1rem; color: var(--muted); font-size: 0.75rem; line-height: 1.6; }
+/* Keep settings out of the plotting area; the dialog owns its own scroll. */
+.workspace .chart-panel .monitor-panel-heading { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:6px 12px; }
+.workspace .monitor-panel-heading #chartPanelSummary { grid-column:1/-1; margin:0; max-width:none; }
+.workspace .chart-settings-trigger { display:inline-flex; align-items:center; justify-content:center; gap:6px; white-space:nowrap; }
+.workspace .chart-block { border:1px solid var(--line); border-radius:6px; background:var(--surface); overflow:hidden; }
+.workspace .chart-block-heading { padding:10px 12px 0; flex-wrap:wrap; }
+.workspace .chart-block-heading strong::before { content:""; display:inline-block; width:7px; height:7px; margin-right:7px; border-radius:50%; background:var(--accent); }
+.workspace .chart-block:first-child .chart-block-heading strong::before { background:#2563eb; }
+.workspace .chart-block .echart-host { border:0; background:transparent; }
+.workspace .dual-chart-stack > .chart-meta { justify-content:flex-end; }
+
+.workspace .output-settings-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.workspace .output-settings-grid .mode-row { padding:0; margin:0; border:0; background:transparent; }
+.workspace .value-display-toolbar { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:20px; padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font-size:12px; }
+.workspace .value-display-toolbar .value-display-row { width:144px; margin:0; padding:3px; gap:2px; }
+.workspace .value-display-row .segmented-option span { min-height:30px; padding:0 12px; font-size:12px; font-weight:600; box-shadow:none; border-radius:4px; }
+.workspace .value-display-row .segmented-option input:checked + span { background:var(--surface); color:var(--accent-strong); }
+.workspace .value-display-row .segmented-option input:focus-visible + span { outline:2px solid var(--accent); outline-offset:2px; }
+
+.workspace .chart-settings-dialog { width:min(760px,calc(100vw - 32px)); max-width:none; max-height:calc(100dvh - 48px); padding:0; margin:auto; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text); box-shadow:0 24px 80px #0003; overflow:hidden; }
+.workspace .chart-settings-dialog::backdrop { background:rgba(16,24,32,.42); }
+.workspace .chart-settings-shell { display:flex; flex-direction:column; max-height:calc(100dvh - 50px); }
+.workspace .chart-settings-dialog-header { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; padding:24px; border-bottom:1px solid var(--line); flex:none; }
+.workspace .chart-settings-dialog-header h2 { margin:0; font-size:20px; line-height:1.3; font-weight:650; }
+.workspace .chart-settings-dialog-header p { margin:6px 0 0; font-size:13px; line-height:1.5; color:var(--muted); }
+.workspace .chart-settings-dialog-header .icon-button { flex:none; width:34px; height:34px; padding:0; min-height:34px; font-size:22px; }
+.workspace .chart-settings-dialog .chart-curve-panel-body { padding:24px; display:grid; gap:24px; overflow:auto; min-height:0; overscroll-behavior:contain; }
+.workspace .chart-settings-dialog .chart-curve-section { gap:16px; min-width:0; }
+.workspace .chart-settings-dialog .chart-curve-section-note { padding:12px 14px; border-left:2px solid var(--accent); background:var(--surface-muted); line-height:1.7; font-size:13px; }
+.workspace .chart-settings-dialog .chart-sampling-section { display:grid; gap:6px; }
+.workspace .chart-settings-dialog .chart-config-status { color:var(--accent-strong); }
+.workspace .chart-settings-dialog .chart-config-status:empty { display:none; }
+.workspace .chart-settings-dialog h3 { margin:0; font-size:14px; font-weight:600; }
+.workspace .chart-settings-dialog .chart-sampling-section > p { margin:0; color:var(--muted); font-size:13px; line-height:1.6; }
+.workspace .chart-settings-dialog .chart-settings { grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; padding:8px 0 0; border:0; background:transparent; }
+.app-shell .workspace .chart-settings-dialog label { margin:0; gap:6px; font-size:13px; }
+.app-shell .workspace .chart-settings-dialog :is(input:not([type="checkbox"]):not([type="radio"]),select) { height:40px; min-height:40px; padding:8px 10px; font-size:14px; }
+.app-shell .workspace .chart-settings-dialog button { min-height:38px; font-size:13px; }
+.workspace .chart-settings-dialog .chart-curve-config { margin-top:0; gap:12px; }
+.workspace .chart-settings-dialog .subsection-heading { display:flex; flex-wrap:wrap; gap:6px 12px; margin:0; }
+.workspace .chart-settings-dialog .subsection-heading span { color:var(--muted); font-size:12px; }
+.workspace .chart-settings-dialog .curve-config-row { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; padding:16px; background:var(--surface-muted); }
+.workspace .chart-settings-dialog .curve-config-row label { min-width:0; }
+.workspace .chart-settings-dialog .curve-config-row > :is(.curve-toggle,.curve-row-actions) { grid-column:1/-1; min-width:0; padding-bottom:10px; border-bottom:1px solid var(--line); }
+.workspace .chart-settings-dialog .curve-toggle { justify-content:flex-start; gap:10px; flex-direction:row; }
+.workspace .chart-settings-dialog .curve-row-actions .curve-toggle { flex:none; }
+.workspace .chart-settings-dialog .curve-toggle input { order:-1; }
+.workspace .chart-settings-dialog .curve-config-row label:has(input[id$="FieldName"]) { grid-column:span 2; }
+.workspace .chart-settings-dialog .parser-test { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:10px; margin:0; }
+.workspace .chart-settings-dialog .parser-test output { grid-column:1/-1; overflow-wrap:anywhere; }
+.workspace .chart-settings-dialog .hart-chart-series { margin:0; }
+.workspace .chart-settings-dialog-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:16px 24px; border-top:1px solid var(--line); background:var(--surface-muted); flex:none; }
+.workspace .chart-settings-dialog-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.workspace .chart-settings-dialog #saveChartConfig { background:var(--accent); color:var(--on-accent); border-radius:6px; padding-inline:14px; }
+
+@media (max-width:700px) {
+  .workspace .chart-panel .monitor-panel-heading { grid-template-columns:minmax(0,1fr); }
+  .workspace .monitor-panel-heading .poll-actions { justify-content:flex-start; }
+  .workspace .chart-settings-dialog { width:calc(100vw - 20px); max-height:calc(100dvh - 20px); }
+  .workspace .chart-settings-shell { max-height:calc(100dvh - 22px); }
+  .workspace .chart-settings-dialog-header, .workspace .chart-settings-dialog .chart-curve-panel-body { padding:18px; }
+  .workspace .chart-settings-dialog-footer { padding:14px 18px; }
+  .workspace .chart-settings-dialog .curve-config-row { grid-template-columns:repeat(2,minmax(0,1fr)); padding:12px; }
+  .workspace .chart-settings-dialog-actions { width:100%; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .app-shell .workspace .chart-settings-dialog button, .workspace .value-display-row .segmented-option span { min-height:44px; }
+}
+
+.workspace .console-panel .serial-log { height: 14rem; border-radius: 0.35rem; padding: 1rem; line-height: 1.65; }
+.workspace .console-panel .send-grid { grid-template-columns: 1fr 1fr auto; grid-template-areas: "format ending send" "command command command"; gap: 0.75rem; }
+.workspace .console-panel .send-grid > button { min-width: 5rem; min-height: 2.75rem; }
+.workspace .console-panel textarea { min-height: 5rem; }
+.workspace .debug-stat-grid, .workspace .mqtt-stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+.workspace .debug-stat, .workspace .mqtt-stat { border: 0; border-left: 2px solid var(--line); border-radius: 0; background: var(--surface-muted); }
+.workspace .debug-stat.wide { grid-column: 1 / -1; }
+.workspace .debug-template-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.workspace .debug-template-grid button { min-height: 2.75rem; }
+.workspace .hart-control-panel { gap: 0.85rem; }
+.workspace :is(.hart-control-panel, .hart-workspace-panel, .hart-tool-card) { grid-template-columns: minmax(0, 1fr); min-width: 0; }
+.workspace .hart-workspace-intro { flex-wrap: wrap; }
+.workspace .hart-workspace-intro > div { min-width: 0; flex: 1 1 18rem; }
+.workspace .hart-workspace-intro .state-pill { white-space: normal; border-radius: 0.35rem; line-height: 1.5; }
+.workspace .hart-calibration-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.workspace .hart-calibration-row label { grid-column: 1 / -1; }
+.workspace .hart-calibration-row button, .workspace .hart-card-actions button { white-space: normal; min-width: 0; max-width: 100%; padding-block: 0.5rem; }
+.workspace :is(.hart-card-actions, .hart-calibration-row, .hart-workspace-intro) > button:not(.ghost-button) { min-height: 2.75rem; padding: 0.55rem 0.75rem; background: var(--accent); color: var(--on-accent); border-radius: 0.35rem; }
+.workspace [data-hart-workspace-panel="general"]:not([hidden]) { display: grid; gap: 1rem; }
+.workspace .device-shell .hart-quick-config { grid-template-columns: minmax(0, 1fr); gap: 1rem; padding: 0.85rem; background: var(--surface-muted); }
+.workspace .hart-standard-command-heading { flex-direction: column; align-items: flex-start; gap: 0.35rem; }
+.workspace .hart-standard-command-heading strong { flex-shrink: 0; }
+.workspace .hart-card-actions { flex-wrap: wrap; }
+.workspace .hart-card-actions button { min-height: 2.75rem; }
+.workspace .hart-variable-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.65rem; }
+.workspace .hart-value-card { padding: 0.85rem; background: var(--surface-muted); }
+.workspace .hart-device-info code { padding: 0.65rem; line-height: 1.6; }
+.workspace .hart-workspace-tabs { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--line); }
+.workspace .hart-workspace-tabs button { flex: 1 1 auto; min-height: 2.75rem; border-radius: 0.35rem 0.35rem 0 0; }
+
+.workspace .request-page .request-panel { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 2.5rem; padding: 2rem; }
+.workspace .request-panel > .panel-heading { display: flex; flex-direction: column; align-items: flex-start; gap: 1rem; margin: 0; }
+.workspace .request-panel > .panel-heading > div:first-child { flex: none; }
+.workspace .request-checklist { display: grid; gap: 1.4rem; padding-left: 1.25rem; margin: 0.75rem 0; }
+.workspace .request-checklist li { padding-left: 0.4rem; color: var(--accent-strong); }
+.workspace .request-checklist strong { display: block; color: var(--text); font-size: 0.9rem; font-weight: 600; }
+.workspace .request-checklist span { display: block; margin-top: 0.4rem; color: var(--muted); font-size: 0.85rem; line-height: 1.6; }
+.workspace .request-template { grid-template-columns: minmax(0, 1fr); margin: 0; gap: 0.75rem; align-content: start; }
+.workspace .request-template textarea { min-height: 21rem; line-height: 1.9; padding: 1rem; background: var(--surface-muted); }
+.workspace .request-template button { min-height: 2.75rem; justify-self: end; min-width: 8rem; }
+
+@media (max-width: 1200px) and (min-width: 1051px) {
+  .workspace .device-shell.active { grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 1rem; }
+  .workspace .device-shell .panel { padding: 1rem; }
+}
+
+@media (max-width: 1050px) {
+  .workspace .device-shell.active { grid-template-columns: minmax(0, 1fr); }
+  .workspace .device-shell .device-page.active { width: 100%; }
+  .workspace .chart-panel .echart-host.line-host { height: 18rem; }
+}
+
+@media (max-width: 700px) {
+  .workspace .workspace-heading { margin-bottom: 1rem; padding-bottom: 1rem; }
+  .workspace-title-row { align-items: flex-start; gap: 0.75rem; }
+  .workspace-title-row h1 { font-size: 1.5rem; }
+  .workspace-title-row p { font-size: 0.8rem; }
+  .workspace-transport { font-size: 0.65rem; }
+  .workspace .device-shell .panel { padding: 1rem; }
+  .workspace .chart-panel .echart-host.line-host { height: 14rem; }
+  .workspace .chart-panel .dual-chart-stack .echart-host.line-host { height: 11rem; }
+  .workspace .chart-curve-panel-body { padding: 0.75rem; }
+  .workspace .chart-curve-panel-summary { white-space: normal; }
+  .workspace .request-page .request-panel { grid-template-columns: minmax(0, 1fr); gap: 2rem; padding: 1.25rem; }
+  .workspace .hart-workspace-grid { grid-template-columns: minmax(0, 1fr); }
+  .workspace .hart-workspace-intro > div { flex: none; }
+}
+
+@media (max-width: 400px) {
+  .workspace-title-row { flex-wrap: wrap; }
+  .workspace .device-shell .panel { padding: 0.85rem; }
+  .workspace .device-shell :is(.config-grid, .config-grid.compact, .settings-grid) { grid-template-columns: minmax(0, 1fr); }
+  .workspace .device-shell .config-grid > * { grid-column: 1; }
+  .workspace .console-panel .send-grid { grid-template-columns: 1fr 1fr; grid-template-areas: "format ending" "command command" "send send"; }
+}
+
+/* Task panes keep long forms available without stacking every workflow. */
+.workspace .workspace-pane-tabs { display:flex; flex-wrap:wrap; gap:0; border-bottom:1px solid var(--line); flex:none; }
+.workspace .workspace-pane-tabs button { flex:1; min-height:40px; padding:8px 12px; border:0; border-bottom:2px solid transparent; border-radius:0; background:transparent; color:var(--muted); font-size:13px; }
+.workspace .workspace-pane-tabs button[aria-selected="true"] { border-bottom-color:var(--accent); color:var(--accent-strong); background:var(--surface-selected); }
+.workspace .hart-workspace-grid.has-workspace-tabs { display:flex; flex-direction:column; gap:12px; }
+.workspace .hart-workspace-grid.has-workspace-tabs > article { order:0; grid-column:auto; }
+.workspace .hart-workspace-grid.has-workspace-tabs .hart-tool-fields { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.workspace .hart-workspace-grid.has-workspace-tabs .hart-tool-wide { grid-column:auto; }
+
+/* Desktop workbench uses the available browser viewport, not a fixed monitor size.
+   Long custom forms and expanded settings retain local scrolling as a fallback. */
+@media (min-width:1051px) and (min-height:640px) {
+  .app-shell:not(.overview-page) { height:100dvh; min-height:0; grid-template-columns:224px minmax(0,1fr); grid-template-rows:60px minmax(0,1fr) 26px; }
+  .app-shell:not(.overview-page) .topbar { padding:8px 16px; position:static; gap:12px; }
+  .app-shell:not(.overview-page) .topbar .brand-logo { width:132px; }
+  .app-shell:not(.overview-page) .topbar .brand-block p { font-size:12px; }
+  .app-shell:not(.overview-page) .topbar-actions { gap:8px; }
+  .app-shell:not(.overview-page) .topbar-actions :is(button,.state-pill) { min-height:34px; height:34px; font-size:13px; }
+  .app-shell:not(.overview-page) .site-footer { padding:4px 12px; }
+  .app-shell:not(.overview-page) .site-footer p { font-size:11px; }
+  .app-shell:not(.overview-page) .sidebar { min-height:0; display:flex; flex-direction:column; gap:8px; padding:10px; overflow:auto; }
+  .app-shell:not(.overview-page) .sidebar .panel { flex:none; padding:0; }
+  .app-shell:not(.overview-page) .sidebar .panel-heading { margin-bottom:6px; }
+  .app-shell:not(.overview-page) .sidebar h2 { font-size:13px; }
+  .app-shell:not(.overview-page) .sidebar .sidebar-collapse-toggle { min-height:28px; width:28px; height:28px; }
+  .app-shell:not(.overview-page) .sidebar .sidebar-panel-body { gap:6px; }
+  .app-shell:not(.overview-page) .sidebar [data-sidebar-panel="project"] .sidebar-panel-body { display:grid; grid-template-columns:minmax(0,1fr); gap:4px; }
+  .app-shell:not(.overview-page) .sidebar [data-sidebar-panel="project"].collapsed .sidebar-panel-body { display:none; }
+  .app-shell:not(.overview-page) .sidebar [data-sidebar-panel="project"] .device-item { grid-template-columns:24px minmax(0,1fr); width:100%; padding:5px; min-height:36px; }
+  .app-shell:not(.overview-page) .sidebar [data-sidebar-panel="project"] .device-icon { width:24px; height:24px; min-width:24px; font-size:12px; }
+  .app-shell:not(.overview-page) .sidebar [data-sidebar-panel="project"] strong { font-size:12px; }
+  .app-shell:not(.overview-page) .sidebar [data-sidebar-panel="library"] { flex:1 1 auto; min-height:140px; display:flex; flex-direction:column; }
+  .app-shell:not(.overview-page) .sidebar [data-sidebar-panel="library"].collapsed { flex:none; min-height:0; }
+  .app-shell:not(.overview-page) .sidebar [data-sidebar-panel="library"] .sidebar-panel-body { min-height:0; grid-template-rows:auto minmax(0,1fr); }
+  .app-shell:not(.overview-page) .sidebar .device-library { overflow:auto; min-height:0; gap:3px; }
+  .app-shell:not(.overview-page) .sidebar .device-item { min-height:42px; padding:5px; gap:8px; }
+  .app-shell:not(.overview-page) .sidebar .device-item strong { font-size:12px; }
+  .app-shell:not(.overview-page) .sidebar .device-item small { font-size:11px; }
+  .app-shell:not(.overview-page) .sidebar .device-icon { width:28px; height:28px; min-width:28px; }
+  .app-shell:not(.overview-page) .sidebar .transport-fields { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
+  .app-shell:not(.overview-page) .sidebar .transport-fields label:has(input[type="text"],input[type="password"],input[type="url"]) { grid-column:1/-1; }
+  .app-shell:not(.overview-page) .sidebar label { margin:0; gap:3px; font-size:11px; }
+  .app-shell:not(.overview-page) .sidebar :is(input,select) { min-height:32px; height:32px; padding:4px 7px; font-size:12px; }
+  .app-shell:not(.overview-page) .workspace { display:flex; flex-direction:column; min-height:0; padding:12px 16px; }
+  .app-shell:not(.overview-page) .workspace-heading { display:flex; align-items:center; gap:18px; flex:none; margin:0 0 12px; padding:0 0 10px; }
+  .app-shell:not(.overview-page) .workspace-breadcrumb { margin:0; font-size:12px; flex:none; }
+  .app-shell:not(.overview-page) .workspace-breadcrumb button { min-height:32px; }
+  .app-shell:not(.overview-page) .workspace-breadcrumb > span { display:none; }
+  .app-shell:not(.overview-page) .workspace-title-row { flex:1; min-width:0; gap:12px; }
+  .app-shell:not(.overview-page) .workspace-title-row > div { display:flex; align-items:baseline; gap:16px; min-width:0; }
+  .app-shell:not(.overview-page) .workspace-title-row h1 { font-size:20px; white-space:nowrap; }
+  .app-shell:not(.overview-page) #workspaceDescription { margin:0; font-size:12px; line-height:1.5; }
+  .app-shell:not(.overview-page) .workspace-transport { font-size:11px; }
+  .app-shell:not(.overview-page) .device-shell.active { flex:1; min-height:0; grid-template-columns:minmax(0,1fr) minmax(0,1.5fr); gap:12px; align-items:stretch; }
+  .app-shell:not(.overview-page) .device-shell .device-page.active { min-height:0; height:100%; overflow:auto; gap:12px; }
+  .app-shell:not(.overview-page) .device-workbench-column { display:grid; grid-template-rows:minmax(0,1.8fr) minmax(220px,1fr); min-height:0; height:100%; gap:12px; align-self:stretch; }
+  .app-shell:not(.overview-page) .workspace .panel { padding:12px; }
+  .app-shell:not(.overview-page) .workspace .panel-heading { gap:8px; margin-bottom:10px; }
+  .app-shell:not(.overview-page) .workspace .panel-heading h2 { font-size:14px; }
+  .app-shell:not(.overview-page) .workspace .panel-heading p { font-size:12px; line-height:1.45; margin-top:3px; }
+  .app-shell:not(.overview-page) .workspace label { gap:4px; font-size:12px; }
+  .app-shell:not(.overview-page) .workspace :is(button,.action-link) { min-height:34px; padding:6px 10px; font-size:12px; }
+  .app-shell:not(.overview-page) .workspace :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),select) { height:34px; min-height:34px; padding:5px 8px; font-size:13px; }
+  .app-shell:not(.overview-page) .workspace input[type="range"] { min-height:20px; }
+  .app-shell:not(.overview-page) .workspace .config-grid { gap:10px; }
+  .app-shell:not(.overview-page) .workspace .state-pill { padding:4px 8px; font-size:11px; }
+  .app-shell:not(.overview-page) .workspace .panel-actions { gap:6px; }
+  .app-shell:not(.overview-page) .workspace .command-preview { gap:10px; margin-top:12px; padding:10px; font-size:12px; }
+  .app-shell:not(.overview-page) .workspace .command-preview code { font-size:12px; }
+  .app-shell:not(.overview-page) .workspace .mode-row { margin-bottom:0; }
+  .app-shell:not(.overview-page) .workspace .setpoint-row { margin-top:12px; gap:8px; }
+  .app-shell:not(.overview-page) .workspace .preset-row { margin-top:8px; gap:6px; }
+  .app-shell:not(.overview-page) .workspace .range-label strong { font-size:22px; }
+  .app-shell:not(.overview-page) .workspace .chart-panel { position:relative; display:flex; flex-direction:column; min-height:0; }
+  .app-shell:not(.overview-page) .workspace .chart-panel > .panel-heading { flex:none; }
+  .app-shell:not(.overview-page) .workspace #chartPanelSummary { max-width:none; margin:0; }
+  .app-shell:not(.overview-page) .workspace .chart-panel-body { flex:1; min-height:0; }
+  .app-shell:not(.overview-page) .workspace .chart-view { height:100%; display:flex; flex-direction:column; min-height:0; }
+  .app-shell:not(.overview-page) .workspace .echart-host { flex:1; height:0; min-height:0; }
+  .app-shell:not(.overview-page) .workspace .chart-meta { flex:none; margin-top:4px; font-size:10px; gap:6px; }
+  .app-shell:not(.overview-page) .workspace .dual-chart-stack { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); grid-template-rows:minmax(0,1fr) auto; gap:10px; }
+  .app-shell:not(.overview-page) .workspace .chart-block { display:flex; flex-direction:column; min-height:0; padding:0; }
+  .app-shell:not(.overview-page) .workspace .chart-block-heading { gap:4px; font-size:11px; }
+  .app-shell:not(.overview-page) .workspace .dual-chart-stack > .chart-meta { grid-column:1/-1; }
+  .app-shell:not(.overview-page) .workspace .console-panel { min-height:0; display:flex; flex-direction:column; }
+  .app-shell:not(.overview-page) .workspace .console-panel > .panel-heading { margin-bottom:8px; flex:none; }
+  .app-shell:not(.overview-page) .workspace .console-panel > .panel-heading p { display:none; }
+  .app-shell:not(.overview-page) .workspace .serial-log { flex:1; height:0; min-height:0; font-size:11px; }
+  .app-shell:not(.overview-page) .workspace .send-grid { flex:none; display:grid; grid-template-columns:76px 76px minmax(0,1fr) auto; align-items:end; gap:8px; margin-top:8px; }
+  .app-shell:not(.overview-page) .workspace .send-grid .send-command { grid-column:auto; grid-row:auto; }
+  .app-shell:not(.overview-page) .workspace .send-grid textarea { height:54px; min-height:54px; resize:none; padding:7px; font-size:12px; }
+  .app-shell:not(.overview-page) .workspace .send-grid #sendManual { grid-column:auto; grid-row:auto; height:54px; }
+  .app-shell:not(.overview-page) .workspace .debug-stat-grid { gap:6px; margin:10px 0; }
+  .app-shell:not(.overview-page) .workspace .debug-stat { padding:8px; }
+  .app-shell:not(.overview-page) .workspace .debug-template-grid { gap:8px; }
+  .app-shell:not(.overview-page) .workspace .debug-template-card { padding:10px; gap:8px; }
+  .app-shell:not(.overview-page) .workspace .subsection-heading { margin:10px 0; }
+  .app-shell:not(.overview-page) .workspace .subsection-heading h3 { font-size:13px; }
+  .app-shell:not(.overview-page) .workspace .hart-control-panel { gap:10px; }
+  .app-shell:not(.overview-page) .workspace .hart-device-info { gap:6px; }
+  .app-shell:not(.overview-page) .workspace .hart-device-info code { padding:6px 8px; font-size:11px; }
+  .app-shell:not(.overview-page) .workspace .hart-workspace-tabs { padding:0; gap:0; border-radius:0; background:transparent; }
+  .app-shell:not(.overview-page) .workspace .hart-workspace-tabs button { padding:8px 10px; border-radius:0; border-bottom:2px solid transparent; }
+  .app-shell:not(.overview-page) .workspace .hart-workspace-tabs button.active { border-bottom-color:var(--accent); background:var(--surface-selected); box-shadow:none; }
+  .app-shell:not(.overview-page) .workspace .hart-variable-cards { grid-template-columns:repeat(4,minmax(0,1fr)); gap:6px; }
+  .app-shell:not(.overview-page) .workspace .hart-value-card { min-height:72px; padding:8px; }
+  .app-shell:not(.overview-page) .workspace .hart-value-readout { font-size:20px; }
+  .app-shell:not(.overview-page) .workspace .hart-value-subtitle { font-size:10px; }
+  .app-shell:not(.overview-page) .workspace [data-hart-workspace-panel="general"] { gap:10px; }
+  .app-shell:not(.overview-page) .workspace .hart-command-response { padding:8px; }
+  .app-shell:not(.overview-page) .workspace .hart-quick-config { gap:10px; }
+  .app-shell:not(.overview-page) .workspace .hart-essential-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .app-shell:not(.overview-page) .workspace label:has(#hartPollMode) { grid-column:auto; }
+  .app-shell:not(.overview-page) .workspace .hart-command-grid { grid-template-columns:minmax(0,1fr) auto; align-items:end; }
+  .app-shell:not(.overview-page) .workspace label:has(#hartCommand) { grid-column:auto; }
+  .app-shell:not(.overview-page) .workspace .hart-command-preview { margin:0; flex-wrap:wrap; }
+  .app-shell:not(.overview-page) .workspace .hart-advanced-section { margin:0; }
+  .app-shell:not(.overview-page) .workspace .hart-advanced-section summary { padding:8px; }
+  .app-shell:not(.overview-page) .workspace .hart-workspace-intro { padding:10px 12px; }
+  .app-shell:not(.overview-page) .workspace .hart-workspace-intro h3 { font-size:14px; }
+  .app-shell:not(.overview-page) .workspace .hart-workspace-intro p { font-size:12px; }
+  .app-shell:not(.overview-page) .workspace .hart-tool-card { padding:14px; gap:12px; }
+  .app-shell:not(.overview-page) .workspace .hart-tool-card > header small { font-size:12px; }
+  .app-shell:not(.overview-page) .workspace .hart-tool-card h4 { font-size:15px; }
+  .app-shell:not(.overview-page) .workspace .hart-card-status { padding:8px; }
+  .app-shell:not(.overview-page) .workspace .hart-calibration-row { grid-template-columns:minmax(0,1fr) auto auto; }
+  .app-shell:not(.overview-page) .workspace .hart-calibration-row label { grid-column:auto; }
+  .app-shell:not(.overview-page) .device-shell.standalone { grid-template-columns:minmax(0,1fr); }
+  .app-shell:not(.overview-page) .microscope-power-frame { height:100%; min-height:0; }
+}
+@media (min-width:1051px) and (max-width:1250px) {
+  .app-shell:not(.overview-page) #workspaceDescription { display:none; }
+  .app-shell:not(.overview-page) .workspace .send-grid { grid-template-columns:64px 64px minmax(0,1fr) auto; gap:5px; }
+}
+@media (max-width:700px) {
+  .workspace .hart-workspace-grid.has-workspace-tabs .hart-tool-fields { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .workspace .workspace-pane-tabs button { min-height:44px; }
+}
+@media (max-width:400px) {
+  .workspace .hart-workspace-grid.has-workspace-tabs .hart-tool-fields { grid-template-columns:minmax(0,1fr); }
+}
+@media (min-width:1051px) and (min-height:640px) {
+  .app-shell:not(.overview-page) .workspace .hart-panel-heading { margin:0; align-items:center; }
+  .app-shell:not(.overview-page) .workspace .hart-panel-heading p { display:none; }
+  .app-shell:not(.overview-page) .workspace .hart-device-info { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .app-shell:not(.overview-page) .workspace .hart-device-info code { min-width:0; font-size:10px; }
+  .app-shell:not(.overview-page) .workspace .hart-workspace-tabs { margin:0; }
+  .app-shell:not(.overview-page) .workspace .hart-value-card { min-height:52px; padding:6px 8px; }
+  .app-shell:not(.overview-page) .workspace .hart-command-response { display:flex; align-items:baseline; gap:12px; }
+  .app-shell:not(.overview-page) .workspace .hart-command-response-label { flex:none; }
+  .app-shell:not(.overview-page) .workspace .hart-quick-config { padding:8px; }
+  .app-shell:not(.overview-page) .workspace .hart-checksum-meta { grid-column:auto; padding:5px; }
+  .app-shell:not(.overview-page) .workspace .hart-standard-command-section:has(.hart-standard-empty) .hart-standard-command-heading { display:none; }
+  .app-shell:not(.overview-page) .workspace .hart-standard-empty { border:0; padding:0; font-size:11px; }
+  .app-shell:not(.overview-page) .workspace .hart-command-preview { gap:6px; padding:8px; }
+  .app-shell:not(.overview-page) .workspace .hart-command-preview > div:first-child { flex-direction:row; align-items:baseline; gap:10px; }
+}
+@media (min-width:1051px) and (min-height:640px) {
+  .app-shell:not(.overview-page) .workspace .mqtt-stats-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .app-shell:not(.overview-page) .workspace .mqtt-stats-grid .debug-stat strong { font-size:14px; }
+}
+@media (min-width:1051px) and (min-height:640px) and (max-height:800px) {
+  .app-shell:not(.overview-page) .workspace :is(.hart-control-panel,.hart-quick-config,[data-hart-workspace-panel="general"]) { gap:5px; }
+  .app-shell:not(.overview-page) .workspace .hart-control-panel { padding:10px; }
+  .app-shell:not(.overview-page) .workspace .hart-essential-grid { gap:6px; }
+  .app-shell:not(.overview-page) .workspace .hart-value-card { min-height:44px; }
+  .app-shell:not(.overview-page) .workspace .debug-template-card { padding:8px; gap:5px; }
+  .app-shell:not(.overview-page) .workspace .debug-template-card code { min-height:30px; padding:5px 7px; }
+  .app-shell:not(.overview-page) .workspace .debug-template-grid { margin-top:8px; }
+  .app-shell:not(.overview-page) .workspace .mqtt-stats-grid .debug-stat { padding:6px 8px; }
+}
+
+/* Modal controls stay comfortable even when the workbench uses compact controls. */
+@media (min-width:1051px) and (min-height:640px) {
+  .app-shell:not(.overview-page) .workspace .chart-settings-dialog :is(input:not([type="checkbox"]):not([type="radio"]),select) { height:40px; min-height:40px; padding:8px 10px; font-size:14px; }
+  .app-shell:not(.overview-page) .workspace .chart-settings-dialog button { min-height:38px; font-size:13px; }
+}
+.app-shell .workspace .chart-settings-dialog .chart-settings-dialog-header .icon-button { font-size:22px; padding:0; width:38px; height:38px; }
+@media (max-width:700px) {
+  .app-shell .workspace .chart-settings-dialog .chart-settings-dialog-header .icon-button { width:44px; height:44px; }
+}

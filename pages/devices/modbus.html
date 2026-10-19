@@ -48,10 +48,6 @@
     </div>
     <div class="config-grid compact">
       <label>
-        <span data-i18n="modbus.slaveId">从站地址</span>
-        <input id="modbusSlaveId" type="number" min="1" max="247" step="1" value="1" />
-      </label>
-      <label>
         <span data-i18n="modbus.functionCode">功能码</span>
         <select id="modbusFunctionCode">
           <option value="3" selected data-i18n="modbus.fc03">03 读保持寄存器</option>
@@ -59,6 +55,10 @@
           <option value="6" data-i18n="modbus.fc06">06 写单寄存器</option>
           <option value="16" data-i18n="modbus.fc16">16 写多寄存器</option>
         </select>
+      </label>
+      <label>
+        <span data-i18n="modbus.slaveId">从站地址</span>
+        <input id="modbusSlaveId" type="number" min="1" max="247" step="1" value="1" />
       </label>
       <label>
         <span data-i18n="modbus.startAddr">起始地址</span>

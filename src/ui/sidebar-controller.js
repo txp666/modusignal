@@ -66,5 +66,11 @@ export function createSidebarController({ root = document } = {}) {
     mediaQuery.addEventListener("change", () => applyLayout());
   }
 
-  return { applyLayout, bind };
+  function refreshLabels() {
+    getPanels().forEach(({ panel, toggle }) => {
+      setCollapsed(panel, toggle, panel.classList.contains("collapsed"));
+    });
+  }
+
+  return { applyLayout, bind, refreshLabels };
 }

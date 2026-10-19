@@ -205,6 +205,7 @@ export function createTransportController(options) {
   }
 
   function updateConnectionUi(connected) {
+    elements.appShell?.classList.toggle("session-connected", connected);
     const standalone = isStandaloneDevice(state.deviceId);
     elements.connectButton.disabled = standalone || connected || !transportReady();
     elements.disconnectButton.disabled = !connected;

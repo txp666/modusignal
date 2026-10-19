@@ -1,7 +1,5 @@
 import { getChartCurveHelp } from "./chart-curve-help.js";
 
-const CHART_CURVE_PANEL_COLLAPSED_KEY = "modusignal.chartCurvePanel.collapsed";
-
 export function initChartCurvePanel(options = {}) {
   const {
     elements,
@@ -13,13 +11,16 @@ export function initChartCurvePanel(options = {}) {
     return;
   }
 
-  const collapsed = loadCollapsedState();
-  setChartCurvePanelCollapsed(elements, collapsed);
-
+  const dialog = elements.chartCurveConfigDialog;
   elements.chartCurveConfigToggle?.addEventListener("click", () => {
-    const nextCollapsed = !elements.chartCurveConfigBlock.classList.contains("collapsed");
-    setChartCurvePanelCollapsed(elements, nextCollapsed);
-    localStorage.setItem(CHART_CURVE_PANEL_COLLAPSED_KEY, JSON.stringify(nextCollapsed));
+    if (dialog && !dialog.open) dialog.showModal();
+  });
+  elements.chartCurveConfigClose?.addEventListener("click", () => dialog?.close());
+  dialog?.addEventListener("click", (event) => {
+    if (event.target === dialog) dialog.close();
+  });
+  dialog?.addEventListener("close", () => {
+    elements.chartCurveConfigToggle?.focus({ preventScroll: true });
     onVisibilityChange?.();
   });
 
@@ -58,9 +59,12 @@ export function updateChartCurvePanel(options = {}) {
   const showPanel = Boolean(isDevicePage && deviceId);
   elements.chartCurveConfigBlock.hidden = !showPanel;
 
-  if (!showPanel) {
-    return;
+  if (!showPanel || elements.chartCurveConfigDialog?.dataset.deviceId !== deviceId) {
+    elements.chartCurveConfigDialog?.close();
+    elements.chartCurveHelpDialog?.close();
   }
+  if (elements.chartCurveConfigDialog) elements.chartCurveConfigDialog.dataset.deviceId = deviceId || "";
+  if (!showPanel) return;
 
   if (elements.chartCurveConfigSummary) {
     elements.chartCurveConfigSummary.textContent = summary;
@@ -81,23 +85,6 @@ export function updateChartCurvePanel(options = {}) {
   elements.chartCurveCustomSection && (elements.chartCurveCustomSection.hidden = !sectionMap.custom);
   elements.chartCurveWebsocketSection && (elements.chartCurveWebsocketSection.hidden = !sectionMap.websocket);
   elements.chartCurveMqttSection && (elements.chartCurveMqttSection.hidden = !sectionMap.mqtt);
-}
-
-function setChartCurvePanelCollapsed(elements, collapsed) {
-  elements.chartCurveConfigBlock.classList.toggle("collapsed", collapsed);
-  elements.chartCurveConfigToggle?.setAttribute("aria-expanded", collapsed ? "false" : "true");
-  if (elements.chartCurveConfigBody) {
-    elements.chartCurveConfigBody.hidden = collapsed;
-  }
-}
-
-function loadCollapsedState() {
-  try {
-    const saved = localStorage.getItem(CHART_CURVE_PANEL_COLLAPSED_KEY);
-    return saved ? JSON.parse(saved) === true : false;
-  } catch {
-    return false;
-  }
 }
 
 function openChartCurveHelpDialog(elements, deviceId) {

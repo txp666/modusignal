@@ -3,6 +3,9 @@ import * as echarts from "../vendor/echarts.esm.min.js";
 const DEFAULT_THEME = {
   grid: "#d7dde4",
   text: "#687381",
+  surface: "#ffffff",
+  surfaceMuted: "#f6f7f9",
+  accent: "#0f766e",
 };
 
 function getChartTheme() {
@@ -11,7 +14,50 @@ function getChartTheme() {
   return {
     grid: styles.getPropertyValue("--line").trim() || DEFAULT_THEME.grid,
     text: styles.getPropertyValue("--muted").trim() || DEFAULT_THEME.text,
+    surface: styles.getPropertyValue("--surface").trim() || DEFAULT_THEME.surface,
+    surfaceMuted: styles.getPropertyValue("--surface-muted").trim() || DEFAULT_THEME.surfaceMuted,
+    accent: styles.getPropertyValue("--accent").trim() || DEFAULT_THEME.accent,
   };
+}
+
+// Match the overview track to the plot edges and keep the two range grips
+// distinct even when a narrow portion of the history is selected.
+function buildOverviewZoom({ startValue, endValue, theme, color = theme.accent, areaColor = "rgba(15, 118, 110, 0.12)" }) {
+  const range = { xAxisIndex: 0, filterMode: "none", startValue, endValue };
+  return [
+    { type: "inside", ...range },
+    {
+      type: "slider",
+      ...range,
+      left: 48,
+      right: 16,
+      height: 28,
+      bottom: 8,
+      backgroundColor: theme.surfaceMuted,
+      borderColor: theme.grid,
+      fillerColor: areaColor,
+      showDataShadow: true,
+      dataBackground: {
+        lineStyle: { color: theme.text, width: 1, opacity: 0.65 },
+        areaStyle: { color: theme.text, opacity: 0.08 },
+      },
+      selectedDataBackground: {
+        lineStyle: { color, width: 1.5, opacity: 1 },
+        areaStyle: { color, opacity: 0.15 },
+      },
+      handleIcon: "path://M2,0H6A2,2,0,0,1,8,2V26A2,2,0,0,1,6,28H2A2,2,0,0,1,0,26V2A2,2,0,0,1,2,0Z",
+      handleSize: "100%",
+      handleStyle: { color: theme.surface, borderColor: color, borderWidth: 1.5 },
+      brushSelect: false,
+      moveHandleSize: 0,
+      showDetail: false,
+      emphasis: {
+        handleLabel: { show: false },
+        handleStyle: { color: theme.surface, borderColor: color, borderWidth: 2 },
+      },
+      textStyle: { color: theme.text },
+    },
+  ];
 }
 
 const ECHARTS_SET_OPTION_FLAGS = {
@@ -178,6 +224,7 @@ function initChartMixin(instance) {
 
     this.chart.resize();
     this.flushPendingRender();
+    this.scheduleRender();
   };
 
   instance.dispose = function dispose() {
@@ -328,7 +375,7 @@ export class EchartsLiveChart {
     chart.setOption(
       {
         animation: false,
-        grid: { left: 48, right: 18, top: 36, bottom: hasZoom ? 54 : 28 },
+        grid: { left: 48, right: 16, top: this.title ? 38 : 18, bottom: hasZoom ? 72 : 30 },
         title: this.title
           ? {
               text: this.title,
@@ -351,41 +398,25 @@ export class EchartsLiveChart {
           type: "category",
           boundaryGap: false,
           data: categories,
-          axisLine: { lineStyle: { color: theme.grid } },
-          axisLabel: { color: theme.text, show: hasData },
+          axisLine: { show: hasData, lineStyle: { color: theme.grid } },
+          axisLabel: { color: theme.text, show: hasData, fontSize: 11, hideOverlap: true, margin: 10 },
           splitLine: { show: false },
         },
         dataZoom: hasZoom
-          ? [
-              {
-                type: "inside",
-                xAxisIndex: 0,
-                filterMode: "none",
-                startValue,
-                endValue,
-              },
-              {
-                type: "slider",
-                xAxisIndex: 0,
-                filterMode: "none",
-                startValue,
-                endValue,
-                height: 18,
-                bottom: 8,
-                borderColor: theme.grid,
-                fillerColor: "rgba(15, 118, 110, 0.12)",
-                handleStyle: { color: this.color },
-                textStyle: { color: theme.text },
-              },
-            ]
+          ? buildOverviewZoom({ startValue, endValue, theme, color: this.color, areaColor: this.areaColor })
           : [],
         yAxis: {
           type: "value",
+          show: hasData,
+          splitNumber: Math.max(2, Math.min(5, Math.floor((chart.getHeight() - 90) / 50))),
+          interval: this.fixedMin !== null && this.fixedMax !== null ? (yMax - yMin) / 4 : undefined,
           min: yMin,
           max: yMax,
           axisLine: { show: false },
           axisLabel: {
             color: theme.text,
+            fontSize: 11,
+            hideOverlap: true,
             formatter: (value) => formatValue(value, 2),
           },
           splitLine: { lineStyle: { color: theme.grid, type: "dashed" } },
@@ -400,7 +431,11 @@ export class EchartsLiveChart {
                 style: {
                   text: this.emptyText,
                   fill: theme.text,
-                  fontSize: 14,
+                  fontSize: 12,
+                  lineHeight: 20,
+                  align: "center",
+                  width: Math.max(100, chart.getWidth() - 48),
+                  overflow: "break",
                 },
               },
             ],
@@ -600,7 +635,7 @@ export class EchartsMultiLiveChart {
     chart.setOption(
       {
         animation: false,
-        grid: { left: 48, right: 18, top: 48, bottom: hasZoom ? 54 : 28 },
+        grid: { left: 48, right: 16, top: 48, bottom: hasZoom ? 72 : 28 },
         title: this.title
           ? {
               text: this.title,
@@ -626,34 +661,24 @@ export class EchartsMultiLiveChart {
           type: "category",
           boundaryGap: false,
           data: categories,
-          axisLine: { lineStyle: { color: theme.grid } },
-          axisLabel: { color: theme.text, show: hasData },
+          axisLine: { show: hasData, lineStyle: { color: theme.grid } },
+          axisLabel: { color: theme.text, show: hasData, fontSize: 11, hideOverlap: true, margin: 10 },
           splitLine: { show: false },
         },
         dataZoom: hasZoom
-          ? [
-              { type: "inside", xAxisIndex: 0, filterMode: "none", startValue, endValue },
-              {
-                type: "slider",
-                xAxisIndex: 0,
-                filterMode: "none",
-                startValue,
-                endValue,
-                height: 18,
-                bottom: 8,
-                borderColor: theme.grid,
-                fillerColor: "rgba(15, 118, 110, 0.12)",
-                textStyle: { color: theme.text },
-              },
-            ]
+          ? buildOverviewZoom({ startValue, endValue, theme })
           : [],
         yAxis: {
           type: "value",
+          show: hasData,
+          splitNumber: Math.max(2, Math.min(5, Math.floor((chart.getHeight() - 90) / 50))),
           min: yMin,
           max: yMax,
           axisLine: { show: false },
           axisLabel: {
             color: theme.text,
+            fontSize: 11,
+            hideOverlap: true,
             formatter: (value) => formatValue(value, 2),
           },
           splitLine: { lineStyle: { color: theme.grid, type: "dashed" } },
@@ -668,7 +693,11 @@ export class EchartsMultiLiveChart {
                 style: {
                   text: this.emptyText,
                   fill: theme.text,
-                  fontSize: 14,
+                  fontSize: 12,
+                  lineHeight: 20,
+                  align: "center",
+                  width: Math.max(100, chart.getWidth() - 48),
+                  overflow: "break",
                 },
               },
             ],

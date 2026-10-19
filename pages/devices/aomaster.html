@@ -1,4 +1,4 @@
-<section id="aomasterPage" class="device-page" data-page-id="aomaster">
+<section id="aomasterPage" class="device-page" data-page-id="aomaster" data-compact-tabs="aomaster">
   <section class="panel control-panel">
     <div class="panel-heading split">
       <div class="panel-title-block">
@@ -16,36 +16,41 @@
       <span data-field="driverState" class="state-pill">Modbus RTU</span>
     </div>
 
-    <div class="mode-row">
-      <label for="outputModeSelect">
-        <span data-i18n="aomaster.signalType">信号类型</span>
-        <select id="outputModeSelect" name="outputMode"></select>
-      </label>
+    <div class="output-settings-grid">
+      <div class="mode-row">
+        <label for="outputModeSelect">
+          <span data-i18n="aomaster.signalType">信号类型</span>
+          <select id="outputModeSelect" name="outputMode"></select>
+        </label>
+      </div>
+
+      <div class="mode-row">
+        <label for="waveformSelect">
+          <span data-i18n="aomaster.outputWaveform">输出波形</span>
+          <select id="waveformSelect" name="waveform">
+            <option value="constant" selected data-i18n="aomaster.waveform.constant">恒定输出</option>
+            <option value="step" data-i18n="aomaster.waveform.step">阶跃</option>
+            <option value="ramp" data-i18n="aomaster.waveform.ramp">斜坡</option>
+            <option value="square" data-i18n="aomaster.waveform.square">方波</option>
+            <option value="triangle" data-i18n="aomaster.waveform.triangle">三角波</option>
+            <option value="sine" data-i18n="aomaster.waveform.sine">正弦波</option>
+          </select>
+        </label>
+      </div>
     </div>
 
-    <div class="mode-row">
-      <label for="waveformSelect">
-        <span data-i18n="aomaster.outputWaveform">输出波形</span>
-        <select id="waveformSelect" name="waveform">
-          <option value="constant" selected data-i18n="aomaster.waveform.constant">恒定输出</option>
-          <option value="step" data-i18n="aomaster.waveform.step">阶跃</option>
-          <option value="ramp" data-i18n="aomaster.waveform.ramp">斜坡</option>
-          <option value="square" data-i18n="aomaster.waveform.square">方波</option>
-          <option value="triangle" data-i18n="aomaster.waveform.triangle">三角波</option>
-          <option value="sine" data-i18n="aomaster.waveform.sine">正弦波</option>
-        </select>
-      </label>
-    </div>
-
-    <div class="mode-row value-display-row" aria-label="数值显示方式">
-      <label class="segmented-option">
-        <input type="radio" name="aomasterValueDisplayMode" value="value" checked />
-        <span data-i18n="aomaster.value.unit">单位</span>
-      </label>
-      <label class="segmented-option">
-        <input type="radio" name="aomasterValueDisplayMode" value="percent" />
-        <span>%</span>
-      </label>
+    <div class="value-display-toolbar">
+      <span data-i18n="aomaster.value.display">数值显示</span>
+      <div class="mode-row value-display-row" role="group" data-i18n-aria-label="aomaster.value.display" aria-label="数值显示">
+        <label class="segmented-option">
+          <input type="radio" name="aomasterValueDisplayMode" value="value" checked />
+          <span data-i18n="aomaster.value.unit">单位</span>
+        </label>
+        <label class="segmented-option">
+          <input type="radio" name="aomasterValueDisplayMode" value="percent" />
+          <span>%</span>
+        </label>
+      </div>
     </div>
 
     <div id="constantSetpointBlock">

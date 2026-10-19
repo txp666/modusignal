@@ -2,9 +2,14 @@
   <div class="panel request-panel">
     <div class="panel-heading split">
       <div>
-        <h2 data-i18n="request.title">新增设备请求</h2>
-        <p data-i18n="request.desc">提交新设备前，请尽量准备协议、连接/串口参数、典型命令、回包样例和期望页面 UI。</p>
+        <h2 data-i18n="request.prepareTitle">准备设备资料</h2>
+        <p data-i18n="request.copyInstruction">复制模板，填写后提交到 GitHub Issues。</p>
       </div>
+      <ol class="request-checklist">
+        <li><strong data-i18n="request.protocolTitle">协议与连接</strong><span data-i18n="request.protocolDesc">设备型号、协议文档及默认连接参数。</span></li>
+        <li><strong data-i18n="request.sampleTitle">命令与回包</strong><span data-i18n="request.sampleDesc">提供一组真实的发送命令和对应响应。</span></li>
+        <li><strong data-i18n="request.uiTitle">期望的操作</strong><span data-i18n="request.uiDesc">要读取的数值、控制项及操作限制。</span></li>
+      </ol>
       <a id="newDeviceRequestLink" class="action-link" href="https://github.com/" target="_blank" rel="noreferrer" data-i18n="request.toGithub">去 GitHub 提交</a>
     </div>
     <div class="request-template">

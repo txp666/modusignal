@@ -5,7 +5,9 @@ import {
 } from "../chart-curve-panel.js";
 import {
   DEFAULT_CHART_CONFIG,
+  CHART_CONFIG_STORAGE_KEY,
   getChartPointSettings as resolveChartPointSettings,
+  loadChartConfig,
   normalizeChartConfig,
 } from "../chart-config.js";
 import { describeJsonCurveSummary } from "../devices/json-curve-config.js";
@@ -40,30 +42,6 @@ import {
   normalizeMqttConfig,
   normalizeWebSocketConfig,
 } from "../protocols.js";
-
-const CHART_CONFIG_STORAGE_KEY = "modusignal.chart.v1";
-const LEGACY_AOMASTER_CONFIG_STORAGE_KEY = "modusignal.aomasterDevice.v1";
-
-function loadChartConfig() {
-  try {
-    const saved = localStorage.getItem(CHART_CONFIG_STORAGE_KEY);
-    if (saved) return normalizeChartConfig(JSON.parse(saved));
-
-    const legacyAomaster = localStorage.getItem(LEGACY_AOMASTER_CONFIG_STORAGE_KEY);
-    if (legacyAomaster) {
-      const parsed = JSON.parse(legacyAomaster);
-      if (parsed.chartPointCount != null || parsed.visibleChartPointCount != null) {
-        return normalizeChartConfig({
-          chartPointCount: parsed.chartPointCount,
-          visibleChartPointCount: parsed.visibleChartPointCount,
-        });
-      }
-    }
-  } catch {
-    // Fall through to the normalized defaults when storage is unavailable or invalid.
-  }
-  return normalizeChartConfig(DEFAULT_CHART_CONFIG);
-}
 
 const on = (element, eventName, handler) => element?.addEventListener(eventName, handler);
 
@@ -135,7 +113,7 @@ export function createChartController(options) {
         color: "#2563eb",
         areaColor: "rgba(37, 99, 235, 0.12)",
         emptyText: i18n("chart.emptySetpoint"),
-        title: i18n("chart.setpointPreview"),
+        title: "",
       });
       actualChart = new EchartsLiveChart(elements.actualChartCanvas, {
         maxPoints: pointSettings.totalPointCount,
@@ -143,7 +121,7 @@ export function createChartController(options) {
         color: "#0f766e",
         areaColor: "rgba(15, 118, 110, 0.12)",
         emptyText: i18n("chart.emptyActual"),
-        title: i18n("chart.realTimeOutput"),
+        title: "",
       });
       allCharts = [chart, setpointChart, actualChart];
       chartsReady = true;
@@ -400,6 +378,7 @@ export function createChartController(options) {
   }
 
   function updateDraftConfig() {
+    if (elements.chartConfigStatus) elements.chartConfigStatus.textContent = "";
     config = readConfigForm();
     applyPointCountConfig();
   }
@@ -410,6 +389,7 @@ export function createChartController(options) {
     populateConfigForm();
     applyPointCountConfig();
     appendLog("info", i18n("log.chart"), i18n("chart.scaleConfigSaved"));
+    if (elements.chartConfigStatus) elements.chartConfigStatus.textContent = i18n("chart.scaleConfigSaved");
   }
 
   function resetConfig() {
@@ -418,6 +398,7 @@ export function createChartController(options) {
     populateConfigForm();
     applyPointCountConfig();
     appendLog("info", i18n("log.chart"), i18n("chart.scaleConfigReset"));
+    if (elements.chartConfigStatus) elements.chartConfigStatus.textContent = i18n("chart.scaleConfigReset");
   }
 
   function bindConfigEvents() {
@@ -465,6 +446,27 @@ export function createChartController(options) {
     requestResize();
   }
 
+  function refreshLabels() {
+    const labels = [
+      [chart, "chart.realTimeChart", "chart.emptyText"],
+      [setpointChart, "", "chart.emptySetpoint"],
+      [actualChart, "", "chart.emptyActual"],
+      [hartChart, "chart.hartVar", "chart.emptyText"],
+    ];
+    labels.forEach(([item, title, empty]) => {
+      if (!item) return;
+      item.title = title ? i18n(title) : "";
+      item.emptyText = i18n(empty);
+      item.scheduleRender();
+    });
+    if (jsonMultiChart) {
+      const { title, emptyText } = getJsonMultiChartMeta();
+      jsonMultiChart.title = title;
+      jsonMultiChart.emptyText = emptyText;
+      jsonMultiChart.scheduleRender();
+    }
+  }
+
   return {
     applyPointCountConfig,
     bindConfigEvents,
@@ -481,6 +483,7 @@ export function createChartController(options) {
     init,
     populateConfigForm,
     requestResize,
+    refreshLabels,
     setConfig,
     shouldUseJsonMultiChart,
     syncCurvePanelUi,

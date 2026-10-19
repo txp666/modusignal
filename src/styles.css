@@ -1,18 +1,22 @@
+@import "./home.css";
+@import "./workbench.css";
+
 :root {
   color-scheme: light;
-  --bg: #eef1f4;
+  --bg: #f5f7f8;
   --surface: #ffffff;
   --surface-muted: #f6f7f9;
   --line: #d7dde4;
   --text: #17202a;
-  --muted: #687381;
+  --muted: #596674;
   --accent: #0f766e;
   --accent-strong: #0b5e58;
+  --on-accent: #ffffff;
   --blue: #2563eb;
   --amber: #b45309;
   --red: #b42318;
   --green: #15803d;
-  --shadow: 0 18px 44px rgba(18, 28, 45, 0.1);
+  --shadow: none;
   --chrome: rgba(255, 255, 255, 0.86);
   --chrome-soft: rgba(255, 255, 255, 0.72);
   --surface-subtle: #fbfcfd;
@@ -32,11 +36,12 @@
   --muted: #9aa9b8;
   --accent: #2bb3a7;
   --accent-strong: #5bd0c5;
+  --on-accent: #092420;
   --blue: #6da0ff;
   --amber: #f3b562;
   --red: #ff8b82;
   --green: #67d391;
-  --shadow: 0 18px 44px rgba(0, 0, 0, 0.28);
+  --shadow: none;
   --chrome: rgba(15, 22, 30, 0.9);
   --chrome-soft: rgba(15, 22, 30, 0.82);
   --surface-subtle: #111923;
@@ -56,12 +61,12 @@ body {
 }
 
 :root[data-theme="dark"] body {
-  background: radial-gradient(circle at 50% -20%, rgba(43, 179, 167, 0.09), transparent 38%), var(--bg);
+  background: var(--bg);
 }
 
 body {
   margin: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(238, 241, 244, 0.92)), var(--bg);
+  background: var(--bg);
   color: var(--text);
   font-family:
     Inter, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
@@ -90,7 +95,7 @@ button:disabled {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 18rem minmax(0, 1fr);
+  grid-template-columns: 15.5rem minmax(0, 1fr);
   grid-template-rows: auto 1fr auto;
   min-height: 100vh;
 }
@@ -163,7 +168,7 @@ button:disabled {
 .brand-logo {
   display: block;
   flex: 0 0 auto;
-  height: 3.25rem;
+  height: 2.6rem;
   width: auto;
   max-width: min(100%, 20rem);
 }
@@ -254,7 +259,7 @@ label {
   align-items: center;
   gap: 0.45rem;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
 }
 
 .primary-button:hover,
@@ -331,10 +336,14 @@ label {
   align-content: start;
   padding: 0.75rem;
   border-right: 1px solid var(--line);
+  background: var(--surface);
 }
 
 .sidebar .panel {
   padding: 0.75rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .sidebar-panel-heading {
@@ -434,20 +443,13 @@ label {
   display: none;
 }
 
-.microscope-power-host {
-  display: grid;
-  grid-template-rows: auto minmax(34rem, 1fr);
-  min-height: calc(100vh - 10.5rem);
-}
-
 .microscope-power-frame {
   display: block;
   width: 100%;
   min-height: 34rem;
-  height: calc(100vh - 15rem);
-  border: 1px solid var(--line);
-  border-radius: 0.5rem;
-  background: #fff;
+  height: calc(100dvh - 7rem);
+  border: 0;
+  background: var(--bg);
 }
 
 .device-shell.active .control-panel,
@@ -570,6 +572,12 @@ label {
 
 .panel-heading.split {
   align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.panel-heading.split > div:first-child {
+  flex: 1 1 14rem;
+  min-width: 0;
 }
 
 .panel-actions {
@@ -577,6 +585,10 @@ label {
   gap: 0.5rem;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+.panel-actions > :is(button, a) {
+  flex-shrink: 0;
 }
 
 .poll-actions {
@@ -600,7 +612,7 @@ label {
   border-radius: 0.45rem;
   padding: 0 0.85rem;
   background: var(--accent);
-  color: #fff;
+  color: var(--on-accent);
   font-weight: 800;
   text-decoration: none;
 }
@@ -1276,6 +1288,7 @@ button:focus-visible {
 
 .device-icon.wiki-icon {
   background: var(--accent);
+  color: var(--on-accent);
 }
 
 .device-item.active {
@@ -1298,7 +1311,7 @@ button:focus-visible {
   height: 2.3rem;
   border-radius: 0.42rem;
   background: var(--text);
-  color: #fff;
+  color: var(--surface);
   font-weight: 800;
   overflow: hidden;
 }

@@ -148,6 +148,11 @@ Firefox 和 Safari 没有 Web Serial / WebUSB，串口和 WebUSB 设备用不了
 
 ## 项目结构
 
+界面修改请先阅读 [`DESIGN.md`](./DESIGN.md)。项目已接入
+[awesome-design-md 的 IBM / Carbon 设计参考](./docs/design/awesome-design-md/README.md)，
+保留 ModuSignal 青绿色品牌、双语、深浅色与离线运行；首页布局位于 `src/home.css`，内部工作台位于 `src/workbench.css`。
+内部页面使用 `#modbus`、`#hart` 等地址，可直接打开，支持浏览器前进/后退；导航逻辑位于 `src/ui/page-navigation.js`。
+
 英文版的 `Architecture` 表已经列得很清楚了，这里不重复。简单说就是：设备层和传输层分开，加新设备 = 写一个驱动 + 注册 + 加一个页面。像 MicroScope Power 这种自己管理 WebUSB 和曲线的专用上位机，可以在注册表里标记为 `standalone`，详见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
 
 ## MicroScope Power WebUSB 上位机

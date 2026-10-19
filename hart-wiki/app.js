@@ -226,7 +226,7 @@ function renderCommandFrame(command) {
     </header>
     <div class="command-frame-lanes">
       <div class="command-frame-lane tx"><div><strong>发送示例</strong><small>${definition.address === "long" ? "示例长地址：Type 0x1234 · ID 0x56789A" : "示例短地址：Primary Master · Polling Address 0"}</small></div><code data-frame-copy-source="tx">${requestExample}</code><button type="button" data-frame-copy="tx">复制</button></div>
-      <div class="command-frame-lane rx"><div><strong>响应模板</strong><small>BC 包含 RC、DS 与 Response Data；实际字段以收到的 Byte Count 为界</small></div><code data-frame-copy-source="rx">${responseTemplate}</code><button type="button" data-frame-copy="rx">复制</button></div>
+      <div class="command-frame-lane rx"><div><strong>响应模板</strong><small>BC 包含 RC、DS 与 Response Data；按响应的 Byte Count 确定数据长度</small></div><code data-frame-copy-source="rx">${responseTemplate}</code><button type="button" data-frame-copy="rx">复制</button></div>
     </div>
     <div class="frame-data-grid">
       ${renderFrameFields("Request Data", definition.requestFields)}

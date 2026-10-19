@@ -4,10 +4,12 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="MicroScope Power 开源便携式可调电源与电流波形分析仪，用于观察单片机休眠、唤醒与活动电流，配合 ModuSignal WebUSB 上位机使用。">
+    <script src="../../../hart-wiki/theme-init.js?v=__ASSET_VERSION__"></script>
     <title>MicroScope Power · 产品介绍 | ModuSignal</title>
     <link rel="stylesheet" href="./about.css?v=__ASSET_VERSION__">
-  </head>
-  <body>
+    <link rel="stylesheet" href="../../shared/editorial.css?v=__ASSET_VERSION__" />
+</head>
+  <body class="design-page">
     <header class="site-header">
       <div class="container header-inner">
         <a class="brand" href="../../../index.html?v=__ASSET_VERSION__">ModuSignal</a>
@@ -23,7 +25,7 @@
         <div>
           <p class="eyebrow">开源硬件 · 浏览器采集</p>
           <h1 id="product-title">MicroScope Power</h1>
-          <p class="headline">可调供电与电流波形，<br>放在一台小仪器里。</p>
+          <p class="headline">便携式可调电源<br>与电流波形分析仪</p>
           <p class="lead">给单片机和传感器供电，观察休眠、唤醒与活动电流。OLED 和旋钮用于本地设定，ModuSignal 用于查看波形、游标测量和数据导出。</p>
           <div class="hero-actions">
             <a class="button" href="./index.html?v=__ASSET_VERSION__">打开 WebUSB 上位机</a>
@@ -48,8 +50,8 @@
 
       <section class="section" aria-labelledby="observe-title">
         <div class="section-heading">
-          <p class="eyebrow">从供电到数据</p>
-          <h2 id="observe-title">查看一段完整的电流过程</h2>
+          <p class="eyebrow">采集与分析</p>
+          <h2 id="observe-title">电流波形、滤波与能量估算</h2>
         </div>
         <div class="feature-grid">
           <article class="feature-card">
@@ -70,7 +72,7 @@
       <section class="section" aria-labelledby="test-title">
         <div class="section-heading">
           <p class="eyebrow">实测示例</p>
-          <h2 id="test-title">XIAO Sense Plus 的完整电流过程</h2>
+          <h2 id="test-title">XIAO Sense Plus 电流实测</h2>
           <p class="spec-note">以 XIAO nRF52840 Sense Plus 为负载，固定 1 Ω 大量程，记录 CPU、指示灯、传感器、蓝牙广播及休眠的电流变化。</p>
         </div>
         <figure class="device-photo">
@@ -89,7 +91,7 @@
       <section class="section hardware-section" aria-labelledby="hardware-title">
         <div class="section-heading">
           <p class="eyebrow">硬件组成</p>
-          <h2 id="hardware-title">双量程前端，共用一条采样链</h2>
+          <h2 id="hardware-title">双量程电流采集电路</h2>
         </div>
         <div class="hardware-grid">
           <div>

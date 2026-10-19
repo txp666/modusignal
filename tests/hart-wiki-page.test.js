@@ -47,10 +47,10 @@ test("HART Wiki presents a sourced protocol learning path", async () => {
   assert.match(html, /约 9\.167 ms/);
   assert.match(html, /data-checksum-input/);
   assert.match(html, /多点 Multi-drop/);
-  assert.match(html, /Cmd 0 返回的不是一个 ID/);
+  assert.match(html, /Cmd 0 响应：设备标识与修订信息/);
   assert.match(html, /data-status-byte-input/);
   assert.match(html, /data-command-frame-select/);
-  assert.match(html, /请求怎么组帧，响应从哪里开始解析/);
+  assert.match(html, /请求数据与响应字段/);
   assert.match(html, /More Status Available/);
   assert.match(script, /applySearch/);
   assert.match(script, /updateChecksum/);

@@ -25,12 +25,12 @@
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="zh_CN" />
   <meta property="og:site_name" content="modusignal" />
-  <meta property="og:title" content="HARTLink Studio · 专业 HART 设备工作台" />
-  <meta property="og:description" content="把设备发现、通信解析、仪表校验、DD 工作区、配置快照、历史比较与受控克隆放进一套跨平台桌面软件。" />
+  <meta property="og:title" content="HARTLink Studio · HART 设备调试软件" />
+  <meta property="og:description" content="HART 设备扫描、通信帧解析、仪表校验与 DD 配置管理，支持 Windows、macOS 和 Linux。" />
   <meta property="og:url" content="https://modusignal.cn/hartlink-studio/" />
   <meta property="og:image" content="https://modusignal.cn/hartlink-studio/assets/configuration-clone.png" />
   <meta name="twitter:card" content="summary_large_image" />
-  <title>HARTLink Studio · 专业 HART 设备工作台</title>
+  <title>HARTLink Studio · HART 设备调试软件</title>
   <link rel="icon" href="../logo.ico" type="image/x-icon" />
   <link rel="stylesheet" href="./styles.css?v=__ASSET_VERSION__" />
   <script type="application/ld+json" data-release-schema>
@@ -64,9 +64,10 @@
       ]
     }
   </script>
+  <link rel="stylesheet" href="../pages/shared/editorial.css?v=__ASSET_VERSION__" />
 </head>
 
-<body>
+<body class="design-page">
   <a class="skip-link" href="#mainContent">跳到主要内容</a>
 
   <header class="site-header" data-sticky-header>
@@ -78,7 +79,7 @@
       </span>
     </a>
     <nav class="site-nav" aria-label="产品页面导航">
-      <a href="#capabilities" data-copy="navCapabilities">核心能力</a>
+      <a href="#capabilities" data-copy="navCapabilities">功能介绍</a>
       <a href="#screens" data-copy="navScreens">软件界面</a>
       <a href="#pricing" data-copy="navPricing">授权价格</a>
       <a href="#downloads" data-copy="navDownloads">下载</a>
@@ -100,8 +101,8 @@
           <span data-release-date data-copy="releaseDatePending">自动同步最新版本</span>
         </div>
         <p class="eyebrow" data-copy="heroEyebrow">跨平台 HART 主站软件</p>
-        <h1 data-copy="heroTitle">把 HART 设备调试<br />做成一件清楚的事</h1>
-        <p class="hero-lede" data-copy="heroDescription">从连接、扫描和通信解析，到仪表校验、DD 菜单、配置快照、历史比较与受控克隆，一套桌面软件串起完整的设备工作流。</p>
+        <h1 data-copy="heroTitle">HART 设备调试<br />与参数配置</h1>
+        <p class="hero-lede" data-copy="heroDescription">支持设备扫描、变量读取、通信帧解析和仪表校验。可导入 DD、保存配置快照、比较历史记录，并在核对源、目标设备身份后克隆配置。</p>
         <div class="hero-actions">
           <a
             class="button button-primary"
@@ -138,25 +139,25 @@
           />
         </div>
         <div class="visual-caption">
-          <span data-copy="visualCaptionLead">真实设备会话</span>
-          <strong data-copy="visualCaptionTitle">从原始帧到结构化结果，始终看得见</strong>
+          <span data-copy="visualCaptionLead">设备连接演示</span>
+          <strong data-copy="visualCaptionTitle">变量读取、通信日志与帧解析</strong>
         </div>
       </div>
     </section>
 
     <section class="trust-strip" aria-label="产品亮点">
       <div class="section-shell trust-grid">
-        <p><strong data-copy="trustOneTitle">单一通信入口</strong><span data-copy="trustOneDesc">事务队列、响应匹配、超时重试统一管理</span></p>
-        <p><strong data-copy="trustTwoTitle">可见的安全边界</strong><span data-copy="trustTwoDesc">写入前核对设备身份与计划，逐项执行并在完成后复核</span></p>
+        <p><strong data-copy="trustOneTitle">通信请求管理</strong><span data-copy="trustOneDesc">事务队列、响应匹配、超时重试统一管理</span></p>
+        <p><strong data-copy="trustTwoTitle">写入检查与回读</strong><span data-copy="trustTwoDesc">写入前核对设备身份与计划，逐项执行并在完成后复核</span></p>
         <p><strong data-copy="trustThreeTitle">三平台发布</strong><span data-copy="trustThreeDesc">Windows、macOS 与 Linux 原生安装包</span></p>
       </div>
     </section>
 
     <section id="capabilities" class="product-section section-shell">
       <header class="section-heading">
-        <p class="eyebrow" data-copy="capabilitiesEyebrow">为真实调试流程设计</p>
-        <h2 data-copy="capabilitiesTitle">不是一排命令按钮<br />而是一套完整工作台</h2>
-        <p data-copy="capabilitiesDescription">每个视图都围绕“当前设备、当前事务、当前结果”组织，让现场定位更快，也让复杂操作保持可追溯。</p>
+        <p class="eyebrow" data-copy="capabilitiesEyebrow">功能介绍</p>
+        <h2 data-copy="capabilitiesTitle">设备连接、命令读写<br />与配置管理</h2>
+        <p data-copy="capabilitiesDescription">按任务选择变量监测、通信日志、仪表设置或 DD 工作区，查看对应设备的参数和命令结果。</p>
       </header>
 
       <div class="capability-grid">
@@ -175,7 +176,7 @@
         <article class="capability-card">
           <span class="capability-number">02</span>
           <h3 data-copy="featureTraceTitle">通信 Trace 与帧解析</h3>
-          <p data-copy="featureTraceDesc">原始 TX/RX、结构化帧列表、响应码、设备状态和校验结果并列呈现，快速定位通信问题。</p>
+          <p data-copy="featureTraceDesc">对照查看原始 TX/RX 字节和解析后的帧字段，包括响应码、设备状态和校验结果。</p>
         </article>
         <article class="capability-card">
           <span class="capability-number">03</span>
@@ -203,8 +204,8 @@
     <section id="screens" class="screens-section">
       <div class="section-shell">
         <header class="section-heading section-heading-light">
-          <p class="eyebrow" data-copy="screensEyebrow">真实软件界面</p>
-          <h2 data-copy="screensTitle">信息密度很高<br />操作路径依然清晰</h2>
+          <p class="eyebrow" data-copy="screensEyebrow">界面截图</p>
+          <h2 data-copy="screensTitle">变量、日志与仪表设置</h2>
         </header>
 
         <div class="screen-carousel" data-screen-carousel aria-label="软件界面轮播">
@@ -212,7 +213,7 @@
             <div class="screen-carousel-track" data-carousel-track>
               <button class="screen-card screen-slide" type="button" data-carousel-slide data-lightbox-src="./assets/workbench.png?v=__ASSET_VERSION__" data-lightbox-title="HART 通用设备工作台" data-lightbox-title-key="screenWorkbenchTitle">
                 <img src="./assets/workbench.png?v=__ASSET_VERSION__" alt="HARTLink Studio 通用设备工作台界面" width="1320" height="880" loading="lazy" />
-                <span><strong data-copy="screenWorkbenchTitle">通用设备工作台</strong><small data-copy="screenWorkbenchDesc">变量读取、通用命令、原始日志与结构化 Trace 同屏协作</small></span>
+                <span><strong data-copy="screenWorkbenchTitle">通用设备工作台</strong><small data-copy="screenWorkbenchDesc">查看变量、执行通用命令，并对照原始日志与解析结果</small></span>
               </button>
               <button class="screen-card screen-slide" type="button" data-carousel-slide data-lightbox-src="./assets/instrument-settings.png?v=__ASSET_VERSION__" data-lightbox-title="仪表设置与校正" data-lightbox-title-key="screenSettingsTitle">
                 <img src="./assets/instrument-settings.png?v=__ASSET_VERSION__" alt="HARTLink Studio 仪表设置与校正界面" width="1320" height="880" loading="lazy" />
@@ -224,11 +225,11 @@
               </button>
               <button class="screen-card screen-slide" type="button" data-carousel-slide data-lightbox-src="./assets/dd-workspace.png?v=__ASSET_VERSION__" data-lightbox-title="DD 设备工作区" data-lightbox-title-key="screenDdWorkspaceTitle">
                 <img src="./assets/dd-workspace.png?v=__ASSET_VERSION__" alt="HARTLink Studio DD 设备工作区界面" width="1320" height="880" loading="lazy" />
-                <span><strong data-copy="screenDdWorkspaceTitle">DD 设备工作区</strong><small data-copy="screenDdWorkspaceDesc">DD 菜单、命令库与结构化 Trace 同屏定位</small></span>
+                <span><strong data-copy="screenDdWorkspaceTitle">DD 设备工作区</strong><small data-copy="screenDdWorkspaceDesc">查看 DD 菜单、命令库和对应的通信记录</small></span>
               </button>
               <button class="screen-card screen-slide" type="button" data-carousel-slide data-lightbox-src="./assets/configuration-snapshot.png?v=__ASSET_VERSION__" data-lightbox-title="配置快照与历史比较" data-lightbox-title-key="screenSnapshotTitle">
                 <img src="./assets/configuration-snapshot.png?v=__ASSET_VERSION__" alt="HARTLink Studio 配置快照与历史比较界面" width="1040" height="720" loading="lazy" />
-                <span><strong data-copy="screenSnapshotTitle">配置快照与历史比较</strong><small data-copy="screenSnapshotDesc">读取可用配置字段，保存 JSON/PDF，比较历史并管理受管记录</small></span>
+                <span><strong data-copy="screenSnapshotTitle">配置快照与历史比较</strong><small data-copy="screenSnapshotDesc">读取配置并保存为 JSON/PDF，管理已存记录并比较历史版本</small></span>
               </button>
               <button class="screen-card screen-slide" type="button" data-carousel-slide data-lightbox-src="./assets/configuration-clone.png?v=__ASSET_VERSION__" data-lightbox-title="受控配置克隆" data-lightbox-title-key="screenCloneTitle">
                 <img src="./assets/configuration-clone.png?v=__ASSET_VERSION__" alt="HARTLink Studio 受控配置克隆预览界面" width="1000" height="740" loading="lazy" />
@@ -255,12 +256,12 @@
 
     <section class="workflow-section section-shell">
       <header class="section-heading">
-        <p class="eyebrow" data-copy="workflowEyebrow">三步进入工作状态</p>
-        <h2 data-copy="workflowTitle">连接 HARTLink<br />然后专注设备本身</h2>
+        <p class="eyebrow" data-copy="workflowEyebrow">连接步骤</p>
+        <h2 data-copy="workflowTitle">连接并读取设备</h2>
       </header>
       <ol class="workflow-list">
         <li><span>01</span><div><strong data-copy="workflowOneTitle">选择接口并连接</strong><p data-copy="workflowOneDesc">通过 HARTLink CDC 或兼容串口接入，软件使用标准 HART 串口参数。</p></div></li>
-        <li><span>02</span><div><strong data-copy="workflowTwoTitle">扫描并锁定身份</strong><p data-copy="workflowTwoDesc">扫描轮询地址，读取 CMD 0，并以设备身份约束后续 DD 与操作会话。</p></div></li>
+        <li><span>02</span><div><strong data-copy="workflowTwoTitle">扫描并识别设备</strong><p data-copy="workflowTwoDesc">扫描轮询地址并读取 CMD 0，后续 DD 匹配和操作使用该设备的身份信息。</p></div></li>
         <li><span>03</span><div><strong data-copy="workflowThreeTitle">读取、解析或配置</strong><p data-copy="workflowThreeDesc">从过程变量与通用命令开始，按需进入设置、校准或匹配的 DD 工作区。</p></div></li>
       </ol>
     </section>
@@ -269,7 +270,7 @@
       <div class="section-shell">
         <header class="pricing-heading">
           <div>
-            <p class="eyebrow" data-copy="pricingEyebrow">简单、长期有效的授权</p>
+            <p class="eyebrow" data-copy="pricingEyebrow">授权方案</p>
             <h2 data-copy="pricingTitle">基础功能免费<br />DD 专业版按席位收费</h2>
           </div>
           <p data-copy="pricingDescription">永久授权，更新、升级与维护免费。</p>
@@ -319,7 +320,7 @@
           <a class="button button-primary" href="mailto:771454616@qq.com" data-copy="contactForQuote">发送邮件</a>
         </div>
 
-        <p class="pricing-roadmap"><span aria-hidden="true"></span><strong data-copy="pricingRoadmap">持续升级中 · 在线 DD 库设计中</strong></p>
+        <p class="pricing-roadmap"><span aria-hidden="true"></span><strong data-copy="pricingRoadmap">在线 DD 库设计中</strong></p>
       </div>
     </section>
 
@@ -328,7 +329,7 @@
         <header class="download-heading">
           <div>
             <p class="eyebrow" data-copy="downloadEyebrow">HARTLink Studio 最新版</p>
-            <h2 data-copy="downloadTitle">选择你的平台<br />开始设备调试</h2>
+            <h2 data-copy="downloadTitle">下载安装包</h2>
           </div>
         </header>
 
@@ -367,7 +368,7 @@
     <div class="section-shell footer-grid">
       <div class="footer-brand">
         <img src="./assets/logo.png?v=__ASSET_VERSION__" alt="" width="1024" height="1024" />
-        <p><strong>HARTLink Studio</strong><span data-copy="footerTagline">让每一次 HART 会话都有迹可循。</span></p>
+        <p><strong>HARTLink Studio</strong><span data-copy="footerTagline">跨平台 HART 设备调试软件</span></p>
       </div>
       <div class="footer-links">
         <a href="../" data-copy="modusignalOnline">modusignal 在线调试</a>

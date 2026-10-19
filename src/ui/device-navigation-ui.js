@@ -4,6 +4,7 @@ import {
   CUSTOM_DEVICE_ID,
   DEFAULT_DEVICE_ID,
   DEVICE_PAGE_IDS,
+  getDeviceProfile,
   HART_DEVICE_ID,
   MODBUS_DEVICE_ID,
   MQTT_DEVICE_ID,
@@ -24,6 +25,21 @@ export function createDeviceNavigationUi({ elements, state, getCustomConfig, get
     const standalone = isDevice && isStandaloneDevice(state.deviceId);
     elements.pages = [...document.querySelectorAll("[data-page-id]")];
     elements.appShell?.classList.toggle("standalone-device", standalone);
+    elements.appShell?.classList.toggle("overview-page", !isDevice);
+    const heading = document.getElementById("workspaceHeading");
+    if (heading) {
+      heading.hidden = state.pageId === "home";
+      const profile = getDeviceProfile(state.deviceId, getCustomConfig(), getModbusConfig());
+      const title = isDevice ? profile.name : i18n("request.title");
+      document.getElementById("workspaceTitle").textContent = title;
+      document.getElementById("workspaceDescription").textContent = isDevice
+        ? i18n(getSummaryKey(state.deviceId)) : i18n("request.desc");
+      document.getElementById("workspaceCategory").textContent = i18n(isDevice ? "workspace.category" : "nav.requestDevice");
+      const transport = document.getElementById("workspaceTransport");
+      transport.hidden = !isDevice;
+      transport.textContent = getTransportLabel(state.deviceId);
+      document.title = state.pageId === "home" ? i18n("app.title") : `${title} · ModuSignal`;
+    }
     elements.deviceShell.classList.toggle("active", isDevice);
     elements.deviceShell.classList.toggle("standalone", standalone);
     elements.pages.forEach((page) => {
@@ -37,6 +53,8 @@ export function createDeviceNavigationUi({ elements, state, getCustomConfig, get
       const active = target.dataset.pageTarget === state.pageId
         || (isDevice && target.dataset.deviceId === state.deviceId);
       target.classList.toggle("active", active);
+      if (active) target.setAttribute("aria-current", "page");
+      else target.removeAttribute("aria-current");
     });
   }
 
@@ -132,12 +150,20 @@ export function createDeviceNavigationUi({ elements, state, getCustomConfig, get
       const summary = document.createElement("span");
       summary.textContent = i18n(getSummaryKey(entry.deviceId));
       body.append(title, summary);
-      button.append(createIcon(entry), body);
+      const meta = document.createElement("span");
+      meta.className = "home-card-meta";
+      const transport = document.createElement("span");
+      transport.textContent = getTransportLabel(entry.deviceId);
+      const action = document.createElement("span");
+      action.className = "home-card-action";
+      action.textContent = i18n("home.openTool");
+      meta.append(transport, action);
+      button.append(createIcon(entry), body, meta);
       grid.append(button);
     });
 
     const requestButton = document.createElement("button");
-    requestButton.className = "home-card";
+    requestButton.className = "home-card home-card-request";
     requestButton.type = "button";
     requestButton.dataset.pageTarget = "request";
     const requestIcon = document.createElement("span");
@@ -153,6 +179,12 @@ export function createDeviceNavigationUi({ elements, state, getCustomConfig, get
     requestBody.append(requestTitle, requestSummary);
     requestButton.append(requestIcon, requestBody);
     grid.append(requestButton);
+  }
+
+  function getTransportLabel(deviceId) {
+    return isStandaloneDevice(deviceId) ? "WebUSB"
+      : deviceId === MQTT_DEVICE_ID ? "MQTT / WS"
+        : deviceId === WEBSOCKET_DEVICE_ID ? "WebSocket" : "Serial";
   }
 
   return { handleSearchInput, isDevicePageActive, renderHomeCards, renderLibrary, updatePage };

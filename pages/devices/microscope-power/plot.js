@@ -72,6 +72,7 @@ export class WavePlot {
 
   draw(source) {
     this.resize();
+    this.darkTheme = this.canvas.ownerDocument?.documentElement.dataset.theme === "dark";
 
     const ctx = this.ctx;
     const width = this.width;
@@ -97,7 +98,7 @@ export class WavePlot {
       source,
     };
 
-    ctx.fillStyle = "#f8fafc";
+    ctx.fillStyle = this.darkTheme ? "#151d27" : "#f6f7f9";
     ctx.fillRect(0, 0, width, height);
 
     if (source.showGrid) {
@@ -212,7 +213,7 @@ export class WavePlot {
   }
 
   drawGrid(ctx, x, y, width, height) {
-    ctx.strokeStyle = "#d9e2ec";
+    ctx.strokeStyle = this.darkTheme ? "#344252" : "#d7dde4";
     ctx.lineWidth = 1;
 
     for (let i = 0; i <= 4; i += 1) {
@@ -234,7 +235,7 @@ export class WavePlot {
 
   drawAxes(ctx, x, y, width, height, source) {
     const fontSize = 12 * this.dpr;
-    ctx.fillStyle = "#334155";
+    ctx.fillStyle = this.darkTheme ? "#bac6d2" : "#40505e";
     ctx.font = `${fontSize}px system-ui, sans-serif`;
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
@@ -294,7 +295,7 @@ export class WavePlot {
   }
 
   drawEmpty(ctx, width, height) {
-    ctx.fillStyle = "#64748b";
+    ctx.fillStyle = this.darkTheme ? "#9aa9b8" : "#596674";
     ctx.font = `${14 * this.dpr}px system-ui, sans-serif`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";

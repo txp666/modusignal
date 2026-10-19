@@ -1,4 +1,5 @@
 import i18n from "../i18n.js";
+import { initWorkspaceTabs } from "./workspace-tabs.js";
 import { initChartCurvePanel } from "../chart-curve-panel.js";
 import { buildDefaultStepSequence } from "../devices/aomaster.js";
 import { WEBSOCKET_QUICK_MESSAGES } from "../devices/websocket-device.js";
@@ -72,6 +73,13 @@ export function bindAppEvents(options) {
   } = handlers;
 
   sidebarController.bind();
+  initWorkspaceTabs();
+  on(document.querySelector(".skip-link"), "click", (event) => {
+    event.preventDefault();
+    const main = document.getElementById("mainContent");
+    main?.focus({ preventScroll: true });
+    main?.scrollIntoView();
+  });
   initChartCurvePanel({ elements, getDeviceId: () => state.deviceId, onVisibilityChange: requestChartResize });
   on(elements.connectButton, "click", transportController.connect);
   on(elements.disconnectButton, "click", transportController.disconnect);

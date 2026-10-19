@@ -18,7 +18,7 @@ test("Fluent Serial Assistant page exposes GitHub Release downloads", async () =
   assert.match(html, /FluentSerialAssistant-0\.1\.11-linux-x64\.deb/);
   assert.match(html, /FluentSerialAssistant-0\.1\.11-linux-arm64\.deb/);
   assert.match(html, /Program Files/);
-  assert.match(html, /高性能实时绘图/);
+  assert.match(html, /实时曲线与导出/);
   assert.match(html, /README_EN\.md/);
   assert.match(html, /CODE_SIGNING_POLICY\.md/);
   assert.match(html, /github\.com\/txp666\/FluentSerialAssistant\/releases/);
@@ -28,8 +28,8 @@ test("Fluent Serial Assistant page exposes GitHub Release downloads", async () =
   assert.doesNotMatch(html, /data-platform="linux-(?:x64|arm64)"/);
   assert.match(html, /styles\.css\?v=20260729\.1/);
   assert.match(html, /app\.js\?v=20260729\.1/);
-  assert.match(html, /<span class="hero-title-line">串口调试<\/span>/);
-  assert.match(html, /<span class="hero-title-line">现在交给 AI<\/span>/);
+  assert.match(html, /<span class="hero-title-line">串口收发与协议调试<\/span>/);
+  assert.match(html, /<span class="hero-title-line">支持 CLI \/ MCP 控制<\/span>/);
   assert.match(html, /id="ai-control"/);
   assert.match(html, /fluentserial-cli ports/);
   assert.match(html, /fluentserial-mcp/);

@@ -1,0 +1,76 @@
+/* Shared editorial surfaces, adapted from docs/design/awesome-design-md/ibm.DESIGN.md. */
+body.design-page {
+  --bg:#f5f7f8; --paper:#fff; --paper-strong:#fff; --paper-soft:#f6f7f9;
+  --surface:#fff; --surface-muted:#f6f7f9; --ink:#17202a; --ink-soft:#40505e;
+  --muted:#596674; --line:#d7dde4; --soft-line:#e4e8ed; --line-strong:#b8c2ce;
+  --teal:#0f766e; --teal-strong:#0b5e58; --teal-soft:#e6f3f0;
+  --cyan:#0f766e; --cyan-strong:#0b5e58; --accent:#0f766e; --accent-strong:#0b5e58;
+  --accent-soft:#e6f3f0; --shadow:none;
+  background:var(--bg); color:var(--ink);
+  font-family:Inter,"Segoe UI","PingFang SC","Microsoft YaHei",Arial,sans-serif;
+}
+:root[data-theme="dark"] body.design-page {
+  --bg:#0b1118; --paper:#151d27; --paper-strong:#151d27; --paper-soft:#1b2531;
+  --surface:#151d27; --surface-muted:#1b2531; --ink:#e6edf3; --ink-soft:#bac6d2;
+  --muted:#9aa9b8; --line:#344252; --soft-line:#283440; --line-strong:#4b5d70;
+  --teal:#2bb3a7; --teal-strong:#5bd0c5; --teal-soft:#15312f;
+  --cyan:#2bb3a7; --cyan-strong:#5bd0c5; --accent:#2bb3a7; --accent-strong:#5bd0c5;
+  --accent-soft:#15312f;
+}
+body.design-page :is(.site-header,.wiki-header) { background:var(--paper); border-bottom:1px solid var(--line); box-shadow:none; backdrop-filter:none; }
+body.design-page :is(h1,h2,h3) { letter-spacing:-.025em; }
+body.design-page h1 { font-size:clamp(30px,3.2vw,46px); font-weight:600; line-height:1.25; }
+body.design-page :is(.section-heading h2,.workspace-copy h2,.open-source-card h2,.pricing-copy h2,.download-copy h2) { font-size:clamp(24px,2.2vw,32px); line-height:1.35; font-weight:600; }
+body.design-page :is(.button,.back-link,.theme-button,.language-button,.release-pill,.header-link,.icon-button,.menu-button) { border-radius:6px; box-shadow:none; }
+body.design-page :is(.button-primary,.button.primary,.header-link) { background:var(--teal); color:#fff; border-color:var(--teal); }
+:root[data-theme="dark"] body.design-page :is(.button-primary,.button.primary,.header-link) { color:#092420; }
+body.design-page :is(.button-secondary,.button.secondary,.back-link) { background:var(--paper); color:var(--ink); border-color:var(--line); }
+body.design-page :is(.app-window,.hero-window,.workspace-figure,.signal-visual,.capability-grid,.download-card,.feature-card,.source-grid a,.range-panel,.fact-strip) { border-radius:6px; box-shadow:none; border-color:var(--line); }
+body.design-page :is(.visual-caption,.floating-note,.header-search) { box-shadow:none; border-radius:6px; }
+body.design-page .hero { padding-block:40px; gap:32px; }
+body.design-page :is(.hero-lede,.lead) { font-size:15px; line-height:1.75; }
+body.design-page .section-heading { margin-bottom:24px; }
+body.design-page :is(.product-section,.workflow-section,.features-section,.download-section,.workspace-section,.screens-section,.pricing-section) { padding-block:48px; }
+body.design-page :is(.capability-card,.feature-grid article,.feature-card) { padding:24px; background:var(--paper); }
+body.design-page .capability-card-featured { background:var(--teal-soft); }
+body.design-page .feature-grid article { min-height:200px; }
+body.design-page .feature-grid h3 { margin-top:20px; }
+body.design-page .download-card { min-height:310px; }
+body.design-page .download-card h3 { margin-top:24px; }
+body.design-page .download-card.recommended { box-shadow:inset 0 2px 0 var(--teal); border-color:var(--teal); }
+body.design-page .open-source-card { border-radius:6px; padding:28px; }
+body.design-page :is(a,button,input,summary):focus-visible { outline:2px solid var(--teal); outline-offset:3px; }
+body.design-page img { max-width:100%; }
+body.design-page .wiki-content { padding-inline:32px; }
+body.design-page .hero-section { padding-block:40px; gap:32px; }
+body.design-page .content-section { padding-block:40px; }
+body.design-page .signal-visual { padding:20px; }
+body.design-page .wiki-sidebar { background:var(--paper); padding:20px 16px; }
+body.design-page .wiki-sidebar nav a { border-radius:0; border-left:2px solid transparent; }
+body.design-page .wiki-sidebar nav a.active { border-left-color:var(--teal); }
+body.design-page .section { margin-top:48px; }
+body.design-page .device-photo img { border-radius:6px; }
+body.design-page .spec-grid strong { font-size:24px; }
+body.design-page .header-inner { min-height:64px; }
+body.design-page .brand { font-weight:600; }
+body.design-page .button-secondary:hover { background:var(--paper-soft); }
+@media (max-width:700px) {
+  body.design-page .hero { padding-block:28px; gap:24px; }
+  body.design-page .wiki-content { padding-inline:16px; }
+  body.design-page :is(.hero-section,.content-section) { padding-block:28px; }
+  body.design-page :is(.product-section,.workflow-section,.features-section,.download-section,.workspace-section,.screens-section,.pricing-section) { padding-block:32px; }
+  body.design-page :is(.button,button,.header-link) { min-height:44px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  html { scroll-behavior:auto; }
+  body.design-page *,body.design-page *::before,body.design-page *::after { animation:none !important; transition:none !important; }
+}
+body.design-page .hero { min-height:0; }
+body.design-page .app-window { transform:none; }
+body.design-page .hero-copy h1 { text-wrap:balance; }
+@media (max-width:400px) {
+  body.design-page .multidrop-visual { grid-template-columns:48px minmax(0,1fr); gap:12px; padding:12px; }
+  body.design-page .multidrop-visual > div { gap:4px; }
+  body.design-page .multidrop-visual span { min-width:0; width:100%; }
+  body.design-page .multidrop-visual .bus-line { left:48px; }
+}

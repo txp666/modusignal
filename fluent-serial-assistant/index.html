@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Fluent 串口助手：同时提供 GUI、机器可读 CLI 与 stdio MCP 服务，让脚本和 AI 安全复用串口会话、协议解析、收发记录与实时曲线。" />
+  <meta name="description" content="Fluent 串口助手：支持文本/HEX 收发、协议解析、日志与实时曲线，提供 GUI、CLI 和 stdio MCP 接口。" />
   <meta name="keywords" content="Fluent串口助手,串口助手,串口调试,Serial Port,CLI,MCP,AI,HEX,Modbus RTU,实时曲线,协议模板" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#f7fbfc" />
@@ -26,7 +26,7 @@
   <meta property="og:locale" content="zh_CN" />
   <meta property="og:site_name" content="modusignal" />
   <meta property="og:title" content="Fluent 串口助手 · GUI、CLI 与 MCP 串口工作台" />
-  <meta property="og:description" content="GUI 掌控串口，CLI 与 MCP 复用当前会话。让人、脚本和 AI 在同一套串口工作流中协作。" />
+  <meta property="og:description" content="支持串口收发、协议解析、日志记录和实时曲线。脚本及 MCP 客户端可复用 GUI 中的串口会话。" />
   <meta property="og:url" content="https://modusignal.cn/fluent-serial-assistant/" />
   <meta property="og:image" content="https://modusignal.cn/fluent-serial-assistant/assets/social-preview.png" />
   <meta name="twitter:card" content="summary_large_image" />
@@ -48,9 +48,10 @@
       "downloadUrl": "https://github.com/txp666/FluentSerialAssistant/releases/latest"
     }
   </script>
+  <link rel="stylesheet" href="../pages/shared/editorial.css?v=__ASSET_VERSION__" />
 </head>
 
-<body>
+<body class="design-page">
   <a class="skip-link" href="#mainContent" data-copy="skipLink">跳到主要内容</a>
 
   <header class="site-header">
@@ -63,7 +64,7 @@
     </a>
     <nav class="site-nav" aria-label="产品页面导航">
       <a href="#ai-control" data-copy="navAiControl">CLI / MCP</a>
-      <a href="#capabilities" data-copy="navCapabilities">核心能力</a>
+      <a href="#capabilities" data-copy="navCapabilities">功能介绍</a>
       <a href="#workspace" data-copy="navWorkspace">软件界面</a>
       <a href="#downloads" data-copy="navDownloads">下载</a>
     </nav>
@@ -84,8 +85,8 @@
           <span data-release-date>2026-07-29 发布</span>
         </div>
         <p class="eyebrow" data-copy="heroEyebrow">GUI · CLI · MCP · 跨平台</p>
-        <h1 data-copy="heroTitle"><span class="hero-title-line">串口调试</span><span class="hero-title-line">现在交给 AI</span></h1>
-        <p class="hero-lede" data-copy="heroDescription">GUI 继续掌控串口，机器可读 CLI 与 MCP 安全复用当前会话。让脚本和 AI 扫描端口、连接设备、精确收发、读取结构化记录并打开实时曲线。</p>
+        <h1 data-copy="heroTitle"><span class="hero-title-line">串口收发与协议调试</span><span class="hero-title-line">支持 CLI / MCP 控制</span></h1>
+        <p class="hero-lede" data-copy="heroDescription">支持文本/HEX 收发、协议解析、日志记录和实时曲线。串口由 GUI 管理，脚本和 MCP 客户端可复用当前会话，执行端口扫描、连接、数据收发和绘图操作。</p>
         <div class="hero-actions">
           <a
             class="button button-primary"
@@ -122,7 +123,7 @@
         </div>
         <div class="visual-caption">
           <span data-copy="visualCaptionLead">CLI + MCP 已随安装包提供</span>
-          <strong data-copy="visualCaptionTitle">复用 GUI 会话，不与串口抢占</strong>
+          <strong data-copy="visualCaptionTitle">CLI 与 MCP 复用 GUI 串口会话</strong>
         </div>
       </div>
     </section>
@@ -131,16 +132,16 @@
       <div class="section-shell trust-grid">
         <p><strong data-copy="trustOneTitle">GUI 唯一持有串口</strong><span data-copy="trustOneDesc">外部控制复用会话，不重复打开设备</span></p>
         <p><strong data-copy="trustTwoTitle">CLI 输出稳定 JSON</strong><span data-copy="trustTwoDesc">适合终端、Shell 脚本与自动测试</span></p>
-        <p><strong data-copy="trustThreeTitle">MCP 提供 12 个工具</strong><span data-copy="trustThreeDesc">让 AI 发现并调用完整串口能力</span></p>
+        <p><strong data-copy="trustThreeTitle">MCP 提供 12 个工具</strong><span data-copy="trustThreeDesc">支持端口扫描、连接、收发、记录读取和绘图控制</span></p>
       </div>
     </section>
 
     <section id="ai-control" class="ai-control-section">
       <div class="section-shell">
         <header class="section-heading ai-control-heading">
-          <p class="eyebrow" data-copy="aiEyebrow">新增 · AI 与自动化控制</p>
-          <h2 data-copy="aiTitle">同一个串口会话，三种操作方式</h2>
-          <p data-copy="aiDescription">在 GUI 中观察和调整，在 CLI 中编排脚本，在 MCP 客户端中直接让 AI 调用工具。三者共享会话、协议解析、收发记录和实时曲线。</p>
+          <p class="eyebrow" data-copy="aiEyebrow">CLI / MCP 接口</p>
+          <h2 data-copy="aiTitle">GUI、命令行与 MCP 共享会话</h2>
+          <p data-copy="aiDescription">可在 GUI 中操作，也可通过 CLI 编写脚本，或由 AI 客户端调用 MCP 工具。各入口使用同一会话中的协议解析、收发记录和曲线配置。</p>
         </header>
 
         <div class="ai-control-grid">
@@ -150,7 +151,7 @@
                 <span class="mode-mark" aria-hidden="true">&gt;_</span>
                 <div>
                   <p class="mode-label">fluentserial-cli</p>
-                  <h3 data-copy="cliTitle">为终端和自动测试而生</h3>
+                  <h3 data-copy="cliTitle">命令行与自动测试</h3>
                   <p data-copy="cliDescription">端口扫描、会话选择、连接、文本/HEX 收发、记录读取、协议选择和绘图控制均返回稳定 JSON。</p>
                 </div>
               </article>
@@ -158,8 +159,8 @@
                 <span class="mode-mark mode-mark-mcp" aria-hidden="true">M</span>
                 <div>
                   <p class="mode-label">fluentserial-mcp</p>
-                  <h3 data-copy="mcpTitle">把串口能力变成 AI 工具</h3>
-                  <p data-copy="mcpDescription">标准 stdio MCP 服务提供 12 个可发现工具、JSON Schema 参数和结构化结果，业务错误可由模型识别并修正。</p>
+                  <h3 data-copy="mcpTitle">MCP 工具调用</h3>
+                  <p data-copy="mcpDescription">stdio MCP 服务提供 12 个工具，使用 JSON Schema 定义参数并返回结构化结果，包含操作失败时的错误信息。</p>
                 </div>
               </article>
             </div>
@@ -182,7 +183,7 @@
 <span class="prompt">$</span> fluentserial-cli records --direction rx --limit 20</code></pre>
             </div>
             <div class="console-group mcp-config">
-              <p><span>MCP</span><small data-copy="consoleMcpLabel">一次配置，按需调用</small></p>
+              <p><span>MCP</span><small data-copy="consoleMcpLabel">MCP 客户端配置</small></p>
               <pre><code>{
   <span class="code-key">"mcpServers"</span>: {
     <span class="code-key">"fluent-serial-assistant"</span>: {
@@ -208,14 +209,14 @@
 
     <section id="capabilities" class="content-section section-shell">
       <header class="section-heading">
-        <p class="eyebrow" data-copy="capabilitiesEyebrow">不止是收发窗口</p>
-        <h2 data-copy="capabilitiesTitle">从一次连接，走到完整测试流程</h2>
-        <p data-copy="capabilitiesDescription">常用功能保持顺手，复杂能力按需展开。无论临时看日志，还是搭建可重复的设备测试，都不需要切换工具。</p>
+        <p class="eyebrow" data-copy="capabilitiesEyebrow">功能介绍</p>
+        <h2 data-copy="capabilitiesTitle">收发、解析、记录与绘图</h2>
+        <p data-copy="capabilitiesDescription">支持多标签串口会话、协议模板、宏命令和 JavaScript 自动化，可按调试任务配置日志与曲线。</p>
       </header>
       <div class="feature-grid">
         <article>
           <span class="feature-index">01</span>
-          <h3 data-copy="featureTerminalTitle">清晰的串口终端</h3>
+          <h3 data-copy="featureTerminalTitle">串口终端</h3>
           <p data-copy="featureTerminalDesc">独立配置收发编码，支持文本、HEX、混合显示、搜索过滤、时间戳、自动断帧与多标签会话。</p>
         </article>
         <article>
@@ -225,22 +226,22 @@
         </article>
         <article>
           <span class="feature-index">03</span>
-          <h3 data-copy="featureAutomationTitle">从宏命令到 AI 工具</h3>
-          <p data-copy="featureAutomationDesc">内置宏和 JavaScript 处理桌面自动化；机器可读 CLI 与 MCP 把同一套能力开放给脚本、测试和 AI。</p>
+          <h3 data-copy="featureAutomationTitle">宏命令与自动化接口</h3>
+          <p data-copy="featureAutomationDesc">可用宏命令和 JavaScript 执行重复操作，也可通过 CLI 或 MCP 从外部脚本、测试程序及 AI 客户端控制。</p>
         </article>
         <article>
           <span class="feature-index">04</span>
-          <h3 data-copy="featureVisualTitle">高性能实时绘图</h3>
-          <p data-copy="featureVisualDesc">从分隔值、键值对或 JSON 中提取多通道数字，以高性能实时曲线呈现并导出 CSV；CLI/MCP 也可直接打开和配置曲线。</p>
+          <h3 data-copy="featureVisualTitle">实时曲线与导出</h3>
+          <p data-copy="featureVisualDesc">从分隔值、键值对或 JSON 中提取多通道数值，绘制实时曲线并导出 CSV；CLI/MCP 也可打开和配置曲线。</p>
         </article>
         <article>
           <span class="feature-index">05</span>
-          <h3 data-copy="featureSendTitle">面向现场的发送工具</h3>
-          <p data-copy="featureSendDesc">常用包、发送历史、循环发送、自动应答和分块文件发送覆盖调试现场的高频操作。</p>
+          <h3 data-copy="featureSendTitle">发送工具</h3>
+          <p data-copy="featureSendDesc">支持保存常用数据包、查看发送历史、循环发送、自动应答和分块文件发送。</p>
         </article>
         <article>
           <span class="feature-index">06</span>
-          <h3 data-copy="featureRecordTitle">完整记录与恢复</h3>
+          <h3 data-copy="featureRecordTitle">日志与会话恢复</h3>
           <p data-copy="featureRecordDesc">自动日志支持 TXT、CSV、BIN 与滚动存储；会话参数、规则和测试配置可在下次启动时恢复。</p>
         </article>
       </div>
@@ -249,9 +250,9 @@
     <section id="workspace" class="workspace-section">
       <div class="section-shell workspace-grid">
         <div class="workspace-copy">
-          <p class="eyebrow" data-copy="workspaceEyebrow">真实软件界面</p>
-          <h2 data-copy="workspaceTitle">熟悉的串口操作，放进更安静的工作区</h2>
-          <p data-copy="workspaceDescription">连接配置和接收选项留在左侧，搜索、统计与终端记录集中在主区域，发送输入始终触手可及。浅色、深色和系统主题均可切换。</p>
+          <p class="eyebrow" data-copy="workspaceEyebrow">界面截图</p>
+          <h2 data-copy="workspaceTitle">串口连接、终端与发送区</h2>
+          <p data-copy="workspaceDescription">左侧设置串口和接收选项，主区域显示终端记录、搜索和统计，底部输入发送内容。支持浅色、深色和系统主题。</p>
           <ul>
             <li data-copy="workspacePointOne">扫描端口并显示描述、厂商、VID / PID 与序列号</li>
             <li data-copy="workspacePointTwo">RX / TX 统一记录，实时显示流量、速率和连接时长</li>
@@ -275,7 +276,7 @@
       <header class="section-heading download-heading">
         <div>
           <p class="eyebrow"><span data-copy="downloadEyebrow">最新稳定版</span> <span data-release-version>0.1.11</span></p>
-          <h2 data-copy="downloadTitle">一次安装，同时获得 GUI、CLI 与 MCP</h2>
+          <h2 data-copy="downloadTitle">下载安装包</h2>
           <p class="download-lede" data-copy="downloadDescription">Windows、macOS 与 Linux 安装包均已包含命令行和 MCP 服务程序。</p>
         </div>
         <a class="release-link" data-release-page href="https://github.com/txp666/FluentSerialAssistant/releases/latest" target="_blank" rel="noreferrer">
@@ -333,7 +334,7 @@
       <div class="section-shell open-source-card">
         <div>
           <p class="eyebrow" data-copy="openEyebrow">开放源码</p>
-          <h2 data-copy="openTitle">工具保持透明，工作流由你掌控</h2>
+          <h2 data-copy="openTitle">源码与许可证</h2>
           <p data-copy="openDescription">Fluent 串口助手基于 C++17、Qt 6 Widgets 与 FluentQtWidgets 构建，采用 GPL-3.0-or-later 许可证。</p>
         </div>
         <div class="open-source-actions">
@@ -345,10 +346,10 @@
   </main>
 
   <footer class="site-footer section-shell">
-    <p><strong>Fluent 串口助手</strong><span data-copy="footerTagline">让每一次串口会话更清楚、更可复用。</span></p>
+    <p><strong>Fluent 串口助手</strong><span data-copy="footerTagline">跨平台串口调试工具，支持 GUI、CLI 与 MCP。</span></p>
     <nav aria-label="页脚导航">
       <a href="#ai-control" data-copy="navAiControl">CLI / MCP</a>
-      <a href="#capabilities" data-copy="navCapabilities">核心能力</a>
+      <a href="#capabilities" data-copy="navCapabilities">功能介绍</a>
       <a href="#downloads" data-copy="navDownloads">下载</a>
       <a href="../" data-copy="backToModusignal">返回 modusignal</a>
     </nav>

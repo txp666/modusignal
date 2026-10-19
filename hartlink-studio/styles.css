@@ -758,6 +758,11 @@ p {
     var(--paper);
 }
 
+.pricing-section > .section-shell,
+.download-section > .section-shell {
+  width: min(1040px, calc(100% - 3rem));
+}
+
 .pricing-heading {
   display: grid;
   grid-template-columns: 1.15fr 0.85fr;
@@ -787,19 +792,19 @@ p {
 
 .pricing-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem;
 }
 
 .pricing-card {
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   min-height: 20.5rem;
-  padding: 1.35rem;
+  padding: 1.5rem;
   border: 1px solid var(--line);
-  border-radius: 0.8rem;
+  border-radius: 6px;
   background: var(--paper-strong);
-  box-shadow: 0 18px 50px rgba(7, 24, 34, 0.07);
 }
 
 .pricing-card-free {
@@ -810,7 +815,6 @@ p {
   border-color: var(--cyan);
   background: var(--dark-surface);
   color: #fff;
-  box-shadow: 0 24px 70px rgba(7, 24, 34, 0.2);
 }
 
 .pricing-card header {
@@ -848,12 +852,13 @@ p {
 .pricing-price {
   display: flex;
   align-items: baseline;
+  flex-wrap: wrap;
   gap: 0.45rem;
   margin-top: 1.75rem;
 }
 
 .pricing-price strong {
-  font-size: clamp(2.55rem, 4vw, 3.75rem);
+  font-size: clamp(2.25rem, 3.2vw, 3rem);
   line-height: 1;
   letter-spacing: -0.055em;
 }
@@ -864,16 +869,16 @@ p {
   font-weight: 760;
 }
 
-.pricing-card-featured .pricing-price span,
-.pricing-card-featured > p:not(.pricing-price) {
-  color: var(--muted-light);
-}
-
 .pricing-card > p:not(.pricing-price) {
   margin-top: 1.15rem;
   color: var(--muted);
   font-size: 0.86rem;
   line-height: 1.75;
+}
+
+.pricing-card-featured .pricing-price span,
+.pricing-card-featured > p:not(.pricing-price) {
+  color: var(--muted-light);
 }
 
 .pricing-feature-list {
@@ -904,7 +909,6 @@ p {
 }
 
 .pricing-button {
-  align-self: end;
   margin-top: auto;
   border-color: var(--line);
   color: var(--ink);
@@ -929,10 +933,10 @@ p {
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: 2rem;
-  margin-top: 1rem;
+  margin-top: 2rem;
   padding: 1.4rem 1.55rem;
   border: 1px solid var(--line);
-  border-radius: 0.8rem;
+  border-radius: 6px;
   background: var(--paper-strong);
 }
 
@@ -987,15 +991,16 @@ p {
 
 .download-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem;
 }
 
 .download-card {
-  display: grid;
-  align-content: start;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   min-height: 26rem;
-  padding: 1.35rem;
+  padding: 1.5rem;
   border: 1px solid var(--line-dark);
   border-radius: 0.72rem;
   background: #0d2a34;
@@ -1064,20 +1069,21 @@ p {
 }
 
 .button-download {
-  align-self: end;
   margin-top: auto;
   background: var(--cyan);
-  color: #041a21;
+  color: #fff;
 }
 
 .button-download:hover {
   background: #41d3d6;
+  color: #041a21;
 }
 
 .linux-downloads {
   display: grid;
   gap: 0.5rem;
-  margin-top: 1.15rem;
+  margin-top: auto;
+  padding-top: 1.15rem;
 }
 
 .linux-downloads a {
@@ -1273,12 +1279,9 @@ button:focus-visible {
     grid-column: 1 / -1;
   }
 
-  .download-card:last-child {
-    grid-column: 1 / -1;
-  }
-
-  .pricing-card:last-child {
-    grid-column: 1 / -1;
+  .pricing-grid,
+  .download-grid {
+    gap: 1.5rem;
   }
 }
 
@@ -1289,6 +1292,11 @@ button:focus-visible {
 
   .section-shell {
     width: min(100% - 1.25rem, 1180px);
+  }
+
+  .pricing-section > .section-shell,
+  .download-section > .section-shell {
+    width: calc(100% - 2rem);
   }
 
   .site-header {
@@ -1457,6 +1465,10 @@ button:focus-visible {
 :root[data-theme="dark"] .button-secondary:hover {
   border-color: var(--cyan);
   background: var(--paper-strong);
+}
+
+:root[data-theme="dark"] .button-download {
+  color: #092420;
 }
 
 :root[data-theme="dark"] .capability-card-featured {

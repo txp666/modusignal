@@ -69,7 +69,12 @@ function walkFilesWithExtensions(dir, extensions) {
 }
 
 function injectStaticAssetVersion(version) {
-  const roots = [join(siteRoot, "pages"), join(siteRoot, "hartlink-studio")];
+  const roots = [
+    join(siteRoot, "pages"),
+    join(siteRoot, "hartlink-studio"),
+    join(siteRoot, "hart-wiki"),
+    join(siteRoot, "fluent-serial-assistant"),
+  ];
 
   for (const root of roots) {
     for (const filePath of walkFilesWithExtensions(root, [".html"])) {

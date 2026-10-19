@@ -34,11 +34,11 @@ test("HARTLink Studio product page resolves the latest release dynamically", asy
   assert.match(html, /configuration-snapshot\.png/);
   assert.match(html, /configuration-clone\.png/);
   assert.match(html, /配置快照与历史比较/);
-  assert.match(html, /比较历史并管理受管记录/);
+  assert.match(html, /管理已存记录并比较历史版本/);
   assert.match(html, /受控配置克隆/);
   assert.match(app, /screenSnapshotTitle/);
   assert.match(app, /screenCloneTitle/);
-  assert.match(app, /compare history, and manage stored records/);
+  assert.match(app, /Read configurations, save JSON\/PDF records and compare saved versions/);
   assert.doesNotMatch(html, /data-os="linux" data-architecture="arm64"/);
   assert.doesNotMatch(html, /x64 \/ ARM64/);
   assert.doesNotMatch(`${html}\n${app}`, /release-module|1\.0\.2|1\.0\.3/);
@@ -53,7 +53,7 @@ test("HARTLink Studio product page resolves the latest release dynamically", asy
   assert.equal((html.match(/771454616@qq\.com/g) || []).length, 2);
   assert.match(html, /data-copy="enterpriseDescription"/);
   assert.doesNotMatch(html, /data-copy="requestTrialCode"|data-copy="contactPurchase"/);
-  assert.match(app, /pricingRoadmap: "持续升级中 · 在线 DD 库设计中"/);
+  assert.match(app, /pricingRoadmap: "在线 DD 库设计中"/);
 });
 
 test("HARTLink Studio product screenshots are de-identified PNG assets", async () => {

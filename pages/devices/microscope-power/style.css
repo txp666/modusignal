@@ -799,3 +799,25 @@ label {
     min-height: 360px;
   }
 }
+
+/* Carbon-inspired instrument surfaces, shared with the main site. */
+:root { --bg:#f5f7f8; --surface:#fff; --surface-2:#f6f7f9; --surface-3:#edf1f4; --text:#17202a; --muted:#596674; --border:#d7dde4; --border-soft:#e4e8ed; --blue:#0f766e; --blue-dark:#0b5e58; --shadow:none; }
+:root[data-theme="dark"] { color-scheme:dark; --bg:#0b1118; --surface:#151d27; --surface-2:#1b2531; --surface-3:#24313d; --text:#e6edf3; --muted:#9aa9b8; --border:#344252; --border-soft:#283440; --blue:#2bb3a7; --blue-dark:#5bd0c5; }
+.topbar .brand-block h1 { color:var(--text); font-size:18px; font-weight:600; }
+.app-shell { height:100dvh; gap:8px; padding:8px; }
+.embedded .app-shell { padding:0; }
+.embedded-only { display:none; }
+.embedded .embedded-only { display:inline-flex; }
+:is(.topbar,.quickbar,.plot-panel,.side-section) { box-shadow:none; border-radius:6px; }
+:is(select,input) { background:var(--surface); }
+:root[data-theme="dark"] :is(.secondary-action,.product-link,.metric,.stat,.range-config-card,.range-readout,.connection-chip) { color:var(--text); background:var(--surface-2); border-color:var(--border); }
+:root[data-theme="dark"] button:disabled { color:var(--muted); background:var(--surface-3); }
+:root[data-theme="dark"] button { color:var(--text); background:var(--surface-3); border-color:var(--border); }
+:root[data-theme="dark"] button.primary-action:not(:disabled) { background:var(--blue); color:#092420; }
+:root[data-theme="dark"] button.run-action:not(:disabled) { background:var(--green); color:#fff; }
+:root[data-theme="dark"] button.stop-action:not(:disabled) { background:var(--red); color:#fff; }
+:root[data-theme="dark"] .cursor-chip { color:var(--text); background:var(--surface-2); }
+@media (max-width:900px) { body { overflow:auto; } .app-shell { height:auto; min-height:100dvh; } }
+:root[data-theme="dark"] :is(.metric-strip strong,.plot-toolbar strong,.side-section summary,.stat strong,.range-config-card h3,.range-readout strong,#logOutput) { color:var(--text); }
+:root[data-theme="dark"] :is(.plot-toolbar,.side-section summary) { background:var(--surface-2); }
+:root[data-theme="dark"] .stat.highlight { background:#15312f; }

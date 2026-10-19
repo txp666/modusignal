@@ -61,10 +61,11 @@
 </head>
 
 <body>
+  <a class="skip-link" href="#mainContent" data-i18n="nav.skipContent">跳到主要内容</a>
   <div class="app-shell">
     <header class="topbar">
       <div class="brand-block">
-        <button class="brand-home-button" type="button" data-page-target="home" aria-label="返回主页">
+        <button class="brand-home-button" type="button" data-page-target="home" data-i18n-aria-label="nav.backHome" aria-label="返回主页">
           <img class="brand-logo" src="./images/modusignal-logo.svg?v=__ASSET_VERSION__" alt="modusignal" width="1500"
             height="460" />
         </button>
@@ -72,7 +73,7 @@
       </div>
       <div class="topbar-actions">
         <button id="themeSwitchButton" class="ghost-button theme-switch" type="button" aria-label="切换到深色主题" title="切换到深色主题">☾</button>
-        <button id="langSwitchButton" class="ghost-button lang-switch" type="button" data-i18n="lang.switch" aria-label="切换语言" title="切换语言">EN</button>
+        <button id="langSwitchButton" class="ghost-button lang-switch" type="button" data-i18n="lang.switch" data-i18n-aria-label="nav.switchLanguage" data-i18n-title="nav.switchLanguage" aria-label="切换语言" title="切换语言">EN</button>
         <span id="secureState" class="state-pill" data-i18n="nav.checkingEnv" data-marquee="检测环境">检测环境</span>
         <button id="connectButton" class="primary-button" type="button">
           <span aria-hidden="true">&#8596;</span>
@@ -84,7 +85,7 @@
       </div>
     </header>
 
-    <aside class="sidebar" aria-label="设备导航">
+    <aside class="sidebar" data-i18n-aria-label="nav.deviceNavigation" aria-label="设备导航">
       <section class="panel device-panel sidebar-panel" data-sidebar-panel="project">
         <div class="panel-heading sidebar-panel-heading">
           <h2 data-i18n="nav.project">项目</h2>
@@ -148,7 +149,18 @@
       </section>
     </aside>
 
-    <main class="workspace">
+    <main id="mainContent" class="workspace" tabindex="-1">
+      <header id="workspaceHeading" class="workspace-heading" hidden>
+        <nav class="workspace-breadcrumb" data-i18n-aria-label="nav.breadcrumb" aria-label="当前位置">
+          <button type="button" data-page-target="home"><span aria-hidden="true">←</span> <span data-i18n="nav.home">主页</span></button>
+          <span aria-hidden="true">/</span>
+          <span id="workspaceCategory">调试工作台</span>
+        </nav>
+        <div class="workspace-title-row">
+          <div><h1 id="workspaceTitle"></h1><p id="workspaceDescription"></p></div>
+          <span id="workspaceTransport" class="workspace-transport"></span>
+        </div>
+      </header>
       <div id="homeMount" class="page-mount"></div>
 
       <div id="deviceShell" class="device-shell">

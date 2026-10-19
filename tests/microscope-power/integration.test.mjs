@@ -15,11 +15,17 @@ test("the embedded and standalone entries resolve the complete versioned MicroSc
   assert.match(iframe, /allow="[^"]*\busb\b/);
   const iframeSource = iframe.match(/\bsrc="([^"]+)"/)[1];
   assert.equal(iframeSource, `./pages/devices/microscope-power/index.html?v=${version}`);
-  assert.ok(wrapper.includes(`href="${iframeSource}"`), "standalone opening uses the same app as the iframe");
 
   const entry = new URL(iframeSource, projectRoot);
   entry.search = "";
   const html = patchHtmlAssetUrls(read(entry), version);
+  const standaloneLink = html.match(/<a\b[^>]*class="[^"]*\bembedded-only\b[^"]*"[^>]*>/)?.[0];
+  assert.ok(standaloneLink, "standalone opening remains available in the acquisition toolbar");
+  const standaloneSource = standaloneLink.match(/\bhref="([^"]+)"/)[1];
+  assert.equal(new URL(standaloneSource, entry).href, new URL(iframeSource, projectRoot).href);
+  assert.match(standaloneLink, /target="_blank"/);
+  assert.match(html, /<a\b[^>]*href="\.\.\/\.\.\/\.\.\/index\.html\?v=[^"]+"[^>]*target="_top"/,
+    "the Home link leaves the frame instead of nesting the site inside it");
   const moduleSource = html.match(/<script\b[^>]*type="module"[^>]*src="([^"]+)"/)?.[1];
   assert.ok(moduleSource);
   assert.match(html, /id="firmwareUpdateValue"/, "the modusignal firmware-update view remains available");

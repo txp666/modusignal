@@ -7,6 +7,7 @@ import { createLogController } from "./ui/log-controller.js";
 import { collectAppElements } from "./ui/app-elements.js";
 import { createSidebarController } from "./ui/sidebar-controller.js";
 import { createDeviceNavigationUi } from "./ui/device-navigation-ui.js";
+import { createPageNavigation } from "./ui/page-navigation.js";
 import { createChartCsvController } from "./monitoring/chart-csv-controller.js";
 import { createChartController } from "./monitoring/chart-controller.js";
 import {
@@ -119,6 +120,8 @@ let logController = null;
 let modbusConfigUi = null;
 let sidebarController = null;
 let deviceNavigationUi = null;
+let pageNavigation = null;
+let activatedDeviceId = null;
 let chartCsvController = null;
 let chartController = null;
 let websocketConfigUi = null;
@@ -258,11 +261,9 @@ async function initialize() {
     },
   });
   await transportController.setTransport(state.transportId);
-  const requestedPageId = window.location.hash.slice(1);
-  if (DEVICE_PAGE_IDS.includes(requestedPageId)) {
-    selectDevice(requestedPageId);
-  } else if (requestedPageId === "request") {
-    navigateToPage("request");
+  pageNavigation.start();
+  if (window.location.hash === "#home-tools") {
+    document.getElementById("home-tools")?.scrollIntoView();
   }
   deviceNavigationUi.updatePage();
   safeUpdateDeviceUi();
@@ -317,6 +318,7 @@ async function refreshHartLinkReleaseSummary() {
 }
 
 function refreshAllDynamicUi() {
+  sidebarController.refreshLabels();
   deviceNavigationUi.renderLibrary();
   deviceNavigationUi.renderHomeCards();
   updateDeviceUi();
@@ -324,6 +326,7 @@ function refreshAllDynamicUi() {
   pollingController.updateUi();
   updateSetpointUi();
   chartController.syncCurvePanelUi();
+  chartController.refreshLabels();
   deviceNavigationUi.updatePage();
   transportController.populateSelect();
   transportController.renderFields();
@@ -418,6 +421,7 @@ function initializeInfrastructureControllers() {
     getCustomConfig: () => customConfig,
     getModbusConfig: () => modbusConfig,
   });
+  pageNavigation = createPageNavigation({ pageIds: DEVICE_PAGE_IDS, onNavigate: showPage });
   customConfigUi = createCustomConfigUi({
     elements,
     state,
@@ -656,7 +660,7 @@ function safeUpdateDeviceUi() {
   }
 }
 
-function selectDevice(deviceId) {
+function activateDevice(deviceId) {
   hartSessionController.resetLinkProbe();
   const standalone = isStandaloneDevice(deviceId);
   state.pollingActive = false;
@@ -702,7 +706,6 @@ function selectDevice(deviceId) {
   pollingController.updateActive();
   pollingController.updateUi();
   sidebarController.applyLayout();
-  resetViewportScroll();
   appendLog("info", i18n("log.device"), `${i18n("log.switchedTo")} ${getDeviceProfile(state.deviceId, customConfig, modbusConfig).name}`);
 
   if (deviceId === HART_DEVICE_ID && state.transportId === DEFAULT_TRANSPORT_ID && session?.connected) {
@@ -710,17 +713,28 @@ function selectDevice(deviceId) {
   }
 }
 
-function navigateToPage(pageId) {
-  if (DEVICE_PAGE_IDS.includes(pageId)) {
-    selectDevice(pageId);
-    return;
+function showPage(pageId, { source }) {
+  if (DEVICE_PAGE_IDS.includes(pageId) && activatedDeviceId !== pageId) {
+    activateDevice(pageId);
+    activatedDeviceId = pageId;
   }
-
-  state.pageId = pageId === "request" ? "request" : "home";
+  state.pageId = pageId;
   deviceNavigationUi.updatePage();
   updateDeviceUi();
   sidebarController.applyLayout();
-  resetViewportScroll();
+  chartController.requestResize();
+  if (source === "navigation") {
+    resetViewportScroll();
+    document.getElementById("mainContent")?.focus({ preventScroll: true });
+  }
+}
+
+function selectDevice(deviceId) {
+  pageNavigation.navigate(deviceId);
+}
+
+function navigateToPage(pageId) {
+  pageNavigation.navigate(pageId);
 }
 
 function resetViewportScroll() {

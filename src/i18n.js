@@ -1,8 +1,18 @@
 const SUPPORTED_LANGS = ["zh", "en"];
 
 const TRANSLATIONS = {
+  "nav.breadcrumb": { zh: "当前位置", en: "Breadcrumb" },
+  "workspace.category": { zh: "调试工作台", en: "Device workbench" },
+  "request.prepareTitle": { zh: "准备设备资料", en: "Prepare device details" },
+  "request.copyInstruction": { zh: "复制模板，填写后提交到 GitHub Issues。", en: "Copy the template, fill it in, and submit a GitHub issue." },
+  "request.protocolTitle": { zh: "协议与连接", en: "Protocol and connection" },
+  "request.protocolDesc": { zh: "设备型号、协议文档及默认连接参数。", en: "Device model, protocol documentation, and connection settings." },
+  "request.sampleTitle": { zh: "命令与回包", en: "Commands and responses" },
+  "request.sampleDesc": { zh: "提供一组真实的发送命令和对应响应。", en: "Include a real command and its corresponding response." },
+  "request.uiTitle": { zh: "期望的操作", en: "Intended workflow" },
+  "request.uiDesc": { zh: "要读取的数值、控制项及操作限制。", en: "Values to read, controls to expose, and operating limits." },
   // ===== 通用 / index.html =====
-  "app.subtitle": { zh: "在线设备调试平台（串口·WebSocket·HART·MQTT）", en: "Online Device Debug Platform (Serial · WebSocket · HART · MQTT)" },
+  "app.subtitle": { zh: "浏览器里的设备调试台", en: "Your browser-based device workbench" },
   "app.title": { zh: "modusignal 在线设备调试", en: "modusignal Online Device Debug" },
   "app.ogTitle": { zh: "modusignal 在线设备调试", en: "modusignal Online Device Debug" },
   "app.ogDesc": { zh: "浏览器端在线设备/信号调试：串口·WebSocket·HART·Modbus·自定义协议，实时曲线与收发调试。", en: "Browser-based device/signal debugging: Serial, WebSocket, HART, Modbus, custom protocols with real-time charts." },
@@ -11,6 +21,9 @@ const TRANSLATIONS = {
   "app.schemaDesc": { zh: "在线设备与信号调试平台，支持 Web Serial 串口、WebSocket、HART、Modbus RTU 与自定义协议驱动。", en: "Online device and signal debug platform supporting Web Serial, WebSocket, HART, Modbus RTU and custom protocol drivers." },
 
   // Header / 导航
+  "nav.backHome": { zh: "返回主页", en: "Back to home" },
+  "nav.switchLanguage": { zh: "切换语言", en: "Switch language" },
+  "nav.deviceNavigation": { zh: "设备导航", en: "Device navigation" },
   "nav.checkingEnv": { zh: "检测环境", en: "Checking..." },
   "nav.connect": { zh: "连接", en: "Connect" },
   "nav.disconnect": { zh: "断开连接", en: "Disconnect" },
@@ -59,18 +72,37 @@ const TRANSLATIONS = {
   "panel.collapse": { zh: "折叠", en: "Collapse" },
 
   // ===== 首页 =====
-  "home.pageTitle": { zh: "modusignal 在线设备调试", en: "modusignal Online Device Debug" },
-  "home.pageDesc": { zh: "通过浏览器连接设备，统一传输抽象（串口·WebSocket·MQTT），把设备驱动、调试收发和曲线查看放在一个在线工具里。", en: "Connect to devices via browser with unified transport abstraction (Serial · WebSocket · MQTT), combining device drivers, debug transceiver and chart viewing in one online tool." },
-  "home.github": { zh: "GitHub", en: "GitHub" },
+  "nav.skipContent": { zh: "跳到主要内容", en: "Skip to main content" },
+  "home.eyebrow": { zh: "ModuSignal / 浏览器里的设备调试台", en: "ModuSignal / The browser workbench" },
+  "home.chooseTool": { zh: "选择调试工具", en: "Explore the tools" },
+  "home.openTool": { zh: "打开工作台", en: "Open workbench" },
+  "home.quickstart": { zh: "使用步骤", en: "Getting started" },
+  "home.stepSelect": { zh: "选择工具", en: "Choose a tool" },
+  "home.stepSelectDesc": { zh: "按设备或协议，打开对应工作台。", en: "Find the workspace for your device or protocol." },
+  "home.stepConnect": { zh: "连接设备", en: "Connect your device" },
+  "home.stepConnectDesc": { zh: "确认通讯参数，授权浏览器连接。", en: "Check your settings and allow the connection." },
+  "home.stepInspect": { zh: "查看信号", en: "Inspect the signal" },
+  "home.stepInspectDesc": { zh: "收发报文，观察曲线与设备响应。", en: "Exchange frames and watch your device respond." },
+  "home.toolsTitle": { zh: "在线调试工具", en: "Browser tools" },
+  "home.toolsDesc": { zh: "选择设备或协议，打开对应调试页面。", en: "Select a device or protocol to open its tools." },
+  "home.browserNote": { zh: "串口 / WebUSB 请使用桌面 Chrome 或 Edge，并通过 HTTPS 或 localhost 打开；WebSocket / MQTT 可使用现代浏览器。", en: "For Serial / WebUSB, use desktop Chrome or Edge over HTTPS or localhost. WebSocket / MQTT work in modern browsers." },
+  "home.hardwareTitle": { zh: "配套硬件", en: "Hardware" },
+  "home.hardwareDesc": { zh: "用于信号输出、HART 通信和电流测量。", en: "For signal generation, HART communication and current measurement." },
+  "home.softwareTitle": { zh: "桌面软件", en: "Desktop software" },
+  "home.softwareDesc": { zh: "HART 仪表调试和串口收发工具。", en: "Tools for HART instruments and serial communication." },
+
+  "home.pageTitle": { zh: "在浏览器中调试设备", en: "Debug devices in your browser" },
+  "home.pageDesc": { zh: "通过串口、USB 或网络连接设备，收发报文、记录日志并查看实时曲线。支持 HART、Modbus RTU、MQTT、WebSocket 和自定义协议。", en: "Connect devices over serial, USB or a network to exchange data, record logs and view live plots. Supports HART, Modbus RTU, MQTT, WebSocket and custom protocols." },
+  "home.github": { zh: "GitHub 源码", en: "Source on GitHub" },
   "home.requestDevice": { zh: "请求新设备", en: "Request New Device" },
   "home.buyProduct": { zh: "购买产品", en: "Buy Product" },
   "home.hartlinkStudioKicker": { zh: "桌面软件 · 最新版", en: "Desktop software · Latest" },
-  "home.hartlinkStudioTitle": { zh: "HARTLink Studio 专业 HART 设备工作台", en: "HARTLink Studio Professional HART Workbench" },
-  "home.hartlinkStudioDesc": { zh: "连接、设备扫描、实时变量、结构化 Trace、仪表校验、DD 工作区、配置快照、历史比较与受控克隆，一套跨平台软件覆盖完整 HART 设备工作流。", en: "Connection, device discovery, live variables, structured traces, instrument calibration, DD workspaces, configuration snapshots, history comparison and controlled cloning in one cross-platform workflow." },
+  "home.hartlinkStudioTitle": { zh: "HARTLink Studio · HART 设备调试软件", en: "HARTLink Studio · HART device tools" },
+  "home.hartlinkStudioDesc": { zh: "支持设备扫描、变量读取、通信帧解析、仪表校验和 DD 工作区，可保存配置快照、比较历史记录并克隆配置。支持 Windows、macOS 和 Linux。", en: "Scan devices, read variables, inspect frames, calibrate instruments and use DD workspaces. Save configuration snapshots, compare history and clone configurations on Windows, macOS and Linux." },
   "home.hartlinkStudioTrace": { zh: "结构化 Trace", en: "Structured Trace" },
   "home.hartlinkStudioDd": { zh: "DD 设备工作区", en: "DD Workspaces" },
   "home.hartlinkStudioConfig": { zh: "快照 · 历史 · 受控克隆", en: "Snapshots · History · Controlled Clone" },
-  "home.hartlinkStudioMore": { zh: "查看软件介绍", en: "Explore HARTLink Studio" },
+  "home.hartlinkStudioMore": { zh: "查看软件介绍", en: "About HARTLink Studio" },
   "home.hartlinkStudioDownload": { zh: "下载最新版", en: "Download latest" },
   "home.microscopePowerKicker": { zh: "MicroScope Power 产品", en: "MicroScope Power Product" },
   "home.microscopePowerProductTitle": { zh: "MicroScope Power 便携式可调电源与微电流波形分析仪", en: "MicroScope Power Portable Power Supply & Current Analyzer" },
@@ -83,22 +115,22 @@ const TRANSLATIONS = {
   "home.microscopePowerDebug": { zh: "打开上位机", en: "Open WebUSB Host" },
   "home.fluentSerialKicker": { zh: "桌面软件 · v0.1.11", en: "Desktop software · v0.1.11" },
   "home.fluentSerialTitle": { zh: "Fluent 串口助手 · GUI、CLI 与 MCP", en: "Fluent Serial Assistant · GUI, CLI and MCP" },
-  "home.fluentSerialDesc": { zh: "GUI 掌控串口，CLI 与 MCP 安全复用当前会话。除了文本/HEX 收发、协议解析和实时曲线，现在也能让脚本与 AI 完成连接、收发、记录读取和绘图控制。", en: "The GUI owns the serial port while CLI and MCP safely reuse the active session. Alongside text/HEX I/O, protocol parsing and live plots, scripts and AI can now connect, exchange data, inspect records and control plotting." },
+  "home.fluentSerialDesc": { zh: "支持文本/HEX 收发、协议解析、实时曲线和日志记录。CLI 与 MCP 复用 GUI 中的串口会话，可通过脚本或 AI 客户端控制连接、收发和绘图。", en: "Supports text/HEX I/O, protocol parsing, live plots and logging. CLI and MCP reuse GUI serial sessions so scripts or AI clients can control connections, data exchange and plotting." },
   "home.fluentSerialTerminal": { zh: "文本 / HEX / 混合终端", en: "Text / HEX / mixed terminal" },
   "home.fluentSerialAutomation": { zh: "机器可读 CLI · 稳定 JSON", en: "Machine-readable CLI · stable JSON" },
   "home.fluentSerialPlot": { zh: "stdio MCP · 12 个工具", en: "stdio MCP · 12 tools" },
-  "home.fluentSerialMore": { zh: "查看软件介绍", en: "Explore Fluent Serial Assistant" },
+  "home.fluentSerialMore": { zh: "查看软件介绍", en: "About Fluent Serial Assistant" },
   "home.fluentSerialDownload": { zh: "下载最新版", en: "Download latest" },
   "home.aomasterKicker": { zh: "AOMaster 产品", en: "AOMaster Product" },
   "home.aomasterProductTitle": { zh: "AOMaster 便携式模拟量输出控制器", en: "AOMaster Portable Analog Output Controller" },
-  "home.aomasterProductDesc": { zh: "基于 CH32V003F4U6 + GP8630 的掌心级模拟量输出设备，支持 OLED 本地调节、0-10 V / 4-20 mA 输出、波形输出与 USART1 Modbus RTU 上位机控制。", en: "A palm-sized analog output device based on CH32V003F4U6 + GP8630, with OLED local adjustment, 0-10 V / 4-20 mA output, waveform output and USART1 Modbus RTU host control." },
+  "home.aomasterProductDesc": { zh: "基于 CH32V003F4U6 和 GP8630，支持 0-10 V / 4-20 mA 输出。可通过 OLED 和旋钮本地调节，也可用 USART1 Modbus RTU 接口设置输出值和波形。", en: "Built around CH32V003F4U6 and GP8630, with 0-10 V / 4-20 mA output. Adjust it locally using the OLED and knob, or set values and waveforms through USART1 Modbus RTU." },
   "home.aomasterLocalControl": { zh: "OLED 本地调节", en: "OLED Local Control" },
   "home.aomasterMore": { zh: "查看产品介绍", en: "Product Intro" },
   "home.aomasterDebug": { zh: "打开调试页", en: "Open Debug Page" },
   "home.aomasterClose": { zh: "关闭产品介绍", en: "Close Product Intro" },
-  "home.aomasterIntro": { zh: "AOMaster 面向传感器、仪表和采集模块调试，可在现场直接旋钮设定输出，也可以通过 modusignal 在浏览器里下发恒定值、阶跃、斜坡、方波、三角波和正弦波，并轮询回读固件输出指令值。", en: "AOMaster is built for sensor, instrument and acquisition-module debugging. Set output directly with the on-device knob, or use modusignal in the browser to send constant, step, ramp, square, triangle and sine outputs while polling firmware output command values." },
+  "home.aomasterIntro": { zh: "AOMaster 用于传感器、仪表和采集模块调试。旋钮可直接设定输出；modusignal 可设置恒定、阶跃、斜坡、方波、三角波和正弦波输出。网页曲线回读的是固件输出指令值，并非模拟量实测值。", en: "AOMaster is used to test sensors, instruments and acquisition modules. Set output with the knob or use modusignal for constant, step, ramp, square, triangle and sine outputs. Web plots show firmware output command values, not measured analog output." },
   "home.aomasterFeatureOutput": { zh: "模拟量输出", en: "Analog Output" },
-  "home.aomasterFeatureOutputDesc": { zh: "覆盖 0-10 V 电压与 4-20 mA 电流，适合 PLC、采集卡、变送器输入端调试。", en: "Covers 0-10 V voltage and 4-20 mA current output for PLC, DAQ and transmitter input debugging." },
+  "home.aomasterFeatureOutputDesc": { zh: "提供 0-10 V 电压和 4-20 mA 电流输出，用于 PLC、采集卡和变送器输入端调试。", en: "Provides 0-10 V and 4-20 mA outputs for testing PLC, DAQ and transmitter inputs." },
   "home.aomasterFeatureWave": { zh: "波形发生", en: "Waveform Generation" },
   "home.aomasterFeatureWaveDesc": { zh: "支持恒定、阶跃、斜坡、方波、三角波、正弦波；阶跃序列最多 16 点。", en: "Supports constant, step, ramp, square, triangle and sine outputs; step sequences support up to 16 points." },
   "home.aomasterFeatureLocal": { zh: "本地操作", en: "Local Operation" },
@@ -111,13 +143,13 @@ const TRANSLATIONS = {
   "home.hartlinkKicker": { zh: "HARTLink M1 产品", en: "HARTLink M1 Product" },
   "home.hartlinkProductTitle": { zh: "HARTLink M1 便携式 HART 手操器", en: "HARTLink M1 Portable HART Communicator" },
   "home.hartlinkProductDesc": { zh: "基于 CH32L103F8U6 的便携式 HART 基础读取手操器与 USB 透传桥，支持 OLED 本机菜单、设备扫描、USB CDC 原始帧透传与 USB HID IAP 升级。", en: "A portable CH32L103F8U6-based HART read-only communicator and USB bridge with an OLED menu, device scanning, raw USB CDC forwarding and USB HID IAP updates." },
-  "home.hartlinkReadOnly": { zh: "安全只读", en: "Safe Read-only" },
+  "home.hartlinkReadOnly": { zh: "本机只读", en: "Local read-only mode" },
   "home.hartlinkLocalMenu": { zh: "OLED 本机菜单", en: "OLED Local Menu" },
   "home.hartlinkMore": { zh: "查看产品介绍", en: "Product Intro" },
   "home.hartlinkDebug": { zh: "打开调试页", en: "Open Debug Page" },
   "home.hartlinkClose": { zh: "关闭产品介绍", en: "Close Product Intro" },
-  "home.hartlinkIntro": { zh: "HARTLink M1 面向学习、实验和现场调试，可脱离电脑发现 HART 设备并读取过程变量与诊断状态；连接电脑后则作为 USB 与 HART 物理层之间的原始帧桥，配合 modusignal 完成更复杂的操作。", en: "HARTLink M1 is designed for learning, lab work and field diagnostics. It discovers HART devices and reads process variables and diagnostic status without a computer, then becomes a raw USB-to-HART physical-layer bridge for more advanced workflows with modusignal." },
-  "home.hartlinkFeatureRead": { zh: "本机安全读取", en: "Safe Local Reads" },
+  "home.hartlinkIntro": { zh: "HARTLink M1 可独立扫描 HART 设备，并在 OLED 上显示过程变量和诊断状态。连接电脑后，通过 USB 转发原始 HART 帧，由 modusignal 等上位机发送命令并解析响应。", en: "HARTLink M1 scans HART devices and shows process variables and diagnostics on its OLED without a computer. When connected over USB, it forwards raw HART frames for host software such as modusignal to send commands and parse responses." },
+  "home.hartlinkFeatureRead": { zh: "本机读取", en: "Local readings" },
   "home.hartlinkFeatureReadDesc": { zh: "提供 Cmd0/1/2/3/7/12/13/14/15/20 等基础读命令，本机菜单不向现场设备发送写参数命令。", en: "Provides core read commands including Cmd0/1/2/3/7/12/13/14/15/20; the local menu does not send parameter-write commands to field devices." },
   "home.hartlinkFeatureScan": { zh: "设备发现与轮询", en: "Discovery and Polling" },
   "home.hartlinkFeatureScanDesc": { zh: "扫描轮询地址 0-15，缓存设备身份与长地址，并在 OLED 上查看过程变量、状态和诊断信息。", en: "Scans polling addresses 0-15, caches device identity and long address, and shows process variables, status and diagnostics on the OLED." },
@@ -128,7 +160,7 @@ const TRANSLATIONS = {
   "home.hartlinkUsageTitle": { zh: "接线提示", en: "Wiring Note" },
   "home.hartlinkUsageDesc": { zh: "USB 仅为 HARTLink 本机供电，不给 4-20 mA/HART 回路供电。请将测试线并联在约 250 Ω 负载两端或现场仪表端子，并在接线前确认回路极性、外部供电、负载与现场安全条件。", en: "USB powers HARTLink only; it does not power the 4-20 mA/HART loop. Connect the probes across an approximately 250 Ω load or the field-device terminals, and verify polarity, external loop power, load and field safety conditions first." },
   "home.hartlinkHardware": { zh: "立创开源硬件", en: "OSHWHub Hardware" },
-  "home.architecture": { zh: "当前架构", en: "Current Architecture" },
+  "home.architecture": { zh: "开发者：了解项目架构", en: "For developers: explore the architecture" },
   "home.archAriaLabel": { zh: "modusignal 架构框图：页面 UI 经 app.js 调度，分为正交的设备层与传输层，数据汇入曲线与日志", en: "modusignal architecture: page UI orchestrated by app.js, orthogonal device layer and transport layer, data flows into charts and logs" },
   "home.archUi": { zh: "页面 UI", en: "Page UI" },
   "home.archUiSub": { zh: "index.html + pages/", en: "index.html + pages/" },
@@ -191,7 +223,10 @@ const TRANSLATIONS = {
   "workbench.realtimeOutput": { zh: "输出指令回读", en: "Output Command Readback" },
   "workbench.realtimeOutputAria": { zh: "输出指令回读曲线", en: "Output Command Readback Chart" },
   "workbench.pollReadback": { zh: "轮询固件输出指令值，非模拟量实测", en: "Polled firmware output command, not analog measurement" },
-  "workbench.chartConfig": { zh: "曲线配置", en: "Chart Config" },
+  "workbench.chartConfig": { zh: "曲线设置", en: "Curve settings" },
+  "workbench.samplingDisplay": { zh: "采样与显示", en: "History and display" },
+  "workbench.samplingHint": { zh: "设置保留的历史长度和当前窗口显示的点数。", en: "Choose how many samples to retain and show in the visible window." },
+  "workbench.saveDisplaySettings": { zh: "保存显示设置", en: "Save display settings" },
   "workbench.chartSummaryDefault": { zh: "—", en: "—" },
   "workbench.protocolHelp": { zh: "协议说明", en: "Protocol Help" },
   "workbench.aomasterDualMode": { zh: "双曲线模式：理想设定预览与固件输出指令回读。默认 50 ms 轮询不能还原 50 Hz 波形；输出频率、抖动和幅值需用示波器或采集设备测量。", en: "Dual charts: ideal setpoint preview and firmware output command readback. Default 50 ms polling cannot reconstruct a 50 Hz waveform; measure frequency, jitter and amplitude with a scope or acquisition device." },
@@ -284,6 +319,7 @@ const TRANSLATIONS = {
   "aomaster.waveform.square": { zh: "方波", en: "Square" },
   "aomaster.waveform.triangle": { zh: "三角波", en: "Triangle" },
   "aomaster.waveform.sine": { zh: "正弦波", en: "Sine" },
+  "aomaster.value.display": { zh: "数值显示", en: "Display as" },
   "aomaster.value.unit": { zh: "单位", en: "Unit" },
   "aomaster.currentSetpoint": { zh: "电流设定", en: "Current Setpoint" },
   "aomaster.voltageSetpoint": { zh: "电压设定", en: "Voltage Setpoint" },
@@ -844,7 +880,7 @@ const TRANSLATIONS = {
   "chart.hartVariableChart": { zh: "HART 变量曲线", en: "HART Variable Chart" },
   "chart.emptyText": { zh: "连接设备并开启轮询后显示实时曲线", en: "Connect device and start polling to see real-time chart" },
   "chart.emptySetpoint": { zh: "调整设定值以预览曲线", en: "Adjust setpoint to preview chart" },
-  "chart.emptyActual": { zh: "连接设备并开启轮询后显示输出指令回读", en: "Connect device and start polling to see output command readback" },
+  "chart.emptyActual": { zh: "连接设备并开始轮询\n查看输出指令回读", en: "Connect and start polling\nto view command readback" },
   "chart.emptyWs": { zh: "连接设备并接收 WebSocket 消息后显示多曲线", en: "Connect device and receive WebSocket messages to see multi-curve" },
   "chart.emptySerial": { zh: "连接设备并接收串口数据后显示多曲线", en: "Connect device and receive serial data to see multi-curve" },
   "chart.emptyModbus": { zh: "连接设备并开始轮询后显示多曲线", en: "Connect device and start polling to see multi-curve" },
@@ -864,13 +900,13 @@ const TRANSLATIONS = {
   "chart.csvLoaded": { zh: "已加载", en: "Loaded" },
   "chart.csvLoadedMsg": { zh: " 已加载", en: " loaded" },
   "chart.singleCurve": { zh: "单曲线", en: "Single Curve" },
-  "chart.dualCurve": { zh: "双曲线 · 设定预览 + 实时输出", en: "Dual Chart · Setpoint Preview + Actual Output" },
+  "chart.dualCurve": { zh: "AOMaster · 设定预览与输出指令回读", en: "AOMaster · Setpoint preview and command readback" },
   "chart.registryValue": { zh: "寄存器值", en: "Register Value" },
   "chart.hexRaw": { zh: "单曲线 · HEX 原始字节", en: "Single Curve · HEX Raw Bytes" },
   "chart.modbusPayload": { zh: "单曲线 · Modbus RTU 载荷", en: "Single Curve · Modbus RTU Payload" },
   "chart.multiCurveCount": { zh: "{count} 条 {mode} 曲线", en: "{count} {mode} curves" },
   "chart.modbusCurveCount": { zh: "{count} 条 Modbus 曲线", en: "{count} Modbus curves" },
-  "chart.aomasterDesc": { zh: "ECharts 曲线预览设定波形，并跟踪固件输出指令回读，非模拟量实测；保留 {total} 个采样点，当前显示 {visible} 个。", en: "ECharts charts preview the set waveform and track firmware output command readback, not analog measurements; {total} sample points retained, {visible} displayed." },
+  "chart.aomasterDesc": { zh: "设定波形与固件指令回读 · 非模拟量实测", en: "Setpoint preview and firmware readback · not analog measurements" },
   "chart.hartDesc": { zh: "HART PV/SV/TV/QV 卡片与多曲线同步显示；保留 {total} 个采样点，当前显示 {visible} 个。", en: "HART PV/SV/TV/QV cards and multi-curve sync; {total} sample points retained, {visible} displayed." },
   "chart.modbusMultiDesc": { zh: "Modbus 多曲线；保留 {total} 个采样点，当前显示 {visible} 个。", en: "Modbus multi-curve; {total} sample points retained, {visible} displayed." },
   "chart.modbusSingleDesc": { zh: "Modbus 读回包自动解析寄存器数值；保留 {total} 个采样点，当前显示 {visible} 个。", en: "Modbus auto-parses register values from response; {total} sample points retained, {visible} displayed." },
@@ -885,11 +921,11 @@ const TRANSLATIONS = {
   // 首页设备卡片描述
   "home.card.aomaster": { zh: "阶跃/斜坡/方波等波形输出，双曲线预览，监测面板可手动轮询回读。", en: "Step, ramp, square and other waveform outputs; dual chart preview; manual polling readback in monitor panel." },
   "home.card.modbus": { zh: "RTU 寄存器读写，支持轮询读取与曲线显示。", en: "RTU register read/write with polling read and curve display." },
-  "home.card.hart": { zh: "通用命令读写，PV/SV/TV/QV 轮询与多曲线，完整 HART 上位机调试。", en: "Universal command read/write, PV/SV/TV/QV polling and multi-curve, full HART host debugging." },
+  "home.card.hart": { zh: "通用命令读写、PV/SV/TV/QV 轮询和多变量曲线。", en: "Read and write universal commands, poll PV/SV/TV/QV and plot multiple variables." },
   "home.card.websocket": { zh: "WebSocket 连接调试，快捷 JSON/文本发送与回包解析。", en: "WebSocket connection debug, quick JSON/text send and response parsing." },
   "home.card.mqtt": { zh: "MQTT Broker 连接调试，发布/订阅消息与 JSON 回包解析。", en: "MQTT Broker connection debug, publish/subscribe messages and JSON response parsing." },
   "home.card.custom": { zh: "模板发送 / JSON·HEX·Modbus 解析", en: "Template send / JSON·HEX·Modbus parsing" },
-  "home.microscopePowerCardDesc": { zh: "RP2040 WebUSB 小电流波形采集上位机，支持高速曲线、游标、校准与 CSV/PNG 导出。", en: "RP2040 WebUSB small-current waveform host with high-speed charts, cursors, calibration and CSV/PNG export." },
+  "home.microscopePowerCardDesc": { zh: "通过 WebUSB 采集电流波形，支持游标测量、校准和 CSV/PNG 导出。", en: "Capture current waveforms over WebUSB, with cursors, calibration and CSV/PNG export." },
 
   // MicroScope Power
   "microscopePower.title": { zh: "MicroScope Power 上位机", en: "MicroScope Power Host" },
@@ -905,7 +941,7 @@ const TRANSLATIONS = {
   "log.curvePointCount": { zh: "已加载 {points} 点", en: "{points} points loaded" },
 
   // ===== 调试曲线 =====
-  "debugCurve.modbusNote": { zh: "读模式下从 RTU 回包<strong>数据区</strong>按字节偏移解码；从站、功能码、起始地址与寄存器数量在设备页配置。启用多条曲线时，会自动扩大读取寄存器数量以覆盖最远偏移。", en: "In read mode, decode by byte offset from RTU response <strong>data area</strong>; slave ID, function code, start address and register count configured on device page. Multiple curves auto-expand read count to cover farthest offset." },
+  "debugCurve.modbusNote": { zh: "读模式下从 RTU 回包数据区按字节偏移解码；从站、功能码、起始地址与寄存器数量在设备页配置。启用多条曲线时，会自动扩大读取寄存器数量以覆盖最远偏移。", en: "In read mode, decode by byte offset from RTU response data area; slave ID, function code, start address and register count configured on device page. Multiple curves auto-expand read count to cover farthest offset." },
   "debugCurve.modbusTitle": { zh: "Modbus 曲线", en: "Modbus Curve" },
   "debugCurve.modbusHint": { zh: "同一读响应内最多 4 条曲线，偏移 0 为数据区首字节", en: "Up to 4 curves per read response; offset 0 = first byte of data area" },
   "debugCurve.jsonTitle": { zh: "JSON 曲线", en: "JSON Curve" },
@@ -1002,7 +1038,7 @@ const TRANSLATIONS = {
   "custom.protocolPending": { zh: "协议待配置", en: "Protocol Pending" },
 
   // ===== 首页扩展 =====
-  "home.card.unsupported": { zh: "用模板发送和解析规则快速适配未知串口设备。", en: "Quickly adapt unknown serial devices with send templates and parsing rules." },
+  "home.card.unsupported": { zh: "为串口设备配置发送模板和数据解析规则。", en: "Configure send templates and data parsing rules for serial devices." },
 
   // ===== 请求页面扩展 =====
   "request.prepareDesc": { zh: "整理设备资料、协议、截图和期望 UI，方便贡献设备驱动。", en: "Prepare device docs, protocol, screenshots and desired UI to help contribute device drivers." },
@@ -1064,7 +1100,7 @@ const TRANSLATIONS = {
         <article class="protocol-example-card">
           <h3>2. 双曲线（同帧多寄存器）</h3>
           <p>曲线一偏移 <code>0</code>，曲线二偏移 <code>2</code>；读 2 个寄存器。偏移相对<strong>数据区首字节</strong>，不含从站/功能码/CRC。</p>
-          <pre><code>响应：01 03 04 00 64 00 C8 FA 33
+          <pre><code>响应：01 03 04 00 64 00 C8 BA 7A
 偏移 0 → 100，偏移 2 → 200</code></pre>
         </article>
         <article class="protocol-example-card">
@@ -1086,7 +1122,7 @@ const TRANSLATIONS = {
         <strong>测试：</strong>
         <span>在曲线配置底部粘贴完整 RTU 帧 HEX（含 CRC），点「测试」验证解码，无需连接设备。</span>
       </div>`,
-    en: `<p>In read mode (function code <code>03/04</code>), the monitor panel decodes values from the RTU response <strong>data area</strong> by byte offset; write mode only sends commands without plotting.</p>
+    en: `<p>In read mode (function code <code>03/04</code>), the monitor panel decodes values from the RTU response data area by byte offset; write mode only sends commands without plotting.</p>
       <div class="protocol-example-grid">
         <article class="protocol-example-card">
           <h3>1. Single Curve (UInt16)</h3>
@@ -1098,7 +1134,7 @@ Data area: 00 64 → 100</code></pre>
         <article class="protocol-example-card">
           <h3>2. Dual Curve (multi-register in one frame)</h3>
           <p>Curve 1 offset <code>0</code>, Curve 2 offset <code>2</code>; read 2 registers. Offset is relative to <strong>data area first byte</strong>, excluding slave/function code/CRC.</p>
-          <pre><code>Response: 01 03 04 00 64 00 C8 FA 33
+          <pre><code>Response: 01 03 04 00 64 00 C8 BA 7A
 Offset 0 → 100, Offset 2 → 200</code></pre>
         </article>
         <article class="protocol-example-card">
@@ -1165,7 +1201,7 @@ Offset 0 → 100, Offset 2 → 200</code></pre>
         <article class="protocol-example-card">
           <h3>4. Modbus 载荷</h3>
           <p>模式 <code>Modbus RTU</code>，配置从站与功能码，在同一 RTU 帧数据区内按偏移解多条曲线。</p>
-          <pre><code>01 03 04 00 64 00 C8 FA 33</code></pre>
+          <pre><code>01 03 04 00 64 00 C8 BA 7A</code></pre>
         </article>
       </div>
       <div class="protocol-note">
@@ -1191,7 +1227,7 @@ Offset 0 → 100, Offset 2 → 200</code></pre>
         <article class="protocol-example-card">
           <h3>4. Modbus Payload</h3>
           <p>Mode <code>Modbus RTU</code>, configure slave & function code, decode multiple curves by offset within the data area of one RTU frame.</p>
-          <pre><code>01 03 04 00 64 00 C8 FA 33</code></pre>
+          <pre><code>01 03 04 00 64 00 C8 BA 7A</code></pre>
         </article>
       </div>
       <div class="protocol-note">
@@ -1219,7 +1255,7 @@ Offset 0 → 100, Offset 2 → 200</code></pre>
         <article class="protocol-example-card">
           <h3>4. Modbus RTU 载荷</h3>
           <p>模式 <code>Modbus RTU</code>；从站、功能码 03/04，在数据区按偏移解寄存器。Modbus 模式自带 CRC 校验。</p>
-          <pre><code>01 03 04 00 64 00 C8 FA 33</code></pre>
+          <pre><code>01 03 04 00 64 00 C8 BA 7A</code></pre>
         </article>
       </div>
       <div class="protocol-note">
@@ -1249,7 +1285,7 @@ Offset 0 → 100, Offset 2 → 200</code></pre>
         <article class="protocol-example-card">
           <h3>4. Modbus RTU Payload</h3>
           <p>Mode <code>Modbus RTU</code>; slave, function code 03/04, decode registers by offset within data area. Modbus mode includes CRC check.</p>
-          <pre><code>01 03 04 00 64 00 C8 FA 33</code></pre>
+          <pre><code>01 03 04 00 64 00 C8 BA 7A</code></pre>
         </article>
       </div>
       <div class="protocol-note">
@@ -1281,7 +1317,7 @@ Offset 0 → 100, Offset 2 → 200</code></pre>
         <article class="protocol-example-card">
           <h3>4. Modbus RTU 载荷</h3>
           <p>MQTT 消息体为完整或连续 Modbus RTU 字节流；自动切帧、校验 CRC、按数据区偏移解多条曲线。</p>
-          <pre><code>01 03 04 00 64 00 C8 FA 33</code></pre>
+          <pre><code>01 03 04 00 64 00 C8 BA 7A</code></pre>
         </article>
       </div>
       <div class="protocol-note">
@@ -1311,7 +1347,7 @@ Offset 0 → 100, Offset 2 → 200</code></pre>
         <article class="protocol-example-card">
           <h3>4. Modbus RTU Payload</h3>
           <p>MQTT message body as complete or continuous Modbus RTU byte stream; auto-framing, CRC check, multi-curve decode by data area offset.</p>
-          <pre><code>01 03 04 00 64 00 C8 FA 33</code></pre>
+          <pre><code>01 03 04 00 64 00 C8 BA 7A</code></pre>
         </article>
       </div>
       <div class="protocol-note">
@@ -1331,9 +1367,9 @@ Offset 0 → 100, Offset 2 → 200</code></pre>
   "chart.mqttEmpty": { zh: "连接设备并接收 MQTT 消息后显示多曲线", en: "Connect device and receive MQTT messages to show multi-curves" },
   "home.aomasterCardDesc": { zh: "阶跃/斜坡/方波等波形输出，双曲线预览，监测面板可手动轮询回读。", en: "Step, ramp, square and other waveform outputs; dual chart preview; manual polling readback in monitor panel." },
   "home.modbusCardDesc": { zh: "RTU 寄存器读写，支持轮询读取与曲线显示。", en: "RTU register read/write with polling read and curve display." },
-  "home.hartCardDesc": { zh: "通用命令读写，PV/SV/TV/QV 轮询与多曲线，完整 HART 上位机调试。", en: "Universal command read/write, PV/SV/TV/QV polling and multi-curve, full HART host debugging." },
+  "home.hartCardDesc": { zh: "通用命令读写、PV/SV/TV/QV 轮询和多变量曲线。", en: "Read and write universal commands, poll PV/SV/TV/QV and plot multiple variables." },
   "home.mqttCardDesc": { zh: "MQTT over WebSocket 调试，主题发布/订阅、QoS 与 JSON 解析。", en: "MQTT over WebSocket debug, topic publish/subscribe, QoS and JSON parsing." },
-  "home.customCardDesc": { zh: "用模板发送和解析规则快速适配未知串口设备。", en: "Quickly adapt unknown serial devices with send templates and parsing rules." },
+  "home.customCardDesc": { zh: "为串口设备配置发送模板和数据解析规则。", en: "Configure send templates and data parsing rules for serial devices." },
   "home.requestCardDesc": { zh: "整理设备资料、协议、截图和期望 UI，方便贡献设备驱动。", en: "Prepare device docs, protocol, screenshots and desired UI to help contribute device drivers." },
   "custom.deviceConfigDescSummary": { zh: "；设定范围与发送模板在本页配置，曲线解析在监测面板。", en: "; Setpoint range and send template configured on this page, curve parsing in monitor panel." },
   "custom.cardDesc": { zh: "模板发送 / JSON·HEX·Modbus 解析", en: "Template send / JSON·HEX·Modbus parsing" },

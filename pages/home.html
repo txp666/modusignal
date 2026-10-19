@@ -1,41 +1,66 @@
 <section id="homePage" class="page home-page active" data-page-id="home">
-  <div class="panel home-overview">
-    <div class="panel-heading split">
-      <div>
-        <h2 data-i18n="home.pageTitle">modusignal 在线设备调试</h2>
-        <p data-i18n="home.pageDesc">通过浏览器连接设备，统一传输抽象（串口·WebSocket·MQTT），把设备驱动、调试收发和曲线查看放在一个在线工具里。</p>
+  <section class="home-hero" aria-labelledby="homeTitle">
+    <div class="home-hero-copy">
+      <span class="home-eyebrow" data-i18n="home.eyebrow">ModuSignal / 浏览器里的设备调试台</span>
+      <h1 id="homeTitle" data-i18n="home.pageTitle">在浏览器中调试设备</h1>
+      <p data-i18n="home.pageDesc">通过串口、USB 或网络连接设备，收发报文、记录日志并查看实时曲线。支持 HART、Modbus RTU、MQTT、WebSocket 和自定义协议。</p>
+      <div class="home-hero-actions">
+        <a class="action-link" href="#home-tools"><span data-i18n="home.chooseTool">选择调试工具</span><span aria-hidden="true">↗</span></a>
+        <a id="githubLink" class="home-text-link" href="https://github.com/txp666/modusignal" target="_blank" rel="noreferrer" data-i18n="home.github">GitHub 源码</a>
       </div>
-      <div class="panel-actions">
-        <a id="githubLink" class="action-link" href="https://github.com/" target="_blank" rel="noreferrer" data-i18n="home.github">GitHub</a>
-        <button class="ghost-button" type="button" data-page-target="request" data-i18n="home.requestDevice">请求新设备</button>
-      </div>
+      <div class="home-protocols" aria-label="Supported protocols"><span>Web Serial</span><span>WebUSB</span><span>Modbus RTU</span><span>HART</span><span>MQTT</span></div>
+    </div>
+    <aside class="home-quickstart" aria-labelledby="homeQuickstartTitle">
+      <h2 id="homeQuickstartTitle" data-i18n="home.quickstart">使用步骤</h2>
+      <ol>
+        <li><span class="home-step-number" aria-hidden="true">01</span><div><strong data-i18n="home.stepSelect">选择工具</strong><p data-i18n="home.stepSelectDesc">按设备或协议，打开对应工作台。</p></div></li>
+        <li><span class="home-step-number" aria-hidden="true">02</span><div><strong data-i18n="home.stepConnect">连接设备</strong><p data-i18n="home.stepConnectDesc">确认通讯参数，授权浏览器连接。</p></div></li>
+        <li><span class="home-step-number" aria-hidden="true">03</span><div><strong data-i18n="home.stepInspect">查看信号</strong><p data-i18n="home.stepInspectDesc">收发报文，观察曲线与设备响应。</p></div></li>
+      </ol>
+    </aside>
+  </section>
+
+  <section id="home-tools" class="home-tools" aria-labelledby="homeToolsTitle">
+    <div class="home-section-heading">
+      <div><span class="home-eyebrow">01 / WORKSPACE</span><h2 id="homeToolsTitle" data-i18n="home.toolsTitle">在线调试工具</h2></div>
+      <p data-i18n="home.toolsDesc">选择设备或协议，打开对应调试页面。</p>
     </div>
     <div id="homeDeviceGrid" class="home-grid"></div>
-  </div>
+    <p class="home-browser-note" data-i18n="home.browserNote">串口 / WebUSB 请使用桌面 Chrome 或 Edge，并通过 HTTPS 或 localhost 打开；WebSocket / MQTT 可使用现代浏览器。</p>
+  </section>
 
-  <section class="panel aomaster-product-card" aria-labelledby="hartlinkStudioCardTitle">
-    <div class="aomaster-product-media hartlink-studio-card-media">
+  <section class="home-collection" aria-labelledby="homeHardwareTitle">
+    <div class="home-section-heading">
+      <div><span class="home-eyebrow">02 / HARDWARE</span><h2 id="homeHardwareTitle" data-i18n="home.hardwareTitle">配套硬件</h2></div>
+      <p data-i18n="home.hardwareDesc">用于信号输出、HART 通信和电流测量。</p>
+    </div>
+    <div class="home-product-grid">
+  <section class="panel aomaster-product-card" aria-labelledby="microscopePowerProductTitle">
+    <div class="aomaster-product-media">
       <img
-        src="./hartlink-studio/assets/logo.png"
-        alt="HARTLink Studio Logo"
-        width="1024"
-        height="1024"
+        loading="lazy" decoding="async"
+        src="./images/microscope-power-device.jpg?v=__ASSET_VERSION__"
+        alt=""
+        aria-hidden="true"
+        width="640"
+        height="305"
       />
     </div>
     <div class="aomaster-product-content">
-      <span class="aomaster-product-kicker" data-hartlink-release-kicker data-i18n="home.hartlinkStudioKicker">桌面软件 · 最新版</span>
-      <h2 id="hartlinkStudioCardTitle" data-i18n="home.hartlinkStudioTitle">HARTLink Studio 专业 HART 设备工作台</h2>
-      <p data-i18n="home.hartlinkStudioDesc">连接、设备扫描、实时变量、结构化 Trace、仪表校验、DD 工作区、配置快照、历史比较与受控克隆，一套跨平台软件覆盖完整 HART 设备工作流。</p>
-      <div class="aomaster-product-highlights" aria-label="HARTLink Studio highlights">
-        <span>Windows · macOS · Linux</span>
-        <span>HART 5 / 6 / 7</span>
-        <span data-i18n="home.hartlinkStudioTrace">结构化 Trace</span>
-        <span data-i18n="home.hartlinkStudioDd">DD 设备工作区</span>
-        <span data-i18n="home.hartlinkStudioConfig">快照 · 历史 · 受控克隆</span>
+      <span class="aomaster-product-kicker" data-i18n="home.microscopePowerKicker">MicroScope Power 产品</span>
+      <h2 id="microscopePowerProductTitle" data-i18n="home.microscopePowerProductTitle">MicroScope Power 便携式可调电源与微电流波形分析仪</h2>
+      <p data-i18n="home.microscopePowerProductDesc">基于 RP2040 与 16 位 ADS8866，集成可调供电和双量程电流采集，通过 WebUSB 观察单片机休眠、唤醒与活动电流，支持低通滤波、游标测量及功率与能量估算。</p>
+      <div class="aomaster-product-highlights" aria-label="MicroScope Power highlights">
+        <span data-i18n="home.microscopePowerMaxSampleRate">100 kSPS 最高配置</span>
+        <span data-i18n="home.microscopePowerNominalSupply">约 0.8–5 V 标称供电</span>
+        <span data-i18n="home.microscopePowerDualRange">1 Ω / 10 Ω 双量程</span>
+        <span>16-bit ADC</span>
+        <span>WebUSB</span>
       </div>
       <div class="panel-actions">
-        <a class="action-link" href="./hartlink-studio/" data-i18n="home.hartlinkStudioMore">查看软件介绍</a>
-        <a class="ghost-button action-link" href="./hartlink-studio/#downloads" data-hartlink-release-download data-i18n="home.hartlinkStudioDownload">下载最新版</a>
+        <a class="action-link" href="./pages/devices/microscope-power/about.html?v=__ASSET_VERSION__" data-i18n="home.microscopePowerMore">查看产品介绍</a>
+        <a class="action-link" href="https://oshwhub.com/txp666/project_iupheygc" target="_blank" rel="noopener noreferrer" data-i18n="home.microscopePowerHardware">立创开源硬件</a>
+        <a class="action-link" href="./pages/devices/microscope-power/index.html?v=__ASSET_VERSION__" data-i18n="home.microscopePowerDebug">打开上位机</a>
       </div>
     </div>
   </section>
@@ -43,6 +68,7 @@
   <section class="panel aomaster-product-card" aria-labelledby="aomasterProductTitle">
     <div class="aomaster-product-media">
       <img
+        loading="lazy" decoding="async"
         src="./images/AOMaster-product.jpg?v=__ASSET_VERSION__"
         alt=""
         aria-hidden="true"
@@ -51,7 +77,7 @@
     <div class="aomaster-product-content">
       <span class="aomaster-product-kicker" data-i18n="home.aomasterKicker">AOMaster 产品</span>
       <h2 id="aomasterProductTitle" data-i18n="home.aomasterProductTitle">AOMaster 便携式模拟量输出控制器</h2>
-      <p data-i18n="home.aomasterProductDesc">基于 CH32V003F4U6 + GP8630 的掌心级模拟量输出设备，支持 OLED 本地调节、0-10 V / 4-20 mA 输出、波形输出与 USART1 Modbus RTU 上位机控制。</p>
+      <p data-i18n="home.aomasterProductDesc">基于 CH32V003F4U6 和 GP8630，支持 0-10 V / 4-20 mA 输出。可通过 OLED 和旋钮本地调节，也可用 USART1 Modbus RTU 接口设置输出值和波形。</p>
       <div class="aomaster-product-highlights" aria-label="AOMaster highlights">
         <span>0-10 V</span>
         <span>4-20 mA</span>
@@ -63,6 +89,36 @@
         <a class="action-link" href="https://mall.bilibili.com/neul-next/detailuniversal/detail.html?page=detailuniversal_detail&amp;itemsId=41266804&amp;loadingShow=1&amp;noTitleBar=1#noReffer=true&amp;msource=merchant_share" target="_blank" rel="noreferrer" data-i18n="home.buyProduct">购买产品</a>
         <button class="ghost-button" type="button" data-page-target="aomaster" data-device-id="aomaster" data-i18n="home.aomasterDebug">打开调试页</button>
       </div>
+    </div>
+  </section>
+
+  <section class="panel aomaster-product-card hartlink-product-card" aria-labelledby="hartlinkProductTitle">
+    <div class="aomaster-product-media">
+      <img
+        loading="lazy" decoding="async"
+        src="./images/HARTLink.jpg?v=__ASSET_VERSION__"
+        alt=""
+        aria-hidden="true"
+      />
+    </div>
+    <div class="aomaster-product-content">
+      <span class="aomaster-product-kicker" data-i18n="home.hartlinkKicker">HARTLink M1 产品</span>
+      <h2 id="hartlinkProductTitle" data-i18n="home.hartlinkProductTitle">HARTLink M1 便携式 HART 手操器</h2>
+      <p data-i18n="home.hartlinkProductDesc">基于 CH32L103F8U6 的便携式 HART 基础读取手操器与 USB 透传桥，支持 OLED 本机菜单、设备扫描、USB CDC 原始帧透传与 USB HID IAP 升级。</p>
+      <div class="aomaster-product-highlights" aria-label="HARTLink M1 highlights">
+        <span>HART 1200 baud 8O1</span>
+        <span data-i18n="home.hartlinkReadOnly">本机只读</span>
+        <span>USB CDC</span>
+        <span data-i18n="home.hartlinkLocalMenu">OLED 本机菜单</span>
+      </div>
+      <div class="panel-actions">
+        <button id="openHartlinkProductDialog" type="button" data-i18n="home.hartlinkMore">查看产品介绍</button>
+        <a class="action-link" href="https://mall.bilibili.com/neul-next/detailuniversal/detail.html?page=detailuniversal_detail&amp;itemsId=41482265&amp;loadingShow=1&amp;noTitleBar=1#noReffer=true&amp;msource=merchant_share" target="_blank" rel="noreferrer" data-i18n="home.buyProduct">购买产品</a>
+        <a class="action-link" href="https://oshwhub.com/txp666/project_dhswhikf" target="_blank" rel="noreferrer" data-i18n="home.hartlinkHardware">立创开源硬件</a>
+        <button class="ghost-button" type="button" data-page-target="hart" data-device-id="hart" data-i18n="home.hartlinkDebug">打开调试页</button>
+      </div>
+    </div>
+  </section>
     </div>
   </section>
 
@@ -89,17 +145,18 @@
         <div class="aomaster-dialog-main">
           <div class="aomaster-dialog-visual">
             <img
-              src="./images/AOMaster-product.jpg?v=__ASSET_VERSION__"
+              loading="lazy" decoding="async"
+        src="./images/AOMaster-product.jpg?v=__ASSET_VERSION__"
               alt=""
               aria-hidden="true"
             />
           </div>
           <div class="aomaster-dialog-copy">
-            <p data-i18n="home.aomasterIntro">AOMaster 面向传感器、仪表和采集模块调试，可在现场直接旋钮设定输出，也可以通过 modusignal 在浏览器里下发恒定值、阶跃、斜坡、方波、三角波和正弦波，并轮询回读实际输出曲线。</p>
+            <p data-i18n="home.aomasterIntro">AOMaster 用于传感器、仪表和采集模块调试。旋钮可直接设定输出；modusignal 可设置恒定、阶跃、斜坡、方波、三角波和正弦波输出。网页曲线回读的是固件输出指令值，并非模拟量实测值。</p>
             <div class="aomaster-dialog-feature-grid">
               <article>
                 <strong data-i18n="home.aomasterFeatureOutput">模拟量输出</strong>
-                <span data-i18n="home.aomasterFeatureOutputDesc">覆盖 0-10 V 电压与 4-20 mA 电流，适合 PLC、采集卡、变送器输入端调试。</span>
+                <span data-i18n="home.aomasterFeatureOutputDesc">提供 0-10 V 电压和 4-20 mA 电流输出，用于 PLC、采集卡和变送器输入端调试。</span>
               </article>
               <article>
                 <strong data-i18n="home.aomasterFeatureWave">波形发生</strong>
@@ -129,33 +186,6 @@
     </div>
   </dialog>
 
-  <section class="panel aomaster-product-card hartlink-product-card" aria-labelledby="hartlinkProductTitle">
-    <div class="aomaster-product-media">
-      <img
-        src="./images/HARTLink.jpg?v=__ASSET_VERSION__"
-        alt=""
-        aria-hidden="true"
-      />
-    </div>
-    <div class="aomaster-product-content">
-      <span class="aomaster-product-kicker" data-i18n="home.hartlinkKicker">HARTLink M1 产品</span>
-      <h2 id="hartlinkProductTitle" data-i18n="home.hartlinkProductTitle">HARTLink M1 便携式 HART 手操器</h2>
-      <p data-i18n="home.hartlinkProductDesc">基于 CH32L103F8U6 的便携式 HART 基础读取手操器与 USB 透传桥，支持 OLED 本机菜单、设备扫描、USB CDC 原始帧透传与 USB HID IAP 升级。</p>
-      <div class="aomaster-product-highlights" aria-label="HARTLink M1 highlights">
-        <span>HART 1200 baud 8O1</span>
-        <span data-i18n="home.hartlinkReadOnly">安全只读</span>
-        <span>USB CDC</span>
-        <span data-i18n="home.hartlinkLocalMenu">OLED 本机菜单</span>
-      </div>
-      <div class="panel-actions">
-        <button id="openHartlinkProductDialog" type="button" data-i18n="home.hartlinkMore">查看产品介绍</button>
-        <a class="action-link" href="https://mall.bilibili.com/neul-next/detailuniversal/detail.html?page=detailuniversal_detail&amp;itemsId=41482265&amp;loadingShow=1&amp;noTitleBar=1#noReffer=true&amp;msource=merchant_share" target="_blank" rel="noreferrer" data-i18n="home.buyProduct">购买产品</a>
-        <a class="action-link" href="https://oshwhub.com/txp666/project_dhswhikf" target="_blank" rel="noreferrer" data-i18n="home.hartlinkHardware">立创开源硬件</a>
-        <button class="ghost-button" type="button" data-page-target="hart" data-device-id="hart" data-i18n="home.hartlinkDebug">打开调试页</button>
-      </div>
-    </div>
-  </section>
-
   <dialog id="hartlinkProductDialog" class="aomaster-product-dialog" aria-labelledby="hartlinkProductDialogTitle">
     <div class="aomaster-dialog-shell">
       <header class="aomaster-dialog-header">
@@ -179,16 +209,17 @@
         <div class="aomaster-dialog-main">
           <div class="aomaster-dialog-visual">
             <img
-              src="./images/HARTLink.jpg?v=__ASSET_VERSION__"
+              loading="lazy" decoding="async"
+        src="./images/HARTLink.jpg?v=__ASSET_VERSION__"
               alt=""
               aria-hidden="true"
             />
           </div>
           <div class="aomaster-dialog-copy">
-            <p data-i18n="home.hartlinkIntro">HARTLink M1 面向学习、实验和现场调试，可脱离电脑发现 HART 设备并读取过程变量与诊断状态；连接电脑后则作为 USB 与 HART 物理层之间的原始帧桥，配合 modusignal 完成更复杂的操作。</p>
+            <p data-i18n="home.hartlinkIntro">HARTLink M1 可独立扫描 HART 设备，并在 OLED 上显示过程变量和诊断状态。连接电脑后，通过 USB 转发原始 HART 帧，由 modusignal 等上位机发送命令并解析响应。</p>
             <div class="aomaster-dialog-feature-grid">
               <article>
-                <strong data-i18n="home.hartlinkFeatureRead">本机安全读取</strong>
+                <strong data-i18n="home.hartlinkFeatureRead">本机读取</strong>
                 <span data-i18n="home.hartlinkFeatureReadDesc">提供 Cmd0/1/2/3/7/12/13/14/15/20 等基础读命令，本机菜单不向现场设备发送写参数命令。</span>
               </article>
               <article>
@@ -219,31 +250,36 @@
     </div>
   </dialog>
 
-  <section class="panel aomaster-product-card" aria-labelledby="microscopePowerProductTitle">
-    <div class="aomaster-product-media">
+  <section class="home-collection" aria-labelledby="homeSoftwareTitle">
+    <div class="home-section-heading">
+      <div><span class="home-eyebrow">03 / DESKTOP</span><h2 id="homeSoftwareTitle" data-i18n="home.softwareTitle">桌面软件</h2></div>
+      <p data-i18n="home.softwareDesc">HART 仪表调试和串口收发工具。</p>
+    </div>
+    <div class="home-product-grid">
+  <section class="panel aomaster-product-card" aria-labelledby="hartlinkStudioCardTitle">
+    <div class="aomaster-product-media hartlink-studio-card-media">
       <img
-        src="./images/microscope-power-device.jpg?v=__ASSET_VERSION__"
-        alt=""
-        aria-hidden="true"
-        width="640"
-        height="305"
+        loading="lazy" decoding="async"
+        src="./hartlink-studio/assets/logo.png"
+        alt="HARTLink Studio Logo"
+        width="1024"
+        height="1024"
       />
     </div>
     <div class="aomaster-product-content">
-      <span class="aomaster-product-kicker" data-i18n="home.microscopePowerKicker">MicroScope Power 产品</span>
-      <h2 id="microscopePowerProductTitle" data-i18n="home.microscopePowerProductTitle">MicroScope Power 便携式可调电源与微电流波形分析仪</h2>
-      <p data-i18n="home.microscopePowerProductDesc">基于 RP2040 与 16 位 ADS8866，集成可调供电和双量程电流采集，通过 WebUSB 观察单片机休眠、唤醒与活动电流，支持低通滤波、游标测量及功率与能量估算。</p>
-      <div class="aomaster-product-highlights" aria-label="MicroScope Power highlights">
-        <span data-i18n="home.microscopePowerMaxSampleRate">100 kSPS 最高配置</span>
-        <span data-i18n="home.microscopePowerNominalSupply">约 0.8–5 V 标称供电</span>
-        <span data-i18n="home.microscopePowerDualRange">1 Ω / 10 Ω 双量程</span>
-        <span>16-bit ADC</span>
-        <span>WebUSB</span>
+      <span class="aomaster-product-kicker" data-hartlink-release-kicker data-i18n="home.hartlinkStudioKicker">桌面软件 · 最新版</span>
+      <h2 id="hartlinkStudioCardTitle" data-i18n="home.hartlinkStudioTitle">HARTLink Studio · HART 设备调试软件</h2>
+      <p data-i18n="home.hartlinkStudioDesc">支持设备扫描、变量读取、通信帧解析、仪表校验和 DD 工作区，可保存配置快照、比较历史记录并克隆配置。支持 Windows、macOS 和 Linux。</p>
+      <div class="aomaster-product-highlights" aria-label="HARTLink Studio highlights">
+        <span>Windows · macOS · Linux</span>
+        <span>HART 5 / 6 / 7</span>
+        <span data-i18n="home.hartlinkStudioTrace">结构化 Trace</span>
+        <span data-i18n="home.hartlinkStudioDd">DD 设备工作区</span>
+        <span data-i18n="home.hartlinkStudioConfig">快照 · 历史 · 受控克隆</span>
       </div>
       <div class="panel-actions">
-        <a class="action-link" href="./pages/devices/microscope-power/about.html?v=__ASSET_VERSION__" data-i18n="home.microscopePowerMore">查看产品介绍</a>
-        <a class="action-link" href="https://oshwhub.com/txp666/project_iupheygc" target="_blank" rel="noopener noreferrer" data-i18n="home.microscopePowerHardware">立创开源硬件</a>
-        <a class="action-link" href="./pages/devices/microscope-power/index.html?v=__ASSET_VERSION__" data-i18n="home.microscopePowerDebug">打开上位机</a>
+        <a class="action-link" href="./hartlink-studio/" data-i18n="home.hartlinkStudioMore">查看软件介绍</a>
+        <a class="ghost-button action-link" href="./hartlink-studio/#downloads" data-hartlink-release-download data-i18n="home.hartlinkStudioDownload">下载最新版</a>
       </div>
     </div>
   </section>
@@ -261,7 +297,7 @@
     <div class="aomaster-product-content">
       <span class="aomaster-product-kicker" data-i18n="home.fluentSerialKicker">桌面软件 · v0.1.11</span>
       <h2 id="fluentSerialCardTitle" data-i18n="home.fluentSerialTitle">Fluent 串口助手 · GUI、CLI 与 MCP</h2>
-      <p data-i18n="home.fluentSerialDesc">GUI 掌控串口，CLI 与 MCP 安全复用当前会话。除了文本/HEX 收发、协议解析和实时曲线，现在也能让脚本与 AI 完成连接、收发、记录读取和绘图控制。</p>
+      <p data-i18n="home.fluentSerialDesc">支持文本/HEX 收发、协议解析、实时曲线和日志记录。CLI 与 MCP 复用 GUI 中的串口会话，可通过脚本或 AI 客户端控制连接、收发和绘图。</p>
       <div class="aomaster-product-highlights" aria-label="Fluent Serial Assistant highlights">
         <span>Windows · macOS · Linux</span>
         <span data-i18n="home.fluentSerialTerminal">文本 / HEX / 混合终端</span>
@@ -274,9 +310,13 @@
       </div>
     </div>
   </section>
+    </div>
+  </section>
 
-  <div class="panel architecture-card">
-    <h2 data-i18n="home.architecture">当前架构</h2>
+
+
+  <details class="panel architecture-card">
+    <summary data-i18n="home.architecture">开发者：了解项目架构</summary>
     <div class="arch-diagram" role="img" data-i18n-aria-label="home.archAriaLabel" aria-label="modusignal 架构框图：页面 UI 经 app.js 调度，分为正交的设备层与传输层，数据汇入曲线与日志">
       <div class="arch-node arch-top">
         <span data-i18n="home.archUi">页面 UI</span>
@@ -324,6 +364,5 @@
       </div>
     </div>
     <p data-i18n="home.archDesc">设备层与传输层正交：设备只产出/解析字节，通过统一的 profile、命令构造和遥测解析接口接入；各设备可声明默认通讯方式，亦可在连接参数中手动切换。</p>
-  </div>
-
+  </details>
 </section>
