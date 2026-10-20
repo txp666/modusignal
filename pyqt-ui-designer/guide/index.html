@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="PyQt UI Designer 使用说明与协议说明：设计界面、绑定串口数据、预览运行、导出打包，以及键值、JSON、HEX 与 Modbus RTU 的收发格式和示例帧。" />
+  <meta name="keywords" content="PyQt UI Designer,使用说明,协议说明,上位机,串口协议,KEY=VALUE,JSON,HEX,Modbus RTU,CRC16" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#f7fbfc" />
+  <meta name="color-scheme" content="light dark" />
+  <script>
+    (() => {
+      try {
+        const saved = localStorage.getItem("modusignal-theme");
+        const theme = saved === "light" || saved === "dark"
+          ? saved
+          : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+      } catch {}
+    })();
+  </script>
+  <link rel="canonical" href="https://modusignal.cn/pyqt-ui-designer/guide/" />
+  <meta property="og:type" content="article" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:site_name" content="modusignal" />
+  <meta property="og:title" content="PyQt UI Designer 使用说明与协议说明" />
+  <meta property="og:description" content="从设计界面到导出打包的完整流程，以及下位机需要遵循的接收与发送格式。" />
+  <meta property="og:url" content="https://modusignal.cn/pyqt-ui-designer/guide/" />
+  <meta property="og:image" content="https://modusignal.cn/pyqt-ui-designer/assets/designer.png" />
+  <title>PyQt UI Designer 使用说明与协议说明</title>
+  <link rel="icon" href="../../logo.ico" type="image/x-icon" />
+  <link rel="stylesheet" href="../styles.css?v=20261020.2" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": "PyQt UI Designer 使用说明与协议说明",
+      "description": "PyQt UI Designer 的使用流程，以及键值、JSON、HEX 与 Modbus RTU 的收发格式。",
+      "inLanguage": "zh-CN",
+      "dateModified": "2026-10-20",
+      "about": { "@type": "SoftwareApplication", "name": "PyQt UI Designer" },
+      "mainEntityOfPage": "https://modusignal.cn/pyqt-ui-designer/guide/"
+    }
+  </script>
+  <link rel="stylesheet" href="../../pages/shared/editorial.css?v=__ASSET_VERSION__" />
+</head>
+
+<body class="design-page">
+  <a class="skip-link" href="#mainContent" data-copy="skipLink">跳到主要内容</a>
+
+  <header class="site-header">
+    <a class="brand" href="../" aria-label="PyQt UI Designer 产品介绍">
+      <img src="../assets/logo.png" alt="" width="512" height="512" />
+      <span>
+        <strong>PyQt UI Designer</strong>
+        <small data-copy="brandTagline">使用说明与协议说明</small>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="页面导航">
+      <a href="../" data-copy="navProduct">产品介绍</a>
+      <a href="./" aria-current="page" data-copy="navGuide">使用说明</a>
+      <a href="../#downloads" data-copy="navDownloads">下载</a>
+    </nav>
+    <div class="header-actions">
+      <button class="theme-button" type="button" data-theme-toggle aria-label="切换到深色主题" title="切换到深色主题">☾</button>
+      <button class="language-button" type="button" data-language-toggle aria-label="Switch to English">EN</button>
+      <a class="back-link" href="../../" data-copy="backToModusignal">返回 modusignal</a>
+    </div>
+  </header>
+
+  <main id="mainContent">
+    <section id="top" class="guide-hero section-shell">
+      <p class="eyebrow" data-copy="heroEyebrow">使用说明 · 协议说明</p>
+      <h1 data-copy="heroTitle">PyQt UI Designer 使用说明</h1>
+      <p class="hero-lede" data-copy="heroDescription">从设计界面、绑定串口数据、预览运行到导出打包的完整流程，以及下位机需要遵循的接收与发送格式。文中的示例帧和 CRC 都可以直接用于联调。</p>
+      <div class="hero-meta" aria-label="适用范围">
+        <span data-copy="metaVersion">适用于 0.1.3</span>
+        <span data-copy="metaSerial">串口通信</span>
+        <span>KEY=VALUE · JSON · HEX · Modbus RTU</span>
+      </div>
+    </section>
+
+    <div class="section-shell guide-layout">
+      <nav class="guide-toc" aria-label="目录" data-guide-toc>
+        <p data-copy="tocTitle">目录</p>
+        <a href="#quickstart"><span>01</span><b data-copy="tocQuickstart">快速上手</b></a>
+        <a href="#serial"><span>02</span><b data-copy="tocSerial">串口与解析模式</b></a>
+        <a href="#receive"><span>03</span><b data-copy="tocReceive">接收：数据绑定</b></a>
+        <a href="#send"><span>04</span><b data-copy="tocSend">发送：命令配置</b></a>
+        <a href="#modbus"><span>05</span><b data-copy="tocModbus">Modbus RTU 参考</b></a>
+        <a href="#export"><span>06</span><b data-copy="tocExport">导出与打包</b></a>
+        <a href="#faq"><span>07</span><b data-copy="tocFaq">常见问题</b></a>
+      </nav>
+
+      <div class="guide-content">
+        <section id="quickstart" class="guide-section">
+          <div data-lang="zh">
+            <h2><small>01</small>快速上手</h2>
+            <p>以一台串口设备为例，按下面 6 步做出一个可以分发的上位机。</p>
+            <ol class="guide-steps">
+              <li><strong>运行设计器</strong>从<a href="../#downloads">下载区</a>获取对应平台的 zip，解压后 Windows 运行 <code>main.exe</code>，Mac 打开 <code>PyQt UI Designer.app</code>。也可以从源码运行：安装依赖后执行 <code>python main.py</code>（需 Python 3.10+）。</li>
+              <li><strong>设计界面</strong>从左侧控件面板把控件拖到画布，在右侧属性编辑器修改位置、尺寸和属性。工具栏提供对齐、分布和缩放；右上角设置上位机名称和画布宽高。工程保存为 <code>.uidp</code> 文件。</li>
+              <li><strong>绑定接收数据</strong>选中数值显示、LED、进度条、仪表盘等显示类控件，在属性编辑器的“数据绑定”中选择解析模式并填写绑定字段，见<a href="#receive">第 03 节</a>。实时曲线在属性中为每条曲线单独设置。</li>
+              <li><strong>配置发送命令</strong>选中按钮、开关、滑块、数值框或输入框，设置“发送模式”“发送内容”和“发送模板”，见<a href="#send">第 04 节</a>。</li>
+              <li><strong>预览运行</strong>切换到“预览运行”页，点击“运行预览”，在串口配置卡片中选择端口和波特率并连接，直接用真实设备测试。修改设计、打开或新建工程会自动停止预览并断开串口，再次点击“运行预览”即使用当前设计。</li>
+              <li><strong>导出与打包</strong>按 <code>Ctrl+Shift+E</code>（Mac 为 <code>⌘⇧E</code>）或点击导航栏“导出代码”得到 Python 项目；在预览页点击“一键打包”可直接生成 exe / .app，见<a href="#export">第 06 节</a>。</li>
+            </ol>
+            <div class="guide-note">
+              <p><strong>没有硬件？</strong>从源码运行时，在仓库根目录执行 <code>python demo/simulate.py</code>，端口选择 <code>DEMO</code> 并连接，即可体验温度/压力采集、实时曲线和命令收发。</p>
+            </div>
+          </div>
+          <div data-lang="en" hidden>
+            <h2><small>01</small>Quick start</h2>
+            <p>Using a serial device as the example, these six steps take you to a host app you can hand out.</p>
+            <ol class="guide-steps">
+              <li><strong>Run the designer</strong>Get the zip for your platform from the <a href="../#downloads">downloads</a>. On Windows run <code>main.exe</code>; on a Mac open <code>PyQt UI Designer.app</code>. To run from source, install the requirements and run <code>python main.py</code> (Python 3.10+).</li>
+              <li><strong>Design the UI</strong>Drag widgets from the palette on the left onto the canvas and edit position, size and properties in the property editor on the right. The toolbar aligns, distributes and zooms; the top right sets the app name and canvas size. Projects are saved as <code>.uidp</code> files.</li>
+              <li><strong>Bind incoming data</strong>Select a display widget such as a value display, LED, progress bar or gauge, choose a parse mode under “数据绑定” (Data binding) and enter the binding field. See <a href="#receive">section 03</a>. Live plots are configured per curve in their properties.</li>
+              <li><strong>Configure commands</strong>Select a button, switch, slider, spin box or line edit and set the send mode, content and template. See <a href="#send">section 04</a>.</li>
+              <li><strong>Run the preview</strong>Switch to the “预览运行” (Preview) page, click “运行预览” (Run preview), pick a port and baud rate in the serial setup card and connect to test with the real device. Editing the design or opening or creating a project stops the preview and closes the port; click “运行预览” again to run the current design.</li>
+              <li><strong>Export and package</strong>Press <code>Ctrl+Shift+E</code> (<code>⌘⇧E</code> on a Mac) or use “导出代码” (Export code) in the sidebar to get a Python project, or click “一键打包” (Package) on the preview page to build an exe / .app. See <a href="#export">section 06</a>.</li>
+            </ol>
+            <div class="guide-note">
+              <p><strong>No hardware?</strong> When running from source, run <code>python demo/simulate.py</code> in the repository root, pick the <code>DEMO</code> port and connect to try temperature/pressure acquisition, live plots and commands.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="serial" class="guide-section">
+          <div data-lang="zh">
+            <h2><small>02</small>串口与解析模式</h2>
+            <p>串口配置卡片设置端口、波特率、数据位、校验位、停止位和流控。卡片的“默认解析模式”决定如何把字节流拆成一条条消息，预览和导出程序使用同一套实现。</p>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>解析模式</th><th>适用数据</th><th>说明</th></tr></thead>
+                <tbody>
+                  <tr><td><code>line</code></td><td>文本行</td><td>每行以 LF（<code>\n</code>，兼容 CRLF）结束，自动识别 JSON、KEY=VALUE 和 CSV。未设置时默认使用。</td></tr>
+                  <tr><td><code>modbus</code></td><td>Modbus RTU 响应</td><td>按功能码计算帧长，CRC 校验通过后输出 <code>reg0</code>、<code>coil0</code> 等字段，见<a href="#modbus">第 05 节</a>。</td></tr>
+                  <tr><td><code>hex</code></td><td>定长二进制帧</td><td>按工程 <code>parserConfig</code> 中的帧头、帧尾和字段拆帧；工程本身不是 hex 模式时，使用默认帧头 <code>AA 55</code>、帧尾 <code>55 AA</code>。</td></tr>
+                  <tr><td>项目设置</td><td>—</td><td>使用 <code>.uidp</code> 中的 <code>serial.parser</code> / <code>parserConfig</code>。</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>卡片上选择与工程不同的解析模式时，使用该模式的默认配置；选回“项目设置”即恢复工程配置。“HEX 字节提取”绑定直接读取原始串口字节，不受这里的解析模式影响。</p>
+            <h3>行文本自动识别（line）</h3>
+            <pre class="guide-code">收到一行文本
+├─ 以 { 开头   → JSON 对象      {"temperature": 25.3}
+├─ 含有 =      → KEY=VALUE      temperature=25.3,humidity=68.5
+└─ 其他        → CSV            25.3,68.5,1013.2  <span class="muted">→ ch0, ch1, ch2</span></pre>
+            <ul>
+              <li>只有实际的 LF 字节算作行尾。收到半行时等待后续数据；一次读到多行时按顺序全部处理。JSON 字符串里转义的 <code>\n</code> 不算换行。</li>
+              <li>字段分隔符默认为逗号。数值依次尝试整数、浮点数，都失败时保留为字符串。</li>
+              <li>以 <code>{</code> 开头但不是合法 JSON 的行会被丢弃；单行超过 64 KiB 时丢弃到下一个 LF。</li>
+              <li><code>key:value</code> 不会被识别为键值对，请使用 <code>key=value</code> 或 JSON。</li>
+            </ul>
+          </div>
+          <div data-lang="en" hidden>
+            <h2><small>02</small>Serial port and parse modes</h2>
+            <p>The serial setup card sets the port, baud rate, data bits, parity, stop bits and flow control. Its “默认解析模式” (default parse mode) decides how the byte stream is split into messages. The preview and exported programs share the same implementation.</p>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>Parse mode</th><th>Data</th><th>Notes</th></tr></thead>
+                <tbody>
+                  <tr><td><code>line</code></td><td>Text lines</td><td>Each line ends with LF (<code>\n</code>; CRLF works). JSON, KEY=VALUE and CSV are detected automatically. This is the default.</td></tr>
+                  <tr><td><code>modbus</code></td><td>Modbus RTU responses</td><td>Frame length comes from the function code. Frames that pass the CRC check produce fields such as <code>reg0</code> and <code>coil0</code>. See <a href="#modbus">section 05</a>.</td></tr>
+                  <tr><td><code>hex</code></td><td>Fixed binary frames</td><td>Splits frames by the header, footer and fields in the project's <code>parserConfig</code>. If the project itself isn't in hex mode, the default header <code>AA 55</code> and footer <code>55 AA</code> are used.</td></tr>
+                  <tr><td>项目设置 (project)</td><td>—</td><td>Uses <code>serial.parser</code> / <code>parserConfig</code> from the <code>.uidp</code> file.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>Choosing a parse mode on the card that differs from the project's uses that mode's defaults; choosing “项目设置” again restores the project configuration. “HEX 字节提取” (HEX byte extraction) bindings read raw serial bytes and are not affected by the parse mode.</p>
+            <h3>Line detection (line)</h3>
+            <pre class="guide-code">A line arrives
+├─ starts with {   → JSON object    {"temperature": 25.3}
+├─ contains =      → KEY=VALUE      temperature=25.3,humidity=68.5
+└─ otherwise       → CSV            25.3,68.5,1013.2  <span class="muted">→ ch0, ch1, ch2</span></pre>
+            <ul>
+              <li>Only a real LF byte ends a line. Partial lines wait for more data; several lines in one read are all processed in order. An escaped <code>\n</code> inside a JSON string is not a line break.</li>
+              <li>Fields are separated by commas by default. Values are tried as integers, then floats, and otherwise kept as strings.</li>
+              <li>A line that starts with <code>{</code> but is not valid JSON is dropped; a line longer than 64 KiB is discarded up to the next LF.</li>
+              <li><code>key:value</code> is not treated as a key/value pair. Use <code>key=value</code> or JSON.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="receive" class="guide-section">
+          <div data-lang="zh">
+            <h2><small>03</small>接收：数据绑定</h2>
+            <p>显示类控件和曲线通道都通过“解析模式”从数据中取值，共四种模式。可选的“转换表达式”用变量 <code>value</code> 换算原始值，例如 <code>value * 0.1</code>。</p>
+
+            <h3>键值匹配</h3>
+            <p>按字段名从行文本解析结果中取值，适用于 KEY=VALUE、JSON 顶层字段和 CSV。</p>
+            <pre class="guide-code">temperature=25.3,humidity=68.5
+{"temperature": 25.3, "humidity": 68.5}
+25.3,68.5,1013.2                <span class="muted">→ 字段名为 ch0 / ch1 / ch2</span></pre>
+            <ul class="guide-settings">
+              <li><span>解析模式</span>键值匹配</li>
+              <li><span>绑定字段</span>temperature</li>
+            </ul>
+
+            <h3>JSON 路径</h3>
+            <p>用点号分隔的路径读取嵌套 JSON，数组用下标表示。</p>
+            <pre class="guide-code">{"data":{"sensors":[{"temp":25.3,"humi":68},{"temp":22.1,"humi":72}]}}</pre>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>JSON 路径</th><th>取得的值</th></tr></thead>
+                <tbody>
+                  <tr><td><code>data.sensors.0.temp</code></td><td>25.3</td></tr>
+                  <tr><td><code>data.sensors.1.humi</code></td><td>72</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>HEX 字节提取</h3>
+            <p>从原始字节中按偏移和数据类型取值。配置帧头和帧尾后，先截取两者之间的有效载荷，字节偏移从载荷第一个字节算起。</p>
+            <div class="guide-frame" aria-label="HEX 帧示例">
+              <span>AA 55<small>帧头</small></span>
+              <span>41 CA 66 66<small>偏移 0 · 温度 25.3</small></span>
+              <span>42 89 00 00<small>偏移 4 · 湿度 68.5</small></span>
+              <span>0D 0A<small>帧尾</small></span>
+            </div>
+            <ul class="guide-settings">
+              <li><span>帧头(HEX)</span>AA 55</li>
+              <li><span>帧尾(HEX)</span>0D 0A</li>
+              <li><span>字节偏移</span>0（湿度为 4）</li>
+              <li><span>数据类型</span>float32</li>
+              <li><span>字节序</span>大端(BE)</li>
+            </ul>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>数据类型</th><th>字节数</th><th>说明</th></tr></thead>
+                <tbody>
+                  <tr><td><code>uint8</code> / <code>int8</code></td><td>1</td><td>0 ~ 255 / -128 ~ 127</td></tr>
+                  <tr><td><code>uint16</code> / <code>int16</code></td><td>2</td><td>0 ~ 65535 / -32768 ~ 32767</td></tr>
+                  <tr><td><code>uint32</code> / <code>int32</code></td><td>4</td><td>32 位整数</td></tr>
+                  <tr><td><code>float32</code></td><td>4</td><td>IEEE 754 单精度浮点</td></tr>
+                  <tr><td><code>ASCII</code></td><td>变长</td><td>读到 0x00 或末尾；仅数据绑定可用，曲线不支持</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="guide-note">
+              <p><strong>连续数据流</strong>请同时配置帧头和帧尾，解析器会缓存半包并逐帧提取。只配一个或都不配时，按每次读到的字节块提取，无法推断设备的实际帧长。</p>
+            </div>
+
+            <h3>Modbus</h3>
+            <p>需把串口配置卡片的默认解析模式设为 <code>modbus</code>。解析器把响应帧转换为 <code>reg0</code>、<code>reg1</code>…（寄存器）或 <code>coil0</code>、<code>coil1</code>…（线圈），并附带 <code>slave</code> 和 <code>fc</code>。</p>
+            <pre class="guide-code">01 03 06 03 E8 09 C4 00 64 02 DB
+<span class="muted">→</span> {"slave": 1, "fc": 3, "reg0": 1000, "reg1": 2500, "reg2": 100}</pre>
+            <ul class="guide-settings">
+              <li><span>寄存器索引</span>0</li>
+              <li><span>数据类型</span>uint16</li>
+              <li><span>从站过滤</span>1（-1 为全部）</li>
+              <li><span>功能码过滤</span>3（-1 为全部）</li>
+              <li><span>转换表达式</span>value * 0.1 → 100.0</li>
+            </ul>
+            <p><code>uint32</code>、<code>int32</code> 和 <code>float32</code> 占两个寄存器。寄存器序为“大端(AB CD)”时 <code>reg{i}</code> 是高 16 位，“小端(CD AB)”时相反。例如 <code>reg0 = 0x41CA</code>、<code>reg1 = 0x6666</code> 按 float32 读取为 25.3。</p>
+
+            <h3>控件如何处理数据</h3>
+            <ul>
+              <li>数值显示、进度条、进度环、滑块、数值框和仪表盘会忽略无法转换为数字的值，同一帧中的其他绑定照常更新。</li>
+              <li>开关接受明确的布尔文本和数值，无法识别的文本不改变状态；LED 优先使用自定义的亮灭值。</li>
+              <li>开关、滑块和数值框收到设备回传的值时只更新显示，不会再次发送命令。</li>
+              <li>实时曲线的每条曲线单独配置解析模式；键值匹配未填写匹配键时，用曲线名称作为键。</li>
+            </ul>
+          </div>
+          <div data-lang="en" hidden>
+            <h2><small>03</small>Receiving: data binding</h2>
+            <p>Display widgets and plot curves read values through a parse mode. There are four. The optional “转换表达式” (expression) converts the raw value with the variable <code>value</code>, for example <code>value * 0.1</code>.</p>
+
+            <h3>Key/value (键值匹配)</h3>
+            <p>Reads a field by name from a parsed line. Works with KEY=VALUE, top-level JSON fields and CSV.</p>
+            <pre class="guide-code">temperature=25.3,humidity=68.5
+{"temperature": 25.3, "humidity": 68.5}
+25.3,68.5,1013.2                <span class="muted">→ fields are ch0 / ch1 / ch2</span></pre>
+            <ul class="guide-settings">
+              <li><span>Parse mode</span>键值匹配</li>
+              <li><span>Field</span>temperature</li>
+            </ul>
+
+            <h3>JSON path (JSON路径)</h3>
+            <p>Reads nested JSON with a dot-separated path; array items use their index.</p>
+            <pre class="guide-code">{"data":{"sensors":[{"temp":25.3,"humi":68},{"temp":22.1,"humi":72}]}}</pre>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>JSON path</th><th>Value</th></tr></thead>
+                <tbody>
+                  <tr><td><code>data.sensors.0.temp</code></td><td>25.3</td></tr>
+                  <tr><td><code>data.sensors.1.humi</code></td><td>72</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h3>HEX byte extraction (HEX字节提取)</h3>
+            <p>Reads a value from raw bytes by offset and data type. With a header and footer set, the payload between them is cut out first and the offset counts from its first byte.</p>
+            <div class="guide-frame" aria-label="HEX frame example">
+              <span>AA 55<small>Header</small></span>
+              <span>41 CA 66 66<small>Offset 0 · temp 25.3</small></span>
+              <span>42 89 00 00<small>Offset 4 · humidity 68.5</small></span>
+              <span>0D 0A<small>Footer</small></span>
+            </div>
+            <ul class="guide-settings">
+              <li><span>Header (HEX)</span>AA 55</li>
+              <li><span>Footer (HEX)</span>0D 0A</li>
+              <li><span>Byte offset</span>0 (4 for humidity)</li>
+              <li><span>Data type</span>float32</li>
+              <li><span>Byte order</span>大端(BE) big-endian</li>
+            </ul>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>Data type</th><th>Bytes</th><th>Notes</th></tr></thead>
+                <tbody>
+                  <tr><td><code>uint8</code> / <code>int8</code></td><td>1</td><td>0 to 255 / -128 to 127</td></tr>
+                  <tr><td><code>uint16</code> / <code>int16</code></td><td>2</td><td>0 to 65535 / -32768 to 32767</td></tr>
+                  <tr><td><code>uint32</code> / <code>int32</code></td><td>4</td><td>32-bit integers</td></tr>
+                  <tr><td><code>float32</code></td><td>4</td><td>IEEE 754 single precision</td></tr>
+                  <tr><td><code>ASCII</code></td><td>Variable</td><td>Up to 0x00 or the end; data bindings only, not plots</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="guide-note">
+              <p><strong>Continuous streams:</strong> set both a header and a footer so the parser buffers partial frames and extracts them one by one. With only one or neither, values are read from each chunk as it arrives, because the real frame length can't be inferred.</p>
+            </div>
+
+            <h3>Modbus</h3>
+            <p>Set the serial card's default parse mode to <code>modbus</code>. The parser turns responses into <code>reg0</code>, <code>reg1</code>… (registers) or <code>coil0</code>, <code>coil1</code>… (coils), plus <code>slave</code> and <code>fc</code>.</p>
+            <pre class="guide-code">01 03 06 03 E8 09 C4 00 64 02 DB
+<span class="muted">→</span> {"slave": 1, "fc": 3, "reg0": 1000, "reg1": 2500, "reg2": 100}</pre>
+            <ul class="guide-settings">
+              <li><span>Register index</span>0</li>
+              <li><span>Data type</span>uint16</li>
+              <li><span>Slave filter</span>1 (-1 for all)</li>
+              <li><span>Function filter</span>3 (-1 for all)</li>
+              <li><span>Expression</span>value * 0.1 → 100.0</li>
+            </ul>
+            <p><code>uint32</code>, <code>int32</code> and <code>float32</code> span two registers. With register order “大端(AB CD)”, <code>reg{i}</code> holds the high 16 bits; “小端(CD AB)” is the reverse. For example <code>reg0 = 0x41CA</code> and <code>reg1 = 0x6666</code> read as float32 give 25.3.</p>
+
+            <h3>How widgets handle data</h3>
+            <ul>
+              <li>Value displays, progress bars, progress rings, sliders, spin boxes and gauges ignore values that can't be converted to numbers; other bindings in the same frame still update.</li>
+              <li>Switches accept explicit boolean text and numbers and ignore unrecognised text; LEDs use their custom on/off values first.</li>
+              <li>When a switch, slider or spin box receives a value from the device it only updates the display and does not send a command back.</li>
+              <li>Each plot curve has its own parse mode. In key/value mode, a curve without a key uses its name as the key.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="send" class="guide-section">
+          <div data-lang="zh">
+            <h2><small>04</small>发送：命令配置</h2>
+            <p>交互类控件用“发送模式”决定下发格式，可选文本、HEX 和 Modbus。文本与 HEX 模式下，“发送模板”中的 <code>{value}</code> 会替换为控件当前值。滑块和数值框可勾选“变化发送”，输入框可勾选“回车发送”。</p>
+
+            <h3>文本模式</h3>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>控件</th><th>配置</th><th>串口发送</th></tr></thead>
+                <tbody>
+                  <tr><td>按钮</td><td>发送内容 <code>LED_ON</code>，换行符 <code>\r\n</code></td><td><code>LED_ON\r\n</code></td></tr>
+                  <tr><td>滑块（值 75）</td><td>发送模板 <code>SET_SPEED={value}</code>，换行符 <code>\n</code>，变化发送</td><td><code>SET_SPEED=75\n</code></td></tr>
+                  <tr><td>输入框（输入 Hello）</td><td>发送模板 <code>MSG:{value}</code>，回车发送</td><td><code>MSG:Hello\r\n</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>换行符可选 无、<code>\r\n</code>、<code>\n</code>、<code>\r</code>，默认 <code>\r\n</code>。开关可分别设置“开启命令”和“关闭命令”。</p>
+
+            <h3>HEX 模式</h3>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>控件</th><th>配置</th><th>串口发送</th></tr></thead>
+                <tbody>
+                  <tr><td>按钮</td><td>发送内容 <code>01 02 03 04</code>，帧头 <code>AA 55</code>，帧尾 <code>0D 0A</code></td><td><code>AA 55 01 02 03 04 0D 0A</code></td></tr>
+                  <tr><td>滑块（值 1000）</td><td>发送模板 <code>01 06 00 01 {value}</code>，数据类型 uint16，字节序 大端(BE)</td><td><code>01 06 00 01 03 E8</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>数据类型为“HEX字符串”时，内容按十六进制原样发送，空格可省略；选择 uint8 到 float32 时，<code>{value}</code> 按所选类型和字节序编码。数值超出类型范围或 HEX 格式错误时不会发送。</p>
+
+            <h3>Modbus 模式</h3>
+            <p>自动组成 Modbus RTU 请求帧并附加 CRC16。读功能码时“值/数量”是读取数量，写功能码时是写入值。</p>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>功能码</th><th>用途</th><th>值/数量范围</th></tr></thead>
+                <tbody>
+                  <tr><td><code>01</code> / <code>02</code></td><td>读线圈 / 读离散输入</td><td>数量 1 ~ 2000</td></tr>
+                  <tr><td><code>03</code> / <code>04</code></td><td>读保持寄存器 / 读输入寄存器</td><td>数量 1 ~ 125</td></tr>
+                  <tr><td><code>05</code></td><td>写单线圈（开关在预览和导出中都用它）</td><td>ON = <code>FF 00</code>，OFF = <code>00 00</code></td></tr>
+                  <tr><td><code>06</code></td><td>写单寄存器</td><td>0 ~ 65535</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>控件</th><th>配置</th><th>串口发送</th></tr></thead>
+                <tbody>
+                  <tr><td>按钮</td><td>从站 1，03 读保持寄存器，地址 0，数量 3</td><td><code>01 03 00 00 00 03 05 CB</code></td></tr>
+                  <tr><td>开关</td><td>从站 1，05 写单线圈，地址 0</td><td>ON <code>01 05 00 00 FF 00 8C 3A</code><br />OFF <code>01 05 00 00 00 00 CD CA</code></td></tr>
+                  <tr><td>滑块（值 500）</td><td>从站 1，06 写单寄存器，地址 10，变化发送</td><td><code>01 06 00 0A 01 F4 A9 DF</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>从站地址须在 1 ~ 247，地址 0 ~ 65535，超出范围的命令不会发送。需要周期读取时，使用“Modbus 配置卡片”：填写“轮询ms”（0 为不轮询）后点击“轮询”。</p>
+            <p>只有整条命令都写入串口后才算发送成功；写入失败或只写入部分字节时会提示失败，Modbus 卡片同时停止轮询。“已发送”表示串口已写出，不代表设备已确认执行。</p>
+          </div>
+          <div data-lang="en" hidden>
+            <h2><small>04</small>Sending: commands</h2>
+            <p>Interactive widgets pick an output format with their send mode: text, HEX or Modbus. In text and HEX modes, <code>{value}</code> in the send template is replaced by the widget's current value. Sliders and spin boxes can send on change (“变化发送”); line edits can send on Enter (“回车发送”).</p>
+
+            <h3>Text mode</h3>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>Widget</th><th>Settings</th><th>Sent on the port</th></tr></thead>
+                <tbody>
+                  <tr><td>Button</td><td>Content <code>LED_ON</code>, line ending <code>\r\n</code></td><td><code>LED_ON\r\n</code></td></tr>
+                  <tr><td>Slider (value 75)</td><td>Template <code>SET_SPEED={value}</code>, line ending <code>\n</code>, send on change</td><td><code>SET_SPEED=75\n</code></td></tr>
+                  <tr><td>Line edit (types Hello)</td><td>Template <code>MSG:{value}</code>, send on Enter</td><td><code>MSG:Hello\r\n</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>Line endings: none, <code>\r\n</code>, <code>\n</code> or <code>\r</code>; the default is <code>\r\n</code>. Switches have separate on and off commands.</p>
+
+            <h3>HEX mode</h3>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>Widget</th><th>Settings</th><th>Sent on the port</th></tr></thead>
+                <tbody>
+                  <tr><td>Button</td><td>Content <code>01 02 03 04</code>, header <code>AA 55</code>, footer <code>0D 0A</code></td><td><code>AA 55 01 02 03 04 0D 0A</code></td></tr>
+                  <tr><td>Slider (value 1000)</td><td>Template <code>01 06 00 01 {value}</code>, data type uint16, byte order big-endian</td><td><code>01 06 00 01 03 E8</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>With the data type “HEX字符串” (HEX string), the content is sent as hex as-is and spaces are optional. With uint8 through float32, <code>{value}</code> is encoded with that type and byte order. Out-of-range values and malformed hex are not sent.</p>
+
+            <h3>Modbus mode</h3>
+            <p>Builds a Modbus RTU request and appends the CRC16. For read functions, “值/数量” (value/count) is the count; for write functions it is the value.</p>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>Function</th><th>Purpose</th><th>Value/count range</th></tr></thead>
+                <tbody>
+                  <tr><td><code>01</code> / <code>02</code></td><td>Read coils / discrete inputs</td><td>Count 1 to 2000</td></tr>
+                  <tr><td><code>03</code> / <code>04</code></td><td>Read holding / input registers</td><td>Count 1 to 125</td></tr>
+                  <tr><td><code>05</code></td><td>Write single coil (used by switches in preview and export)</td><td>ON = <code>FF 00</code>, OFF = <code>00 00</code></td></tr>
+                  <tr><td><code>06</code></td><td>Write single register</td><td>0 to 65535</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>Widget</th><th>Settings</th><th>Sent on the port</th></tr></thead>
+                <tbody>
+                  <tr><td>Button</td><td>Slave 1, 03 read holding registers, address 0, count 3</td><td><code>01 03 00 00 00 03 05 CB</code></td></tr>
+                  <tr><td>Switch</td><td>Slave 1, 05 write single coil, address 0</td><td>ON <code>01 05 00 00 FF 00 8C 3A</code><br />OFF <code>01 05 00 00 00 00 CD CA</code></td></tr>
+                  <tr><td>Slider (value 500)</td><td>Slave 1, 06 write single register, address 10, send on change</td><td><code>01 06 00 0A 01 F4 A9 DF</code></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>The slave address must be 1 to 247 and the address 0 to 65535; commands outside these ranges are not sent. For periodic reads, use the Modbus setup card: enter “轮询ms” (poll interval, 0 = off) and click “轮询” (Poll).</p>
+            <p>A send only counts as successful once the whole command has been written to the port. A failed or partial write is reported as a failure, and the Modbus card stops polling. “已发送” (sent) means the bytes left the port, not that the device acted on them.</p>
+          </div>
+        </section>
+
+        <section id="modbus" class="guide-section">
+          <div data-lang="zh">
+            <h2><small>05</small>Modbus RTU 参考</h2>
+            <p>多字节字段按大端（高字节在前）传输，只有 CRC 是低字节在前。</p>
+            <h3>读请求（01 ~ 04）</h3>
+            <div class="guide-frame">
+              <span>从站地址<small>1 字节</small></span><span>功能码<small>1 字节</small></span><span>起始地址<small>2 字节 · 大端</small></span><span>数量<small>2 字节 · 大端</small></span><span class="crc">CRC16<small>2 字节 · 低字节在前</small></span>
+            </div>
+            <h3>写单个（05 / 06）</h3>
+            <div class="guide-frame">
+              <span>从站地址<small>1 字节</small></span><span>功能码<small>1 字节</small></span><span>线圈/寄存器地址<small>2 字节 · 大端</small></span><span>值<small>2 字节 · 大端</small></span><span class="crc">CRC16<small>2 字节 · 低字节在前</small></span>
+            </div>
+            <h3>读寄存器响应（03 / 04）</h3>
+            <div class="guide-frame">
+              <span>从站地址<small>1 字节</small></span><span>功能码<small>1 字节</small></span><span>字节数<small>1 字节</small></span><span>寄存器数据<small>N × 2 字节 · 大端</small></span><span class="crc">CRC16<small>2 字节</small></span>
+            </div>
+            <h3>读线圈响应（01 / 02）</h3>
+            <div class="guide-frame">
+              <span>从站地址<small>1 字节</small></span><span>功能码<small>1 字节</small></span><span>字节数<small>1 字节</small></span><span>线圈状态<small>每字节低位在前</small></span><span class="crc">CRC16<small>2 字节</small></span>
+            </div>
+            <h3>异常响应</h3>
+            <div class="guide-frame">
+              <span>从站地址<small>1 字节</small></span><span>功能码 | 0x80<small>1 字节</small></span><span>异常码<small>1 字节</small></span><span class="crc">CRC16<small>2 字节</small></span>
+            </div>
+            <p>正常响应和异常响应都要通过 CRC 校验，校验失败的帧会被丢弃，不会更新控件。</p>
+            <h3>CRC16 计算</h3>
+            <p>Modbus 标准 CRC16：初值 <code>0xFFFF</code>，多项式 <code>0xA001</code>（反射形式），结果低字节在前附加到帧末。</p>
+            <pre class="guide-code">def modbus_crc(data: bytes) -> bytes:
+    crc = 0xFFFF
+    for byte in data:
+        crc ^= byte
+        for _ in range(8):
+            crc = (crc >> 1) ^ 0xA001 if crc & 1 else crc >> 1
+    return crc.to_bytes(2, "little")
+
+modbus_crc(bytes.fromhex("010300000003"))  <span class="muted"># → 05 CB</span></pre>
+          </div>
+          <div data-lang="en" hidden>
+            <h2><small>05</small>Modbus RTU reference</h2>
+            <p>Multi-byte fields are big-endian (high byte first); only the CRC is sent low byte first.</p>
+            <h3>Read request (01 to 04)</h3>
+            <div class="guide-frame">
+              <span>Slave<small>1 byte</small></span><span>Function<small>1 byte</small></span><span>Start address<small>2 bytes · BE</small></span><span>Count<small>2 bytes · BE</small></span><span class="crc">CRC16<small>2 bytes · low first</small></span>
+            </div>
+            <h3>Write single (05 / 06)</h3>
+            <div class="guide-frame">
+              <span>Slave<small>1 byte</small></span><span>Function<small>1 byte</small></span><span>Coil/register address<small>2 bytes · BE</small></span><span>Value<small>2 bytes · BE</small></span><span class="crc">CRC16<small>2 bytes · low first</small></span>
+            </div>
+            <h3>Read registers response (03 / 04)</h3>
+            <div class="guide-frame">
+              <span>Slave<small>1 byte</small></span><span>Function<small>1 byte</small></span><span>Byte count<small>1 byte</small></span><span>Register data<small>N × 2 bytes · BE</small></span><span class="crc">CRC16<small>2 bytes</small></span>
+            </div>
+            <h3>Read coils response (01 / 02)</h3>
+            <div class="guide-frame">
+              <span>Slave<small>1 byte</small></span><span>Function<small>1 byte</small></span><span>Byte count<small>1 byte</small></span><span>Coil states<small>LSB first in each byte</small></span><span class="crc">CRC16<small>2 bytes</small></span>
+            </div>
+            <h3>Exception response</h3>
+            <div class="guide-frame">
+              <span>Slave<small>1 byte</small></span><span>Function | 0x80<small>1 byte</small></span><span>Exception code<small>1 byte</small></span><span class="crc">CRC16<small>2 bytes</small></span>
+            </div>
+            <p>Both normal and exception responses must pass the CRC check. Frames that fail are dropped and do not update widgets.</p>
+            <h3>Computing the CRC16</h3>
+            <p>Standard Modbus CRC16: initial value <code>0xFFFF</code>, polynomial <code>0xA001</code> (reflected), appended low byte first.</p>
+            <pre class="guide-code">def modbus_crc(data: bytes) -> bytes:
+    crc = 0xFFFF
+    for byte in data:
+        crc ^= byte
+        for _ in range(8):
+            crc = (crc >> 1) ^ 0xA001 if crc & 1 else crc >> 1
+    return crc.to_bytes(2, "little")
+
+modbus_crc(bytes.fromhex("010300000003"))  <span class="muted"># → 05 CB</span></pre>
+          </div>
+        </section>
+
+        <section id="export" class="guide-section">
+          <div data-lang="zh">
+            <h2><small>06</small>导出与打包</h2>
+            <p>“导出代码”生成一个不依赖设计器的 Python 项目。代码生成和语法检查完成后才写入目标目录，配置有误时不会覆盖已有文件。</p>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>文件</th><th>用途</th></tr></thead>
+                <tbody>
+                  <tr><td><code>main.py</code></td><td>程序入口</td></tr>
+                  <tr><td><code>ui.py</code></td><td>界面、图表和控件</td></tr>
+                  <tr><td><code>serial_handler.py</code></td><td>串口线程与协议解析器</td></tr>
+                  <tr><td><code>data_binding.py</code></td><td>数据绑定</td></tr>
+                  <tr><td><code>theme_support.py</code></td><td>浅色、深色与跟随系统主题</td></tr>
+                  <tr><td><code>requirements.txt</code></td><td>运行依赖</td></tr>
+                  <tr><td><code>assets/</code></td><td>图片控件用到的本地图片</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <pre class="guide-code"><span class="prompt">$</span> cd my-app
+<span class="prompt">$</span> python -m venv .venv
+<span class="prompt">$</span> source .venv/bin/activate        <span class="muted"># Windows: .venv\Scripts\activate</span>
+<span class="prompt">$</span> pip install -r requirements.txt
+<span class="prompt">$</span> python main.py</pre>
+            <h3>一键打包</h3>
+            <ul>
+              <li>在预览页点击“一键打包”并选择目录，会依次导出代码、用 Nuitka 编译、清理编译缓存并压缩为 zip，编译输出实时显示。</li>
+              <li>需要本机 Python 3.10+ 和 C/C++ 编译器。Mac 先执行 <code>xcode-select --install</code> 安装 Xcode Command Line Tools；Windows 使用 Nuitka 支持的编译器，Python 3.13+ 需要 MSVC。</li>
+              <li>下载的运行包里只有设计器自己用的 Python，打包导出程序仍需本机安装 Python。Mac 上找到的 Python 缺少依赖时，会在导出目录创建 <code>.build-venv</code> 安装依赖，后续打包可复用。</li>
+              <li>打包按本机架构生成，不能在 Windows 上交叉编译 Mac 应用。</li>
+              <li>导出程序沿用设置页的主题（浅色、深色或跟随系统）。重新导出会覆盖生成的 <code>.py</code> 文件，业务扩展建议放在单独的模块里。</li>
+            </ul>
+          </div>
+          <div data-lang="en" hidden>
+            <h2><small>06</small>Export and packaging</h2>
+            <p>“导出代码” (Export code) produces a Python project that does not depend on the designer. Files are written only after code generation and a syntax check succeed, so a bad configuration never overwrites an existing export.</p>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+                <tbody>
+                  <tr><td><code>main.py</code></td><td>Program entry point</td></tr>
+                  <tr><td><code>ui.py</code></td><td>Layout, plots and widgets</td></tr>
+                  <tr><td><code>serial_handler.py</code></td><td>Serial thread and protocol parsers</td></tr>
+                  <tr><td><code>data_binding.py</code></td><td>Data bindings</td></tr>
+                  <tr><td><code>theme_support.py</code></td><td>Light, dark and follow-system themes</td></tr>
+                  <tr><td><code>requirements.txt</code></td><td>Runtime dependencies</td></tr>
+                  <tr><td><code>assets/</code></td><td>Local images used by image widgets</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <pre class="guide-code"><span class="prompt">$</span> cd my-app
+<span class="prompt">$</span> python -m venv .venv
+<span class="prompt">$</span> source .venv/bin/activate        <span class="muted"># Windows: .venv\Scripts\activate</span>
+<span class="prompt">$</span> pip install -r requirements.txt
+<span class="prompt">$</span> python main.py</pre>
+            <h3>One-click packaging</h3>
+            <ul>
+              <li>Click “一键打包” (Package) on the preview page and choose a folder. It exports the code, compiles it with Nuitka, cleans the build cache and zips the result, with live compiler output.</li>
+              <li>You need Python 3.10+ and a C/C++ compiler. On a Mac, run <code>xcode-select --install</code> for the Xcode Command Line Tools; on Windows use a compiler Nuitka supports (MSVC for Python 3.13+).</li>
+              <li>The downloaded package only bundles the Python the designer itself uses, so packaging an export still needs Python installed. On a Mac, if the Python found lacks dependencies, a <code>.build-venv</code> is created in the export folder and reused next time.</li>
+              <li>Builds target the current machine's architecture; you can't cross-compile a Mac app on Windows.</li>
+              <li>Exports use the theme chosen in Settings (light, dark or follow system). Re-exporting overwrites the generated <code>.py</code> files, so keep your own logic in separate modules.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section id="faq" class="guide-section">
+          <div data-lang="zh">
+            <h2><small>07</small>常见问题</h2>
+            <div class="guide-faq">
+              <details>
+                <summary>Windows 提示“Windows 已保护你的电脑”</summary>
+                <div><p>运行包没有代码签名。点击“更多信息”，再点击“仍要运行”。</p></div>
+              </details>
+              <details>
+                <summary>Mac 提示无法打开或无法验证开发者</summary>
+                <div><p>运行包未做 Apple Developer ID 签名与公证。打开“系统设置 → 隐私与安全性”，在被拦截的提示处点击“仍要打开”。</p></div>
+              </details>
+              <details>
+                <summary>Mac 上找不到串口</summary>
+                <div><p>串口一般显示为 <code>/dev/cu.usbserial-*</code> 或 <code>/dev/cu.usbmodem*</code>。USB 转串口芯片请按厂商要求安装驱动。</p></div>
+              </details>
+              <details>
+                <summary>连接成功但控件不更新</summary>
+                <div>
+                  <ul>
+                    <li>行文本是否以 <code>\n</code> 结尾？没有换行时数据会一直留在缓冲区。</li>
+                    <li>默认解析模式是否和数据格式一致？Modbus 数据要选 <code>modbus</code>。</li>
+                    <li>绑定字段或 JSON 路径是否和设备发送的字段名一致？字段名区分大小写。</li>
+                    <li>是否写成了 <code>key:value</code>？请改为 <code>key=value</code> 或 JSON。</li>
+                    <li>Modbus 是否设置了从站或功能码过滤？CRC 错误的帧会被丢弃。</li>
+                  </ul>
+                </div>
+              </details>
+              <details>
+                <summary>曲线数据会保存多少</summary>
+                <div><p>显示缓存每条曲线最多 10,000 点，完整采样另存在临时文件中，“保存”会导出全部历史 CSV / JSON。清空曲线、停止预览或关闭控件后临时记录会释放，需要的数据请先保存。</p></div>
+              </details>
+            </div>
+            <p class="guide-footnote">更完整的字段说明见 GitHub 上的 <a href="https://github.com/txp666/PyQt-UI-Designer/blob/main/docs/protocol.md" target="_blank" rel="noreferrer">协议文档</a>，问题可提交到 <a href="https://github.com/txp666/PyQt-UI-Designer/issues" target="_blank" rel="noreferrer">Issues</a>。</p>
+          </div>
+          <div data-lang="en" hidden>
+            <h2><small>07</small>FAQ</h2>
+            <div class="guide-faq">
+              <details>
+                <summary>Windows says “Windows protected your PC”</summary>
+                <div><p>The package isn't code-signed. Click “More info”, then “Run anyway”.</p></div>
+              </details>
+              <details>
+                <summary>macOS says the app can't be opened or the developer can't be verified</summary>
+                <div><p>The package isn't Developer ID signed or notarized. Open System Settings → Privacy &amp; Security and click “Open Anyway” next to the blocked app.</p></div>
+              </details>
+              <details>
+                <summary>No serial port shows up on a Mac</summary>
+                <div><p>Serial ports usually appear as <code>/dev/cu.usbserial-*</code> or <code>/dev/cu.usbmodem*</code>. Install the USB-serial driver your chip vendor requires.</p></div>
+              </details>
+              <details>
+                <summary>Connected, but widgets don't update</summary>
+                <div>
+                  <ul>
+                    <li>Do text lines end with <code>\n</code>? Without it, data stays in the buffer.</li>
+                    <li>Does the default parse mode match the data? Modbus needs <code>modbus</code>.</li>
+                    <li>Do the binding field or JSON path match the device's field names exactly? Names are case-sensitive.</li>
+                    <li>Is the device sending <code>key:value</code>? Switch to <code>key=value</code> or JSON.</li>
+                    <li>Are slave or function filters set for Modbus? Frames with bad CRCs are dropped.</li>
+                  </ul>
+                </div>
+              </details>
+              <details>
+                <summary>How much plot data is kept?</summary>
+                <div><p>Each curve keeps up to 10,000 points on screen; the full history goes to a temporary file, and “保存” (Save) exports all of it as CSV / JSON. The temporary record is released when you clear the plot, stop the preview or close the widget, so save what you need first.</p></div>
+              </details>
+            </div>
+            <p class="guide-footnote">Field-by-field details are in the <a href="https://github.com/txp666/PyQt-UI-Designer/blob/main/docs/protocol.md" target="_blank" rel="noreferrer">protocol document</a> on GitHub (Chinese). Report problems in <a href="https://github.com/txp666/PyQt-UI-Designer/issues" target="_blank" rel="noreferrer">Issues</a>.</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer section-shell">
+    <p><strong>PyQt UI Designer</strong><span data-copy="footerTagline">面向硬件工程师的可视化上位机设计工具。</span></p>
+    <nav aria-label="页脚导航">
+      <a href="../" data-copy="navProduct">产品介绍</a>
+      <a href="#top" data-copy="backToTop">返回顶部</a>
+      <a href="../#downloads" data-copy="navDownloads">下载</a>
+      <a href="../../" data-copy="backToModusignal">返回 modusignal</a>
+    </nav>
+  </footer>
+
+  <script src="./guide.js?v=20261020.1" defer></script>
+</body>
+
+</html>

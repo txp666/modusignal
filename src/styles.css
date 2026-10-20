@@ -1049,12 +1049,20 @@ button:focus-visible {
     var(--surface-muted);
 }
 
-.fluent-serial-card-media img {
+.fluent-serial-card-media img,
+.pyqt-designer-card-media img {
   width: 100%;
   height: auto;
   border: 1px solid var(--line);
   border-radius: 0.4rem;
   filter: drop-shadow(0 0.65rem 1rem rgba(10, 75, 80, 0.1));
+}
+
+.pyqt-designer-card-media {
+  padding: 0.65rem;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(31, 159, 218, 0.13), transparent 48%),
+    var(--surface-muted);
 }
 
 .aomaster-product-content,

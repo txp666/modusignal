@@ -19,3 +19,6 @@
 
 /fluent-serial-assistant/assets/*
   Cache-Control: public, max-age=31536000, immutable
+
+/pyqt-ui-designer/assets/*
+  Cache-Control: public, max-age=31536000, immutable

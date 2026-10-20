@@ -1,0 +1,357 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="PyQt UI Designer：面向硬件工程师的可视化上位机设计器。拖拽控件、绑定串口数据、预览运行，并导出可独立运行的 PyQt5 程序或打包为 exe / .app。" />
+  <meta name="keywords" content="PyQt UI Designer,上位机,上位机设计器,PyQt5,串口,Modbus RTU,可视化设计,低代码,Nuitka,实时曲线" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#f7fbfc" />
+  <meta name="color-scheme" content="light dark" />
+  <script>
+    (() => {
+      try {
+        const saved = localStorage.getItem("modusignal-theme");
+        const theme = saved === "light" || saved === "dark"
+          ? saved
+          : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+      } catch {}
+    })();
+  </script>
+  <link rel="canonical" href="https://modusignal.cn/pyqt-ui-designer/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:site_name" content="modusignal" />
+  <meta property="og:title" content="PyQt UI Designer · 可视化上位机设计器" />
+  <meta property="og:description" content="拖拽控件、绑定串口数据、预览运行，导出可独立运行的 PyQt5 上位机程序。" />
+  <meta property="og:url" content="https://modusignal.cn/pyqt-ui-designer/" />
+  <meta property="og:image" content="https://modusignal.cn/pyqt-ui-designer/assets/designer.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <title>PyQt UI Designer · 可视化上位机设计器</title>
+  <link rel="icon" href="../logo.ico" type="image/x-icon" />
+  <link rel="stylesheet" href="./styles.css?v=20261020.2" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "PyQt UI Designer",
+      "softwareVersion": "0.1.3",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Windows, macOS",
+      "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+      "description": "面向硬件工程师的可视化上位机设计器，可导出独立运行的 PyQt5 程序。",
+      "url": "https://modusignal.cn/pyqt-ui-designer/",
+      "downloadUrl": "https://github.com/txp666/PyQt-UI-Designer/releases/latest"
+    }
+  </script>
+  <link rel="stylesheet" href="../pages/shared/editorial.css?v=__ASSET_VERSION__" />
+</head>
+
+<body class="design-page">
+  <a class="skip-link" href="#mainContent" data-copy="skipLink">跳到主要内容</a>
+
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="PyQt UI Designer 首页">
+      <img src="./assets/logo.png" alt="" width="512" height="512" />
+      <span>
+        <strong>PyQt UI Designer</strong>
+        <small data-copy="brandTagline">可视化上位机设计器</small>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="产品页面导航">
+      <a href="#workflow" data-copy="navWorkflow">工作流程</a>
+      <a href="#capabilities" data-copy="navCapabilities">功能介绍</a>
+      <a href="#workspace" data-copy="navWorkspace">导出示例</a>
+      <a href="./guide/" data-copy="navGuide">使用说明</a>
+      <a href="#downloads" data-copy="navDownloads">下载</a>
+    </nav>
+    <div class="header-actions">
+      <button class="theme-button" type="button" data-theme-toggle aria-label="切换到深色主题" title="切换到深色主题">☾</button>
+      <button class="language-button" type="button" data-language-toggle aria-label="Switch to English">EN</button>
+      <a class="back-link" href="../" data-copy="backToModusignal">返回 modusignal</a>
+    </div>
+  </header>
+
+  <main id="mainContent">
+    <section id="top" class="hero section-shell">
+      <div class="hero-copy">
+        <div class="release-pill">
+          <span class="release-dot" aria-hidden="true"></span>
+          <span data-copy="stableRelease">最新稳定版</span>
+          <strong data-release-version>0.1.3</strong>
+          <span data-release-date>2026-10-20 发布</span>
+        </div>
+        <p class="eyebrow" data-copy="heroEyebrow">拖拽设计 · 数据绑定 · 一键打包</p>
+        <h1 data-copy="heroTitle"><span class="hero-title-line">拖拽搭建上位机界面</span><span class="hero-title-line">导出独立 PyQt5 程序</span></h1>
+        <p class="hero-lede" data-copy="heroDescription">把控件拖到画布上，配置属性并绑定串口数据，在设计器里直接连接设备预览运行。调通后一键导出完整的 Python 项目，或用 Nuitka 打包为 Windows exe / macOS .app。</p>
+        <div class="hero-actions">
+          <a
+            class="button button-primary"
+            data-primary-download
+            href="https://github.com/txp666/PyQt-UI-Designer/releases/download/v0.1.3/PyQt-UI-Designer-v0.1.3-windows-x64.zip"
+          >
+            <span data-copy="downloadNow">立即下载</span>
+            <small data-primary-download-label>Windows x64 · ZIP · 49.4 MB</small>
+          </a>
+          <a class="button button-secondary" href="#workflow" data-copy="exploreWorkflow">了解工作流程</a>
+        </div>
+        <div class="hero-meta" aria-label="支持的平台与技术">
+          <span>PyQt5</span>
+          <span>Serial · Modbus RTU</span>
+          <span>Nuitka</span>
+          <span>Windows · macOS</span>
+        </div>
+        <p class="release-source" data-release-status data-copy="releaseSource">下载信息来自 GitHub Releases，页面会自动检查最新稳定版。</p>
+      </div>
+
+      <div class="hero-visual">
+        <div class="app-window">
+          <div class="window-bar" aria-hidden="true">
+            <span></span><span></span><span></span>
+            <strong>PyQt UI Designer <span data-release-version>0.1.3</span></strong>
+          </div>
+          <img
+            src="./assets/designer.png"
+            alt="PyQt UI Designer 设计器界面，左侧控件面板，中间画布，右侧属性编辑器"
+            width="1500"
+            height="900"
+            fetchpriority="high"
+          />
+        </div>
+        <div class="visual-caption">
+          <span data-copy="visualCaptionLead">27 种控件 · 所见即所得</span>
+          <strong data-copy="visualCaptionTitle">预览与导出使用同一套解析规则</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="trust-strip" aria-label="产品亮点">
+      <div class="section-shell trust-grid">
+        <p><strong data-copy="trustOneTitle">零代码搭建界面</strong><span data-copy="trustOneDesc">拖拽控件、配置属性和绑定键即可</span></p>
+        <p><strong data-copy="trustTwoTitle">设计器内连接设备</strong><span data-copy="trustTwoDesc">预览运行时直接收发串口数据</span></p>
+        <p><strong data-copy="trustThreeTitle">导出即可独立运行</strong><span data-copy="trustThreeDesc">生成 Python 项目，可打包为 exe / .app</span></p>
+      </div>
+    </section>
+
+    <section id="workflow" class="workflow-section">
+      <div class="section-shell">
+        <header class="section-heading workflow-heading">
+          <p class="eyebrow" data-copy="workflowEyebrow">工作流程</p>
+          <h2 data-copy="workflowTitle">从画布到可分发的上位机</h2>
+          <p data-copy="workflowDescription">显示类控件按绑定键从串口数据中取值，交互类控件按发送模式组帧下发。设计器预览与导出程序共用同一份串口和解析实现，预览里调通的行为导出后保持一致。</p>
+        </header>
+
+        <div class="workflow-grid">
+          <div class="workflow-copy">
+            <div class="control-mode-list">
+              <article>
+                <span class="mode-mark" aria-hidden="true">RX</span>
+                <div>
+                  <p class="mode-label">data binding</p>
+                  <h3 data-copy="bindTitle">接收：数据绑定</h3>
+                  <p data-copy="bindDescription">支持键值匹配、JSON 路径、HEX 字节偏移和 Modbus RTU 寄存器解析；数值、LED、进度条、仪表盘和曲线按绑定键更新。</p>
+                </div>
+              </article>
+              <article>
+                <span class="mode-mark mode-mark-accent" aria-hidden="true">TX</span>
+                <div>
+                  <p class="mode-label">commands</p>
+                  <h3 data-copy="sendTitle">发送：命令配置</h3>
+                  <p data-copy="sendDescription">按钮、开关、滑块等控件可按文本、HEX 或 Modbus 模式发送，命令模板用 <code>{value}</code> 占位符代入控件当前值。</p>
+                </div>
+              </article>
+            </div>
+            <a class="inline-link" href="./guide/">
+              <span data-copy="viewGuide">查看使用说明与协议说明</span>
+              <span aria-hidden="true">→</span>
+            </a>
+          </div>
+
+          <div class="control-console" aria-label="Data binding and export examples">
+            <div class="console-bar">
+              <span></span><span></span><span></span>
+              <strong data-copy="consoleTitle">串口数据与导出项目</strong>
+            </div>
+            <div class="console-group">
+              <p><span>RX</span><small data-copy="consoleRxLabel">每行一帧，按绑定键取值</small></p>
+              <pre><code><span class="code-key">temperature</span>=<span class="code-value">25.3</span>,<span class="code-key">humidity</span>=<span class="code-value">68.5</span>
+{<span class="code-key">"temperature"</span>: <span class="code-value">26.42</span>, <span class="code-key">"running"</span>: <span class="code-value">1</span>}</code></pre>
+            </div>
+            <div class="console-group">
+              <p><span>EXPORT</span><small data-copy="consoleExportLabel">导出的独立项目</small></p>
+              <pre><code>my-app/
+├── main.py
+├── ui.py
+├── serial_handler.py
+├── data_binding.py
+└── theme_support.py
+<span class="prompt">$</span> python main.py</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-flow" aria-label="设计到打包的流程">
+          <div class="flow-node"><strong data-copy="flowDesign">设计界面</strong><span data-copy="flowDesignDetail">拖拽 · 对齐 · 属性</span></div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="flow-node"><strong data-copy="flowBind">绑定数据</strong><span data-copy="flowBindDetail">绑定键 · 解析模式 · 命令</span></div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="flow-node flow-node-accent"><strong data-copy="flowPreview">预览运行</strong><span data-copy="flowPreviewDetail">连接串口实时测试</span></div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="flow-node"><strong data-copy="flowExport">导出打包</strong><span data-copy="flowExportDetail">Python 项目 · exe · .app</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="capabilities" class="content-section section-shell">
+      <header class="section-heading">
+        <p class="eyebrow" data-copy="capabilitiesEyebrow">功能介绍</p>
+        <h2 data-copy="capabilitiesTitle">设计、通信、绘图与打包</h2>
+        <p data-copy="capabilitiesDescription">面向串口设备的常见上位机需求：参数显示、状态指示、控制命令、实时曲线和数据记录，都能在画布上完成配置。</p>
+      </header>
+      <div class="feature-grid">
+        <article>
+          <span class="feature-index">01</span>
+          <h3 data-copy="featureDesignerTitle">可视化设计器</h3>
+          <p data-copy="featureDesignerDesc">拖拽式画布，支持网格吸附、左右顶底对齐与横纵分布，画布尺寸自由设置并可缩放；工程保存为 .uidp 文件。</p>
+        </article>
+        <article>
+          <span class="feature-index">02</span>
+          <h3 data-copy="featureWidgetsTitle">27 种控件</h3>
+          <p data-copy="featureWidgetsDesc">基础、布局、显示、图表和复合控件，包括 LED 指示灯、仪表盘、进度环、数据表格，以及串口配置、收发和 Modbus 配置卡片。</p>
+        </article>
+        <article>
+          <span class="feature-index">03</span>
+          <h3 data-copy="featureParseTitle">串口通信与解析</h3>
+          <p data-copy="featureParseDesc">自动扫描端口，可设波特率、数据位、校验位、停止位和流控；支持行文本、HEX 帧和 Modbus RTU 解析，Modbus 响应校验 CRC。</p>
+        </article>
+        <article>
+          <span class="feature-index">04</span>
+          <h3 data-copy="featureSendTitle">命令发送</h3>
+          <p data-copy="featureSendDesc">文本模式可选换行符，HEX 模式支持帧头帧尾和数据类型打包，Modbus 模式自动构建 RTU 帧并支持轮询。</p>
+        </article>
+        <article>
+          <span class="feature-index">05</span>
+          <h3 data-copy="featureChartTitle">实时曲线</h3>
+          <p data-copy="featureChartDesc">多通道曲线带游标，约 33 ms 批量刷新；完整采样历史可导出为 CSV / JSON，也可重新加载查看。</p>
+        </article>
+        <article>
+          <span class="feature-index">06</span>
+          <h3 data-copy="featureExportTitle">代码导出与打包</h3>
+          <p data-copy="featureExportDesc">导出可独立运行的 Python 项目；内置 Nuitka 一键打包，实时显示编译输出，完成后自动清理缓存并压缩为 zip。</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="workspace" class="workspace-section">
+      <div class="section-shell workspace-grid">
+        <div class="workspace-copy">
+          <p class="eyebrow" data-copy="workspaceEyebrow">导出示例</p>
+          <h2 data-copy="workspaceTitle">串口采集 Demo</h2>
+          <p data-copy="workspaceDescription">仓库中的 demo 包含可编辑的 .uidp 工程、完整导出代码和模拟串口设备，不接硬件也能体验温度/压力采集与命令发送。</p>
+          <ul>
+            <li data-copy="workspacePointOne">选择 DEMO 端口即可连接模拟设备，无需硬件</li>
+            <li data-copy="workspacePointTwo">数值显示、进度环、LED、双通道曲线、字段表格和事件日志</li>
+            <li data-copy="workspacePointThree">整个 demo 文件夹可复制到仓库外独立运行</li>
+          </ul>
+          <a class="inline-link" href="https://github.com/txp666/PyQt-UI-Designer/blob/main/demo/README.md" target="_blank" rel="noreferrer">
+            <span data-copy="viewDemo">查看 demo 说明</span>
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+        <figure class="workspace-figure">
+          <img
+            src="./assets/demo.jpg"
+            alt="PyQt UI Designer 导出的串口采集 Demo，显示温度、压力、实时曲线和原始串口数据"
+            width="1400"
+            height="1079"
+            loading="lazy"
+          />
+          <figcaption data-copy="workspaceCaption">由 PyQt UI Designer 导出的串口采集 Demo（深色主题）</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="downloads" class="download-section section-shell">
+      <header class="section-heading download-heading">
+        <div>
+          <p class="eyebrow"><span data-copy="downloadEyebrow">最新稳定版</span> <span data-release-version>0.1.3</span></p>
+          <h2 data-copy="downloadTitle">下载运行包</h2>
+          <p class="download-lede" data-copy="downloadDescription">各平台 zip 均内置 Python 和 Qt，解压即可运行，无需另装 Python。</p>
+        </div>
+        <a class="release-link" data-release-page href="https://github.com/txp666/PyQt-UI-Designer/releases/latest" target="_blank" rel="noreferrer">
+          <span data-copy="viewRelease">在 GitHub 查看 Release</span>
+          <span aria-hidden="true">↗</span>
+        </a>
+      </header>
+
+      <div class="download-grid">
+        <article class="download-card recommended" data-platform="windows">
+          <header><span>Windows</span><strong data-copy="recommended">推荐</strong></header>
+          <h3>Windows x64</h3>
+          <p data-copy="windowsDescription">解压后运行 main.exe。适用于 Windows 10 / 11。</p>
+          <dl><div><dt data-copy="format">格式</dt><dd>ZIP</dd></div><div><dt data-copy="size">大小</dt><dd data-asset-size="windows">49.4 MB</dd></div></dl>
+          <span class="package-includes" data-copy="packageIncludes">内置 Python + Qt</span>
+          <a class="button button-download" data-asset="windows" href="https://github.com/txp666/PyQt-UI-Designer/releases/download/v0.1.3/PyQt-UI-Designer-v0.1.3-windows-x64.zip" data-copy="downloadWindows">下载 Windows 版</a>
+        </article>
+
+        <article class="download-card" data-platform="macos-arm64">
+          <header><span>macOS</span><strong>Apple Silicon</strong></header>
+          <h3>macOS arm64</h3>
+          <p data-copy="macArmDescription">适用于 M 系列芯片的 Mac，解压后打开 PyQt UI Designer.app。</p>
+          <dl><div><dt data-copy="format">格式</dt><dd>ZIP</dd></div><div><dt data-copy="size">大小</dt><dd data-asset-size="macos-arm64">50.4 MB</dd></div></dl>
+          <span class="package-includes" data-copy="packageIncludes">内置 Python + Qt</span>
+          <a class="button button-download" data-asset="macos-arm64" href="https://github.com/txp666/PyQt-UI-Designer/releases/download/v0.1.3/PyQt-UI-Designer-v0.1.3-macos-arm64.zip" data-copy="downloadMacArm">下载 Apple Silicon 版</a>
+        </article>
+
+        <article class="download-card" data-platform="macos-x64">
+          <header><span>macOS</span><strong>Intel</strong></header>
+          <h3>macOS x64</h3>
+          <p data-copy="macIntelDescription">适用于 Intel 芯片的 Mac，解压后打开 PyQt UI Designer.app。</p>
+          <dl><div><dt data-copy="format">格式</dt><dd>ZIP</dd></div><div><dt data-copy="size">大小</dt><dd data-asset-size="macos-x64">56.5 MB</dd></div></dl>
+          <span class="package-includes" data-copy="packageIncludes">内置 Python + Qt</span>
+          <a class="button button-download" data-asset="macos-x64" href="https://github.com/txp666/PyQt-UI-Designer/releases/download/v0.1.3/PyQt-UI-Designer-v0.1.3-macos-x64.zip" data-copy="downloadMacIntel">下载 Intel 版</a>
+        </article>
+      </div>
+      <p class="download-note">
+        <span data-copy="downloadNote">下载按钮直接连接 GitHub Release 附件，每个包都提供 .zip.sha256 校验文件。安装包暂未签名：Windows 出现 SmartScreen 提示时点击“更多信息 → 仍要运行”；Mac 版未做 Developer ID 签名与公证。应用内“一键打包”仍需本机 Python 与 C/C++ 编译工具。</span>
+        <span class="download-note-links">
+          <a href="https://github.com/txp666/PyQt-UI-Designer#快速开始" target="_blank" rel="noreferrer" data-copy="runFromSource">从源码运行</a>
+          <a href="./guide/" data-copy="guideLink">使用说明</a>
+          <a href="https://github.com/txp666/PyQt-UI-Designer" target="_blank" rel="noreferrer" data-copy="sourceCode">查看源代码</a>
+        </span>
+      </p>
+    </section>
+
+    <section class="open-source-section">
+      <div class="section-shell open-source-card">
+        <div>
+          <p class="eyebrow" data-copy="openEyebrow">开放源码</p>
+          <h2 data-copy="openTitle">源码与许可证</h2>
+          <p data-copy="openDescription">PyQt UI Designer 基于 PyQt5、PyQt-Fluent-Widgets、pyqtgraph 与 pyserial 构建，使用 Nuitka 打包，采用 GPLv3 许可证。TCP、MQTT 等通信方式正在开发中，欢迎提交 PR。</p>
+        </div>
+        <div class="open-source-actions">
+          <a class="button button-primary" href="https://github.com/txp666/PyQt-UI-Designer" target="_blank" rel="noreferrer" data-copy="githubRepository">GitHub 仓库</a>
+          <a class="button button-secondary" href="https://github.com/txp666/PyQt-UI-Designer/issues" target="_blank" rel="noreferrer" data-copy="reportIssue">反馈问题</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer section-shell">
+    <p><strong>PyQt UI Designer</strong><span data-copy="footerTagline">面向硬件工程师的可视化上位机设计工具。</span></p>
+    <nav aria-label="页脚导航">
+      <a href="#workflow" data-copy="navWorkflow">工作流程</a>
+      <a href="#capabilities" data-copy="navCapabilities">功能介绍</a>
+      <a href="./guide/" data-copy="navGuide">使用说明</a>
+      <a href="#downloads" data-copy="navDownloads">下载</a>
+      <a href="../" data-copy="backToModusignal">返回 modusignal</a>
+    </nav>
+  </footer>
+
+  <script src="./app.js?v=20261020.2" defer></script>
+</body>
+
+</html>

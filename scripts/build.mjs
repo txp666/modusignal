@@ -74,6 +74,7 @@ function injectStaticAssetVersion(version) {
     join(siteRoot, "hartlink-studio"),
     join(siteRoot, "hart-wiki"),
     join(siteRoot, "fluent-serial-assistant"),
+    join(siteRoot, "pyqt-ui-designer"),
   ];
 
   for (const root of roots) {
@@ -95,6 +96,7 @@ function copyStaticAssets() {
     ["hart-wiki", "hart-wiki"],
     ["hartlink-studio", "hartlink-studio"],
     ["fluent-serial-assistant", "fluent-serial-assistant"],
+    ["pyqt-ui-designer", "pyqt-ui-designer"],
     [
       "images",
       "images",
@@ -164,6 +166,8 @@ function injectContentSecurityPolicyHashes() {
     join(siteRoot, "hart-wiki", "index.html"),
     join(siteRoot, "hartlink-studio", "index.html"),
     join(siteRoot, "fluent-serial-assistant", "index.html"),
+    join(siteRoot, "pyqt-ui-designer", "index.html"),
+    join(siteRoot, "pyqt-ui-designer", "guide", "index.html"),
   ];
   const hashes = [];
 
