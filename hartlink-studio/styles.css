@@ -154,8 +154,10 @@ p {
 .site-nav {
   display: flex;
   justify-content: center;
-  gap: 2rem;
+  gap: clamp(0.75rem, 1.6vw, 1.5rem);
 }
+
+.site-nav a { white-space: nowrap; }
 
 .site-nav a,
 .back-link,
@@ -1102,6 +1104,59 @@ p {
 .linux-downloads a:hover {
   border-color: var(--cyan);
   color: #fff;
+}
+
+.release-history-section {
+  padding-block: 48px;
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.release-history-section > .section-shell {
+  width: min(1040px, calc(100% - 3rem));
+}
+
+.release-history-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px 24px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+}
+
+.release-history-heading h2 { font-size: clamp(24px, 2.2vw, 32px); font-weight: 600; }
+.release-history-heading p { color: var(--muted); font-size: 14px; }
+.release-history-list { list-style: none; margin: 0; padding: 0; }
+
+.release-history-entry {
+  display: grid;
+  grid-template-columns: 152px minmax(0, 1fr);
+  gap: 32px;
+  padding-block: 28px;
+  border-top: 1px solid var(--line);
+}
+
+.release-history-meta { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.release-history-version { font-size: 22px; font-weight: 600; line-height: 1.35; }
+.release-history-entry:first-child .release-history-version { color: var(--teal); }
+.release-history-meta time { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.release-history-entry h3 { font-size: 18px; font-weight: 600; line-height: 1.5; }
+.release-history-summary { margin-top: 8px; color: var(--ink-soft); font-size: 14px; line-height: 1.8; }
+.release-history-note { margin-top: 12px; border-left: 2px solid var(--teal); padding-left: 12px; color: var(--ink-soft); font-size: 13px; line-height: 1.8; }
+.release-history-details { margin-top: 12px; }
+.release-history-details summary { width: fit-content; padding-block: 5px; cursor: pointer; color: var(--teal); font-size: 13px; }
+.release-history-details summary:hover { color: var(--teal-strong); }
+.release-history-details ul { margin: 12px 0 0; padding-left: 20px; color: var(--ink-soft); font-size: 14px; line-height: 1.85; }
+.release-history-details li + li { margin-top: 8px; }
+
+@media (max-width: 680px) {
+  .release-history-section { padding-block: 32px; }
+  .release-history-section > .section-shell { width: calc(100% - 2rem); }
+  .release-history-heading { margin-bottom: 20px; }
+  .release-history-entry { grid-template-columns: minmax(0, 1fr); gap: 12px; padding-block: 24px; }
+  .release-history-meta { flex-direction: row; align-items: baseline; gap: 14px; }
+  .release-history-details summary { min-height: 44px; display: list-item; align-content: center; }
 }
 
 .site-footer {
