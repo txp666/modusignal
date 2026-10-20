@@ -1,3 +1,5 @@
+import { parseDownloadTracking, trackDownloadResponse } from "./download-stats.js";
+
 const textEncoder = new TextEncoder();
 const DEFAULT_PREFIXES = ["HARTLinkStudio/ota", "HARTForgeStudio/ota"];
 const VERSIONED_CACHE_CONTROL = "public, max-age=31536000, immutable";
@@ -137,7 +139,8 @@ async function proxyRequest(request, env, ctx) {
   const requestUrl = new URL(request.url);
   const prefixes = normalizedPrefixes(env.COS_PREFIXES || env.COS_PREFIX);
   const publicHost = (env.PUBLIC_HOST || "download.modusignal.cn").toLowerCase();
-  if (requestUrl.hostname.toLowerCase() !== publicHost || requestUrl.search || !isAllowedDownloadPath(requestUrl.pathname, prefixes)) {
+  const tracking = parseDownloadTracking(requestUrl);
+  if (requestUrl.hostname.toLowerCase() !== publicHost || !tracking.valid || !isAllowedDownloadPath(requestUrl.pathname, prefixes)) {
     return plainResponse("Not found", 404);
   }
 
@@ -147,10 +150,11 @@ async function proxyRequest(request, env, ctx) {
 
   const isRangeRequest = request.headers.has("Range");
   const cache = caches.default;
+  requestUrl.search = "";
   const cacheKey = new Request(requestUrl.toString(), { method: "GET" });
   if (request.method === "GET") {
     const cached = await cache.match(new Request(cacheKey, { headers: isRangeRequest ? { Range: request.headers.get("Range") } : {} }));
-    if (cached) return cached;
+    if (cached) return trackDownloadResponse(request, cached, env, tracking, requestUrl.pathname);
   }
 
   const host = `${env.COS_BUCKET}.cos.${env.COS_REGION}.myqcloud.com`;
@@ -186,7 +190,7 @@ async function proxyRequest(request, env, ctx) {
   if (request.method === "GET" && !isRangeRequest && originResponse.status === 200) {
     ctx.waitUntil(cache.put(cacheKey, response.clone()).catch((error) => console.warn("Unable to cache COS object", error)));
   }
-  return response;
+  return trackDownloadResponse(request, response, env, tracking, requestUrl.pathname);
 }
 
 export default {
