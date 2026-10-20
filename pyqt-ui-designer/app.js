@@ -226,7 +226,7 @@ async function refreshLatestRelease() {
     if (!response.ok) throw new Error(`GitHub API ${response.status}`);
     applyRelease(await response.json());
   } catch {
-    updatePrimaryDownload(preferredPlatform());
+    // Keep the fallback links already shown for the visitor's platform.
   }
 }
 
@@ -238,4 +238,6 @@ let savedLanguage = "zh";
 try { savedLanguage = localStorage.getItem("pyqt-ui-designer-language") || "zh"; } catch {}
 initTheme();
 applyLanguage(savedLanguage);
+// The GitHub API can take seconds to answer, so pick the platform from the built-in links first.
+updatePrimaryDownload(preferredPlatform());
 refreshLatestRelease();

@@ -24,7 +24,7 @@ test("PyQt UI Designer page exposes GitHub Release downloads", async () => {
   assert.equal((html.match(/data-asset="/g) || []).length, 3);
   assert.equal((html.match(/<article class="download-card(?: recommended)?" data-platform=/g) || []).length, 3);
   assert.match(html, /styles\.css\?v=20261020\.2/);
-  assert.match(html, /app\.js\?v=20261020\.2/);
+  assert.match(html, /app\.js\?v=20261020\.3/);
   assert.match(html, /id="workflow"/);
   assert.match(html, /src="\.\/assets\/designer\.png"/);
   assert.match(html, /src="\.\/assets\/demo\.jpg"/);
@@ -39,6 +39,8 @@ test("PyQt UI Designer page exposes GitHub Release downloads", async () => {
   assert.match(script, /windows-x64\\\.zip/);
   assert.match(script, /macos-arm64\\\.zip/);
   assert.match(script, /macos-x64\\\.zip/);
+  // The primary button follows the visitor's platform before the GitHub request starts.
+  assert.match(script, /updatePrimaryDownload\(preferredPlatform\(\)\);\nrefreshLatestRelease\(\);\s*$/);
 });
 
 test("modusignal home and production build include PyQt UI Designer", async () => {
