@@ -56,7 +56,6 @@
 
 .workspace .device-shell.standalone { grid-template-columns: minmax(0, 1fr); }
 .app-shell.standalone-device .workspace .workspace-heading { display:none; }
-.workspace .hart-page.hart-workspace-expanded { grid-column: 1 / -1; }
 .workspace .device-shell .panel { padding: 1.25rem; border-radius: 0.5rem; }
 .workspace .panel-heading { gap: 0.75rem; margin-bottom: 1rem; }
 .workspace .panel-heading h2 { font-size: 1.05rem; font-weight: 650; line-height: 1.4; }
@@ -354,6 +353,9 @@
 .workspace .hart-workspace-grid.has-workspace-tabs > article { order:0; grid-column:auto; }
 .workspace .hart-workspace-grid.has-workspace-tabs .hart-tool-fields { grid-template-columns:repeat(3,minmax(0,1fr)); }
 .workspace .hart-workspace-grid.has-workspace-tabs .hart-tool-wide { grid-column:auto; }
+/* The card title gives way so its read buttons stay on one line. */
+.workspace .hart-tool-card > header .hart-card-actions { flex:none; }
+.workspace .hart-workspace-status { max-height:5.5rem; overflow:auto; }
 
 /* Desktop workbench uses the available browser viewport, not a fixed monitor size.
    Long custom forms and expanded settings retain local scrolling as a fallback. */
@@ -488,7 +490,12 @@
 }
 @media (min-width:1051px) and (min-height:640px) {
   .app-shell:not(.overview-page) .workspace .hart-panel-heading { margin:0; align-items:center; }
-  .app-shell:not(.overview-page) .workspace .hart-panel-heading p { display:none; }
+  .app-shell:not(.overview-page) .workspace :is(.hart-panel-heading, .hart-workspace-intro) p { display:none; }
+  .app-shell:not(.overview-page) .workspace .hart-workspace-intro { gap:6px 12px; padding:8px 10px; }
+  .app-shell:not(.overview-page) .workspace .hart-workspace-intro > div { flex:1 1 auto; }
+  .app-shell:not(.overview-page) .workspace .hart-workspace-intro > button { flex:none; min-height:34px; padding:4px 10px; }
+  /* The calibration safety note takes its own row under the title. */
+  .app-shell:not(.overview-page) .workspace .hart-workspace-intro > .state-pill { flex:1 1 100%; padding:4px 8px; font-size:11px; }
   .app-shell:not(.overview-page) .workspace .hart-device-info { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
   .app-shell:not(.overview-page) .workspace .hart-device-info code { min-width:0; font-size:10px; }
   .app-shell:not(.overview-page) .workspace .hart-workspace-tabs { margin:0; }
@@ -501,6 +508,7 @@
   .app-shell:not(.overview-page) .workspace .hart-standard-empty { border:0; padding:0; font-size:11px; }
   .app-shell:not(.overview-page) .workspace .hart-command-preview { gap:6px; padding:8px; }
   .app-shell:not(.overview-page) .workspace .hart-command-preview > div:first-child { flex-direction:row; align-items:baseline; gap:10px; }
+  .app-shell:not(.overview-page) .workspace .hart-workspace-grid.has-workspace-tabs .hart-tool-fields { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @media (min-width:1051px) and (min-height:640px) {
   .app-shell:not(.overview-page) .workspace .mqtt-stats-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }

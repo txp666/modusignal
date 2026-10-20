@@ -2,7 +2,7 @@
   <section class="panel control-panel hart-control-panel">
     <div class="panel-heading split hart-panel-heading">
       <div>
-        <h2 data-i18n="hart.variableRead">变量读取</h2>
+        <h2 data-i18n="hart.variableRead">HART 主站</h2>
         <p data-field="deviceSummary">Address 0 · poll PV (Cmd 1) · 1000 ms · device not found</p>
       </div>
       <div class="panel-actions">
@@ -189,7 +189,6 @@
         </div>
         <button type="button" data-hart-workspace-action="read-identity" data-i18n="hart.settings.readIdentity">读取仪表标识 · Cmd 0</button>
       </div>
-      <code id="hartSettingsStatus" class="hart-card-status hart-workspace-status" role="status" aria-live="polite" data-i18n="hart.workspace.ready">就绪</code>
 
       <div id="hartSettingsPanes" class="hart-workspace-grid hart-settings-grid" data-compact-tabs="HART settings">
         <article class="hart-tool-card">
@@ -317,6 +316,7 @@
           </div>
         </article>
       </div>
+      <code id="hartSettingsStatus" class="hart-card-status hart-workspace-status" role="status" aria-live="polite" data-i18n="hart.workspace.ready">就绪</code>
     </section>
 
     <section class="hart-workspace-panel" data-hart-workspace-panel="calibration" hidden>
@@ -327,7 +327,6 @@
         </div>
         <span class="state-pill warning" data-i18n="hart.calibration.safety">校正会影响现场输出</span>
       </div>
-      <code id="hartCalibrationStatus" class="hart-card-status hart-workspace-status" role="status" aria-live="polite" data-i18n="hart.workspace.ready">就绪</code>
 
       <div id="hartCalibrationPanes" class="hart-workspace-grid hart-calibration-grid" data-compact-tabs="HART calibration">
         <article class="hart-tool-card">
@@ -413,6 +412,7 @@
           </div>
         </article>
       </div>
+      <code id="hartCalibrationStatus" class="hart-card-status hart-workspace-status" role="status" aria-live="polite" data-i18n="hart.workspace.ready">就绪</code>
     </section>
   </section>
 </section>

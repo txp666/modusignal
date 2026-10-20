@@ -204,7 +204,7 @@ MicroScope Power 页面嵌入了 `pages/devices/microscope-power/` 下的浏览�
 
 “扫描 0-15”逐个地址发送 Cmd 0，找到第一台设备即停止，扫描时同一按钮用于停止。“通用命令应答”只显示最近一次命令的应答，轮询数据显示在 PV/SV/TV/QV 卡片和曲线中。处于 Burst 模式的设备主动发出的数据也会更新卡片和曲线，但请求不会按 Burst 时序发送，可能与 Burst 帧冲突而超时。
 
-“仪表设置”和“输入输出校正”页签顶部显示该页最近一次操作的结果（应答内容、错误或超时原因）；写操作发送前需确认。
+“仪表设置”和“输入输出校正”页签在卡片下方显示该页最近一次操作的结果（应答内容、错误或超时原因），写操作发送前需确认；切换页签时右侧的监测面板和收发日志保持显示，可以直接对照收发的帧。
 
 ## 自定义设备
 
@@ -419,7 +419,7 @@ Search, scan, polling, commands and the instrument settings / calibration action
 
 **Scan 0-15** sends Cmd 0 to each address in turn and stops at the first device; while it runs, the same button stops it. **Command Response** shows the answer to the latest command only; poll data goes to the PV/SV/TV/QV cards and the chart. Data sent by a device in burst mode also updates the cards and chart, but requests are not timed around burst messages, so one may collide with a burst and time out.
 
-The Instrument Settings and I/O Calibration tabs show the outcome of their latest action at the top (the answer, an error or the timeout cause); writes ask for confirmation before they are sent.
+The Instrument Settings and I/O Calibration tabs show the outcome of their latest action under the cards (the answer, an error or the timeout cause), and writes ask for confirmation before they are sent. The monitor and the transceiver log stay in view on every tab, so the frames can be checked as you go.
 
 ## Custom device
 

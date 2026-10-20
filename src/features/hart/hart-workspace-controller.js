@@ -28,7 +28,6 @@ export function createHartWorkspaceController({
   function switchWorkspace(nextWorkspace) {
     const next = ["general", "settings", "calibration"].includes(nextWorkspace) ? nextWorkspace : "general";
     workspace = next;
-    document.querySelector("#hartPage")?.classList.toggle("hart-workspace-expanded", next !== "general");
     elements.hartWorkspaceTabs.forEach((button) => {
       const active = button.dataset.hartWorkspaceTab === next;
       button.classList.toggle("active", active);

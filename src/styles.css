@@ -2527,16 +2527,6 @@ code {
   gap: 0.75rem;
 }
 
-.device-shell:has(.hart-page.active.hart-workspace-expanded) .hart-page.active {
-  flex: 1 1 100%;
-  width: 100%;
-  max-width: 100%;
-}
-
-.device-shell:has(.hart-page.active.hart-workspace-expanded) .workbench-mount {
-  display: none;
-}
-
 .hart-page .panel {
   padding: 0.85rem;
 }

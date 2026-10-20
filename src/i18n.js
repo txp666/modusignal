@@ -437,7 +437,7 @@ const TRANSLATIONS = {
   "modbus.table.value": { zh: "值", en: "Value" },
 
   // HART
-  "hart.variableRead": { zh: "变量读取", en: "Variable Reading" },
+  "hart.variableRead": { zh: "HART 主站", en: "HART Master" },
   "hart.deviceNotFound": { zh: "尚未搜索到设备", en: "Device not found" },
   "hart.deviceNotSearched": { zh: "设备：尚未搜索", en: "Device: Not searched" },
   "hart.hartlinkWaiting": { zh: "HARTLink：连接串口后自动探测版本", en: "HARTLink: Version is detected after serial connection" },
