@@ -16,14 +16,6 @@
     "COS_PREFIXES": "HARTLinkStudio/ota,HARTForgeStudio/ota",
     "PUBLIC_HOST": "download.modusignal.cn"
   },
-  "d1_databases": [
-    {
-      "binding": "DOWNLOAD_STATS",
-      "database_name": "modusignal-download-stats",
-      "database_id": "46971f07-d0c4-4500-bec2-ab0e5391f8ee",
-      "migrations_dir": "migrations"
-    }
-  ],
   "observability": {
     "enabled": true
   }
