@@ -6,9 +6,15 @@ import { formatModbusAddress, formatRegisterRows, isPairFormat } from "./registe
 
 const LOG_LABEL = "Modbus";
 
+const TABLE_FORMAT_LABELS = {
+  uint16: "UInt16", int16: "Int16", hex: "HEX", uint32: "UInt32", int32: "Int32", float32: "Float32",
+};
+
 export function describeModbusRequest(request) {
   const code = String(request.functionCode).padStart(2, "0");
-  return `${i18n("modbus.slaveShort")} ${request.slaveId} · FC${code} · ${i18n("modbus.addrShort")} ${request.address} ×${request.quantity}`;
+  const last = request.address + request.quantity - 1;
+  const range = request.quantity > 1 ? `${request.address}–${last} (${request.quantity})` : String(request.address);
+  return `${i18n("modbus.slaveShort")} ${request.slaveId} · FC${code} · ${i18n("modbus.addrShort")} ${range}`;
 }
 
 export function describeModbusException(exceptionCode) {
@@ -106,12 +112,18 @@ export function createModbusController({ elements: e, getConfig, getSession, app
 
   function renderTable() {
     const config = normalizeModbusConfig(getConfig());
-    if (e.modbusTableWordOrder) e.modbusTableWordOrder.disabled = !isPairFormat(config.tableFormat);
+    const pairFormat = isPairFormat(config.tableFormat);
+    const wordOrderField = e.modbusTableWordOrder?.closest("label");
+    if (wordOrderField) wordOrderField.hidden = !pairFormat;
+    if (e.modbusTableValueHeader) {
+      const format = TABLE_FORMAT_LABELS[config.tableFormat] ?? i18n("modbus.table.binary");
+      e.modbusTableValueHeader.textContent = `${i18n("modbus.table.value")} · ${pairFormat ? `${format} ${config.tableWordOrder}` : format}`;
+    }
     if (!e.modbusRegisterRows) return;
     if (!table) {
       const row = document.createElement("tr");
       const cell = document.createElement("td");
-      cell.colSpan = 3;
+      cell.colSpan = 5;
       cell.className = "modbus-table-empty";
       cell.textContent = i18n("modbus.table.empty");
       row.append(cell);
@@ -124,20 +136,30 @@ export function createModbusController({ elements: e, getConfig, getSession, app
       wordOrder: config.tableWordOrder,
       previous: table.previous,
     });
-    e.modbusRegisterRows.replaceChildren(...rows.map((row) => {
+    const cell = (text, className) => {
+      const td = document.createElement("td");
+      td.textContent = text;
+      if (className) td.className = className;
+      return td;
+    };
+    e.modbusRegisterRows.replaceChildren(...rows.map((row, index) => {
       const tr = document.createElement("tr");
-      if (row.changed) tr.className = "changed";
-      const address = document.createElement("td");
-      address.append(String(row.address));
-      const hexAddress = document.createElement("small");
-      hexAddress.textContent = formatModbusAddress(row.address);
-      address.append(hexAddress);
-      const hex = document.createElement("td");
-      hex.textContent = row.hex;
-      const value = document.createElement("td");
-      value.textContent = row.continued ? "" : row.value;
-      if (row.continued) value.className = "continued";
-      tr.append(address, hex, value);
+      if (row.changed) tr.classList.add("changed");
+      // Stripe by register, or by register pair when a 32-bit value spans two rows.
+      if (Math.floor(index / (pairFormat ? 2 : 1)) % 2 === 1) tr.classList.add("alt");
+      tr.append(
+        cell(String(row.address), "num"),
+        cell(formatModbusAddress(row.address), "muted"),
+        cell(row.hex),
+      );
+      if (!row.continued) {
+        const value = cell(row.value, "num value");
+        value.title = row.value;
+        if (rows[index + 1]?.continued) value.rowSpan = 2;
+        tr.append(value);
+      }
+      // Trailing filler keeps the value next to its register on wide panels.
+      tr.append(cell(""));
       return tr;
     }));
     if (e.modbusTableMeta) {

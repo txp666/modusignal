@@ -115,14 +115,11 @@
   </section>
 
   <section class="panel modbus-table-panel">
-    <div class="panel-heading split">
-      <div>
-        <h2 data-i18n="modbus.table.title">寄存器表</h2>
-        <p id="modbusTableMeta" data-i18n="modbus.table.desc">每次读取成功后刷新，变化的值会高亮。</p>
-      </div>
+    <div class="modbus-table-header">
+      <h2 data-i18n="modbus.table.title">寄存器表</h2>
       <div class="modbus-table-options">
         <label>
-          <span data-i18n="modbus.table.format">显示格式</span>
+          <span data-i18n="modbus.table.format">显示</span>
           <select id="modbusTableFormat">
             <option value="uint16">UInt16</option>
             <option value="int16">Int16</option>
@@ -133,7 +130,7 @@
             <option value="float32">Float32</option>
           </select>
         </label>
-        <label>
+        <label hidden>
           <span data-i18n="modbus.wordOrder">字序</span>
           <select id="modbusTableWordOrder">
             <option value="ABCD">ABCD</option>
@@ -144,13 +141,23 @@
         </label>
       </div>
     </div>
+    <p id="modbusTableMeta" class="modbus-table-meta" data-i18n="modbus.table.desc">每次读取成功后刷新，变化的值会高亮。</p>
     <div class="modbus-table-wrap">
       <table class="modbus-register-table">
+        <colgroup>
+          <col class="col-address" />
+          <col class="col-hex-address" />
+          <col class="col-raw" />
+          <col class="col-value" />
+          <col />
+        </colgroup>
         <thead>
           <tr>
             <th scope="col" data-i18n="modbus.table.address">地址</th>
-            <th scope="col">HEX</th>
-            <th scope="col" data-i18n="modbus.table.value">值</th>
+            <th scope="col" data-i18n="modbus.table.hexAddress">HEX 地址</th>
+            <th scope="col" data-i18n="modbus.table.raw">原始值</th>
+            <th scope="col" id="modbusTableValueHeader" data-i18n="modbus.table.value">值</th>
+            <th aria-hidden="true"></th>
           </tr>
         </thead>
         <tbody id="modbusRegisterRows"></tbody>

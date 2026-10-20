@@ -429,9 +429,11 @@ const TRANSLATIONS = {
   "modbus.table.title": { zh: "寄存器表", en: "Register Table" },
   "modbus.table.desc": { zh: "每次读取成功后刷新，变化的值会高亮。", en: "Refreshed after each successful read; changed values are highlighted." },
   "modbus.table.empty": { zh: "读取成功后在此显示寄存器值", en: "Register values appear here after a successful read" },
-  "modbus.table.format": { zh: "显示格式", en: "Display" },
+  "modbus.table.format": { zh: "显示", en: "Display" },
   "modbus.table.binary": { zh: "二进制", en: "Binary" },
   "modbus.table.address": { zh: "地址", en: "Address" },
+  "modbus.table.hexAddress": { zh: "HEX 地址", en: "HEX Addr" },
+  "modbus.table.raw": { zh: "原始值", en: "Raw" },
   "modbus.table.value": { zh: "值", en: "Value" },
 
   // HART
