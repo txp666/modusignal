@@ -143,13 +143,12 @@ export function createCustomSetOutputCommand(state, config, helpers) {
   const normalized = normalizeCustomConfig(config);
   const modeConfig = createCustomProfile(normalized).modes.custom;
   const value = clamp(toFiniteNumber(state.setpoint, normalized.defaultValue), modeConfig.min, modeConfig.max);
-  const rendered = renderCommandTemplate(normalized.commandTemplate, {
-    value,
-    unit: modeConfig.unit,
-    mode: state.mode,
-  });
-
   try {
+    const rendered = renderCommandTemplate(normalized.commandTemplate, {
+      value,
+      unit: modeConfig.unit,
+      mode: state.mode,
+    });
     const bytes =
       normalized.commandFormat === "hex"
         ? helpers.parseHexPayload(rendered)

@@ -302,6 +302,7 @@ export function bytesToHex(bytes) {
 }
 
 export function resolveLineEnding(value) {
+  if (value === "\\r") return "\r";
   if (value === "\\n") {
     return "\n";
   }

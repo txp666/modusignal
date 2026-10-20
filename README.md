@@ -192,6 +192,12 @@ MicroScope Power 页面嵌入了 `pages/devices/microscope-power/` 下的浏览�
 
 ## 自定义设备
 
+“常用指令”页签支持文本（UTF-8）和 HEX，发送前可预览实际字节、字节数及追加的 Modbus CRC16 / SUM8 / XOR8。文本可选无行尾、LF、CR、CRLF；HEX 不追加行尾。校验覆盖全部内容（含文本行尾），CRC16 低字节在前；已有校验的报文应选择“无”，避免重复追加。
+
+可以保存最多 50 条命名指令，按需加载、修改或移除。指令库只保存在当前浏览器，可导出 JSON 备份；导入会合并内容并跳过完全相同的指令，不会自动发送。导入文件上限 512 KB，单条发送内容上限 8192 字符。
+
+定时发送支持 50–60000 ms 间隔，次数为 0 时持续发送，其余为 1–100000 次。第一条立即发送，此后在每次写入完成后等待指定间隔；成功计数表示传输写入完成，不表示设备已执行。点击停止、离开发送页签或页面、断开连接、写入失败都会停止后续发送；正在写入的报文不能撤回。浏览器后台计时可能延迟。编辑区支持 ⌘ / Ctrl + Enter 单次发送。
+
 不想写 JS 也能配一个驱动出来：
 
 - 输出范围、单位、步长
@@ -380,6 +386,12 @@ Ramp, square, triangle and sine periods are limited to `20..65535 ms` in 1 ms st
 Default 50 ms polling (about 20 points/s) provides low-rate command readback and cannot reconstruct a 50 Hz waveform. The setpoint preview is an ideal mathematical curve; verify output frequency, jitter, amplitude and settling time with a scope or acquisition device.
 
 ## Custom device
+
+The **Commands** tab sends UTF-8 text or HEX, with a byte preview and optional Modbus CRC16, SUM8 or XOR8. Text supports no ending, LF, CR or CRLF; HEX ignores line endings. Checksums cover the entire payload including text endings, with CRC16 low byte first. Choose no checksum when your frame already includes one.
+
+Save up to 50 named commands in this browser and export a JSON backup. Import merges commands and skips identical entries without sending anything. Limits: 512 KB per library and 8192 characters per payload.
+
+Timed sending accepts a 50–60000 ms delay after each completed write and a count of 1–100000 (0 means unlimited). The first send is immediate. Counts track completed transport writes, not device acknowledgments. Stop, leaving the sending tab/page, disconnecting or a write error cancels future sends; an in-flight write cannot be recalled. Background browser timers may be delayed. Use ⌘ / Ctrl + Enter in the editor to send once.
 
 If your device isn't built in, the *Custom* page lets you describe it without writing JS:
 

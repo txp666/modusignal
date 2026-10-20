@@ -79,6 +79,8 @@ export function createTransportController(options) {
     updatePollingUi,
     updateDeviceUi,
     detectHartLink,
+    onSessionEnding = () => {},
+    onConnectionChange = () => {},
   } = options;
   let transportOptions = {};
 
@@ -219,6 +221,7 @@ export function createTransportController(options) {
     updateSetpointUi();
     updatePollingUi();
     if (connected) updateDeviceUi();
+    onConnectionChange(connected);
   }
 
   function renderFields() {
@@ -276,6 +279,7 @@ export function createTransportController(options) {
   }
 
   async function setTransport(transportId) {
+    onSessionEnding();
     const current = getSession();
     if (current?.connected) {
       await current.disconnect().catch((error) => appendLog("error", i18n("log.connect"), error.message));
@@ -311,6 +315,7 @@ export function createTransportController(options) {
   }
 
   async function disconnect() {
+    onSessionEnding();
     await getSession()?.disconnect();
   }
 

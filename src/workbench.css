@@ -234,6 +234,46 @@
 .workspace .workspace-pane-tabs { display:flex; flex-wrap:wrap; gap:0; border-bottom:1px solid var(--line); flex:none; }
 .workspace .workspace-pane-tabs button { flex:1; min-height:40px; padding:8px 12px; border:0; border-bottom:2px solid transparent; border-radius:0; background:transparent; color:var(--muted); font-size:13px; }
 .workspace .workspace-pane-tabs button[aria-selected="true"] { border-bottom-color:var(--accent); color:var(--accent-strong); background:var(--surface-selected); }
+
+/* Custom serial commands use the existing page tabs, with one editor per task. */
+.workspace .custom-command-panel { display:grid; gap:12px; flex:none; }
+.workspace .custom-command-panel .panel-heading { margin:0; }
+.workspace .custom-command-panel label { margin:0; min-width:0; }
+.workspace .custom-command-library { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:end; gap:8px; }
+.workspace .custom-command-save { display:flex; align-items:center; gap:8px; }
+.workspace #customQuickSave { margin-left:auto; }
+.workspace .custom-command-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.workspace .custom-command-editor { display:grid; gap:6px; }
+.workspace .custom-command-editor textarea { min-height:72px; height:72px; resize:vertical; font:13px/1.5 ui-monospace,monospace; padding:8px 10px; }
+.workspace .custom-byte-preview { display:grid; gap:6px; min-width:0; padding:10px 12px; background:var(--surface-muted); border:1px solid var(--line); border-radius:6px; }
+.workspace .custom-byte-preview > div { display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px 12px; font-size:12px; }
+.workspace .custom-byte-preview strong { font-weight:600; }
+.workspace .custom-byte-preview code { display:block; min-height:36px; max-height:60px; overflow:auto; overflow-wrap:anywhere; white-space:pre-wrap; font:12px/1.5 ui-monospace,monospace; }
+.workspace .custom-command-panel :is(small,.custom-command-status) { font-size:11px; line-height:1.5; color:var(--muted); }
+.workspace .custom-command-panel .invalid { color:var(--red); }
+.workspace .custom-command-send, .workspace .custom-repeat-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.workspace #customQuickSend { background:var(--accent); color:var(--on-accent); border-radius:6px; min-width:100px; }
+.workspace .custom-repeat-section { border-top:1px solid var(--line); padding-top:12px; display:grid; gap:8px; }
+.workspace .custom-repeat-heading h3 { margin:0; font-size:13px; font-weight:600; }
+.workspace .custom-repeat-controls { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto auto; gap:8px; align-items:end; }
+.workspace .custom-command-status { margin:0; min-height:17px; }
+@media (min-width:1051px) {
+  .app-shell:not(.overview-page) .workspace .custom-command-panel { gap:6px; }
+  .app-shell:not(.overview-page) .workspace .custom-command-panel .panel-heading { margin-bottom:0; }
+  .app-shell .workspace .custom-command-editor textarea { height:48px; min-height:48px; }
+  .app-shell .workspace .custom-byte-preview { padding:8px 10px; }
+  .app-shell .workspace .custom-byte-preview code { min-height:20px; max-height:44px; }
+  .app-shell .workspace .custom-repeat-section { padding-top:8px; gap:6px; }
+}
+@media (max-width:600px) {
+  .workspace .custom-command-options { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .workspace .custom-command-options > label:last-child { grid-column:1/-1; }
+  .workspace .custom-repeat-controls { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .workspace .custom-command-panel :is(button,select,input) { min-height:44px; }
+}
+@media (min-width:1051px) and (max-height:800px) {
+  .app-shell:not(.overview-page) .workspace .custom-command-panel { gap:4px; }
+}
 .workspace .hart-workspace-grid.has-workspace-tabs { display:flex; flex-direction:column; gap:12px; }
 .workspace .hart-workspace-grid.has-workspace-tabs > article { order:0; grid-column:auto; }
 .workspace .hart-workspace-grid.has-workspace-tabs .hart-tool-fields { grid-template-columns:repeat(3,minmax(0,1fr)); }

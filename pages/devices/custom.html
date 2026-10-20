@@ -1,4 +1,54 @@
 <section id="customPage" class="device-page" data-page-id="custom" data-compact-tabs="custom">
+  <section class="panel custom-command-panel">
+    <div class="panel-heading split">
+      <div>
+        <h2 data-i18n="customTools.title">常用指令</h2>
+        <p id="customQuickConnection">连接设备后可发送</p>
+      </div>
+      <div class="panel-actions">
+        <button id="customQuickImport" class="ghost-button" type="button" data-i18n="customTools.import">导入</button>
+        <button id="customQuickExport" class="ghost-button" type="button" data-i18n="customTools.export">导出</button>
+        <input id="customQuickFile" type="file" accept=".json,application/json" hidden />
+      </div>
+    </div>
+    <div class="custom-command-library">
+      <label><span data-i18n="customTools.library">已存指令</span><select id="customQuickLibrary"></select></label>
+      <label><span data-i18n="customTools.name">指令名称</span><input id="customQuickName" type="text" maxlength="60" data-i18n-placeholder="customTools.namePlaceholder" placeholder="例如：读取版本" /></label>
+    </div>
+    <div class="custom-command-save">
+      <button id="customQuickNew" class="ghost-button" type="button" data-i18n="customTools.new">新建</button>
+      <button id="customQuickDelete" class="ghost-button" type="button" data-i18n="customTools.remove">移除</button>
+      <button id="customQuickSave" class="ghost-button" type="button" data-i18n="customTools.save">保存指令</button>
+    </div>
+    <div class="custom-command-options">
+      <label><span data-i18n="custom.format">格式</span><select id="customQuickFormat"><option value="ascii" data-i18n="customTools.text">文本 UTF-8</option><option value="hex">HEX</option></select></label>
+      <label><span data-i18n="custom.lineEnding">行尾</span><select id="customQuickEnding"><option value="" data-i18n="common.none">无</option><option value="\n">LF</option><option value="\r">CR</option><option value="\r\n" selected>CRLF</option></select></label>
+      <label><span data-i18n="customTools.checksum">追加校验</span><select id="customQuickChecksum"><option value="none" data-i18n="common.none">无</option><option value="modbus">Modbus CRC16</option><option value="sum8">SUM8</option><option value="xor8">XOR8</option></select></label>
+    </div>
+    <div class="custom-command-editor">
+      <div class="custom-command-send">
+        <label for="customQuickPayload" data-i18n="customTools.payload">发送内容</label>
+        <button id="customQuickSend" type="button" disabled data-i18n="customTools.send" data-i18n-title="customTools.shortcut" title="⌘ / Ctrl + Enter 发送">发送一次</button>
+      </div>
+      <textarea id="customQuickPayload" rows="3" maxlength="8192" spellcheck="false" data-i18n-placeholder="customTools.payloadPlaceholder" placeholder="文本：READ?　HEX：01 03 00 00 00 02"></textarea>
+    </div>
+    <div class="custom-byte-preview">
+      <div><strong data-i18n="customTools.preview">发送字节预览</strong><span id="customQuickBytes">0 B</span></div>
+      <code id="customQuickPreview"></code>
+      <small data-i18n="customTools.checksumHelp">校验覆盖全部发送内容（含文本行尾）；CRC16 低字节在前。HEX 不追加行尾。</small>
+    </div>
+    <div class="custom-repeat-section">
+      <div class="custom-repeat-heading"><h3 data-i18n="customTools.repeat">定时发送</h3><span id="customQuickRunStatus" class="state-pill" role="status"></span></div>
+      <div class="custom-repeat-controls">
+        <label><span data-i18n="customTools.interval">间隔 / ms</span><input id="customQuickInterval" type="number" min="50" max="60000" step="1" value="1000" /></label>
+        <label><span data-i18n="customTools.limit">次数 / 0 为不限</span><input id="customQuickLimit" type="number" min="0" max="100000" step="1" value="10" /></label>
+        <button id="customQuickStart" class="ghost-button" type="button" disabled data-i18n="customTools.start">开始</button>
+        <button id="customQuickStop" class="ghost-button" type="button" disabled data-i18n="customTools.stop">停止</button>
+      </div>
+      <small data-i18n="customTools.repeatHelp">每次写入完成后计时；离开本页、断开或出错即停止。</small>
+    </div>
+    <p id="customQuickStatus" class="custom-command-status" role="status"></p>
+  </section>
   <section class="panel control-panel">
     <div class="panel-heading split">
       <div>
@@ -99,6 +149,7 @@
         <select id="customCommandLineEnding">
           <option value="" data-i18n="common.none">无</option>
           <option value="\n">LF</option>
+          <option value="\r">CR</option>
           <option value="\r\n" selected>CRLF</option>
         </select>
       </label>

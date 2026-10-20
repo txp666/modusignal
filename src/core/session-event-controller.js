@@ -52,6 +52,7 @@ export function createSessionEventController(options) {
     });
 
     target.addEventListener("disconnected", () => {
+      getControllers().customCommandUi?.stop("disconnected");
       const { pollingController, hartSessionController, transportController, messageDebugController } = getControllers();
       state.pollingActive = false;
       pollingController.stopAll();
@@ -69,6 +70,7 @@ export function createSessionEventController(options) {
     target.addEventListener("rx", (event) => handleRx(event.detail));
     target.addEventListener("tx", (event) => handleTx(event.detail));
     target.addEventListener("error", (event) => {
+      getControllers().customCommandUi?.stop("failed");
       appendLog("error", i18n("log.error"), event.detail.error?.message ?? String(event.detail.error));
     });
   }

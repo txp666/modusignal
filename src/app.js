@@ -31,6 +31,7 @@ import {
 } from "./features/custom/custom-config-ui.js";
 import { bindAppEvents } from "./ui/app-event-bindings.js";
 import { createMessageDebugController } from "./features/message-debug/message-debug-controller.js";
+import { createCustomCommandUi } from "./features/custom/custom-command-ui.js";
 import { DEFAULT_TRANSPORT_ID } from "./transports/registry.js";
 import {
   AOMASTER_DEVICE_ID,
@@ -132,6 +133,7 @@ let transportController = null;
 let pollingController = null;
 let debugCurveController = null;
 let customConfigUi = null;
+let customCommandUi = null;
 let messageDebugController = null;
 let sessionEventController = null;
 let themeController = null;
@@ -318,6 +320,7 @@ async function refreshHartLinkReleaseSummary() {
 }
 
 function refreshAllDynamicUi() {
+  customCommandUi?.localize();
   sidebarController.refreshLabels();
   deviceNavigationUi.renderLibrary();
   deviceNavigationUi.renderHomeCards();
@@ -379,6 +382,12 @@ function initializeInfrastructureControllers() {
     getLogElement: () => elements.serialLog,
     bytesToHex,
   });
+  customCommandUi = createCustomCommandUi({
+    elements,
+    getSession: () => session,
+    isActive: () => state.deviceId === CUSTOM_DEVICE_ID && state.pageId === CUSTOM_DEVICE_ID,
+    appendLog,
+  });
   sessionEventController = createSessionEventController({
     elements,
     state,
@@ -403,6 +412,7 @@ function initializeInfrastructureControllers() {
       messageDebugController,
       pollingController,
       transportController,
+      customCommandUi,
     }),
     updateHartDeviceInfo,
     updateDeviceUi,
@@ -551,6 +561,8 @@ function initializeInfrastructureControllers() {
     state,
     getConfigs: () => ({ customConfig, modbusConfig }),
     getSession: () => session,
+    onSessionEnding: () => customCommandUi.stop("disconnected"),
+    onConnectionChange: () => customCommandUi.refresh(),
     setSession: (nextSession) => {
       session = nextSession;
     },
@@ -661,6 +673,7 @@ function safeUpdateDeviceUi() {
 }
 
 function activateDevice(deviceId) {
+  customCommandUi?.stop();
   hartSessionController.resetLinkProbe();
   const standalone = isStandaloneDevice(deviceId);
   state.pollingActive = false;
@@ -714,6 +727,7 @@ function activateDevice(deviceId) {
 }
 
 function showPage(pageId, { source }) {
+  if (pageId !== CUSTOM_DEVICE_ID) customCommandUi?.stop();
   if (DEVICE_PAGE_IDS.includes(pageId) && activatedDeviceId !== pageId) {
     activateDevice(pageId);
     activatedDeviceId = pageId;
@@ -742,6 +756,7 @@ function resetViewportScroll() {
 }
 
 function updateDeviceUi() {
+  customCommandUi?.refresh();
   chartController.bindConfigEvents();
   chartController.updatePointLabels();
   const profile = getDeviceProfile(state.deviceId, customConfig, modbusConfig);
@@ -757,7 +772,7 @@ function updateDeviceUi() {
   const modbusIsRead = isModbus && isReadFunctionCode(normalizedModbus.functionCode);
 
   if (elements.customDeviceNavName) {
-    elements.customDeviceNavName.textContent = normalizeCustomConfig(customConfig).name;
+    elements.customDeviceNavName.textContent = getDeviceProfile(CUSTOM_DEVICE_ID, customConfig, modbusConfig).name;
   }
 
   const setpointRow = queryDeviceField("setpointRow");
