@@ -9,11 +9,6 @@ import {
   formatHartDeviceSummary,
   getHartCommandLabel,
   parseCommand0Device,
-  parseHartCommand1Variables,
-  parseHartCommand9Variables,
-  parseHartCommand33Variables,
-  parseHartCommand3Variables,
-  parseHartTelemetryValue,
   parseHartUniversalResponse,
   PRIMARY_MASTER,
   SECONDARY_MASTER,
@@ -69,6 +64,7 @@ export const DEFAULT_HART_CONFIG = {
   scale: 1,
   offset: 0,
   pollIntervalMs: 1000,
+  responseTimeoutMs: 1000,
   preambleLength: 5,
   chartSeries: {
     pv: true,
@@ -85,8 +81,6 @@ export const HART_VARIABLE_CARDS = [
   { key: "tv", label: "TV", subtitle: "Tertiary Variable", defaultUnit: "", color: "#b45309" },
   { key: "qv", label: "QV", subtitle: "Quaternary Variable", defaultUnit: "", color: "#9c27b0" },
 ];
-
-export const HART_DYNAMIC_VARIABLE_KEYS = ["pv", "sv", "tv", "qv"];
 
 let rxBuffer = new Uint8Array(0);
 
@@ -562,6 +556,7 @@ export function normalizeHartConfig(config = {}) {
     scale: toFiniteNumber(merged.scale, DEFAULT_HART_CONFIG.scale),
     offset: toFiniteNumber(merged.offset, DEFAULT_HART_CONFIG.offset),
     pollIntervalMs: Math.max(0, Math.trunc(toFiniteNumber(merged.pollIntervalMs, DEFAULT_HART_CONFIG.pollIntervalMs))),
+    responseTimeoutMs: clamp(Math.trunc(toFiniteNumber(merged.responseTimeoutMs, DEFAULT_HART_CONFIG.responseTimeoutMs)), 100, 10000),
     pollMode: merged.pollMode === "dynamic" ? "dynamic" : "pv",
     preambleLength: normalizePreambleLength(merged.preambleLength),
     chartSeries: normalizeChartSeries(merged.chartSeries),
@@ -575,15 +570,6 @@ export function normalizeHartConfig(config = {}) {
 
 export function getHartActiveCommand(config = DEFAULT_HART_CONFIG) {
   return normalizeHartConfig(config).activeCommand;
-}
-
-export function formatHartCommandPreview(bytes, bytesToHex) {
-  if (!bytes?.length) {
-    return "";
-  }
-
-  const checksum = bytes[bytes.length - 1];
-  return `${bytesToHex(bytes)} · 校验 0x${checksum.toString(16).toUpperCase().padStart(2, "0")}`;
 }
 
 export function createHartProfile() {
@@ -622,7 +608,7 @@ export function createHartSearchCommand(config, helpers) {
 
   return {
     supported: true,
-    preview: formatHartCommandPreview(bytes, helpers.bytesToHex),
+    preview: helpers.bytesToHex(bytes),
     bytes,
     checksum: bytes[bytes.length - 1],
   };
@@ -706,7 +692,7 @@ function createHartCommandBytes(normalized, command, helpers) {
 
   return {
     supported: true,
-    preview: formatHartCommandPreview(bytes, helpers.bytesToHex),
+    preview: helpers.bytesToHex(bytes),
     bytes,
     checksum: bytes[bytes.length - 1],
     command,
@@ -718,32 +704,34 @@ function createHartCommandBytes(normalized, command, helpers) {
 
 export function validateHartCommandData(command, data = new Uint8Array(0)) {
   const length = data?.length ?? 0;
-  const exact = (expected) =>
-    length === expected ? null : `${getHartCommandLabel(command)}：请求数据必须为 ${expected} 字节（当前 ${length} 字节）`;
-  const range = (minimum, maximum, description) =>
-    length >= minimum && length <= maximum
-      ? null
-      : `${getHartCommandLabel(command)}：请求数据${description}（当前 ${length} 字节）`;
+  const message = (key, values = {}) =>
+    Object.entries({ command: getHartCommandLabel(command), length, ...values }).reduce(
+      (text, [name, value]) => text.replace(`{${name}}`, String(value)),
+      i18n(key),
+    );
+  const exact = (expected) => (length === expected ? null : message("hart.payload.exact", { expected }));
+  const either = (first, second) => ([first, second].includes(length) ? null : message("hart.payload.either", { first, second }));
+  const codes = (max) => (length >= 1 && length <= max ? null : message("hart.payload.variableCodes", { max }));
 
   if ([0, 1, 2, 3, 7, 8, 12, 13, 14, 15, 16, 20, 43, 50].includes(command)) return exact(0);
-  if (command === 6) return [1, 2].includes(length) ? null : `${getHartCommandLabel(command)}：请求数据必须为 1 或 2 字节`;
-  if (command === 9) return range(1, 8, "必须包含 1–8 个设备变量码");
+  if (command === 6) return either(1, 2);
+  if (command === 9) return codes(8);
   if (command === 11) return exact(6);
   if (command === 17) return exact(24);
   if (command === 18) return exact(21);
   if (command === 19) return exact(3);
   if (command === 21 || command === 22) return exact(32);
-  if (command === 33) return range(1, 4, "必须包含 1–4 个设备变量码");
+  if (command === 33) return codes(4);
   if ([34, 40, 45, 46].includes(command)) return exact(4);
   if (command === 35) return exact(9);
-  if (command === 38) return [0, 2].includes(length) ? null : `${getHartCommandLabel(command)}：请求数据必须为空或为 2 字节计数器`;
+  if (command === 38) return either(0, 2);
   if ([44, 47, 81].includes(command)) return exact(1);
-  if (command === 48) return length === 0 || (length >= 9 && length <= 25) ? null : `${getHartCommandLabel(command)}：请求数据必须为空或为 9–25 字节状态镜像`;
+  if (command === 48) return length === 0 || (length >= 9 && length <= 25) ? null : message("hart.payload.statusMirror");
   if (command === 82) return exact(7);
-  if (command === 105) return [0, 1].includes(length) ? null : `${getHartCommandLabel(command)}：请求数据必须为空或为 1 字节消息号`;
-  if (command === 108) return [1, 3].includes(length) ? null : `${getHartCommandLabel(command)}：请求数据必须为 1 或 3 字节`;
-  if (command === 109) return [1, 2].includes(length) ? null : `${getHartCommandLabel(command)}：请求数据必须为 1 或 2 字节`;
-  return length <= 0xff ? null : `${getHartCommandLabel(command)}：请求数据不能超过 255 字节`;
+  if (command === 105) return either(0, 1);
+  if (command === 108) return either(1, 3);
+  if (command === 109) return either(1, 2);
+  return length <= 0xff ? null : message("hart.payload.tooLong");
 }
 
 export function parseHartTelemetry(bytes, config) {
@@ -751,62 +739,52 @@ export function parseHartTelemetry(bytes, config) {
     return null;
   }
 
-  const normalized = normalizeHartConfig(config);
   rxBuffer = concatBytes(rxBuffer, bytes);
   const { frames, remaining } = extractHartFrames(rxBuffer);
   rxBuffer = remaining;
 
   for (const parsed of frames) {
-    if (parsed.command === 0) {
-      const device = parseCommand0Device(parsed);
-      if (device) {
-        return {
-          fieldName: i18n("hart.mode.deviceId"),
-          unit: "",
-          value: device.deviceId,
-          rawValue: device.deviceId,
-          device,
-          pollAddress: parsed.pollAddress,
-          isDiscovery: true,
-        };
-      }
-      continue;
-    }
-
-    if (!matchesHartResponseAddress(parsed, normalized)) {
-      continue;
-    }
-
-    if (parsed.command === normalized.activeCommand) {
-      const universal = parseHartUniversalResponse(parsed);
-      if (universal) {
-        return buildHartUniversalTelemetry(normalized, universal, parsed);
-      }
-
-      const telemetry = parseHartTelemetryValue(parsed, normalized.activeCommand);
-      if (!telemetry) {
-        continue;
-      }
-
-      return attachHartFrameStatus(
-        {
-          fieldName: normalized.fieldName || telemetry.fieldName,
-          unit: normalized.unit || telemetry.unit,
-          value: telemetry.value * normalized.scale + normalized.offset,
-          rawValue: telemetry.rawValue,
-          extra: telemetry.extra,
-        },
-        parsed,
-      );
-    }
-
-    const multi = parseHartMultiVariables(parsed, normalized);
-    if (multi) {
-      return attachHartFrameStatus(multi, parsed);
+    const telemetry = interpretHartFrame(parsed, config);
+    if (telemetry) {
+      return telemetry;
     }
   }
 
   return null;
+}
+
+/** Turns one slave frame (a response or a burst message) into telemetry; null when it carries nothing to show. */
+export function interpretHartFrame(parsed, config) {
+  if (!parsed) {
+    return null;
+  }
+
+  const normalized = normalizeHartConfig(config);
+  if (parsed.command === 0) {
+    const device = parseCommand0Device(parsed);
+    if (device) {
+      const universal = parseHartUniversalResponse(parsed);
+      return {
+        fieldName: i18n("hart.mode.deviceId"),
+        unit: "",
+        value: device.deviceId,
+        rawValue: device.deviceId,
+        device,
+        pollAddress: parsed.pollAddress,
+        isDiscovery: true,
+        command: 0,
+        commandSummary: universal?.summary ?? "",
+        commandLines: universal?.lines ?? [],
+      };
+    }
+  }
+
+  if (!matchesHartResponseAddress(parsed, normalized)) {
+    return null;
+  }
+
+  const universal = parseHartUniversalResponse(parsed);
+  return universal ? buildHartUniversalTelemetry(normalized, universal, parsed) : null;
 }
 
 function buildHartUniversalTelemetry(config, universal, parsed) {
@@ -889,114 +867,6 @@ function attachHartFrameStatus(telemetry, parsed) {
     commandLines,
     hartResponseCode: parsed.responseCode,
     hartDeviceStatus: parsed.status,
-  };
-}
-
-function parseHartMultiVariables(parsed, config) {
-  if (parsed.command === 1 && parsed.byteCount >= 5) {
-    const variables = parseHartCommand1Variables(parsed.data);
-    if (!variables?.pv) {
-      return null;
-    }
-
-    return buildHartMultiTelemetry(config, {
-      pv: applyHartVariableScale(variables.pv, config),
-    });
-  }
-
-  if (parsed.command === 3 && parsed.byteCount >= 24) {
-    const variables = parseHartCommand3Variables(parsed.data);
-    if (!variables) {
-      return null;
-    }
-
-    return buildHartMultiTelemetry(config, {
-      pv: applyHartVariableScale(variables.pv, config),
-      sv: variables.sv,
-      tv: variables.tv,
-      qv: variables.qv,
-    });
-  }
-
-  if (parsed.command === 9) {
-    const variables = parseHartCommand9Variables(parsed.data);
-    if (!variables) {
-      return null;
-    }
-
-    return buildHartMultiTelemetry(
-      config,
-      Object.fromEntries(
-        Object.entries(variables.variables).map(([key, entry]) => [
-          key,
-          key === "pv" ? applyHartVariableScale(entry, config) : entry,
-        ]),
-      ),
-    );
-  }
-
-  if (parsed.command === 33) {
-    const variables = parseHartCommand33Variables(parsed.data);
-    if (!variables) {
-      return null;
-    }
-
-    return buildHartMultiTelemetry(
-      config,
-      Object.fromEntries(
-        Object.entries(variables.variables).map(([key, entry]) => [
-          key,
-          key === "pv" ? applyHartVariableScale(entry, config) : entry,
-        ]),
-      ),
-    );
-  }
-
-  return null;
-}
-
-function buildHartMultiTelemetry(config, variables) {
-  const normalized = {};
-  for (const key of HART_DYNAMIC_VARIABLE_KEYS) {
-    const entry = variables[key];
-    if (!entry || !Number.isFinite(entry.value)) {
-      continue;
-    }
-
-    normalized[key] = {
-      value: entry.value,
-      unit: entry.unit || "",
-    };
-  }
-
-  if (Object.keys(normalized).length === 0) {
-    return null;
-  }
-
-  const primary = normalized.pv ?? Object.values(normalized)[0];
-  const commandLines = HART_DYNAMIC_VARIABLE_KEYS.filter((key) => normalized[key]).map(
-    (key) => `${key.toUpperCase()} ${normalized[key].value.toFixed(3)}${normalized[key].unit ? ` ${normalized[key].unit}` : ""}`,
-  );
-  return {
-    isMulti: true,
-    variables: normalized,
-    fieldName: "PV",
-    unit: primary.unit,
-    value: primary.value,
-    rawValue: primary.value,
-    commandSummary: commandLines.join(" · "),
-    commandLines,
-  };
-}
-
-function applyHartVariableScale(entry, config) {
-  if (!entry) {
-    return null;
-  }
-
-  return {
-    value: entry.value * config.scale + config.offset,
-    unit: config.unit || entry.unit || "",
   };
 }
 

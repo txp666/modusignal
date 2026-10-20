@@ -36,7 +36,9 @@ Lower layers must not import `app.js` or reach into its mutable state. Controlle
 - `core/polling-controller.js` owns polling eligibility, timers, and polling status UI across devices.
 - `core/session-event-controller.js` owns transport session events, receive/transmit logging, parser dispatch, and telemetry routing.
 - `features/hart/`, `features/aomaster/`, `features/modbus/`, `features/custom/`, and `features/message-debug/` own device/workflow UI behavior.
-- `features/modbus/modbus-master.js` owns the Modbus RTU master session: one request in flight, response matching, exception/timeout results, statistics and the request/response polling loop. `modbus-controller.js` renders its status and the register table; `register-table.js` holds the pure value formatting.
+- `framing/request-master.js` is the request/response master shared by Modbus and HART: one request in flight, response matching through a protocol adapter, exception/timeout results, statistics and the polling loop.
+- `features/modbus/modbus-master.js` adapts it to Modbus RTU. `modbus-controller.js` renders its status and the register table; `register-table.js` holds the pure value formatting.
+- `features/hart/hart-master-controller.js` adapts it to HART (responses matched by address, master and command; replies still arriving are not cut off) and renders the HART exchange status. Search and scan (`hart-session-controller.js`), polling, commands and the settings/calibration workspace all send through it; every received frame, including burst messages, goes to `hart-monitor-controller.js`.
 - `features/aomaster/aomaster-controller.js` owns AOMaster configuration, value/percent presentation, readback state, and polling reads; waveform editing stays in `aomaster-waveform-ui.js`.
 - `monitoring/chart-controller.js` owns chart instances, single/multi-series switching, point limits, resize behavior, summaries, and chart configuration persistence.
 - `monitoring/chart-csv-controller.js` owns CSV import/export orchestration while `chart-csv.js` remains the pure data layer.

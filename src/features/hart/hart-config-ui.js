@@ -149,6 +149,7 @@ export function createHartConfigUi({ elements, getConfig, populateWorkspaceContr
       fieldName: elements.hartFieldName.value,
       unit: elements.hartUnit.value,
       pollIntervalMs: elements.hartPollIntervalMs.value,
+      responseTimeoutMs: elements.hartResponseTimeoutMs?.value ?? current.responseTimeoutMs,
       chartSeries: readChartSeriesFromControls(),
     });
   }
@@ -171,6 +172,7 @@ export function createHartConfigUi({ elements, getConfig, populateWorkspaceContr
     elements.hartFieldName.value = normalized.fieldName;
     elements.hartUnit.value = normalized.unit;
     elements.hartPollIntervalMs.value = String(normalized.pollIntervalMs);
+    if (elements.hartResponseTimeoutMs) elements.hartResponseTimeoutMs.value = String(normalized.responseTimeoutMs);
     populateWorkspaceControls(normalized);
     updateDeviceInfo();
   }
@@ -190,6 +192,7 @@ export function createHartConfigUi({ elements, getConfig, populateWorkspaceContr
       elements.hartFieldName,
       elements.hartUnit,
       elements.hartPollIntervalMs,
+      elements.hartResponseTimeoutMs,
     ];
   }
 

@@ -198,6 +198,14 @@ MicroScope Power 页面嵌入了 `pages/devices/microscope-power/` 下的浏览�
 
 写入时直接输入值，多个值用逗号或空格分隔，支持负数（补码）和 `0x` 十六进制，也可按 32 位整数或 Float32 编码。功能码 06 只写 1 个 16 位值；功能码 16 写入的寄存器数量由输入的值决定，不会对相邻寄存器补零。
 
+## HART
+
+搜索、扫描、轮询、通用命令以及仪表设置 / 校正操作都按“一问一答”进行：每个请求都等到设备应答或超时后才发下一条，轮询间隔是两次请求的起始间隔（最小间隙 50 ms）；轮询期间发送的命令排在当前请求之后，不会与应答相撞。应答超时在“高级设置”中，默认 1000 ms，可设 100–10000 ms，计算到设备开始应答为止；应答正在接收时会等它收完（1200 bit/s 下长帧需要 2 秒以上）。页面统计请求、成功、错误、超时次数和最近一次响应时间；错误应答显示响应码及含义（如 `0x07 写保护`、`0x20 设备忙`），超时会区分“未收到任何数据”“收到字节但没有有效应答帧”“收到的帧不是本次请求的应答”。收发调试区手动发送的 HART 请求帧同样会被匹配和计时。
+
+“扫描 0-15”逐个地址发送 Cmd 0，找到第一台设备即停止，扫描时同一按钮用于停止。“通用命令应答”只显示最近一次命令的应答，轮询数据显示在 PV/SV/TV/QV 卡片和曲线中。处于 Burst 模式的设备主动发出的数据也会更新卡片和曲线，但请求不会按 Burst 时序发送，可能与 Burst 帧冲突而超时。
+
+“仪表设置”和“输入输出校正”页签顶部显示该页最近一次操作的结果（应答内容、错误或超时原因）；写操作发送前需确认。
+
 ## 自定义设备
 
 “常用指令”页签上方直接列出已存指令，每行显示名称、内容和字节数：点右侧“发送”即按保存时的格式、行尾和校验发出一次，不影响编辑区；点名称则载入下方编辑区修改。编辑区支持文本（UTF-8）和 HEX，发送前可预览实际字节、字节数及追加的 Modbus CRC16 / SUM8 / XOR8。文本可选无行尾、LF、CR、CRLF；HEX 不追加行尾。校验覆盖全部内容（含文本行尾），CRC16 低字节在前；已有校验的报文应选择“无”，避免重复追加。
@@ -404,6 +412,14 @@ Reads (03/04) and polling are strictly request/response: each request waits for 
 The register table shows the address, raw HEX and value of the latest successful read as UInt16, Int16, HEX, binary, or UInt32 / Int32 / Float32 in ABCD, CDAB, BADC or DCBA word order, highlighting values that changed.
 
 To write, type the values separated by commas or spaces; negatives (two's complement) and `0x` hex are accepted, and values can be encoded as 32-bit integers or Float32. FC06 writes one 16-bit value; FC16 writes exactly as many registers as the values need and never zero-pads neighbouring registers.
+
+## HART
+
+Search, scan, polling, commands and the instrument settings / calibration actions are all request/response: each request waits for the device's answer or a timeout before the next is sent, the poll interval is the time between request starts (at least a 50 ms gap), and a command sent while polling waits its turn instead of colliding with a reply. The response timeout (under Advanced Settings) defaults to 1000 ms (100–10000 ms) and runs until the device starts answering; a reply already arriving is received in full (a long frame takes over 2 s at 1200 bit/s). The page counts requests, successes, errors and timeouts and shows the latest response time. Error answers show their response code and meaning (e.g. `0x07 In Write Protect Mode`, `0x20 Busy`); timeouts tell apart "no data", "bytes but no valid response frame" and "frames that did not answer this request". HART request frames sent from the manual sender are matched and timed too.
+
+**Scan 0-15** sends Cmd 0 to each address in turn and stops at the first device; while it runs, the same button stops it. **Command Response** shows the answer to the latest command only; poll data goes to the PV/SV/TV/QV cards and the chart. Data sent by a device in burst mode also updates the cards and chart, but requests are not timed around burst messages, so one may collide with a burst and time out.
+
+The Instrument Settings and I/O Calibration tabs show the outcome of their latest action at the top (the answer, an error or the timeout cause); writes ask for confirmation before they are sent.
 
 ## Custom device
 

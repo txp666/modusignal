@@ -19,7 +19,8 @@ export function createHartWorkspaceController({
   populateConfigForm,
   updateDeviceUi,
   sendSearchCommand,
-  sendDeviceCommand,
+  sendCommand,
+  describeResult,
 }) {
   let workspace = "general";
   let calibrationState = EMPTY_CALIBRATION_STATE();
@@ -117,6 +118,23 @@ export function createHartWorkspaceController({
     element.dataset.state = stateName;
   }
 
+  /**
+   * Answers update the status from their telemetry; what never produces one (no reply,
+   * a declined write, an invalid value, an answer without data to show) is reported here.
+   */
+  function reportResult(element, result) {
+    if (!element || element.dataset.state !== "pending") return;
+    if (!result) {
+      setStatus(element, i18n("hart.workspace.notSent"), "error");
+    } else if (result.status === "declined") {
+      setStatus(element, i18n("hart.writeCancelled"));
+    } else if (result.status === "invalid") {
+      setStatus(element, result.message, "error");
+    } else {
+      setStatus(element, describeResult(result), result.status === "ok" ? "success" : "error");
+    }
+  }
+
   function readNumber(element, label, minimum = -Infinity, maximum = Infinity) {
     const value = Number(element?.value);
     if (!Number.isFinite(value) || value < minimum || value > maximum) {
@@ -130,8 +148,8 @@ export function createHartWorkspaceController({
     if (command !== 0 && !normalizeHartConfig(getConfig()).device.discovered) throw new Error(i18n("hart.searchFirst"));
 
     if (command === 0) {
-      setStatus(statusElement, i18n("hart.workspace.sending").replace("{command}", "0"));
-      await sendSearchCommand();
+      setStatus(statusElement, i18n("hart.workspace.sending").replace("{command}", "0"), "pending");
+      reportResult(statusElement, await sendSearchCommand());
       return;
     }
 
@@ -149,17 +167,29 @@ export function createHartWorkspaceController({
     setConfig(nextConfig);
     populateConfigForm(nextConfig);
     updateDeviceUi();
-    setStatus(statusElement, i18n("hart.workspace.sending").replace("{command}", String(command)));
-    await sendDeviceCommand();
+    setStatus(statusElement, i18n("hart.workspace.sending").replace("{command}", String(command)), "pending");
+    reportResult(statusElement, await sendCommand());
   }
 
+  /** Runs a workspace button; a value or state that stops it is shown in that tab's status too. */
   async function handleAction(action) {
+    const button = elements.hartWorkspaceActions.find((entry) => entry.dataset.hartWorkspaceAction === action);
+    const panel = button?.closest("[data-hart-workspace-panel]")?.dataset.hartWorkspacePanel;
+    try {
+      return await runAction(action);
+    } catch (error) {
+      setStatus(panel === "calibration" ? elements.hartCalibrationStatus : elements.hartSettingsStatus, error.message, "error");
+      throw error;
+    }
+  }
+
+  async function runAction(action) {
     const settingsStatus = elements.hartSettingsStatus;
     const calibrationStatus = elements.hartCalibrationStatus;
     switch (action) {
       case "read-identity": return sendWorkspaceCommand(0, {}, settingsStatus);
-      case "read-sensor": return sendWorkspaceCommand(14, {}, elements.hartSettingsMeasurementStatus);
-      case "read-config": return sendWorkspaceCommand(15, {}, elements.hartSettingsMeasurementStatus);
+      case "read-sensor": return sendWorkspaceCommand(14, {}, settingsStatus);
+      case "read-config": return sendWorkspaceCommand(15, {}, settingsStatus);
       case "write-unit": return sendWorkspaceCommand(44, { unit_code: elements.hartSettingsUnit?.value }, settingsStatus);
       case "write-range":
         return sendWorkspaceCommand(35, {
@@ -259,9 +289,6 @@ export function createHartWorkspaceController({
 
     if ([6, 12, 13, 14, 15, 16, 17, 18, 19, 34, 35, 44, 47, 105, 108, 109].includes(command)) {
       setStatus(elements.hartSettingsStatus, summary, telemetry.isError ? "error" : "success");
-    }
-    if ([14, 15, 34, 35, 44, 47].includes(command)) {
-      setStatus(elements.hartSettingsMeasurementStatus, summary, telemetry.isError ? "error" : "success");
     }
     if (!telemetry.isError && fields) {
       if ((command === 12 || command === 17) && elements.hartSettingsMessage) elements.hartSettingsMessage.value = fields.message ?? "";

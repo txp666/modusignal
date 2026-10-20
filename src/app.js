@@ -59,8 +59,10 @@ import {
 } from "./devices/hart-device.js";
 import {
   formatHartDeviceSummary,
+  getHartCommandLabel,
 } from "./hart/hart.js";
 import { createHartConfigUi } from "./features/hart/hart-config-ui.js";
+import { createHartMasterController, describeHartTransaction } from "./features/hart/hart-master-controller.js";
 import { createHartMonitorController } from "./features/hart/hart-monitor-controller.js";
 import { createHartSessionController } from "./features/hart/hart-session-controller.js";
 import { createHartWorkspaceController } from "./features/hart/hart-workspace-controller.js";
@@ -115,6 +117,7 @@ let websocketConfig = loadMessageConfig(
 let mqttConfig = loadMessageConfig(MQTT_CONFIG_STORAGE_KEY, DEFAULT_MQTT_CONFIG, normalizeMqttConfig);
 let session = null;
 let hartConfigUi = null;
+let hartMasterController = null;
 let hartMonitorController = null;
 let hartSessionController = null;
 let hartWorkspaceController = null;
@@ -323,6 +326,7 @@ async function refreshHartLinkReleaseSummary() {
 function refreshAllDynamicUi() {
   customCommandUi?.localize();
   modbusController.localize();
+  hartMasterController.localize();
   sidebarController.refreshLabels();
   deviceNavigationUi.renderLibrary();
   deviceNavigationUi.renderHomeCards();
@@ -402,24 +406,17 @@ function initializeInfrastructureControllers() {
       mqttConfig,
       aomasterConfig: aomasterController.getConfig(),
     }),
-    setHartConfig: (config) => {
-      hartConfig = config;
-    },
     getControllers: () => ({
       aomasterController,
       chartController,
-      hartConfigUi,
-      hartMonitorController,
+      hartMasterController,
       hartSessionController,
-      hartWorkspaceController,
       messageDebugController,
       pollingController,
       transportController,
       customCommandUi,
       modbusController,
     }),
-    updateHartDeviceInfo,
-    updateDeviceUi,
     queueRxLogDisplay,
     finalizeRxLogCoalesce,
     appendLog,
@@ -476,11 +473,14 @@ function initializeInfrastructureControllers() {
       aomasterConfig: aomasterController.getConfig(),
     }),
     sendDeviceCommand,
-    sendHartPoll: sendHartPollCommand,
     sendAomasterPoll: aomasterController.sendReadCommand,
     modbusPolling: {
       start: () => modbusController.startPolling(buildModbusRequest),
       stop: () => modbusController.stopPolling(),
+    },
+    hartPolling: {
+      start: () => hartMasterController.startPolling(buildHartPollRequest),
+      stop: () => hartMasterController.stopPolling(),
     },
     appendLog,
   });
@@ -604,6 +604,17 @@ function initializeInfrastructureControllers() {
 }
 
 function initializeHartControllers() {
+  hartMasterController = createHartMasterController({
+    elements,
+    getConfig: () => hartConfig,
+    getSession: () => session,
+    appendLog,
+    onFrame: (response, transaction) => hartMonitorController.handleFrame(response, transaction),
+    onPollingStopped: () => {
+      state.pollingActive = false;
+      pollingController.updateUi();
+    },
+  });
   hartSessionController = createHartSessionController({
     elements,
     getConfig: () => hartConfig,
@@ -616,6 +627,8 @@ function initializeHartControllers() {
     populateConfigForm: (config) => hartConfigUi.populateConfigForm(config),
     updateDeviceUi,
     resetRxBuffer: resetHartRxBuffer,
+    sendRequest: (bytes, source) => hartMasterController.send(bytes, source),
+    onDiscovered: () => hartWorkspaceController.updateFromDiscovery(),
     bytesToHex,
     appendLog,
   });
@@ -631,7 +644,8 @@ function initializeHartControllers() {
     populateConfigForm: (config) => hartConfigUi.populateConfigForm(config),
     updateDeviceUi,
     sendSearchCommand: () => hartSessionController.sendSearchCommand(),
-    sendDeviceCommand,
+    sendCommand: sendHartCommand,
+    describeResult: (transaction) => describeHartTransaction(transaction, normalizeHartConfig(hartConfig).responseTimeoutMs),
   });
   hartConfigUi = createHartConfigUi({
     elements,
@@ -648,6 +662,7 @@ function initializeHartControllers() {
     ensureChart: chartController.ensureHartChart,
     getChart: () => chartController.getCharts().hartChart,
     updateWorkspaceFromTelemetry: (telemetry) => hartWorkspaceController.updateFromTelemetry(telemetry),
+    onDiscovery: (telemetry) => hartSessionController.applyDiscovery(telemetry),
     syncChartPanel: chartController.syncCurvePanelUi,
   });
 }
@@ -698,6 +713,7 @@ function activateDevice(deviceId) {
   state.pollingActive = false;
   pollingController.stopAll();
   modbusController.reset();
+  hartMasterController.reset();
   resetModbusRxBuffer();
   resetHartRxBuffer();
   resetAomasterRxBuffer();
@@ -814,7 +830,7 @@ function updateDeviceUi() {
       hartConfigUi.syncCommandModeUi();
       chartController.ensureHartChart();
       hartMonitorController.syncSeriesControls();
-      hartMonitorController.updateVariableCards();
+      hartMonitorController.renderVariableCards();
     } else if (chartController.shouldUseJsonMultiChart()) {
       chartController.ensureJsonMultiChart();
     } else {
@@ -1021,12 +1037,16 @@ function updateSetpointUi() {
     if (sendDriverCommand) {
       sendDriverCommand.textContent = i18n("driver.sendCommand");
     }
+    const scan = hartSessionController.getScanProgress();
     if (elements.hartSearchDevice) {
-      elements.hartSearchDevice.disabled = !session?.connected || hartSessionController.isAddressScanActive();
+      elements.hartSearchDevice.disabled = !session?.connected || Boolean(scan);
     }
     if (elements.hartScanAddresses) {
-      elements.hartScanAddresses.disabled = !session?.connected || hartSessionController.isAddressScanActive();
-      elements.hartScanAddresses.textContent = hartSessionController.isAddressScanActive() ? i18n("hart.scanning") : i18n("hart.scanAddresses");
+      // While a scan runs, the same button stops it.
+      elements.hartScanAddresses.disabled = !session?.connected || Boolean(scan?.stopping);
+      elements.hartScanAddresses.textContent = scan
+        ? i18n("hart.scanStop").replace("{address}", String(scan.address ?? 0))
+        : i18n("hart.scanAddresses");
     }
     if (driverState) {
       driverState.textContent = normalizeHartConfig(hartConfig).device.discovered ? i18n("driver.hartIdentified") : i18n("driver.hartNotSearched");
@@ -1097,6 +1117,10 @@ async function copyRequestTemplate() {
 }
 
 async function sendDeviceCommand() {
+  if (state.deviceId === HART_DEVICE_ID) {
+    await sendHartCommand();
+    return;
+  }
   try {
     const command = createDeviceSetOutputCommand(
       state.deviceId,
@@ -1120,15 +1144,6 @@ async function sendDeviceCommand() {
       return;
     }
 
-    if (
-      state.deviceId === HART_DEVICE_ID &&
-      command.requiresConfirmation &&
-      !window.confirm(`${i18n("hart.writeConfirm")}\n\n${command.preview}`)
-    ) {
-      appendLog("info", i18n("log.send"), i18n("hart.writeCancelled"));
-      return;
-    }
-
     const writeOptions = state.deviceId === MQTT_DEVICE_ID ? messageDebugController.readMqttWriteOptions() : undefined;
     const interframeDelayMs = state.deviceId === AOMASTER_DEVICE_ID ? AOMASTER_INTERFRAME_DELAY_MS : 0;
     for (let index = 0; index < frames.length; index++) {
@@ -1141,6 +1156,33 @@ async function sendDeviceCommand() {
   } catch (error) {
     appendLog("error", i18n("log.send"), error.message);
   }
+}
+
+/**
+ * Sends the configured HART command once it is confirmed (writes) and resolves to the finished
+ * exchange, { status: "invalid" | "declined" } when nothing was sent, or null when the write failed.
+ */
+async function sendHartCommand() {
+  const command = createDeviceSetOutputCommand(HART_DEVICE_ID, state, customConfig, modbusConfig, aomasterController.getConfig(), hartConfig);
+  if (!command.supported || !command.bytes) {
+    const message = command.preview || i18n("common.noDriverCmd");
+    appendLog("error", i18n("log.send"), message);
+    return { status: "invalid", message };
+  }
+  if (command.requiresConfirmation &&
+    !window.confirm(`${i18n("hart.writeConfirm")}\n\nCmd ${getHartCommandLabel(command.command)}\n${command.preview}`)) {
+    appendLog("info", i18n("log.send"), i18n("hart.writeCancelled"));
+    return { status: "declined" };
+  }
+  return hartMasterController.send(command.bytes, "command");
+}
+
+function buildHartPollRequest() {
+  const command = createHartPollCommand(hartConfig, { bytesToHex, parseHexPayload });
+  if (!command.supported || !command.bytes) {
+    throw new Error(command.preview || i18n("common.noDriverCmd"));
+  }
+  return command.bytes;
 }
 
 function buildModbusRequest() {
@@ -1332,19 +1374,6 @@ function resetModbusConfig() {
   updateDeviceUi();
   pollingController.updateActive();
   appendLog("info", i18n("log.device"), `${i18n("device.modbus")}${i18n("common.configResetShort")}`);
-}
-
-async function sendHartPollCommand() {
-  if (!session?.connected) {
-    return;
-  }
-
-  const command = createHartPollCommand(hartConfig, { bytesToHex, parseHexPayload });
-  if (!command.supported || !command.bytes) {
-    return;
-  }
-
-  await session.write(command.bytes);
 }
 
 function updateHartDraftConfig() {

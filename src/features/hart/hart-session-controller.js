@@ -1,10 +1,11 @@
 import i18n from "../../i18n.js";
 import {
   createHartSearchCommand,
-  DEFAULT_HART_CONFIG,
   HART_DEVICE_ID,
+  mergeHartDiscovery,
   normalizeHartConfig,
 } from "../../devices/hart-device.js";
+import { formatHartDeviceSummary, parseCommand0Device } from "../../hart/hart.js";
 import {
   HARTLINK_VERSION_QUERY,
   isHartLinkVersionProbeChunk,
@@ -14,7 +15,7 @@ import {
 const LINK_DETECT_DELAY_MS = 80;
 const LINK_DETECT_TIMEOUT_MS = 1200;
 const LINK_RESPONSE_BUFFER_LIMIT = 512;
-const SCAN_ADDRESS_DELAY_MS = 650;
+const SCAN_LAST_ADDRESS = 15;
 
 const delay = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 
@@ -28,16 +29,25 @@ export function createHartSessionController({
   populateConfigForm,
   updateDeviceUi,
   resetRxBuffer,
+  sendRequest,
+  onDiscovered,
   bytesToHex,
   appendLog,
 }) {
   let addressScanActive = false;
+  let scanStopRequested = false;
+  let scanAddress = null;
   let linkProbeTimer = null;
   let linkResponseBuffer = "";
   let linkState = { status: "idle", version: "", model: "" };
 
   function isAddressScanActive() {
     return addressScanActive;
+  }
+
+  /** null when no scan runs, else the address being searched and whether a stop was requested. */
+  function getScanProgress() {
+    return addressScanActive ? { address: scanAddress, stopping: scanStopRequested } : null;
   }
 
   function clearLinkProbeTimer() {
@@ -135,63 +145,69 @@ export function createHartSessionController({
     }, LINK_DETECT_TIMEOUT_MS);
   }
 
-  async function sendSearchCommand(pollAddress = normalizeHartConfig(getConfig()).pollAddress) {
-    const session = getSession();
-    if (!session?.connected) return;
-
-    resetRxBuffer();
-    const searchConfig = normalizeHartConfig({ ...getConfig(), pollAddress, command: 0 });
-    const command = createHartSearchCommand(searchConfig, { bytesToHex });
-    await session.write(command.bytes);
+  /** Cmd 0 at a short address; resolves to the finished exchange, or null when it could not be sent. */
+  function sendCommand0(pollAddress, source) {
+    const searchConfig = normalizeHartConfig({ ...getConfig(), pollAddress });
+    return sendRequest(createHartSearchCommand(searchConfig, { bytesToHex }).bytes, source);
   }
 
-  async function scanAddresses() {
-    if (!getSession()?.connected || addressScanActive) return;
+  async function sendSearchCommand(pollAddress = normalizeHartConfig(getConfig()).pollAddress) {
+    if (!getSession()?.connected) return null;
+    return sendCommand0(pollAddress, "search");
+  }
 
-    const originalConfig = normalizeHartConfig(getConfig());
+  function applyDiscovery(telemetry) {
+    const nextConfig = mergeHartDiscovery(getConfig(), telemetry);
+    setConfig(nextConfig);
+    populateConfigForm(nextConfig);
+    onDiscovered();
+    appendLog("info", "HART", formatHartDeviceSummary(nextConfig.device));
+    updateDeviceUi();
+  }
+
+  /** Searches addresses 0–15 one exchange at a time; calling it again while it runs stops it. */
+  async function scanAddresses() {
+    if (addressScanActive) {
+      // The exchange in flight still finishes (at most one response timeout).
+      scanStopRequested = true;
+      updateDeviceUi();
+      return;
+    }
+    if (!getSession()?.connected) return;
+
     addressScanActive = true;
-    resetRxBuffer();
     updateDeviceUi();
     appendLog("info", "HART", i18n("hart.scanStarted"));
 
+    let found = false;
     try {
-      for (let address = 0; address <= 15; address += 1) {
-        if (!addressScanActive || !getSession()?.connected) break;
-
-        const nextConfig = normalizeHartConfig({
-          ...getConfig(),
-          pollAddress: address,
-          device: { ...DEFAULT_HART_CONFIG.device },
-        });
-        setConfig(nextConfig);
-        populateConfigForm(nextConfig);
+      for (let address = 0; address <= SCAN_LAST_ADDRESS; address += 1) {
+        if (scanStopRequested || !getSession()?.connected) break;
+        scanAddress = address;
         updateDeviceUi();
-        await sendSearchCommand(address);
-
-        const startedAt = Date.now();
-        while (Date.now() - startedAt < SCAN_ADDRESS_DELAY_MS) {
-          if (!addressScanActive || !getSession()?.connected) break;
-          if (normalizeHartConfig(getConfig()).device.discovered) {
-            appendLog("info", "HART", i18n("hart.scanFound").replace("{address}", String(normalizeHartConfig(getConfig()).pollAddress)));
-            return;
-          }
-          await delay(50);
+        const transaction = await sendCommand0(address, "scan");
+        if (transaction?.status === "ok" && parseCommand0Device(transaction.response)) {
+          found = true;
+          appendLog("info", "HART", i18n("hart.scanFound").replace("{address}", String(address)));
+          break;
         }
       }
-
-      if (!normalizeHartConfig(getConfig()).device.discovered) {
-        setConfig(originalConfig);
-        populateConfigForm(originalConfig);
-        appendLog("warning", "HART", i18n("hart.scanNotFound"));
+      if (!found) {
+        const stopped = scanStopRequested || !getSession()?.connected;
+        appendLog("warning", "HART", i18n(stopped ? "hart.scanStopped" : "hart.scanNotFound"));
       }
     } finally {
       addressScanActive = false;
+      scanStopRequested = false;
+      scanAddress = null;
       updateDeviceUi();
     }
   }
 
   return {
+    applyDiscovery,
     detectLinkVersion,
+    getScanProgress,
     handleLinkProbeRx,
     isAddressScanActive,
     resetLinkProbe,

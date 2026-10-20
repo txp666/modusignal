@@ -25,11 +25,12 @@ const DEVICE_LABELS = {
 };
 
 export function createPollingController(options) {
-  const { elements, state, getSession, getConfigs, sendDeviceCommand, sendHartPoll, sendAomasterPoll, modbusPolling, appendLog } = options;
+  const { elements, state, getSession, getConfigs, sendDeviceCommand, sendAomasterPoll, modbusPolling, hartPolling, appendLog } = options;
   const timers = new Map();
 
   function stop(deviceId) {
     if (deviceId === MODBUS_DEVICE_ID) modbusPolling.stop();
+    if (deviceId === HART_DEVICE_ID) hartPolling.stop();
     const timer = timers.get(deviceId);
     if (timer) window.clearInterval(timer);
     timers.delete(deviceId);
@@ -37,6 +38,7 @@ export function createPollingController(options) {
 
   function stopAll() {
     modbusPolling.stop();
+    hartPolling.stop();
     [...timers.keys()].forEach(stop);
   }
 
@@ -89,8 +91,12 @@ export function createPollingController(options) {
       isReadFunctionCode(modbus.functionCode) && modbus.pollIntervalMs > 0;
     if (modbusDue) modbusPolling.start();
     else modbusPolling.stop();
+    // HART polls the same way: a request goes out only after the previous reply or timeout.
     const hart = normalizeHartConfig(configs.hartConfig);
-    schedule(HART_DEVICE_ID, sendHartPoll, hart.pollIntervalMs);
+    const hartDue = state.deviceId === HART_DEVICE_ID && state.pollingActive && getSession()?.connected &&
+      hart.device.discovered && hart.pollIntervalMs > 0;
+    if (hartDue) hartPolling.start();
+    else hartPolling.stop();
     const aomaster = normalizeAomasterConfig(configs.aomasterConfig);
     schedule(DEFAULT_DEVICE_ID, sendAomasterPoll, aomaster.pollIntervalMs);
     const websocket = normalizeWebSocketConfig(configs.websocketConfig);

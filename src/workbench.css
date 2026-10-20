@@ -69,7 +69,7 @@
 .workspace .device-shell :is(input[type="text"], input[type="number"], input[type="date"], select) { min-height: 2.75rem; font-size: 0.85rem; }
 .workspace .device-shell :is(input, select, textarea) { min-width: 0; max-width: 100%; }
 .workspace .device-shell :is(.config-grid, .config-grid.compact, .settings-grid) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.85rem; }
-.workspace .device-page .config-grid label:has(#modbusFunctionCode, #hartCommand, #hartPollMode) { grid-column: 1 / -1; }
+.workspace .device-page .config-grid label:has(#modbusFunctionCode, #hartCommand) { grid-column: 1 / -1; }
 .workspace .device-page .config-grid label:has(#mqttPublishTopic) { grid-column: 1 / -1; }
 .workspace .device-page label:has(#mqttPublishRetain) { justify-items: start; align-content: start; }
 .workspace #mqttPublishRetain { width: 1.15rem; height: 1.15rem; margin: 0.6rem 0; }
@@ -299,14 +299,16 @@
 .workspace .modbus-write-row label { margin:0; }
 .workspace .modbus-write-row input { font-family:ui-monospace,monospace; }
 .workspace .modbus-write-row small { grid-column:1/-1; font-size:11px; line-height:1.5; color:var(--muted); }
-.workspace .modbus-stats { display:flex; flex-wrap:wrap; align-items:center; gap:4px 16px; font-size:12px; color:var(--muted); }
-.workspace .modbus-stats [data-stat] { display:inline-flex; align-items:baseline; gap:6px; }
-.workspace .modbus-stats strong { color:var(--text); font:600 13px/1.4 ui-monospace,monospace; }
-.workspace .modbus-stats [data-stat].alert strong { color:var(--red); }
-.workspace .modbus-stats button { margin-left:auto; min-height:28px; padding:2px 10px; font-size:12px; }
-.workspace .modbus-last-result { margin:0; min-height:18px; font-size:12px; line-height:1.5; color:var(--muted); overflow-wrap:anywhere; }
-.workspace .modbus-last-result.ok { color:var(--green); }
-.workspace .modbus-last-result.error { color:var(--red); }
+.workspace :is(.modbus-stats, .hart-stats) { display:flex; flex-wrap:wrap; align-items:center; gap:4px 16px; font-size:12px; color:var(--muted); }
+.workspace :is(.modbus-stats, .hart-stats) [data-stat] { display:inline-flex; align-items:baseline; gap:6px; }
+.workspace :is(.modbus-stats, .hart-stats) strong { color:var(--text); font:600 13px/1.4 ui-monospace,monospace; }
+.workspace :is(.modbus-stats, .hart-stats) [data-stat].alert strong { color:var(--red); }
+.workspace :is(.modbus-stats, .hart-stats) button { margin-left:auto; min-height:28px; padding:2px 10px; font-size:12px; }
+.workspace :is(.modbus-last-result, .hart-last-result) { margin:0; min-height:18px; font-size:12px; line-height:1.5; color:var(--muted); overflow-wrap:anywhere; }
+.workspace :is(.modbus-last-result, .hart-last-result).ok { color:var(--green); }
+.workspace :is(.modbus-last-result, .hart-last-result).error { color:var(--red); }
+.workspace .hart-workspace-status[data-state="success"] { color:var(--green); }
+.workspace .hart-workspace-status[data-state="error"] { color:var(--red); }
 .workspace .modbus-table-panel { display:grid; gap:8px; flex:none; }
 .workspace .modbus-table-header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 12px; }
 .workspace .modbus-table-header h2 { margin:0; }
@@ -340,7 +342,7 @@
   .workspace .modbus-table-options { width:100%; }
   .workspace .device-shell .modbus-table-options label { flex:1; }
   .workspace .modbus-table-options select { flex:1; }
-  .workspace .modbus-stats button { min-height:44px; }
+  .workspace :is(.modbus-stats, .hart-stats) button { min-height:44px; }
   .workspace .modbus-register-table .col-address { width:48px; }
   .workspace .modbus-register-table .col-hex-address { width:70px; }
   .workspace .modbus-register-table .col-raw { width:52px; }
@@ -456,7 +458,6 @@
   .app-shell:not(.overview-page) .workspace .hart-command-response { padding:8px; }
   .app-shell:not(.overview-page) .workspace .hart-quick-config { gap:10px; }
   .app-shell:not(.overview-page) .workspace .hart-essential-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
-  .app-shell:not(.overview-page) .workspace label:has(#hartPollMode) { grid-column:auto; }
   .app-shell:not(.overview-page) .workspace .hart-command-grid { grid-template-columns:minmax(0,1fr) auto; align-items:end; }
   .app-shell:not(.overview-page) .workspace label:has(#hartCommand) { grid-column:auto; }
   .app-shell:not(.overview-page) .workspace .hart-command-preview { margin:0; flex-wrap:wrap; }

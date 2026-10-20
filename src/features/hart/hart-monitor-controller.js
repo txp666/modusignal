@@ -1,5 +1,5 @@
 import i18n from "../../i18n.js";
-import { HART_VARIABLE_CARDS, normalizeHartConfig } from "../../devices/hart-device.js";
+import { HART_VARIABLE_CARDS, interpretHartFrame, normalizeHartConfig } from "../../devices/hart-device.js";
 
 export function createHartMonitorController({
   elements,
@@ -8,8 +8,12 @@ export function createHartMonitorController({
   ensureChart,
   getChart,
   updateWorkspaceFromTelemetry,
+  onDiscovery,
   syncChartPanel,
 }) {
+  // The cards keep the latest reading until new values arrive or the chart is cleared.
+  let cardVariables = {};
+
   function buildSeriesDefs(config = getConfig()) {
     const normalized = normalizeHartConfig(config);
     return HART_VARIABLE_CARDS.map((card) => ({
@@ -33,6 +37,12 @@ export function createHartMonitorController({
   }
 
   function updateVariableCards(variables = {}) {
+    cardVariables = variables;
+    renderVariableCards();
+  }
+
+  function renderVariableCards() {
+    const variables = cardVariables;
     document.querySelectorAll("#hartVariableCards [data-hart-card]").forEach((card) => {
       const key = card.dataset.hartCard;
       const readout = card.querySelector(".hart-value-readout");
@@ -58,8 +68,22 @@ export function createHartMonitorController({
     elements.hartCommandResponse.textContent = lines.join("\n");
   }
 
-  function handleTelemetry(telemetry) {
-    updateCommandResponse(telemetry);
+  /** A response from the master (with its exchange) or a burst message (without one). */
+  function handleFrame(response, transaction) {
+    const telemetry = interpretHartFrame(response, getConfig());
+    if (!telemetry) return;
+    const source = transaction?.source ?? "burst";
+    if (telemetry.isDiscovery) {
+      if (source === "command") updateCommandResponse(telemetry);
+      onDiscovery(telemetry);
+      return;
+    }
+    handleTelemetry(telemetry, source);
+  }
+
+  function handleTelemetry(telemetry, source) {
+    // Polls and burst messages feed the cards and chart; the response view keeps the last command's answer.
+    if (source !== "poll" && source !== "burst") updateCommandResponse(telemetry);
     updateWorkspaceFromTelemetry(telemetry);
 
     if (telemetry?.isMulti && telemetry.variables) {
@@ -110,8 +134,9 @@ export function createHartMonitorController({
 
   return {
     buildSeriesDefs,
+    handleFrame,
     handleSeriesChange,
-    handleTelemetry,
+    renderVariableCards,
     syncSeriesControls,
     updateVariableCards,
   };

@@ -226,13 +226,30 @@ export function verifyHartChecksum(frame) {
   return checksum === frame[frame.length - 1];
 }
 
+// Low three delimiter bits: the frame type.
+const BURST_FRAME = 0x01;
+const REQUEST_FRAME = 0x02;
+const RESPONSE_FRAME = 0x06;
+
+function isHartFrameStart(byte) {
+  const type = byte & 0x07;
+  return type === RESPONSE_FRAME || type === BURST_FRAME;
+}
+
+/** Compares addresses without the master and burst-mode bits of the first address byte. */
+function hartAddressKey(frame, addressLength) {
+  if (addressLength === 1) return `#${frame[1] & 0x3f}`;
+  return [frame[1] & 0x3f, ...frame.subarray(2, 6)].map((byte) => formatHexNumber(byte, 2)).join("");
+}
+
+/** Parses a slave frame: a response (ACK) or a burst message (BACK). */
 export function parseHartFrame(frame) {
   if (!frame || frame.length < 6) {
     return null;
   }
 
   const delimiter = frame[0];
-  if ((delimiter & 0x07) !== 0x06) {
+  if (!isHartFrameStart(delimiter)) {
     return null;
   }
 
@@ -278,7 +295,10 @@ export function parseHartFrame(frame) {
 
   return {
     delimiter,
+    isBurst: (delimiter & 0x07) === BURST_FRAME,
     addressLength,
+    addressKey: hartAddressKey(frame, addressLength),
+    masterAddress: frame[1] & 0x80,
     expansionByteCount,
     pollAddress,
     command,
@@ -291,6 +311,93 @@ export function parseHartFrame(frame) {
   };
 }
 
+/** Parses a master request (STX) as written to the line, preambles included. */
+export function parseHartRequest(bytes) {
+  if (!bytes?.length) {
+    return null;
+  }
+
+  let start = 0;
+  while (start < bytes.length && bytes[start] === 0xff) {
+    start += 1;
+  }
+  const frame = bytes.subarray(start);
+  if (frame.length < 5 || (frame[0] & 0x07) !== REQUEST_FRAME) {
+    return null;
+  }
+
+  const addressLength = (frame[0] & 0x80) !== 0 ? 5 : 1;
+  const commandIndex = 1 + addressLength + ((frame[0] >> 5) & 0x03);
+  if (frame.length < commandIndex + 3) {
+    return null;
+  }
+  const byteCount = frame[commandIndex + 1];
+  if (frame.length !== commandIndex + 2 + byteCount + 1 || !verifyHartChecksum(frame)) {
+    return null;
+  }
+
+  const wireCommand = frame[commandIndex];
+  let command = wireCommand;
+  let data = frame.subarray(commandIndex + 2, commandIndex + 2 + byteCount);
+  if (wireCommand === 31 && data.length >= 2) {
+    command = (data[0] << 8) | data[1];
+    data = data.subarray(2);
+  }
+
+  return {
+    addressLength,
+    addressKey: hartAddressKey(frame, addressLength),
+    masterAddress: frame[1] & 0x80,
+    pollAddress: addressLength === 1 ? frame[1] & 0x3f : null,
+    command,
+    wireCommand,
+    data,
+  };
+}
+
+/** A response answers a request when it comes back to the same master, from the same address, for the same command. */
+export function matchHartResponse(request, response) {
+  if (!request || !response || response.isBurst) {
+    return false;
+  }
+  // An error answer to an expanded command may be too short to repeat the command number.
+  const sameCommand = response.command === request.command || (request.wireCommand === 31 && response.command === 31);
+  return sameCommand &&
+    response.addressLength === request.addressLength &&
+    response.addressKey === request.addressKey &&
+    response.masterAddress === request.masterAddress;
+}
+
+/** A communication error, or a response code the command does not define as a warning. */
+export function isHartErrorResponse(response) {
+  const { command, responseCode } = response;
+  return (responseCode & 0x80) !== 0 || (responseCode !== 0 && !isHartCommandResponseWarning(command, responseCode));
+}
+
+function measureHartFrame(buffer, start) {
+  const delimiter = buffer[start];
+  const addressLength = (delimiter & 0x80) !== 0 ? 5 : 1;
+  const headerLength = 1 + addressLength + ((delimiter >> 5) & 0x03) + 2;
+  if (buffer.length - start < headerLength) {
+    return null;
+  }
+  return headerLength + buffer[start + headerLength - 1] + 1;
+}
+
+/** Index of the next complete, valid frame that follows at least two preambles, or -1. */
+function findPreambledHartFrame(buffer, from) {
+  for (let index = Math.max(from, 2); index < buffer.length; index += 1) {
+    if (!isHartFrameStart(buffer[index]) || buffer[index - 1] !== 0xff || buffer[index - 2] !== 0xff) {
+      continue;
+    }
+    const length = measureHartFrame(buffer, index);
+    if (length !== null && buffer.length - index >= length && parseHartFrame(buffer.subarray(index, index + length))) {
+      return index;
+    }
+  }
+  return -1;
+}
+
 export function extractHartFrames(buffer) {
   const frames = [];
   let offset = 0;
@@ -299,8 +406,7 @@ export function extractHartFrames(buffer) {
     let startIndex = -1;
 
     for (let index = offset; index < buffer.length; index += 1) {
-      const byte = buffer[index];
-      if ((byte & 0x07) === 0x06) {
+      if (isHartFrameStart(buffer[index])) {
         startIndex = index;
         break;
       }
@@ -316,20 +422,16 @@ export function extractHartFrames(buffer) {
       break;
     }
 
-    const delimiter = buffer[startIndex];
-    const addressLength = (delimiter & 0x80) !== 0 ? 5 : 1;
-    const expansionByteCount = (delimiter >> 5) & 0x03;
-    const headerLength = 1 + addressLength + expansionByteCount + 2;
-
-    if (buffer.length - startIndex < headerLength + 2) {
-      break;
-    }
-
-    const byteCount = buffer[startIndex + headerLength - 1];
-    const frameLength = headerLength + byteCount + 1;
-
-    if (buffer.length - startIndex < frameLength) {
-      break;
+    const frameLength = measureHartFrame(buffer, startIndex);
+    if (frameLength === null || buffer.length - startIndex < frameLength) {
+      // Still incomplete: unless this is a stray delimiter-like byte (line noise, or a modem
+      // echoing the request) and a complete frame already follows its preambles.
+      const next = findPreambledHartFrame(buffer, startIndex + 1);
+      if (next === -1) {
+        break;
+      }
+      offset = next;
+      continue;
     }
 
     const raw = buffer.subarray(startIndex, startIndex + frameLength);
@@ -825,10 +927,7 @@ export function parseHartUniversalResponse(parsedFrame) {
   const { command, data, responseCode, status, byteCount } = parsedFrame;
   const statusSuffix =
     responseCode !== 0 || status !== 0
-      ? ` · 应答 0x${responseCode.toString(16).toUpperCase().padStart(2, "0")} · 状态 0x${status
-          .toString(16)
-          .toUpperCase()
-          .padStart(2, "0")}`
+      ? ` · ${i18n("hart.responseCode")} 0x${formatHexNumber(responseCode, 2)} · ${i18n("hart.deviceStatus")} 0x${formatHexNumber(status, 2)}`
       : "";
 
   if (responseCode !== 0 && !isHartCommandResponseWarning(command, responseCode)) {

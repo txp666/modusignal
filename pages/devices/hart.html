@@ -25,7 +25,7 @@
 
     <div data-hart-workspace-panel="general">
 
-    <div id="hartVariableCards" class="hart-variable-cards" aria-label="HART 动态变量">
+    <div id="hartVariableCards" class="hart-variable-cards" data-i18n-aria-label="hart.variableCards" aria-label="HART 动态变量">
       <article class="hart-value-card" data-hart-card="pv">
         <span class="hart-value-label">PV</span>
         <small class="hart-value-subtitle" data-i18n="hart.primaryVariable">Primary Variable</small>
@@ -56,6 +56,16 @@
       <span class="hart-command-response-label" data-i18n="hart.cmdResponse">通用命令应答</span>
       <code id="hartCommandResponse" data-i18n="hart.noResponse">尚未收到应答</code>
     </div>
+
+    <div class="hart-stats" role="group" data-i18n-aria-label="hart.stats.label" aria-label="通讯统计">
+      <span data-stat><span data-i18n="hart.stats.requests">请求</span><strong id="hartStatRequests">0</strong></span>
+      <span data-stat><span data-i18n="hart.stats.responses">成功</span><strong id="hartStatResponses">0</strong></span>
+      <span data-stat><span data-i18n="hart.stats.errors">错误</span><strong id="hartStatErrors">0</strong></span>
+      <span data-stat><span data-i18n="hart.stats.timeouts">超时</span><strong id="hartStatTimeouts">0</strong></span>
+      <span data-stat><span data-i18n="hart.stats.latency">响应</span><strong id="hartStatLatency">—</strong></span>
+      <button id="hartStatsReset" class="ghost-button" type="button" data-i18n="hart.stats.reset">清零</button>
+    </div>
+    <p id="hartLastResult" class="hart-last-result" role="status" aria-live="polite"></p>
 
     <div class="hart-quick-config">
       <div class="config-grid hart-essential-grid">
@@ -124,7 +134,7 @@
     <details class="hart-advanced-section">
       <summary>
         <span data-i18n="hart.advancedSettings">高级设置</span>
-        <small data-i18n="hart.advancedSettingsDesc">主站/前导码和 PV 显示缩放</small>
+        <small data-i18n="hart.advancedSettingsDesc">主站/前导码、应答超时和 PV 显示缩放</small>
       </summary>
       <div class="hart-advanced-body">
         <div class="config-grid hart-advanced-grid">
@@ -144,6 +154,10 @@
               <option value="15">15</option>
               <option value="20">20</option>
             </select>
+          </label>
+          <label>
+            <span data-i18n="hart.responseTimeout">应答超时 (ms)</span>
+            <input id="hartResponseTimeoutMs" type="number" min="100" max="10000" step="100" value="1000" data-i18n-title="hart.responseTimeoutTitle" title="发送后等待设备开始应答的最长时间；应答正在接收时会等它收完" />
           </label>
           <label>
             <span data-i18n="hart.pvDisplayName">PV 显示名</span>
@@ -175,6 +189,7 @@
         </div>
         <button type="button" data-hart-workspace-action="read-identity" data-i18n="hart.settings.readIdentity">读取仪表标识 · Cmd 0</button>
       </div>
+      <code id="hartSettingsStatus" class="hart-card-status hart-workspace-status" role="status" aria-live="polite" data-i18n="hart.workspace.ready">就绪</code>
 
       <div id="hartSettingsPanes" class="hart-workspace-grid hart-settings-grid" data-compact-tabs="HART settings">
         <article class="hart-tool-card">
@@ -188,7 +203,6 @@
               <button class="ghost-button" type="button" data-hart-workspace-action="read-config">Cmd 15</button>
             </div>
           </header>
-          <code id="hartSettingsMeasurementStatus" class="hart-card-status" data-i18n="hart.settings.notRead">尚未读取仪表参数</code>
           <div class="config-grid hart-tool-fields">
             <label>
               <span data-i18n="hart.input.unitCode">工程单位</span>
@@ -301,7 +315,6 @@
             <button type="button" data-hart-workspace-action="enable-burst" data-i18n="hart.settings.enableBurst">启用 · Cmd 109</button>
             <button class="ghost-button" type="button" data-hart-workspace-action="disable-burst" data-i18n="hart.settings.disableBurst">停用 · Cmd 109</button>
           </div>
-          <code id="hartSettingsStatus" class="hart-card-status" data-i18n="hart.workspace.ready">就绪</code>
         </article>
       </div>
     </section>
@@ -314,6 +327,7 @@
         </div>
         <span class="state-pill warning" data-i18n="hart.calibration.safety">校正会影响现场输出</span>
       </div>
+      <code id="hartCalibrationStatus" class="hart-card-status hart-workspace-status" role="status" aria-live="polite" data-i18n="hart.workspace.ready">就绪</code>
 
       <div id="hartCalibrationPanes" class="hart-workspace-grid hart-calibration-grid" data-compact-tabs="HART calibration">
         <article class="hart-tool-card">
@@ -397,7 +411,6 @@
             </label>
             <button id="hartCalibrationHighButton" type="button" data-hart-workspace-action="trim-high-pv" disabled data-i18n="hart.calibration.trimPvHigh">校正高点 · Cmd 82</button>
           </div>
-          <code id="hartCalibrationStatus" class="hart-card-status" data-i18n="hart.workspace.ready">就绪</code>
         </article>
       </div>
     </section>

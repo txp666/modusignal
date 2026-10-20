@@ -1,14 +1,10 @@
 import i18n from "../i18n.js";
 import { resetAomasterRxBuffer } from "../devices/aomaster.js";
 import { resetCustomRxBuffer } from "../devices/custom-device.js";
-import {
-  mergeHartDiscovery,
-  resetHartRxBuffer,
-} from "../devices/hart-device.js";
+import { resetHartRxBuffer } from "../devices/hart-device.js";
 import { resetModbusRxBuffer } from "../devices/modbus-device.js";
 import { resetMqttRxBuffer } from "../devices/mqtt-device.js";
 import { resetWebSocketRxBuffer } from "../devices/websocket-device.js";
-import { formatHartDeviceSummary } from "../hart/hart.js";
 import {
   CUSTOM_DEVICE_ID,
   DEFAULT_DEVICE_ID,
@@ -28,10 +24,7 @@ export function createSessionEventController(options) {
     elements,
     state,
     getConfigs,
-    setHartConfig,
     getControllers,
-    updateHartDeviceInfo,
-    updateDeviceUi,
     queueRxLogDisplay,
     finalizeRxLogCoalesce,
     appendLog,
@@ -45,9 +38,10 @@ export function createSessionEventController(options) {
 
   function bind(target) {
     target.addEventListener("connected", () => {
-      const { messageDebugController, transportController, pollingController, modbusController } = getControllers();
+      const { messageDebugController, transportController, pollingController, modbusController, hartMasterController } = getControllers();
       messageDebugController.resetStats();
       modbusController.reset();
+      hartMasterController.reset();
       resetMessageBuffers(getConfigs().customConfig);
       transportController.updateConnectionUi(true);
       pollingController.updateActive();
@@ -56,10 +50,13 @@ export function createSessionEventController(options) {
 
     target.addEventListener("disconnected", () => {
       getControllers().customCommandUi?.stop("disconnected");
-      const { pollingController, hartSessionController, transportController, messageDebugController, modbusController } = getControllers();
+      const {
+        pollingController, hartSessionController, hartMasterController, transportController, messageDebugController, modbusController,
+      } = getControllers();
       state.pollingActive = false;
       pollingController.stopAll();
       modbusController.reset();
+      hartMasterController.reset();
       resetModbusRxBuffer();
       resetHartRxBuffer();
       hartSessionController.resetLinkProbe();
@@ -80,15 +77,7 @@ export function createSessionEventController(options) {
   }
 
   function handleRx({ bytes, text, topic }) {
-    const {
-      aomasterController,
-      chartController,
-      hartConfigUi,
-      hartMonitorController,
-      hartSessionController,
-      hartWorkspaceController,
-      messageDebugController,
-    } = getControllers();
+    const { aomasterController, chartController, hartSessionController, messageDebugController } = getControllers();
     const configs = getConfigs();
     const hartLinkProbeChunk = state.deviceId === HART_DEVICE_ID && state.transportId === DEFAULT_TRANSPORT_ID
       ? hartSessionController.handleLinkProbeRx(text)
@@ -103,6 +92,11 @@ export function createSessionEventController(options) {
     if (state.deviceId === MODBUS_DEVICE_ID) {
       // The Modbus master matches responses to requests and feeds the table and chart itself.
       getControllers().modbusController.handleRx(bytes);
+      return;
+    }
+    if (state.deviceId === HART_DEVICE_ID) {
+      // Likewise for HART: responses, burst messages and timeouts all come from the master.
+      getControllers().hartMasterController.handleRx(bytes);
       return;
     }
 
@@ -120,21 +114,8 @@ export function createSessionEventController(options) {
     );
     if (!telemetry) return;
 
-    if (state.deviceId === HART_DEVICE_ID && telemetry.isDiscovery) {
-      const nextHartConfig = mergeHartDiscovery(configs.hartConfig, telemetry);
-      setHartConfig(nextHartConfig);
-      hartConfigUi.populateConfigForm(nextHartConfig);
-      updateHartDeviceInfo();
-      hartWorkspaceController.updateFromDiscovery(telemetry);
-      appendLog("info", "HART", formatHartDeviceSummary(nextHartConfig.device));
-      updateDeviceUi();
-      return;
-    }
-
     if (state.deviceId === DEFAULT_DEVICE_ID) {
       aomasterController.handleTelemetry(telemetry);
-    } else if (state.deviceId === HART_DEVICE_ID) {
-      hartMonitorController.handleTelemetry(telemetry);
     } else if ([MQTT_DEVICE_ID, WEBSOCKET_DEVICE_ID, CUSTOM_DEVICE_ID, MODBUS_DEVICE_ID].includes(state.deviceId)) {
       chartController.handleJsonMultiTelemetry(telemetry);
     } else {
@@ -159,6 +140,7 @@ export function createSessionEventController(options) {
     }
     appendLog("tx", "TX", payload);
     if (state.deviceId === MODBUS_DEVICE_ID && bytes) getControllers().modbusController.handleTx(bytes);
+    if (state.deviceId === HART_DEVICE_ID && bytes) getControllers().hartMasterController.handleTx(bytes);
     if (state.deviceId === WEBSOCKET_DEVICE_ID) messageDebugController.increment("websocket", "tx");
     if (state.deviceId === MQTT_DEVICE_ID) messageDebugController.increment("mqtt", "tx");
   }
