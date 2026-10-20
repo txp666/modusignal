@@ -91,9 +91,11 @@ src/devices/microscope-power.js
 
 src/devices/modbus-device.js
   通用 Modbus RTU profile、读写命令与回包解析
+  主站收发在 `features/modbus/modbus-master.js`（基于 `framing/request-master.js`）：一问一答，响应超时默认 1000 ms（50–10000），轮询最小间隙 20 ms；FC16 只写输入的寄存器，不对相邻寄存器补零。
 
 src/devices/hart-device.js
   HART profile、搜索/轮询命令、PV/SV/TV/QV 解析
+  主站收发在 `features/hart/hart-master-controller.js`（同样基于 `framing/request-master.js`）：按地址、主站位和命令号匹配应答；应答超时默认 1000 ms（100–10000），计到设备开始应答，正在接收的应答会等它收完（最多再等 3 s）；轮询最小间隙 50 ms。Burst 帧只更新卡片和曲线，不参与请求匹配。写命令发送前需确认。
 
 src/devices/json-curve-config.js
   JSON 多曲线槽位（4 槽）、路径解析、normalize / list / remove 共享逻辑

@@ -4,12 +4,11 @@
 
 <p align="center">
   <b>在浏览器里直接调设备。</b><br/>
-  <b>Talk to industrial devices from a browser tab.</b><br/>
   <sub>串口 · WebUSB · WebSocket · MQTT · Modbus RTU · HART · 自定义协议</sub>
 </p>
 
 <p align="center">
-  <a href="https://modusignal.cn/"><img src="https://img.shields.io/badge/live%20demo-modusignal.cn-0f766e?style=flat-square" alt="Live demo"></a>
+  <a href="https://modusignal.cn/"><img src="https://img.shields.io/badge/live%20demo-modusignal.cn-0f766e?style=flat-square" alt="在线使用"></a>
   <a href="./LICENSE.txt"><img src="https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square" alt="License"></a>
   <a href="https://github.com/txp666/modusignal/stargazers"><img src="https://img.shields.io/github/stars/txp666/modusignal?style=flat-square" alt="Stars"></a>
   <a href="https://github.com/txp666/modusignal/issues"><img src="https://img.shields.io/github/issues/txp666/modusignal?style=flat-square" alt="Issues"></a>
@@ -17,17 +16,15 @@
 </p>
 
 <p align="center">
-  <a href="#中文"><b>中文</b></a> ·
-  <a href="#english"><b>English</b></a> ·
+  <b>中文</b> ·
+  <a href="./README_EN.md">English</a> ·
   <a href="https://modusignal.cn/">立即使用 →</a> ·
   <a href="https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82">请求设备</a>
 </p>
 
 <p align="center">
-  <img src="./images/show.gif" alt="modusignal demo" width="880" />
+  <img src="./images/show.gif" alt="modusignal 演示" width="880" />
 </p>
-
----
 
 <table>
   <tr>
@@ -50,54 +47,58 @@
   </tr>
 </table>
 
----
+## 简介
 
-<a id="中文"></a>
-
-## modusignal · 中文说明
-
-浏览器里的设备调试台，纯静态前端，没有上位机要装、没有后端要起。打开网页、选设备、连上、看原始报文、手动发命令、看实时曲线，就这样。
+浏览器里的设备调试台，纯静态前端，没有上位机要装、没有后端要起。打开网页、选设备、连上，就能看原始报文、手动发命令、看实时曲线。
 
 > 一个标签页，一根线，跟设备直接对话。
 
-## 适用场景
+**适用场景**
 
-- 临时调一块 Modbus RTU 板子，不想装某厂家 200MB 的上位机
-- 进车间带个 USB 转 485，笔记本插上就是 HART 调试工具
+- 临时调一块 Modbus RTU 板子，不想装厂家几百 MB 的上位机
+- 进车间带个 HART 调制解调器，笔记本插上就是 HART 调试工具
 - 新设备走 WebSocket 或 MQTT，想边看流量边看曲线
-- 调 RP2040 WebUSB 小电流采集，不想单独装桌面上位机
 - 把链接发给同事，比发 `setup.exe` 省事
-- 内部协议没有现成工具，用 *自定义设备* 页面拼一个，不用写 JS
+- 内部协议没有现成工具，用 *自定义设备* 页面拼一个，不用写代码
 
-不适合：长时间数据采集、生产监控、SCADA。这是个调试工具。
+不适合长时间数据采集、生产监控或 SCADA，这是个调试工具。
 
 ## 内置设备
 
 | 设备 | 传输 | 默认参数 | 说明 |
 |------|------|----------|------|
-| AOMaster | 串口 | 115200 8N1 | 4-20mA / 0-10V 信号源，6 种波形 |
 | Modbus RTU | 串口 | 9600 8N1 | 读写保持 / 输入寄存器 |
-| HART | 串口 | 1200 8O1 | 设备搜索、通用命令、PV/SV/TV/QV |
+| HART | 串口 | 1200 8O1 | 设备搜索、通用命令、PV/SV/TV/QV、仪表设置与校正 |
 | WebSocket | WebSocket | — | JSON / HEX / Modbus 报文调试 |
 | MQTT | MQTT over WS | — | 发布订阅、QoS、保留消息、统计 |
-| MicroScope Power | WebUSB | VID `0xCAFE`, PID `0x4012` | RP2040 小电流波形采集、游标、校准、CSV/PNG 导出 |
-| 自定义设备 | 任意 | — | 模板 + 解析规则，无需写代码 |
+| AOMaster | 串口 | 115200 8N1 | 4-20 mA / 0-10 V 信号源 |
+| MicroScope Power | WebUSB | — | 小电流波形采集（[硬件](https://oshwhub.com/txp666/project_iupheygc) · [固件](https://github.com/txp666/MicroScope-Power)） |
+| 自定义设备 | 任意 | — | 发送模板 + 解析规则，无需写代码 |
 
-普通设备切换时通讯方式和参数会跟着自动切换。MicroScope Power 这类独立 WebUSB 工具会在设备页内部保留自己的连接和采集控制。
+切换设备时，通讯方式和默认参数会跟着切换。
 
-## 跑起来
+## 主要功能
 
-开发模式不用构建，起一个静态服务即可：
+- **收发调试**：毫秒时间戳，HEX / 文本显示切换，暂停滚动，收发字节统计，日志保存为 .txt。
+- **Modbus RTU**：一问一答收发，超时与异常码诊断；寄存器表支持 16 / 32 位整数和 Float32 等多种格式。
+- **HART**：地址扫描、通用命令、PV/SV/TV/QV 轮询，仪表参数设置与输入输出校正；应答超时和响应码诊断，写操作发送前确认。
+- **自定义设备**：常用指令库（导入导出、定时发送），文本转义，CRC16 / SUM8 / XOR8 校验；发送模板支持 `{value}` 等占位符，解析支持正则、JSON 路径、HEX 偏移和 Modbus 载荷。
+- **实时曲线**：多曲线显示，CSV 导入导出。
+- **其它**：中英文界面、深浅色主题，可下载离线包使用。
 
-```powershell
-python -m http.server 4173
+## 快速开始
+
+开发时不用构建，起一个静态服务即可：
+
+```bash
+python3 -m http.server 4173
 ```
 
 用 Chrome / Edge 打开 `http://localhost:4173`。
 
-要发布的话：
+构建发布版本：
 
-```powershell
+```bash
 npm install
 npm run build
 npm run preview
@@ -107,33 +108,11 @@ npm run preview
 
 ## 离线使用
 
-适合在笔记本、工控机或现场环境拷贝一份，无需联网拉代码。
+适合拷到笔记本、工控机或现场环境里用，无需联网。
 
-**获取离线包**
-
-- 每次推送到 `main`：打开 [Actions → Offline package](https://github.com/txp666/modusignal/actions/workflows/offline-package.yml)，在最新一次运行里下载 Artifact `modusignal-offline-<版本>.zip`。
-- 打 `v*` 标签发布：在 [Releases](https://github.com/txp666/modusignal/releases) 下载 `modusignal-offline-<标签>.zip`。
-
-**本地运行**
-
-解压后双击 `start-modusignal.bat`（Windows）或运行 `start-modusignal.sh`（macOS/Linux），会自动起服务并打开浏览器。
-
-也可手动执行：
-
-```powershell
-python -m http.server 4173
-```
-
-用 Chrome / Edge 打开 `http://localhost:4173`。串口和 WebUSB 功能需在 `localhost` 或 HTTPS 下使用。
-
-**自己打包**
-
-```powershell
-npm install
-npm run build:offline
-```
-
-产物在 `_release/modusignal-offline-<版本>.zip`（系统无 `zip` 命令时为 `.tar.gz`）。解压目录内的 `OFFLINE.txt` 有简要说明。
+- **下载**：每次推送到 `main` 后，在 [Actions → Offline package](https://github.com/txp666/modusignal/actions/workflows/offline-package.yml) 最新一次运行里下载 `modusignal-offline-<版本>.zip`；打 `v*` 标签的版本在 [Releases](https://github.com/txp666/modusignal/releases) 下载。
+- **运行**：解压后双击 `start-modusignal.bat`（Windows）或运行 `start-modusignal.sh`（macOS / Linux），会自动起服务并打开浏览器。
+- **自己打包**：`npm install` 后运行 `npm run build:offline`，产物在 `_release/`。
 
 ## 浏览器要求
 
@@ -141,319 +120,30 @@ npm run build:offline
 |------|--------|
 | 串口（Web Serial） | Chrome / Edge 89+，需要 HTTPS 或 localhost |
 | WebUSB | Chrome / Edge，需要 HTTPS 或 localhost |
-| WebSocket | 现代浏览器都行 |
-| MQTT over WebSocket | 现代浏览器都行 |
+| WebSocket、MQTT over WebSocket | 现代浏览器均可 |
 
-Firefox 和 Safari 没有 Web Serial / WebUSB，串口和 WebUSB 设备用不了，其它功能正常。
+Firefox 和 Safari 不支持 Web Serial / WebUSB，串口和 WebUSB 设备用不了，其它功能正常。
 
-## 项目结构
+## 开发
 
-界面修改请先阅读 [`DESIGN.md`](./DESIGN.md)。项目已接入
-[awesome-design-md 的 IBM / Carbon 设计参考](./docs/design/awesome-design-md/README.md)，
-保留 ModuSignal 青绿色品牌、双语、深浅色与离线运行；首页布局位于 `src/home.css`，内部工作台位于 `src/workbench.css`。
-内部页面使用 `#modbus`、`#hart` 等地址，可直接打开，支持浏览器前进/后退；导航逻辑位于 `src/ui/page-navigation.js`。
+设备层和传输层分开：加一个新设备通常就是在 `src/devices/` 写驱动、在 `src/device-registry.js` 注册、在 `pages/devices/` 加页面。
 
-英文版的 `Architecture` 表已经列得很清楚了，这里不重复。简单说就是：设备层和传输层分开，加新设备 = 写一个驱动 + 注册 + 加一个页面。像 MicroScope Power 这种自己管理 WebUSB 和曲线的专用上位机，可以在注册表里标记为 `standalone`，详见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md)：添加设备的步骤
+- [`docs/architecture.md`](./docs/architecture.md)：模块分层
+- [`DESIGN.md`](./DESIGN.md)：界面设计规范
+- [`AI.md`](./AI.md)：各设备的协议约定与实现说明
 
-## MicroScope Power WebUSB 上位机
+测试：`npm test`。
 
-硬件、电路与外壳介绍见 [MicroScope Power 立创开源项目](https://oshwhub.com/txp666/project_iupheygc)，固件源码见 [MicroScope-Power](https://github.com/txp666/MicroScope-Power)。
+## 参与
 
-MicroScope Power 页面嵌入了 `pages/devices/microscope-power/` 下的浏览器上位机。它直接通过 WebUSB 连接 RP2040 固件（`VID 0xCAFE`、`PID 0x4012`），页面内自带采样率、ADS8866 ADC 采集、曲线缩放平移、游标、校准、CSV/PNG 导出。
-
-使用时通过 `localhost` 或 HTTPS 用 Chrome / Edge 打开站点，在设备库选择 **MicroScope Power**，再在内嵌上位机里点击 **连接设备**。这里没有打包原项目的 Pico 固件、SDK 和构建产物，上位机源码和回归测试只在此仓库维护，MicroScope-Power 仓库仅保留固件。采集工具栏保持单行，电流读数、游标、零点偏移和 CSV 都使用 µA。
-
-网页已同步 MicroScope-Power 的采集可靠性优化：USB 命令确认与超时处理、精确窗口统计与包络、按设备时间戳绘图及导出、丢帧断点和 ADC/时序诊断。连续帧按相邻设备时间戳估算采样间隔，时序延迟不会在每帧末尾画出空白；真正丢帧仍显示断点。切换采样率会清空旧缓存并开始新采集段。保留了本站的固件更新检查；新增回归测试随 `npm test` 运行。
-
-**显示设置 → 低通滤波** 提供一阶数字低通，默认关闭。可选择 10 Hz 至 20 kHz 的常用截止频率，或自定义 1–45000 Hz；超出实际采样率 45% 时显示受限后的有效频率。滤波按设备时间轴估算的采样间隔作用于每个样本，曲线、游标、统计和低通 CSV 使用同一结果，缩放和平移不会改变截止频率。低通 CSV 另含原始电流与实际截止频率列，并可独立导出原始 CSV。归零仍使用原始 ADC 数据。降低截止频率会衰减短脉冲、增加响应延迟，数字滤波不能消除已经混叠或饱和造成的信息损失。
-
-曲线支持左键拖框同时放大时间轴和电流轴，右键拖动平移，双击恢复最新波形与自动 Y 轴。滚轮仍可缩放时间轴，Ctrl/Alt + 滚轮缩放电流轴；启用游标后，左键单击设置 A/B，拖动仍用于框选。
-
-**功率与能量**：固件 0.2.2 起上传输出端实测电压，上位机约每 0.5 秒读取一次，以最近的有效电压和原始校准电流计算功率、累计能量与平均功率。电压为低速检测，功率与能量均标为估算；电压过期或丢失的采样时段不补算。旧固件可手动填入负载端供电电压。滤波、视图缩放和暂停显示不会影响累计；重新采集、清屏、校准、手动电压或电压模式改变会重新统计，亦可独立重置和导出统计 CSV。保留有符号电流，避免将零点负噪声截断为正向能量。
-
-## AOMaster 寄存器表
-
-| 地址 | 读写 | 含义 |
-|------|------|------|
-| 0x0000 | R/W | 信号类型（电流 / 电压） |
-| 0x0001 | R/W | 波形：0=恒定 1=阶跃 2=斜坡 3=方波 4=三角 5=正弦 |
-| 0x0002 | R/W | 设定值 / 低值 |
-| 0x0003 | R/W | 高值 / 阶跃保持时间 |
-| 0x0004 | R/W | 周期 20–65535 ms / 阶跃循环次数（0=无限） |
-| 0x0005 | R/W | 占空比 × 10 |
-| 0x0006 | R | 固件输出指令值（回读，非模拟量实测） |
-| 0x0007+ | R/W | 步进序列值 |
-
-上位机用 `01 03 00 00 00 07 04 08` 读取 `0x0000..0x0006`。回包必须包含全部 7 个寄存器；`0x0000` 选择电流/电压单位，`0x0006` 是固件最近请求输出的指令值，不能证明 DAC 已发送成功或模拟输出已到达该值。模拟量原始值按 1000 缩放：原始值 `10600` 在电压模式表示 `10.600 V`，在电流模式表示 `10.600 mA`。回读曲线的 Y 轴会随回包类型切换为 `0..10 V` 或 `4..20 mA`。
-
-斜坡、方波、三角波和正弦波周期限制为 `20..65535 ms`，以 1 ms 步进，设定频率为 `1000 / 周期(ms)`，最高 50 Hz；周期 `0` 与固件一致恢复为默认 `1000 ms`，其余超出范围的输入在预览及发送前统一限幅。阶跃单步保持范围仍为 `1..65535 ms`，循环次数 `0` 表示无限循环，先写 `0x0007+` 序列值，再写头部寄存器。
-
-默认轮询周期 50 ms（约 20 点/秒），用于低速指令值回读，不能还原 50 Hz 波形。设定预览是理想数学曲线；频率、抖动、幅值及模拟输出建立时间需通过示波器或采集设备验证。
-
-## Modbus
-
-读取（03/04）和轮询都按“一问一答”进行：每个请求都等到响应、异常或超时后才发下一条，轮询间隔是两次请求的起始间隔（最小间隙 20 ms）。响应超时默认 1000 ms，可设 50–10000 ms。页面统计请求、成功、异常、超时次数和最近一次响应时间；异常响应会显示异常码及含义（如 `02 非法数据地址`），超时会区分“未收到任何数据”“收到字节但没有有效帧”“响应与请求不匹配”，便于判断是接线、地址还是波特率问题。收发调试区手动发送的 RTU 请求同样会被匹配和计时。
-
-寄存器表显示最近一次成功读取的地址、原始 HEX 和数值，可切换 UInt16、Int16、HEX、二进制以及 UInt32 / Int32 / Float32（ABCD、CDAB、BADC、DCBA 字序），变化的值会高亮。
-
-写入时直接输入值，多个值用逗号或空格分隔，支持负数（补码）和 `0x` 十六进制，也可按 32 位整数或 Float32 编码。功能码 06 只写 1 个 16 位值；功能码 16 写入的寄存器数量由输入的值决定，不会对相邻寄存器补零。
-
-## HART
-
-搜索、扫描、轮询、通用命令以及仪表设置 / 校正操作都按“一问一答”进行：每个请求都等到设备应答或超时后才发下一条，轮询间隔是两次请求的起始间隔（最小间隙 50 ms）；轮询期间发送的命令排在当前请求之后，不会与应答相撞。应答超时在“高级设置”中，默认 1000 ms，可设 100–10000 ms，计算到设备开始应答为止；应答正在接收时会等它收完（1200 bit/s 下长帧需要 2 秒以上）。页面统计请求、成功、错误、超时次数和最近一次响应时间；错误应答显示响应码及含义（如 `0x07 写保护`、`0x20 设备忙`），超时会区分“未收到任何数据”“收到字节但没有有效应答帧”“收到的帧不是本次请求的应答”。收发调试区手动发送的 HART 请求帧同样会被匹配和计时。
-
-“扫描 0-15”逐个地址发送 Cmd 0，找到第一台设备即停止，扫描时同一按钮用于停止。“通用命令应答”只显示最近一次命令的应答，轮询数据显示在 PV/SV/TV/QV 卡片和曲线中。处于 Burst 模式的设备主动发出的数据也会更新卡片和曲线，但请求不会按 Burst 时序发送，可能与 Burst 帧冲突而超时。
-
-“仪表设置”和“输入输出校正”页签在卡片下方显示该页最近一次操作的结果（应答内容、错误或超时原因），写操作发送前需确认；切换页签时右侧的监测面板和收发日志保持显示，可以直接对照收发的帧。
-
-## 自定义设备
-
-“常用指令”页签上方直接列出已存指令，每行显示名称、内容和字节数：点右侧“发送”即按保存时的格式、行尾和校验发出一次，不影响编辑区；点名称则载入下方编辑区修改。编辑区支持文本（UTF-8）和 HEX，发送前可预览实际字节、字节数及追加的 Modbus CRC16 / SUM8 / XOR8。文本可选无行尾、LF、CR、CRLF；HEX 不追加行尾。校验覆盖全部内容（含文本行尾），CRC16 低字节在前；已有校验的报文应选择“无”，避免重复追加。
-
-文本指令可勾选“解析转义字符”，支持 `\r`、`\n`、`\t`、`\xHH`（任意单字节）和 `\\`（反斜杠），例如 `AT+RST\r\n` 或 `\x02START\x03`。字节预览显示转义后的实际字节，无法识别的转义会直接提示。该选项默认关闭，已有指令的发送内容不变。
-
-可以保存最多 50 条命名指令，按需加载、修改或移除。指令库只保存在当前浏览器，可导出 JSON 备份（格式仍为 `modusignal.custom-commands` 版本 1，开启转义的指令多一个 `"escapes": true` 字段）；导入会合并内容并跳过完全相同的指令，不会自动发送。导入文件上限 512 KB，单条发送内容上限 8192 字符。
-
-定时发送支持 50–60000 ms 间隔，次数为 0 时持续发送，其余为 1–100000 次。第一条立即发送，此后在每次写入完成后等待指定间隔；成功计数表示传输写入完成，不表示设备已执行。点击停止、离开发送页签或页面、断开连接、写入失败都会停止后续发送；正在写入的报文不能撤回。浏览器后台计时可能延迟。编辑区支持 ⌘ / Ctrl + Enter 单次发送。
-
-下方“收发调试”区各设备共用。日志时间精确到毫秒（`HH:MM:SS.mmm`），标题栏显示本次日志的 RX / TX 字节数，清空日志时归零。“显示”可选自动、HEX、文本：自动时 Modbus、HART、AOMaster 显示 HEX，其他设备的数据是可打印文本就显示文本、否则显示 HEX；HEX 和文本对收发两个方向都生效，切换后已有日志一并刷新。文本视图用与编辑区相同的转义标出行尾和不可打印字节（如 `OK\r\n`、`\x01`）。“暂停滚动”后仍照常记录，但视图停在当前位置；“保存日志”把当前日志（保留最近 1000 行）下载为 .txt。底部发送框与常用指令使用相同的行尾（无 / LF / CR / CRLF）和校验选项；JSON 格式（WebSocket、MQTT 页默认）不追加行尾和校验。
-
-不想写 JS 也能配一个驱动出来：
-
-- 输出范围、单位、步长
-- 发送模板，支持 `{value}`、`{value:2}`、`{unit}` 占位符
-- 解析规则：正则、JSON 路径、HEX 偏移、Modbus 载荷
-- 数值换算：`解析值 × 比例 + 偏移`
-
-## 项目状态
-
-仍在持续迭代。新设备和解析能力会陆续加进来，欢迎在 [issues](https://github.com/txp666/modusignal/issues) 里讨论你想要的功能。需要新设备但不方便自己写驱动的，[提一个 issue](https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82) 附上协议文档、报文样例和默认连接参数即可。
-
-## 贡献
-
-欢迎 PR 增加设备或修复驱动，提交前请看 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
+项目在持续迭代。需要新设备但不方便自己写驱动的，[提一个 issue](https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82)，附上协议文档、报文样例和默认连接参数即可。也欢迎 PR 增加设备或修复驱动。
 
 ## 许可证
 
 [Apache License 2.0](./LICENSE.txt)。
 
 如果 modusignal 帮你省下了一个下午跟厂家上位机较劲的时间，点个 star 能让更多人看到它。
-
----
-
-<a id="english"></a>
-
-## What it is
-
-A static web app for debugging serial / WebUSB / WebSocket / MQTT devices from a browser.
-No installer, no backend, no database. Open the page, pick a device, connect, and you get raw frames, manual send, parsed values, and a real-time chart.
-
-> Open a tab. Plug in a device. Talk to it.
-
-## Use cases
-
-- Bench-test a Modbus RTU board without firing up a 200 MB vendor tool
-- Walk into a plant with a USB-to-485 dongle and a laptop, and you have a HART debugger
-- Bring up a new MQTT/WebSocket-speaking device and watch traffic on a live curve
-- Capture RP2040 WebUSB current waveforms without installing a desktop host
-- Hand a colleague a URL instead of a `setup.exe`
-- Build a quick UI for an in-house protocol with the *Custom device* page (no JS required)
-
-Not what it's for: long-running data acquisition, plant monitoring, anything you'd actually call SCADA.
-
-## Built-in devices
-
-| Device | Transport | Default | Notes |
-|--------|-----------|---------|-------|
-| AOMaster | Serial | 115200 8N1 | 4-20 mA / 0-10 V signal source, 6 waveforms |
-| Modbus RTU | Serial | 9600 8N1 | Read / write holding & input registers |
-| HART | Serial | 1200 8O1 | Device search, universal commands, PV/SV/TV/QV |
-| WebSocket | WebSocket | — | JSON / HEX / Modbus message debug |
-| MQTT | MQTT over WS | — | Pub / sub, QoS, retain, message stats |
-| MicroScope Power | WebUSB | VID `0xCAFE`, PID `0x4012` | RP2040 current waveform capture, cursors, calibration, CSV/PNG export |
-| Custom | any | — | Template + parser, no code |
-
-Switching regular devices also switches the transport and its defaults. Standalone WebUSB tools, such as MicroScope Power, keep their own connection and capture controls inside the device page.
-
-## Quick start
-
-Serve the repo as static files:
-
-```powershell
-python -m http.server 4173
-```
-
-Open `http://localhost:4173` in Chrome or Edge. That's it — no install, no build.
-
-To produce a deployable build:
-
-```powershell
-npm install
-npm run build
-npm run preview
-```
-
-The build script is `scripts/build.mjs` (esbuild). Output goes to `_site/`.
-
-## Offline package
-
-Use this when you want a self-contained copy on a laptop or a plant PC without cloning the repo.
-
-**Download**
-
-- Push to `main`: open [Actions → Offline package](https://github.com/txp666/modusignal/actions/workflows/offline-package.yml), pick the latest run, download the artifact `modusignal-offline-<version>.zip`.
-- Tagged release (`v*`): download `modusignal-offline-<tag>.zip` from [Releases](https://github.com/txp666/modusignal/releases).
-
-**Run locally**
-
-Double-click `start-modusignal.bat` (Windows) or run `start-modusignal.sh` (macOS/Linux). It starts a local server and opens the browser.
-
-Or manually:
-
-```powershell
-python -m http.server 4173
-```
-
-Open `http://localhost:4173` in Chrome or Edge. Web Serial and WebUSB need `localhost` or HTTPS.
-
-**Build the zip yourself**
-
-```powershell
-npm install
-npm run build:offline
-```
-
-Output: `_release/modusignal-offline-<version>.zip` (or `.tar.gz` if `zip` is not installed).
-
-## Browser support
-
-| Feature | Browsers |
-|---------|----------|
-| Serial (Web Serial API) | Chrome / Edge 89+, HTTPS or localhost |
-| WebUSB | Chrome / Edge, HTTPS or localhost |
-| WebSocket | any modern browser |
-| MQTT over WebSocket | any modern browser |
-
-Firefox and Safari don't ship Web Serial or WebUSB, so serial and WebUSB devices won't work there. Everything else works.
-
-## Architecture
-
-```
-index.html              app shell (topbar, sidebar, mount points)
-pages/
-  home.html             home and device grid
-  request.html          new-device request form
-  devices/              one HTML page per device
-  devices/microscope-power/
-                         standalone MicroScope Power WebUSB host assets
-  shared/workbench.html shared log + chart panel
-src/
-  app.js                state, routing, events, device orchestration
-  protocols.js          command / telemetry dispatch
-  device-registry.js    device registry
-  page-loader.js        async HTML fragment loader
-  chart.js              Canvas 2D real-time chart
-  echarts-charts.js     ECharts waveform preview
-  config.js             app metadata
-  transports/           serial / websocket / mqtt sessions
-  devices/              per-device drivers
-  modbus/modbus.js      Modbus RTU framing
-  hart/hart.js          HART framing
-  framing/              generic frame parsing (lines, header/tail, CRC16)
-```
-
-Devices and transports are kept separate. Adding a new device is usually: a driver file in `src/devices/`, an entry in `device-registry.js`, and a page in `pages/devices/`. Dedicated browser-tool pages can be registered as `standalone` when they own their transport and UI, as MicroScope Power does. See [`CONTRIBUTING.md`](./CONTRIBUTING.md) for details (the contributing guide is in Chinese).
-
-## MicroScope Power WebUSB host
-
-Find the hardware, circuit and enclosure details on the [MicroScope Power OSHWHub project](https://oshwhub.com/txp666/project_iupheygc), and firmware sources in [MicroScope-Power](https://github.com/txp666/MicroScope-Power).
-
-The MicroScope Power page embeds the browser host from `pages/devices/microscope-power/`. It talks directly to the RP2040 firmware over WebUSB (`VID 0xCAFE`, `PID 0x4012`) and keeps its own controls for sample rate, ADS8866 ADC capture, chart zoom/pan, cursors, calibration, and CSV/PNG export.
-
-Use Chrome or Edge from `localhost` or HTTPS, then choose **MicroScope Power** in the device library and click **Connect device** inside the embedded host. The Pico firmware, SDK, and build outputs from the source project are not bundled here; this repository is the sole home for the browser host and its regression tests, while MicroScope-Power contains the firmware. The capture toolbar stays on one row; readings, cursors, zero offsets, and CSV data use µA.
-
-The host includes MicroScope-Power capture reliability improvements: acknowledged USB commands with timeouts, exact window statistics and envelopes, device timestamps for plotting and export, discontinuities for dropped frames, and ADC/timing diagnostics. Consecutive frames use their measured start-time interval, so timing delays do not produce an empty strip at every frame boundary; genuine dropped frames still break the trace. Changing the sample rate clears the buffer and starts a new capture segment. The site-specific firmware update checker is retained; regression tests run with `npm test`.
-
-**Display settings → Low-pass filter** provides a first-order digital low-pass, off by default. Choose a preset from 10 Hz to 20 kHz or a custom cutoff from 1 to 45000 Hz; the effective cutoff is limited to 45% of the measured sample rate. Filtering uses sample intervals estimated from device timestamps, before plot aggregation. The waveform, cursors, statistics, and filtered CSV share the same results; zooming and panning do not change the filter. Filtered CSV includes raw current and effective cutoff columns, and raw CSV remains separately available. Zero calibration always uses raw ADC data. Lower cutoffs attenuate short pulses and delay the response; digital filtering cannot recover information lost through aliasing or saturation.
-
-Drag with the left button to box-zoom both time and current; drag with the right button to pan. Double-click restores the latest waveform and automatic Y scale. The wheel still zooms time, while Ctrl/Alt + wheel zooms current. With cursors enabled, a left click places A/B and a left drag still box-zooms.
-
-**Power and energy**: firmware 0.2.2 adds measured output-voltage telemetry. The host polls it about every 0.5 seconds and combines the latest valid voltage with raw calibrated current to estimate power, accumulated energy and average power. Voltage is sampled at a lower rate, so these readings are estimates; expired voltage and missing current intervals are excluded. Older firmware can use a manually entered load voltage. Filtering and plot navigation do not affect accumulation. Starting a capture, clearing data, calibration, changing manual voltage or changing voltage mode resets the statistics; they can also be reset separately and exported as CSV. Signed current is preserved to avoid biasing zero-input noise toward positive energy.
-
-## AOMaster register map
-
-| Addr | R/W | Meaning | Raw unit |
-|------|-----|---------|----------|
-| 0x0000 | R/W | Signal type: 0=current, 1=voltage | enum |
-| 0x0001 | R/W | Waveform: 0=const 1=step 2=ramp 3=square 4=triangle 5=sine | enum |
-| 0x0002 | R/W | Setpoint / low value; step count in step mode | mV or uA |
-| 0x0003 | R/W | High value; step dwell in step mode | mV/uA or ms |
-| 0x0004 | R/W | Period 20–65535 ms; step loop count (0=infinite) | ms / count |
-| 0x0005 | R/W | Duty cycle | permille |
-| 0x0006 | R   | Firmware output command (not analog measurement) | mV or uA |
-| 0x0007..0x0016 | R/W | Step sequence values, max 16 points | mV or uA |
-
-Raw analog values are scaled by 1000: voltage uses mV (`10600` = `10.600 V`), current uses uA (`10600` = `10.600 mA`). The web UI polls registers `0x0000..0x0006` in one Modbus RTU read so the response contains both signal type and output command readback:
-
-```text
-01 03 00 00 00 07 04 08
-```
-
-The response must include all seven registers. Register `0x0000` selects the engineering unit (`0=current`, `1=voltage`). Register `0x0006` reports the firmware's most recent requested output, not confirmation of a completed DAC transfer or an analog measurement. The readback chart Y axis follows the response type: `4..20 mA` for current and `0..10 V` for voltage.
-
-Ramp, square, triangle and sine periods are limited to `20..65535 ms` in 1 ms steps before preview and transmission. Period `0` restores the `1000 ms` default, matching the firmware; other out-of-range values are clamped. Configured frequency is `1000 / period(ms)`, up to 50 Hz. Step dwell remains `1..65535 ms`, with loop count `0` meaning infinite; the sequence is written before the header.
-
-Default 50 ms polling (about 20 points/s) provides low-rate command readback and cannot reconstruct a 50 Hz waveform. The setpoint preview is an ideal mathematical curve; verify output frequency, jitter, amplitude and settling time with a scope or acquisition device.
-
-## Modbus
-
-Reads (03/04) and polling are strictly request/response: each request waits for its response, exception or timeout before the next is sent, and the poll interval is the time between request starts (at least a 20 ms gap). The response timeout defaults to 1000 ms (50–10000 ms). The page counts requests, successes, exceptions and timeouts and shows the latest response time. Exceptions show their code and meaning (e.g. `02 Illegal data address`); timeouts tell apart "no data", "bytes but no valid frame" and "response did not match the request", which points at wiring, addressing or baud rate. RTU requests sent from the manual sender are matched and timed too.
-
-The register table shows the address, raw HEX and value of the latest successful read as UInt16, Int16, HEX, binary, or UInt32 / Int32 / Float32 in ABCD, CDAB, BADC or DCBA word order, highlighting values that changed.
-
-To write, type the values separated by commas or spaces; negatives (two's complement) and `0x` hex are accepted, and values can be encoded as 32-bit integers or Float32. FC06 writes one 16-bit value; FC16 writes exactly as many registers as the values need and never zero-pads neighbouring registers.
-
-## HART
-
-Search, scan, polling, commands and the instrument settings / calibration actions are all request/response: each request waits for the device's answer or a timeout before the next is sent, the poll interval is the time between request starts (at least a 50 ms gap), and a command sent while polling waits its turn instead of colliding with a reply. The response timeout (under Advanced Settings) defaults to 1000 ms (100–10000 ms) and runs until the device starts answering; a reply already arriving is received in full (a long frame takes over 2 s at 1200 bit/s). The page counts requests, successes, errors and timeouts and shows the latest response time. Error answers show their response code and meaning (e.g. `0x07 In Write Protect Mode`, `0x20 Busy`); timeouts tell apart "no data", "bytes but no valid response frame" and "frames that did not answer this request". HART request frames sent from the manual sender are matched and timed too.
-
-**Scan 0-15** sends Cmd 0 to each address in turn and stops at the first device; while it runs, the same button stops it. **Command Response** shows the answer to the latest command only; poll data goes to the PV/SV/TV/QV cards and the chart. Data sent by a device in burst mode also updates the cards and chart, but requests are not timed around burst messages, so one may collide with a burst and time out.
-
-The Instrument Settings and I/O Calibration tabs show the outcome of their latest action under the cards (the answer, an error or the timeout cause), and writes ask for confirmation before they are sent. The monitor and the transceiver log stay in view on every tab, so the frames can be checked as you go.
-
-## Custom device
-
-The **Commands** tab lists saved commands at the top with their name, payload and byte count. **Send** on a row sends that command once exactly as saved (format, ending and checksum) without touching the editor; clicking the name loads it into the editor below. The editor sends UTF-8 text or HEX, with a byte preview and optional Modbus CRC16, SUM8 or XOR8. Text supports no ending, LF, CR or CRLF; HEX ignores line endings. Checksums cover the entire payload including text endings, with CRC16 low byte first. Choose no checksum when your frame already includes one.
-
-Text commands can opt in to **Parse escapes**: `\r`, `\n`, `\t`, `\xHH` (any single byte) and `\\` (a backslash), e.g. `AT+RST\r\n` or `\x02START\x03`. The byte preview shows the result, and an unknown escape is reported instead of sent. The option is off by default, so existing commands send the same bytes as before.
-
-Save up to 50 named commands in this browser and export a JSON backup (still `modusignal.custom-commands` version 1; commands with escapes on carry an extra `"escapes": true`). Import merges commands and skips identical entries without sending anything. Limits: 512 KB per library and 8192 characters per payload.
-
-Timed sending accepts a 50–60000 ms delay after each completed write and a count of 1–100000 (0 means unlimited). The first send is immediate. Counts track completed transport writes, not device acknowledgments. Stop, leaving the sending tab/page, disconnecting or a write error cancels future sends; an in-flight write cannot be recalled. Background browser timers may be delayed. Use ⌘ / Ctrl + Enter in the editor to send once.
-
-The **Transceiver Debug** panel below is shared by every device. Log times have millisecond precision (`HH:MM:SS.mmm`) and the header counts RX / TX bytes until the log is cleared. **View** offers Auto, HEX and Text: Auto shows HEX for Modbus, HART and AOMaster, and elsewhere shows printable text as text and anything else as HEX; HEX and Text apply to both directions and re-render the existing lines. Text view marks line endings and unprintable bytes with the editor's escapes (e.g. `OK\r\n`, `\x01`). **Pause scroll** keeps logging but holds the view in place; **Save log** downloads the current log (the latest 1000 lines) as a .txt file. The bottom sender has the same line endings (none / LF / CR / CRLF) and checksums as the command editor; JSON (the default on the WebSocket and MQTT pages) adds neither.
-
-If your device isn't built in, the *Custom* page lets you describe it without writing JS:
-
-- Output range, unit, step
-- Send template with `{value}`, `{value:2}`, `{unit}` placeholders
-- Parser: regex, JSON path, HEX offset, Modbus payload
-- Scaling: `parsed × scale + offset`
-
-## Status
-
-modusignal is actively maintained. New devices and parsers land regularly — see [open issues](https://github.com/txp666/modusignal/issues) for what's being discussed and feel free to chime in. If you'd like a device supported but don't want to write the driver yourself, [open a request](https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82) with the protocol doc, sample frames, and default connection parameters.
-
-## Contributing
-
-PRs that add devices or improve existing drivers are welcome. Please read [`CONTRIBUTING.md`](./CONTRIBUTING.md) first (Chinese; English version coming).
-
-## License
-
-Apache License 2.0. See [`LICENSE.txt`](./LICENSE.txt).
-
-If modusignal saved you an afternoon of fighting with a vendor installer, a star helps other people find it.
-
 
 ---
 

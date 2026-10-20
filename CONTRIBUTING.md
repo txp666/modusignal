@@ -18,7 +18,7 @@
 4. 在 `src/device-registry.js` 的 `DEVICE_REGISTRY` 追加 entry（含 `pagePath`、`getProfile`、`createCommand`、`parseTelemetry`）。独立上位机可设置 `standalone: true`，并省略 `createCommand` / `parseTelemetry`。
 5. 在 `pages/devices/` 增加设备页面 HTML（路径与 registry 中 `pagePath` 一致）。
 6. 在 `src/app.js` 增加页面状态绑定、设备专属 UI 显隐逻辑与轮询/配置表单。独立上位机应隐藏共享工作台和共享连接参数，避免两套连接 UI 冲突。
-7. 更新 `README.md` 和 `AI.md`（含监测面板曲线配置说明；独立上位机需说明浏览器 API、默认 VID/PID 或连接入口）。
+7. 在 `AI.md` 写明协议约定和监测面板曲线配置（独立上位机需说明浏览器 API、默认 VID/PID 或连接入口），并在 `README.md` 与 `README_EN.md` 的设备表各加一行简介；README 不写具体协议细节。
 8. 至少运行：
 
 ```powershell
