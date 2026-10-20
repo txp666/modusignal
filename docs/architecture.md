@@ -42,6 +42,7 @@ Lower layers must not import `app.js` or reach into its mutable state. Controlle
 - `monitoring/chart-csv-controller.js` owns CSV import/export orchestration while `chart-csv.js` remains the pure data layer.
 - `ui/app-event-bindings.js` is the event wiring boundary; `ui/app-elements.js` builds the DOM registry.
 - `ui/device-navigation-ui.js`, `ui/sidebar-controller.js`, `ui/debug-curve-controller.js`, and `ui/log-controller.js` own reusable UI workflows.
+- `ui/log-controller.js` owns the shared send/receive log: RX coalescing, the Auto/HEX/Text display, pause, byte counters, the line limit and saving. `ui/log-format.js` and `utils/text-escapes.js` hold the pure formatting; the escape syntax is shared with the custom command editor (`features/custom/command-library.js`), which also builds the shared sender's payloads.
 
 `app.js` retains cross-feature state, bootstrap ordering, controller dependency injection, device selection, and the shared command workbench. New protocol dispatch, chart lifecycle, device-specific form logic, or timers must not be added there.
 

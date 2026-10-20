@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildCustomCommand, parseCommandLibrary, serializeCommandLibrary, mergeCommandLibraries } from "../src/features/custom/command-library.js";
+import { buildCustomCommand, buildManualSendPayload, parseCommandLibrary, serializeCommandLibrary, mergeCommandLibraries } from "../src/features/custom/command-library.js";
 import { createCommandRunner } from "../src/features/custom/command-runner.js";
 import { createDeviceSetOutputCommand } from "../src/protocols.js";
 
@@ -52,6 +52,41 @@ test("import validates the whole file and does not mutate existing commands on e
   assert.throws(() => mergeCommandLibraries(current, [{ ...hexCommand, name: "" }]));
   assert.deepEqual(current, [textCommand]);
   assert.throws(() => serializeCommandLibrary(Array(50).fill({ ...textCommand, payload: "中".repeat(8192) })));
+});
+
+test("opt-in text escapes become bytes before the ending and checksum; plain text is unchanged", () => {
+  const escaped = { ...textCommand, payload: "RST\\x01\\tALL", checksum: "xor8", escapes: true };
+  assert.equal(buildCustomCommand(escaped).hex, "52 53 54 01 09 41 4C 4C 0D 0A 1B");
+  assert.equal(buildCustomCommand({ ...escaped, payload: "\\xFF\\r", lineEnding: "", checksum: "none" }).hex, "FF 0D");
+  assert.equal(buildCustomCommand({ ...textCommand, payload: "A\\r" }).hex, "41 5C 72 0D 0A");
+  assert.equal(buildCustomCommand({ ...textCommand, payload: "A\\r", escapes: "yes" }).hex, "41 5C 72 0D 0A");
+  assert.throws(() => buildCustomCommand({ ...escaped, payload: "A\\q" }), /\\q$/);
+  // HEX payloads never interpret escapes.
+  assert.equal(buildCustomCommand({ ...hexCommand, escapes: true }).hex, "01 03 00 00 00 02 C4 0B");
+});
+
+test("the escapes flag is saved only when on, so existing v1 libraries stay identical", () => {
+  const escaped = { ...textCommand, payload: "AT\\r", lineEnding: "", escapes: true };
+  const text = serializeCommandLibrary([textCommand, escaped, { ...hexCommand, escapes: true }, { ...textCommand, escapes: false }]);
+  const saved = JSON.parse(text);
+  assert.equal(saved.format, "modusignal.custom-commands");
+  assert.equal(saved.version, 1);
+  assert.deepEqual(saved.commands.map((command) => command.escapes), [undefined, true, undefined, undefined]);
+  assert.deepEqual(parseCommandLibrary(text)[1], escaped);
+  assert.equal(serializeCommandLibrary([textCommand]), serializeCommandLibrary(parseCommandLibrary(serializeCommandLibrary([textCommand]))));
+  assert.throws(() => serializeCommandLibrary([{ ...escaped, payload: "\\x4" }]));
+});
+
+test("shared sender keeps text frames without a checksum and appends one to text or HEX bytes", () => {
+  assert.equal(buildManualSendPayload({ format: "ascii", payload: "PING", lineEnding: "\\r" }), "PING\r");
+  assert.equal(buildManualSendPayload({ format: "ascii", payload: "PING", lineEnding: "\\r\\n", checksum: "none" }), "PING\r\n");
+  assert.equal(buildManualSendPayload({ format: "json", payload: " {\"a\":1} ", lineEnding: "\\r\\n", checksum: "modbus" }), "{\"a\":1}");
+  assert.deepEqual([...buildManualSendPayload({ format: "ascii", payload: "PING", lineEnding: "\\r", checksum: "sum8" })],
+    [0x50, 0x49, 0x4e, 0x47, 0x0d, 0x3b]);
+  assert.deepEqual([...buildManualSendPayload({ format: "hex", payload: "01 03 00 00 00 02", lineEnding: "\\r\\n", checksum: "modbus" })],
+    [0x01, 0x03, 0x00, 0x00, 0x00, 0x02, 0xc4, 0x0b]);
+  assert.deepEqual([...buildManualSendPayload({ format: "hex", payload: "01 03", lineEnding: "\\r\\n" })], [0x01, 0x03]);
+  assert.throws(() => buildManualSendPayload({ format: "hex", payload: "0G", lineEnding: "", checksum: "xor8" }));
 });
 
 function fixture() {

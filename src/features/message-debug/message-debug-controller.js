@@ -1,4 +1,5 @@
 import i18n from "../../i18n.js";
+import { syncManualSendOptions } from "../../ui/manual-send-options.js";
 import {
   buildMqttMessage,
   getMqttPublishOptions,
@@ -157,6 +158,7 @@ export function createMessageDebugController(options) {
   function loadIntoManualSender(preset) {
     if (elements.sendFormat) elements.sendFormat.value = preset.format;
     if (elements.lineEnding) elements.lineEnding.value = "";
+    syncManualSendOptions(elements);
     if (elements.manualCommand) {
       elements.manualCommand.value = preset.message;
       elements.manualCommand.focus();

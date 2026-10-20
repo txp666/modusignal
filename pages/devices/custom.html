@@ -12,19 +12,26 @@
       </div>
     </div>
     <div class="custom-command-library">
-      <label><span data-i18n="customTools.library">已存指令</span><select id="customQuickLibrary"></select></label>
-      <label><span data-i18n="customTools.name">指令名称</span><input id="customQuickName" type="text" maxlength="60" data-i18n-placeholder="customTools.namePlaceholder" placeholder="例如：读取版本" /></label>
+      <div class="custom-command-list-heading">
+        <h3 data-i18n="customTools.library">已存指令</h3>
+        <span id="customQuickCount">0 / 50</span>
+      </div>
+      <ul id="customQuickLibrary" class="custom-command-list" data-i18n-aria-label="customTools.library" aria-label="已存指令"></ul>
+      <p id="customQuickEmpty" class="custom-command-empty" data-i18n="customTools.empty">还没有保存的指令。在下方填写后点“保存指令”，之后可在这里一键发送。</p>
     </div>
     <div class="custom-command-save">
+      <h3 id="customQuickEditorTitle">新指令</h3>
       <button id="customQuickNew" class="ghost-button" type="button" data-i18n="customTools.new">新建</button>
       <button id="customQuickDelete" class="ghost-button" type="button" data-i18n="customTools.remove">移除</button>
       <button id="customQuickSave" class="ghost-button" type="button" data-i18n="customTools.save">保存指令</button>
     </div>
+    <label class="custom-command-name"><span data-i18n="customTools.name">指令名称</span><input id="customQuickName" type="text" maxlength="60" data-i18n-placeholder="customTools.namePlaceholder" placeholder="例如：读取版本" /></label>
     <div class="custom-command-options">
       <label><span data-i18n="custom.format">格式</span><select id="customQuickFormat"><option value="ascii" data-i18n="customTools.text">文本 UTF-8</option><option value="hex">HEX</option></select></label>
       <label><span data-i18n="custom.lineEnding">行尾</span><select id="customQuickEnding"><option value="" data-i18n="common.none">无</option><option value="\n">LF</option><option value="\r">CR</option><option value="\r\n" selected>CRLF</option></select></label>
       <label><span data-i18n="customTools.checksum">追加校验</span><select id="customQuickChecksum"><option value="none" data-i18n="common.none">无</option><option value="modbus">Modbus CRC16</option><option value="sum8">SUM8</option><option value="xor8">XOR8</option></select></label>
     </div>
+    <label class="custom-command-escapes"><input id="customQuickEscapes" type="checkbox" /><span data-i18n="customTools.escapes">解析转义字符</span><code>\r \n \t \xHH \\</code></label>
     <div class="custom-command-editor">
       <div class="custom-command-send">
         <label for="customQuickPayload" data-i18n="customTools.payload">发送内容</label>

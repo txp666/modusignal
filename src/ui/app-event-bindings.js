@@ -1,5 +1,6 @@
 import i18n from "../i18n.js";
 import { initWorkspaceTabs } from "./workspace-tabs.js";
+import { syncManualSendOptions } from "./manual-send-options.js";
 import { initChartCurvePanel } from "../chart-curve-panel.js";
 import { buildDefaultStepSequence } from "../devices/aomaster.js";
 import { WEBSOCKET_QUICK_MESSAGES } from "../devices/websocket-device.js";
@@ -48,7 +49,6 @@ export function bindAppEvents(options) {
     sendWebSocketQuickMessage,
     sendMqttQuickMessage,
     loadMessageIntoManualSender,
-    resetRxLogCoalesce,
     appendLog,
     clearAllCharts,
     selectDevice,
@@ -141,11 +141,7 @@ export function bindAppEvents(options) {
   on(elements.copyRequestTemplate, "click", copyRequestTemplate);
   bindProductDialog(elements.openAomasterProductDialog, elements.aomasterProductDialog, elements.closeAomasterProductDialog);
   bindProductDialog(elements.openHartlinkProductDialog, elements.hartlinkProductDialog, elements.closeHartlinkProductDialog);
-  on(elements.clearLog, "click", () => {
-    resetRxLogCoalesce();
-    elements.serialLog.innerHTML = "";
-    appendLog("info", i18n("log.system"), i18n("log.logCleared"));
-  });
+  on(elements.sendFormat, "change", () => syncManualSendOptions(elements));
   on(elements.clearChart, "click", () => {
     clearAllCharts();
     appendLog("info", i18n("log.system"), i18n("log.chartCleared"));

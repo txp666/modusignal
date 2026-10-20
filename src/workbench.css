@@ -239,9 +239,28 @@
 .workspace .custom-command-panel { display:grid; gap:12px; flex:none; }
 .workspace .custom-command-panel .panel-heading { margin:0; }
 .workspace .custom-command-panel label { margin:0; min-width:0; }
-.workspace .custom-command-library { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:end; gap:8px; }
-.workspace .custom-command-save { display:flex; align-items:center; gap:8px; }
-.workspace #customQuickSave { margin-left:auto; }
+.workspace .custom-command-library { display:grid; gap:6px; min-width:0; }
+.workspace .custom-command-list-heading { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
+.workspace :is(.custom-command-list-heading, .custom-command-save) h3 { margin:0; font-size:13px; font-weight:600; }
+.workspace #customQuickCount { color:var(--muted); font:12px/1.4 ui-monospace,monospace; font-variant-numeric:tabular-nums; }
+.workspace .custom-command-list { margin:0; padding:0; list-style:none; max-height:206px; overflow:auto; border:1px solid var(--line); border-radius:6px; }
+.workspace .custom-command-row { display:flex; align-items:center; gap:4px; padding-right:4px; border-bottom:1px solid var(--line); }
+.workspace .custom-command-row:last-child { border-bottom:0; }
+.workspace .custom-command-row.selected { background:var(--surface-selected); box-shadow:inset 2px 0 0 var(--accent); }
+.workspace .custom-command-load { flex:1; display:flex; align-items:center; gap:8px; min-width:0; min-height:34px; padding:6px 10px; border-radius:0; background:transparent; color:var(--text); font-weight:400; text-align:left; }
+.workspace .custom-command-load:hover:not(:disabled) span { color:var(--accent-strong); text-decoration:underline; }
+.workspace .custom-command-load :is(span, code) { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.workspace .custom-command-load span { flex:none; max-width:45%; font-size:13px; font-weight:600; }
+.workspace .custom-command-load code { flex:1; min-width:0; color:var(--muted); font:12px/1.5 ui-monospace,monospace; }
+.workspace .custom-command-load small { flex:none; color:var(--muted); font:11px/1.5 ui-monospace,monospace; }
+.workspace .custom-command-row-send { flex:none; min-height:28px; padding:0 12px; font-size:12px; }
+.workspace .custom-command-empty { margin:0; padding:10px 12px; border:1px dashed var(--line); border-radius:6px; color:var(--muted); font-size:12px; line-height:1.5; }
+.workspace .custom-command-save { display:flex; align-items:center; gap:8px; padding-top:10px; border-top:1px solid var(--line); }
+.workspace .custom-command-save h3 { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.workspace .custom-command-panel .custom-command-escapes { display:flex; align-items:center; flex-wrap:wrap; gap:6px; font-size:12px; font-weight:400; }
+.workspace .custom-command-escapes input { width:auto; min-height:0; margin:0; accent-color:var(--accent); }
+.workspace .custom-command-escapes code { color:var(--muted); font:11px/1.4 ui-monospace,monospace; }
+.workspace .custom-command-escapes:has(input:disabled) { color:var(--muted); }
 .workspace .custom-command-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
 .workspace .custom-command-editor { display:grid; gap:6px; }
 .workspace .custom-command-editor textarea { min-height:72px; height:72px; resize:vertical; font:13px/1.5 ui-monospace,monospace; padding:8px 10px; }
@@ -505,4 +524,42 @@
 .app-shell .workspace .chart-settings-dialog .chart-settings-dialog-header .icon-button { font-size:22px; padding:0; width:38px; height:38px; }
 @media (max-width:700px) {
   .app-shell .workspace .chart-settings-dialog .chart-settings-dialog-header .icon-button { width:44px; height:44px; }
+}
+
+/* Send/receive log toolbar and the shared sender's checksum column. */
+.workspace .console-panel > .panel-heading { flex-wrap:wrap; gap:8px 12px; }
+.workspace .log-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:6px; margin-left:auto; }
+.workspace .log-counters { display:inline-flex; gap:10px; margin-right:4px; color:var(--muted); font:12px/1.4 ui-monospace,monospace; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.workspace .log-counters strong { color:var(--text); font-weight:600; }
+.workspace .console-panel .log-display-mode { display:inline-flex; align-items:center; gap:6px; margin:0; color:var(--muted); font-size:12px; font-weight:400; }
+.workspace .log-display-mode select { width:auto; min-height:34px; padding:0 6px; font-size:12px; }
+.workspace .log-toolbar button { min-height:34px; padding:0 10px; font-size:12px; font-weight:600; }
+.workspace .log-toolbar .icon-button { min-width:34px; padding:0; }
+.workspace .log-toolbar #logPauseScroll[aria-pressed="true"] { border-color:var(--accent); background:var(--surface-selected); color:var(--accent-strong); }
+/* The log controller keeps a paused view steady itself, so native scroll anchoring must not adjust it twice. */
+.workspace .serial-log { overflow-anchor:none; }
+.workspace .serial-log .log-line { grid-template-columns:13ch 2.5rem minmax(0,1fr); }
+.workspace .console-panel .send-grid { grid-template-columns:1fr 1fr 1fr auto; grid-template-areas:"format ending checksum send" "command command command command"; }
+.workspace .console-panel .send-grid > .send-checksum { grid-area:checksum; }
+@media (min-width:1051px) and (min-height:640px) {
+  .app-shell:not(.overview-page) .workspace .send-grid { grid-template-columns:76px 76px 84px minmax(0,1fr) auto; grid-template-areas:none; }
+  .app-shell:not(.overview-page) .workspace .console-panel .send-grid > label { grid-area:auto; }
+  .app-shell:not(.overview-page) .workspace :is(#sendFormat, #lineEnding, #sendChecksum) { padding-inline:6px 2px; }
+}
+@media (min-width:1051px) and (max-width:1250px) and (min-height:640px) {
+  .app-shell:not(.overview-page) .workspace .send-grid { grid-template-columns:60px 66px 74px minmax(0,1fr) auto; }
+}
+@media (max-width:700px) {
+  .workspace .serial-log .log-line { grid-template-columns:13ch minmax(0,1fr); }
+}
+@media (max-width:600px) {
+  .workspace .log-toolbar { justify-content:flex-start; margin-left:0; }
+  .workspace .log-toolbar button, .workspace .log-display-mode select { min-height:44px; }
+  .workspace .log-toolbar .icon-button { min-width:44px; }
+  .workspace .custom-command-row-send, .workspace .custom-command-load { min-height:44px; }
+  .workspace .custom-command-save { flex-wrap:wrap; }
+  .workspace .custom-command-save h3 { flex-basis:100%; }
+}
+@media (max-width:400px) {
+  .workspace .console-panel .send-grid { grid-template-columns:1fr 1fr; grid-template-areas:"format ending" "checksum checksum" "command command" "send send"; }
 }

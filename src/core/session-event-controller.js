@@ -16,10 +16,12 @@ import {
   MODBUS_DEVICE_ID,
   MQTT_DEVICE_ID,
   WEBSOCKET_DEVICE_ID,
-  bytesToHex,
   parseDeviceTelemetry,
 } from "../protocols.js";
 import { DEFAULT_TRANSPORT_ID } from "../transports/registry.js";
+
+// Binary protocols whose traffic the log's "auto" display shows as HEX.
+const HEX_LOG_DEVICE_IDS = [MODBUS_DEVICE_ID, HART_DEVICE_ID, DEFAULT_DEVICE_ID];
 
 export function createSessionEventController(options) {
   const {
@@ -91,9 +93,9 @@ export function createSessionEventController(options) {
     const hartLinkProbeChunk = state.deviceId === HART_DEVICE_ID && state.transportId === DEFAULT_TRANSPORT_ID
       ? hartSessionController.handleLinkProbeRx(text)
       : false;
-    const useHexDisplay = [MODBUS_DEVICE_ID, HART_DEVICE_ID, DEFAULT_DEVICE_ID].includes(state.deviceId);
-    const rxPayload = topic ? `[${topic}] ${text ?? bytesToHex(bytes)}` : text ?? bytesToHex(bytes);
-    queueRxLogDisplay(bytes, rxPayload, useHexDisplay && !topic && !hartLinkProbeChunk);
+    // Device default for the log's "auto" display; the HEX/Text toggle overrides it.
+    const useHexDisplay = HEX_LOG_DEVICE_IDS.includes(state.deviceId);
+    queueRxLogDisplay(bytes, text, useHexDisplay && !topic && !hartLinkProbeChunk, topic ? `[${topic}] ` : "");
     if (hartLinkProbeChunk) return;
 
     if (state.deviceId === WEBSOCKET_DEVICE_ID) messageDebugController.increment("websocket", "rx");
@@ -147,12 +149,13 @@ export function createSessionEventController(options) {
   function handleTx({ bytes, text, topic, qos, retain }) {
     const { messageDebugController } = getControllers();
     finalizeRxLogCoalesce();
-    let payload = text ?? bytesToHex(bytes);
+    // A record rather than a string, so the log can show it as HEX or text. Text writes keep showing as text.
+    const payload = { bytes, text, autoHex: text === undefined && HEX_LOG_DEVICE_IDS.includes(state.deviceId) };
     if (topic) {
       const flags = [];
       if (qos) flags.push(`QoS${qos}`);
       if (retain) flags.push("retain");
-      payload = `[${topic}${flags.length ? ` ${flags.join(" ")}` : ""}] ${payload}`;
+      payload.prefix = `[${topic}${flags.length ? ` ${flags.join(" ")}` : ""}] `;
     }
     appendLog("tx", "TX", payload);
     if (state.deviceId === MODBUS_DEVICE_ID && bytes) getControllers().modbusController.handleTx(bytes);

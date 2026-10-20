@@ -1,5 +1,5 @@
 import i18n from "../../i18n.js";
-import { buildCustomCommand, COMMAND_LIBRARY_KEY, MAX_LIBRARY_SIZE, parseCommandLibrary,
+import { buildCustomCommand, COMMAND_LIBRARY_KEY, MAX_COMMANDS, MAX_LIBRARY_SIZE, parseCommandLibrary,
   serializeCommandLibrary, validateSavedCommand, mergeCommandLibraries } from "./command-library.js";
 import { createCommandRunner } from "./command-runner.js";
 
@@ -10,8 +10,9 @@ export function createCustomCommandUi({ elements, getSession, isActive, appendLo
   let statusKey = "customTools.localOnly";
   let errorText = "";
   let importing = false;
+  let rows = [];
   const editor = [e.customQuickName, e.customQuickPayload, e.customQuickFormat,
-    e.customQuickEnding, e.customQuickChecksum, e.customQuickInterval, e.customQuickLimit];
+    e.customQuickEnding, e.customQuickChecksum, e.customQuickEscapes, e.customQuickInterval, e.customQuickLimit];
   const runner = createCommandRunner({ getSession, isActive, onChange: refresh, onError: reportError });
 
   function reportError(error) {
@@ -23,7 +24,7 @@ export function createCustomCommandUi({ elements, getSession, isActive, appendLo
   function read() {
     return { name: e.customQuickName.value, payload: e.customQuickPayload.value,
       format: e.customQuickFormat.value, lineEnding: e.customQuickEnding.value,
-      checksum: e.customQuickChecksum.value };
+      checksum: e.customQuickChecksum.value, escapes: e.customQuickEscapes.checked };
   }
   function populate(command = { name: "", payload: "", format: "ascii", lineEnding: "\\r\\n", checksum: "none" }) {
     e.customQuickName.value = command.name;
@@ -31,21 +32,52 @@ export function createCustomCommandUi({ elements, getSession, isActive, appendLo
     e.customQuickFormat.value = command.format;
     e.customQuickEnding.value = command.lineEnding;
     e.customQuickChecksum.value = command.checksum;
+    e.customQuickEscapes.checked = command.escapes === true;
     message("customTools.localOnly");
   }
+  function select(index) {
+    selected = index;
+    renderLibrary();
+    populate(commands[index]);
+    rows[index]?.load.focus();
+  }
+  // Each saved command is a row: the name loads it into the editor, Send writes it as saved.
   function renderLibrary() {
     e.customQuickLibrary.replaceChildren();
-    const draft = document.createElement("option");
-    draft.value = "-1";
-    draft.textContent = i18n("customTools.unsaved");
-    e.customQuickLibrary.append(draft);
-    commands.forEach((command, index) => {
-      const option = document.createElement("option");
-      option.value = String(index);
-      option.textContent = `${command.name} · ${command.format === "hex" ? "HEX" : "UTF-8"}`;
-      e.customQuickLibrary.append(option);
+    rows = commands.map((command, index) => {
+      const row = document.createElement("li");
+      row.className = `custom-command-row${index === selected ? " selected" : ""}`;
+      const load = document.createElement("button");
+      load.type = "button";
+      load.className = "custom-command-load";
+      load.title = i18n("customTools.loadTitle");
+      if (index === selected) load.setAttribute("aria-current", "true");
+      const name = document.createElement("span");
+      name.textContent = command.name;
+      const payload = document.createElement("code");
+      payload.textContent = command.payload;
+      let meta = command.format === "hex" ? "HEX" : i18n("customTools.textShort");
+      try { meta += ` · ${buildCustomCommand(command).bytes.length} B`; } catch {}
+      const info = document.createElement("small");
+      info.textContent = meta;
+      load.append(name, payload, info);
+      load.addEventListener("click", () => select(index));
+      const send = document.createElement("button");
+      send.type = "button";
+      send.className = "ghost-button custom-command-row-send";
+      send.textContent = i18n("customTools.sendRow");
+      send.setAttribute("aria-label", `${i18n("customTools.sendRow")} ${command.name}`);
+      send.addEventListener("click", safely(() => sendBytes(buildCustomCommand(command).bytes)));
+      row.append(load, send);
+      e.customQuickLibrary.append(row);
+      return { load, send };
     });
-    e.customQuickLibrary.value = String(selected);
+    e.customQuickLibrary.hidden = !commands.length;
+    e.customQuickEmpty.hidden = commands.length > 0;
+    e.customQuickCount.textContent = `${commands.length} / ${MAX_COMMANDS}`;
+    e.customQuickEditorTitle.textContent = selected < 0 ? i18n("customTools.newCommand")
+      : `${i18n("customTools.editing")}${commands[selected].name}`;
+    e.customQuickEditorTitle.title = e.customQuickEditorTitle.textContent;
   }
   function persist(next) {
     const text = serializeCommandLibrary(next);
@@ -64,10 +96,16 @@ export function createCustomCommandUi({ elements, getSession, isActive, appendLo
     e.customQuickBytes.textContent = payload ? `${payload.bytes.length} B${payload.checksumHex ? ` · ${i18n("customTools.checksum")}: ${payload.checksumHex}` : ""}` : "0 B";
     editor.forEach((control) => { control.disabled = locked; });
     e.customQuickEnding.disabled = locked || e.customQuickFormat.value === "hex";
-    for (const control of [e.customQuickLibrary, e.customQuickNew, e.customQuickSave, e.customQuickImport]) control.disabled = locked;
+    e.customQuickEscapes.disabled = locked || e.customQuickFormat.value === "hex";
+    for (const control of [e.customQuickNew, e.customQuickSave, e.customQuickImport]) control.disabled = locked;
     e.customQuickDelete.disabled = locked || selected < 0;
     e.customQuickExport.disabled = !commands.length;
-    const ready = isActive() && getSession()?.connected && payload && !locked;
+    const connected = Boolean(isActive() && getSession()?.connected);
+    const ready = connected && payload && !locked;
+    for (const row of rows) {
+      row.load.disabled = locked;
+      row.send.disabled = !connected || locked;
+    }
     e.customQuickSend.disabled = !ready;
     e.customQuickStart.disabled = !ready;
     e.customQuickStop.disabled = !run.active;
@@ -79,10 +117,13 @@ export function createCustomCommandUi({ elements, getSession, isActive, appendLo
     e.customQuickConnection.textContent = i18n(getSession()?.connected && isActive() ? "customTools.connected" : "customTools.connectFirst");
   }
   function safely(action) { return () => { try { action(); } catch (error) { reportError(error); } }; }
-  function send(repeat) {
+  function sendBytes(bytes, schedule) {
     errorText = "";
+    void runner.start(bytes, schedule);
+  }
+  function send(repeat) {
     const { bytes } = buildCustomCommand(read());
-    void runner.start(bytes, repeat ? { interval: Number(e.customQuickInterval.value), limit: Number(e.customQuickLimit.value) } : undefined);
+    sendBytes(bytes, repeat ? { interval: Number(e.customQuickInterval.value), limit: Number(e.customQuickLimit.value) } : undefined);
   }
   function download() {
     const url = URL.createObjectURL(new Blob([serializeCommandLibrary(commands)], { type: "application/json" }));
@@ -93,10 +134,6 @@ export function createCustomCommandUi({ elements, getSession, isActive, appendLo
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  e.customQuickLibrary.addEventListener("change", () => {
-    selected = Number(e.customQuickLibrary.value);
-    populate(commands[selected]);
-  });
   e.customQuickNew.addEventListener("click", () => { selected = -1; renderLibrary(); populate(); e.customQuickPayload.focus(); });
   editor.forEach((control) => control.addEventListener("input", () => { errorText = ""; refresh(); }));
   e.customQuickSave.addEventListener("click", safely(() => {

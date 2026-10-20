@@ -6,14 +6,18 @@ import { COMMAND_LIBRARY_KEY, serializeCommandLibrary } from "../src/features/cu
 
 class Element {
   value = "";
+  checked = false;
   disabled = false;
   hidden = false;
   textContent = "";
+  className = "";
   children = [];
+  attributes = {};
   handlers = {};
   classList = { toggle() {} };
+  setAttribute(name, value) { this.attributes[name] = value; }
   addEventListener(name, handler) { this.handlers[name] = handler; }
-  append(child) { this.children.push(child); }
+  append(...nodes) { this.children.push(...nodes); }
   replaceChildren() { this.children = []; }
   focus() {}
   closest() { return this.panel; }
@@ -51,6 +55,18 @@ function fixture(t) {
   return { e: elements, ui, pane, session, writes, stored, logs, denyStorage() { denyStorage = true; } };
 }
 
+// Saved commands render as rows of [load-into-editor button, send button].
+function row(f, index) {
+  const [load, send] = f.e.customQuickLibrary.children[index].children;
+  return { load, send, selected: f.e.customQuickLibrary.children[index].className.includes("selected") };
+}
+
+async function saveCommand(f, fields) {
+  await f.e.customQuickNew.emit("click");
+  for (const [key, value] of Object.entries(fields)) f.e[`customQuick${key}`][key === "Escapes" ? "checked" : "value"] = value;
+  await f.e.customQuickSave.emit("click");
+}
+
 test("editor preview, saved commands and actual single-send bytes stay aligned", async (t) => {
   const f = fixture(t);
   f.e.customQuickName.value = "Read";
@@ -62,9 +78,11 @@ test("editor preview, saved commands and actual single-send bytes stay aligned",
   assert.equal(JSON.parse(f.stored.get(COMMAND_LIBRARY_KEY)).commands[0].payload, "READ?");
   await f.e.customQuickNew.emit("click");
   assert.equal(f.e.customQuickPayload.value, "");
-  f.e.customQuickLibrary.value = "0";
-  await f.e.customQuickLibrary.emit("change");
+  assert.equal(row(f, 0).selected, false);
+  await row(f, 0).load.emit("click");
   assert.equal(f.e.customQuickPayload.value, "READ?");
+  assert.equal(row(f, 0).selected, true);
+  assert.equal(row(f, 0).load.attributes["aria-current"], "true");
   f.session.connected = true;
   f.ui.refresh();
   assert.equal(f.e.customQuickSend.disabled, false);
@@ -104,12 +122,53 @@ test("failed import or storage leaves the saved library intact", async (t) => {
   await f.e.customQuickFile.emit("change");
   assert.equal(f.stored.get(COMMAND_LIBRARY_KEY), saved);
   assert.equal(f.logs.length, 1);
-  f.e.customQuickLibrary.value = "0";
-  await f.e.customQuickLibrary.emit("change");
+  await row(f, 0).load.emit("click");
   f.denyStorage();
   await f.e.customQuickDelete.emit("click");
-  assert.equal(f.e.customQuickLibrary.value, "0");
+  assert.equal(f.e.customQuickLibrary.children.length, 1);
+  assert.equal(row(f, 0).selected, true);
   assert.equal(f.stored.get(COMMAND_LIBRARY_KEY), saved);
   assert.equal(f.logs.length, 2);
   assert.deepEqual(f.writes, []);
+});
+
+test("each saved row sends its saved bytes in one click without touching the editor", async (t) => {
+  const f = fixture(t);
+  assert.equal(f.e.customQuickEmpty.hidden, false);
+  assert.equal(f.e.customQuickLibrary.hidden, true);
+  await saveCommand(f, { Name: "Version", Payload: "VER?", Ending: "\\r" });
+  await saveCommand(f, { Name: "Registers", Format: "hex", Payload: "01 03 00 00 00 02", Ending: "", Checksum: "modbus" });
+  await saveCommand(f, { Name: "Reset", Payload: "RST\\x01", Ending: "", Escapes: true });
+  assert.equal(f.e.customQuickCount.textContent, "3 / 50");
+  assert.equal(f.e.customQuickEmpty.hidden, true);
+  assert.equal(row(f, 1).load.children[2].textContent, "HEX · 8 B");
+  assert.equal(row(f, 1).send.disabled, true);
+
+  await f.e.customQuickNew.emit("click");
+  f.e.customQuickPayload.value = "draft in progress";
+  f.session.connected = true;
+  f.ui.refresh();
+  assert.equal(row(f, 1).send.disabled, false);
+  await row(f, 1).send.emit("click");
+  await row(f, 2).send.emit("click");
+  await row(f, 0).send.emit("click");
+  assert.deepEqual(f.writes, [[1, 3, 0, 0, 0, 2, 0xc4, 0x0b], [0x52, 0x53, 0x54, 0x01], [0x56, 0x45, 0x52, 0x3f, 0x0d]]);
+  assert.equal(f.e.customQuickPayload.value, "draft in progress");
+  assert.equal(f.e.customQuickEditorTitle.textContent, "新指令");
+
+  await row(f, 2).load.emit("click");
+  assert.equal(f.e.customQuickEscapes.checked, true);
+  assert.equal(f.e.customQuickPreview.textContent, "52 53 54 01");
+  assert.match(f.e.customQuickEditorTitle.textContent, /Reset$/);
+});
+
+test("rows are locked while a timed send runs", async (t) => {
+  const f = fixture(t);
+  await saveCommand(f, { Name: "Ping", Payload: "PING" });
+  f.session.connected = true;
+  f.session.write = () => new Promise(() => {});
+  f.ui.refresh();
+  await f.e.customQuickStart.emit("click");
+  assert.equal(row(f, 0).send.disabled, true);
+  assert.equal(row(f, 0).load.disabled, true);
 });

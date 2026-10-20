@@ -140,18 +140,31 @@
     <div class="panel-heading split">
       <div>
         <h2 data-i18n="workbench.transceiverDebug">收发调试</h2>
-        <p data-i18n="workbench.transceiverDesc">支持 ASCII 与 HEX，适合协议确认前做调试。</p>
+        <p data-i18n="workbench.transceiverDesc">发送文本、HEX 或 JSON，可加行尾与校验；日志可切换 HEX/文本并保存。</p>
       </div>
-      <button id="clearLog" class="icon-button" type="button" data-i18n-aria-label="workbench.clearLog" data-i18n-title="workbench.clearLog" aria-label="清空日志" title="清空日志">&#9003;</button>
+      <div class="log-toolbar">
+        <span class="log-counters" data-i18n-title="workbench.byteCountersTitle" title="本次日志收发的字节数，清空日志时归零"><span>RX <strong id="logRxBytes">0</strong> B</span><span>TX <strong id="logTxBytes">0</strong> B</span></span>
+        <label class="log-display-mode">
+          <span data-i18n="workbench.logDisplay">显示</span>
+          <select id="logDisplayMode" data-i18n-title="workbench.logDisplayTitle" title="自动：Modbus、HART、AOMaster 显示 HEX，其余设备可打印文本显示为文本、否则 HEX。HEX/文本作用于全部收发日志。">
+            <option value="auto" data-i18n="workbench.logDisplayAuto">自动</option>
+            <option value="hex">HEX</option>
+            <option value="text" data-i18n="workbench.logDisplayText">文本</option>
+          </select>
+        </label>
+        <button id="logPauseScroll" class="ghost-button" type="button" aria-pressed="false" data-i18n="workbench.pauseScroll">暂停滚动</button>
+        <button id="saveLog" class="ghost-button" type="button" data-i18n="workbench.saveLog" data-i18n-title="workbench.saveLogTitle" title="将当前日志保存为 .txt 文件">保存日志</button>
+        <button id="clearLog" class="icon-button" type="button" data-i18n-aria-label="workbench.clearLog" data-i18n-title="workbench.clearLog" aria-label="清空日志" title="清空日志">&#9003;</button>
+      </div>
     </div>
     <div id="serialLog" class="serial-log" aria-live="polite"></div>
     <div class="send-grid">
       <label>
         <span data-i18n="workbench.format">格式</span>
         <select id="sendFormat">
-          <option value="ascii" selected>ASCII</option>
-          <option value="json">JSON</option>
+          <option value="ascii" selected data-i18n="customTools.textShort">文本</option>
           <option value="hex">HEX</option>
+          <option value="json">JSON</option>
         </select>
       </label>
       <label>
@@ -159,7 +172,17 @@
         <select id="lineEnding">
           <option value="" data-i18n="common.none">无</option>
           <option value="\n">LF</option>
+          <option value="\r">CR</option>
           <option value="\r\n" selected>CRLF</option>
+        </select>
+      </label>
+      <label class="send-checksum">
+        <span data-i18n="customTools.checksum">追加校验</span>
+        <select id="sendChecksum">
+          <option value="none" data-i18n="common.none">无</option>
+          <option value="modbus">CRC16</option>
+          <option value="sum8">SUM8</option>
+          <option value="xor8">XOR8</option>
         </select>
       </label>
       <label class="send-command">

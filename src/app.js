@@ -33,6 +33,8 @@ import {
 import { bindAppEvents } from "./ui/app-event-bindings.js";
 import { createMessageDebugController } from "./features/message-debug/message-debug-controller.js";
 import { createCustomCommandUi } from "./features/custom/custom-command-ui.js";
+import { buildManualSendPayload } from "./features/custom/command-library.js";
+import { syncManualSendOptions } from "./ui/manual-send-options.js";
 import { DEFAULT_TRANSPORT_ID } from "./transports/registry.js";
 import {
   AOMASTER_DEVICE_ID,
@@ -69,7 +71,6 @@ import {
 } from "./debug-curve-form.js";
 import { isReadFunctionCode } from "./modbus/modbus.js";
 import {
-  buildManualPayload,
   bytesToHex,
   createDeviceSetOutputCommand,
   CUSTOM_DEVICE_ID,
@@ -90,7 +91,6 @@ import {
   normalizeWebSocketConfig,
   parseDeviceTelemetry,
   parseHexPayload,
-  resolveLineEnding,
   MQTT_DEVICE_ID,
   WEBSOCKET_DEVICE_ID,
 } from "./protocols.js";
@@ -240,7 +240,6 @@ async function initialize() {
       sendWebSocketQuickMessage: messageDebugController.sendWebsocketQuickMessage,
       sendMqttQuickMessage: messageDebugController.sendMqttQuickMessage,
       loadMessageIntoManualSender: messageDebugController.loadIntoManualSender,
-      resetRxLogCoalesce,
       appendLog,
       clearAllCharts: chartController.clearAll,
       selectDevice,
@@ -382,6 +381,7 @@ function initializeAomasterController() {
 function initializeInfrastructureControllers() {
   debugCurveController = createDebugCurveController({ elements });
   logController = createLogController({
+    elements,
     getLogElement: () => elements.serialLog,
     bytesToHex,
   });
@@ -902,6 +902,7 @@ function updateDeviceUi() {
       elements.lineEnding.value = "";
     }
   }
+  syncManualSendOptions(elements);
 
   chartController.requestResize();
   updateSetpointUi();
@@ -1158,7 +1159,12 @@ async function sendManualCommand() {
       return;
     }
 
-    const payload = buildManualPayload(elements.sendFormat.value, command, resolveLineEnding(elements.lineEnding.value));
+    const payload = buildManualSendPayload({
+      format: elements.sendFormat.value,
+      payload: command,
+      lineEnding: elements.lineEnding.value,
+      checksum: elements.sendChecksum?.value,
+    });
     if (state.deviceId === MQTT_DEVICE_ID) {
       await session.write(payload, messageDebugController.readMqttWriteOptions());
       return;
@@ -1426,16 +1432,12 @@ function renderFooterCopyright() {
   elements.footerCopyright.append(siteLink);
 }
 
-function resetRxLogCoalesce() {
-  logController.resetRxCoalesce();
-}
-
 function finalizeRxLogCoalesce() {
   logController.finalizeRxCoalesce();
 }
 
-function queueRxLogDisplay(bytes, text, useHexDisplay) {
-  logController.queueRx(bytes, text, useHexDisplay);
+function queueRxLogDisplay(bytes, text, useHexDisplay, prefix) {
+  logController.queueRx(bytes, text, useHexDisplay, prefix);
 }
 
 function appendLog(kind, direction, payload, options = {}) {

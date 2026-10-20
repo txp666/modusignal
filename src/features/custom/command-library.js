@@ -1,6 +1,7 @@
 import i18n from "../../i18n.js";
-import { bytesToHex, parseHexPayload } from "../../protocols.js";
+import { buildManualPayload, bytesToHex, parseHexPayload, resolveLineEnding } from "../../protocols.js";
 import { crc16Modbus } from "../../modbus/modbus.js";
+import { encodeEscapedText, TextEscapeError } from "../../utils/text-escapes.js";
 
 export const COMMAND_LIBRARY_KEY = "modusignal.customCommands.v1";
 export const MAX_COMMANDS = 50;
@@ -20,7 +21,8 @@ export function buildCustomCommand(command) {
   }
   // HEX is already a byte sequence. Text endings are appended before checksum calculation.
   const body = command.format === "hex" ? parseHexPayload(command.payload)
-    : new TextEncoder().encode(command.payload + ENDINGS[command.lineEnding]);
+    : command.escapes === true ? concat(encodeText(command.payload), new TextEncoder().encode(ENDINGS[command.lineEnding]))
+      : new TextEncoder().encode(command.payload + ENDINGS[command.lineEnding]);
   let suffix = [];
   if (command.checksum === "modbus") {
     const crc = crc16Modbus(body);
@@ -30,10 +32,33 @@ export function buildCustomCommand(command) {
   } else if (command.checksum === "xor8") {
     suffix = [body.reduce((xor, byte) => xor ^ byte, 0)];
   }
-  const bytes = new Uint8Array(body.length + suffix.length);
-  bytes.set(body);
-  bytes.set(suffix, body.length);
+  const bytes = concat(body, suffix);
   return { bytes, hex: bytesToHex(bytes), checksumHex: bytesToHex(suffix) };
+}
+
+function concat(left, right) {
+  const bytes = new Uint8Array(left.length + right.length);
+  bytes.set(left);
+  bytes.set(right, left.length);
+  return bytes;
+}
+
+function encodeText(payload) {
+  try {
+    return encodeEscapedText(payload);
+  } catch (error) {
+    if (error instanceof TextEscapeError) throw new Error(`${i18n("customTools.escapeInvalid")}${error.sequence}`);
+    throw error;
+  }
+}
+
+/**
+ * The shared workbench sender. JSON and checksum-free text keep the string path so
+ * WebSocket and MQTT still send text frames; a checksum always produces bytes.
+ */
+export function buildManualSendPayload({ format, payload, lineEnding, checksum = "none" }) {
+  if (format === "json" || checksum === "none") return buildManualPayload(format, payload, resolveLineEnding(lineEnding));
+  return buildCustomCommand({ format, payload, lineEnding: format === "hex" ? "" : lineEnding, checksum }).bytes;
 }
 
 export function validateSavedCommand(command) {
@@ -41,10 +66,13 @@ export function validateSavedCommand(command) {
   if (typeof command.name !== "string" || !command.name.trim() || command.name.trim().length > 60) {
     throw new Error(i18n("customTools.nameRequired"));
   }
-  return {
+  const saved = {
     name: command.name.trim(), format: command.format, payload: command.payload,
     lineEnding: command.format === "hex" ? "" : command.lineEnding, checksum: command.checksum,
   };
+  // Optional v1 field, written only when on so existing libraries stay byte-identical.
+  if (command.format === "ascii" && command.escapes === true) saved.escapes = true;
+  return saved;
 }
 
 export function serializeCommandLibrary(commands) {

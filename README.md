@@ -200,11 +200,15 @@ MicroScope Power 页面嵌入了 `pages/devices/microscope-power/` 下的浏览�
 
 ## 自定义设备
 
-“常用指令”页签支持文本（UTF-8）和 HEX，发送前可预览实际字节、字节数及追加的 Modbus CRC16 / SUM8 / XOR8。文本可选无行尾、LF、CR、CRLF；HEX 不追加行尾。校验覆盖全部内容（含文本行尾），CRC16 低字节在前；已有校验的报文应选择“无”，避免重复追加。
+“常用指令”页签上方直接列出已存指令，每行显示名称、内容和字节数：点右侧“发送”即按保存时的格式、行尾和校验发出一次，不影响编辑区；点名称则载入下方编辑区修改。编辑区支持文本（UTF-8）和 HEX，发送前可预览实际字节、字节数及追加的 Modbus CRC16 / SUM8 / XOR8。文本可选无行尾、LF、CR、CRLF；HEX 不追加行尾。校验覆盖全部内容（含文本行尾），CRC16 低字节在前；已有校验的报文应选择“无”，避免重复追加。
 
-可以保存最多 50 条命名指令，按需加载、修改或移除。指令库只保存在当前浏览器，可导出 JSON 备份；导入会合并内容并跳过完全相同的指令，不会自动发送。导入文件上限 512 KB，单条发送内容上限 8192 字符。
+文本指令可勾选“解析转义字符”，支持 `\r`、`\n`、`\t`、`\xHH`（任意单字节）和 `\\`（反斜杠），例如 `AT+RST\r\n` 或 `\x02START\x03`。字节预览显示转义后的实际字节，无法识别的转义会直接提示。该选项默认关闭，已有指令的发送内容不变。
+
+可以保存最多 50 条命名指令，按需加载、修改或移除。指令库只保存在当前浏览器，可导出 JSON 备份（格式仍为 `modusignal.custom-commands` 版本 1，开启转义的指令多一个 `"escapes": true` 字段）；导入会合并内容并跳过完全相同的指令，不会自动发送。导入文件上限 512 KB，单条发送内容上限 8192 字符。
 
 定时发送支持 50–60000 ms 间隔，次数为 0 时持续发送，其余为 1–100000 次。第一条立即发送，此后在每次写入完成后等待指定间隔；成功计数表示传输写入完成，不表示设备已执行。点击停止、离开发送页签或页面、断开连接、写入失败都会停止后续发送；正在写入的报文不能撤回。浏览器后台计时可能延迟。编辑区支持 ⌘ / Ctrl + Enter 单次发送。
+
+下方“收发调试”区各设备共用。日志时间精确到毫秒（`HH:MM:SS.mmm`），标题栏显示本次日志的 RX / TX 字节数，清空日志时归零。“显示”可选自动、HEX、文本：自动时 Modbus、HART、AOMaster 显示 HEX，其他设备的数据是可打印文本就显示文本、否则显示 HEX；HEX 和文本对收发两个方向都生效，切换后已有日志一并刷新。文本视图用与编辑区相同的转义标出行尾和不可打印字节（如 `OK\r\n`、`\x01`）。“暂停滚动”后仍照常记录，但视图停在当前位置；“保存日志”把当前日志（保留最近 1000 行）下载为 .txt。底部发送框与常用指令使用相同的行尾（无 / LF / CR / CRLF）和校验选项；JSON 格式（WebSocket、MQTT 页默认）不追加行尾和校验。
 
 不想写 JS 也能配一个驱动出来：
 
@@ -403,11 +407,15 @@ To write, type the values separated by commas or spaces; negatives (two's comple
 
 ## Custom device
 
-The **Commands** tab sends UTF-8 text or HEX, with a byte preview and optional Modbus CRC16, SUM8 or XOR8. Text supports no ending, LF, CR or CRLF; HEX ignores line endings. Checksums cover the entire payload including text endings, with CRC16 low byte first. Choose no checksum when your frame already includes one.
+The **Commands** tab lists saved commands at the top with their name, payload and byte count. **Send** on a row sends that command once exactly as saved (format, ending and checksum) without touching the editor; clicking the name loads it into the editor below. The editor sends UTF-8 text or HEX, with a byte preview and optional Modbus CRC16, SUM8 or XOR8. Text supports no ending, LF, CR or CRLF; HEX ignores line endings. Checksums cover the entire payload including text endings, with CRC16 low byte first. Choose no checksum when your frame already includes one.
 
-Save up to 50 named commands in this browser and export a JSON backup. Import merges commands and skips identical entries without sending anything. Limits: 512 KB per library and 8192 characters per payload.
+Text commands can opt in to **Parse escapes**: `\r`, `\n`, `\t`, `\xHH` (any single byte) and `\\` (a backslash), e.g. `AT+RST\r\n` or `\x02START\x03`. The byte preview shows the result, and an unknown escape is reported instead of sent. The option is off by default, so existing commands send the same bytes as before.
+
+Save up to 50 named commands in this browser and export a JSON backup (still `modusignal.custom-commands` version 1; commands with escapes on carry an extra `"escapes": true`). Import merges commands and skips identical entries without sending anything. Limits: 512 KB per library and 8192 characters per payload.
 
 Timed sending accepts a 50–60000 ms delay after each completed write and a count of 1–100000 (0 means unlimited). The first send is immediate. Counts track completed transport writes, not device acknowledgments. Stop, leaving the sending tab/page, disconnecting or a write error cancels future sends; an in-flight write cannot be recalled. Background browser timers may be delayed. Use ⌘ / Ctrl + Enter in the editor to send once.
+
+The **Transceiver Debug** panel below is shared by every device. Log times have millisecond precision (`HH:MM:SS.mmm`) and the header counts RX / TX bytes until the log is cleared. **View** offers Auto, HEX and Text: Auto shows HEX for Modbus, HART and AOMaster, and elsewhere shows printable text as text and anything else as HEX; HEX and Text apply to both directions and re-render the existing lines. Text view marks line endings and unprintable bytes with the editor's escapes (e.g. `OK\r\n`, `\x01`). **Pause scroll** keeps logging but holds the view in place; **Save log** downloads the current log (the latest 1000 lines) as a .txt file. The bottom sender has the same line endings (none / LF / CR / CRLF) and checksums as the command editor; JSON (the default on the WebSocket and MQTT pages) adds neither.
 
 If your device isn't built in, the *Custom* page lets you describe it without writing JS:
 
