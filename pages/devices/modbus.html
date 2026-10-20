@@ -1,5 +1,5 @@
 <section id="modbusPage" class="device-page" data-page-id="modbus">
-  <section class="panel control-panel">
+  <section class="panel control-panel modbus-ops-panel">
     <div class="panel-heading split">
       <div>
         <h2 data-i18n="modbus.registerOps">寄存器操作</h2>
@@ -8,7 +8,7 @@
       <span data-field="driverState" class="state-pill">Modbus RTU</span>
     </div>
 
-    <div class="setpoint-row" data-field="setpointRow">
+    <div class="setpoint-row" data-field="setpointRow" hidden>
       <label class="range-label">
         <span data-field="setpointLabel" data-i18n="modbus.writeValue">写入值</span>
         <strong data-field="setpointReadout">0</strong>
@@ -20,10 +20,35 @@
       </div>
     </div>
 
-    <div class="preset-row" data-field="presetRow" aria-label="快速设定">
+    <div class="preset-row" data-field="presetRow" aria-label="快速设定" hidden>
       <button type="button" data-preset="min" data-i18n="aomaster.preset.min">最小</button>
       <button type="button" data-preset="mid" data-i18n="aomaster.preset.mid">中点</button>
       <button type="button" data-preset="max" data-i18n="aomaster.preset.max">最大</button>
+    </div>
+
+    <div id="modbusWriteRow" class="modbus-write-row" hidden>
+      <label class="modbus-write-values">
+        <span data-i18n="modbus.write.values">写入值</span>
+        <input id="modbusWriteValues" type="text" autocomplete="off" spellcheck="false" maxlength="2000" data-i18n-placeholder="modbus.write.placeholder" placeholder="例如：100, -5, 0x1F" />
+      </label>
+      <label>
+        <span data-i18n="modbus.write.format">数据类型</span>
+        <select id="modbusWriteFormat">
+          <option value="int16" data-i18n="modbus.write.int16">16 位整数</option>
+          <option value="int32" data-i18n="modbus.write.int32">32 位整数</option>
+          <option value="float32">Float32</option>
+        </select>
+      </label>
+      <label>
+        <span data-i18n="modbus.wordOrder">字序</span>
+        <select id="modbusWriteWordOrder">
+          <option value="ABCD">ABCD</option>
+          <option value="CDAB">CDAB</option>
+          <option value="BADC">BADC</option>
+          <option value="DCBA">DCBA</option>
+        </select>
+      </label>
+      <small data-i18n="modbus.write.help">多个值用逗号或空格分隔，负数按补码写入；功能码 16 按值的个数写寄存器，不会补零。</small>
     </div>
 
     <div class="command-preview">
@@ -33,6 +58,16 @@
       </div>
       <button data-field="sendDriverCommand" type="button" disabled data-i18n="modbus.readRegister">读取寄存器</button>
     </div>
+
+    <div class="modbus-stats" role="group" data-i18n-aria-label="modbus.stats.label" aria-label="通讯统计">
+      <span data-stat><span data-i18n="modbus.stats.requests">请求</span><strong id="modbusStatRequests">0</strong></span>
+      <span data-stat><span data-i18n="modbus.stats.responses">成功</span><strong id="modbusStatResponses">0</strong></span>
+      <span data-stat><span data-i18n="modbus.stats.exceptions">异常</span><strong id="modbusStatExceptions">0</strong></span>
+      <span data-stat><span data-i18n="modbus.stats.timeouts">超时</span><strong id="modbusStatTimeouts">0</strong></span>
+      <span data-stat><span data-i18n="modbus.stats.latency">响应</span><strong id="modbusStatLatency">—</strong></span>
+      <button id="modbusStatsReset" class="ghost-button" type="button" data-i18n="modbus.stats.reset">清零</button>
+    </div>
+    <p id="modbusLastResult" class="modbus-last-result" role="status" aria-live="polite"></p>
   </section>
 
   <section class="panel custom-panel">
@@ -70,8 +105,56 @@
       </label>
       <label>
         <span data-i18n="modbus.pollInterval">轮询间隔 (ms)</span>
-        <input id="modbusPollIntervalMs" type="number" min="0" step="100" value="500" data-i18n-title="modbus.pollIntervalTitle" title="读模式下大于 0 时可在监测面板手动开始轮询，默认 500" />
+        <input id="modbusPollIntervalMs" type="number" min="0" step="100" value="500" data-i18n-title="modbus.pollIntervalTitle" title="两次请求的起始间隔；每次都等到响应或超时后才发下一次" />
       </label>
+      <label>
+        <span data-i18n="modbus.responseTimeout">响应超时 (ms)</span>
+        <input id="modbusResponseTimeoutMs" type="number" min="50" max="10000" step="50" value="1000" data-i18n-title="modbus.responseTimeoutTitle" title="发送后等待响应的最长时间，超时会记录原因并继续下一次" />
+      </label>
+    </div>
+  </section>
+
+  <section class="panel modbus-table-panel">
+    <div class="panel-heading split">
+      <div>
+        <h2 data-i18n="modbus.table.title">寄存器表</h2>
+        <p id="modbusTableMeta" data-i18n="modbus.table.desc">每次读取成功后刷新，变化的值会高亮。</p>
+      </div>
+      <div class="modbus-table-options">
+        <label>
+          <span data-i18n="modbus.table.format">显示格式</span>
+          <select id="modbusTableFormat">
+            <option value="uint16">UInt16</option>
+            <option value="int16">Int16</option>
+            <option value="hex">HEX</option>
+            <option value="binary" data-i18n="modbus.table.binary">二进制</option>
+            <option value="uint32">UInt32</option>
+            <option value="int32">Int32</option>
+            <option value="float32">Float32</option>
+          </select>
+        </label>
+        <label>
+          <span data-i18n="modbus.wordOrder">字序</span>
+          <select id="modbusTableWordOrder">
+            <option value="ABCD">ABCD</option>
+            <option value="CDAB">CDAB</option>
+            <option value="BADC">BADC</option>
+            <option value="DCBA">DCBA</option>
+          </select>
+        </label>
+      </div>
+    </div>
+    <div class="modbus-table-wrap">
+      <table class="modbus-register-table">
+        <thead>
+          <tr>
+            <th scope="col" data-i18n="modbus.table.address">地址</th>
+            <th scope="col">HEX</th>
+            <th scope="col" data-i18n="modbus.table.value">值</th>
+          </tr>
+        </thead>
+        <tbody id="modbusRegisterRows"></tbody>
+      </table>
     </div>
   </section>
 </section>

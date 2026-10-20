@@ -15,6 +15,7 @@ import {
   loadModbusConfig as loadModbusConfigSnapshot,
   persistModbusConfig,
 } from "./features/modbus/modbus-config-ui.js";
+import { createModbusController } from "./features/modbus/modbus-controller.js";
 import {
   createMessageConfigUi,
   loadMessageConfig,
@@ -119,6 +120,7 @@ let hartSessionController = null;
 let hartWorkspaceController = null;
 let logController = null;
 let modbusConfigUi = null;
+let modbusController = null;
 let sidebarController = null;
 let deviceNavigationUi = null;
 let pageNavigation = null;
@@ -321,6 +323,7 @@ async function refreshHartLinkReleaseSummary() {
 
 function refreshAllDynamicUi() {
   customCommandUi?.localize();
+  modbusController.localize();
   sidebarController.refreshLabels();
   deviceNavigationUi.renderLibrary();
   deviceNavigationUi.renderHomeCards();
@@ -413,6 +416,7 @@ function initializeInfrastructureControllers() {
       pollingController,
       transportController,
       customCommandUi,
+      modbusController,
     }),
     updateHartDeviceInfo,
     updateDeviceUi,
@@ -423,6 +427,17 @@ function initializeInfrastructureControllers() {
   modbusConfigUi = createModbusConfigUi({
     elements,
     syncCurveRows: debugCurveController.syncRows,
+  });
+  modbusController = createModbusController({
+    elements,
+    getConfig: () => modbusConfig,
+    getSession: () => session,
+    appendLog,
+    onTelemetry: (telemetry) => chartController.handleJsonMultiTelemetry(telemetry),
+    onPollingStopped: () => {
+      state.pollingActive = false;
+      pollingController.updateUi();
+    },
   });
   sidebarController = createSidebarController();
   deviceNavigationUi = createDeviceNavigationUi({
@@ -463,6 +478,10 @@ function initializeInfrastructureControllers() {
     sendDeviceCommand,
     sendHartPoll: sendHartPollCommand,
     sendAomasterPoll: aomasterController.sendReadCommand,
+    modbusPolling: {
+      start: () => modbusController.startPolling(buildModbusRequest),
+      stop: () => modbusController.stopPolling(),
+    },
     appendLog,
   });
   const sharedMessageConfigOptions = {
@@ -678,6 +697,7 @@ function activateDevice(deviceId) {
   const standalone = isStandaloneDevice(deviceId);
   state.pollingActive = false;
   pollingController.stopAll();
+  modbusController.reset();
   resetModbusRxBuffer();
   resetHartRxBuffer();
   resetAomasterRxBuffer();
@@ -768,8 +788,6 @@ function updateDeviceUi() {
   const isMessageDebug = isWebsocket || isMqtt;
   const isAomaster = state.deviceId === DEFAULT_DEVICE_ID;
   const isStandalone = isStandaloneDevice(state.deviceId);
-  const normalizedModbus = normalizeModbusConfig(modbusConfig);
-  const modbusIsRead = isModbus && isReadFunctionCode(normalizedModbus.functionCode);
 
   if (elements.customDeviceNavName) {
     elements.customDeviceNavName.textContent = getDeviceProfile(CUSTOM_DEVICE_ID, customConfig, modbusConfig).name;
@@ -778,10 +796,10 @@ function updateDeviceUi() {
   const setpointRow = queryDeviceField("setpointRow");
   const presetRow = queryDeviceField("presetRow");
   if (setpointRow) {
-    setpointRow.hidden = isStandalone || modbusIsRead || isHart || isMessageDebug;
+    setpointRow.hidden = isStandalone || isModbus || isHart || isMessageDebug;
   }
   if (presetRow) {
-    presetRow.hidden = isStandalone || modbusIsRead || isHart || isMessageDebug;
+    presetRow.hidden = isStandalone || isModbus || isHart || isMessageDebug;
   }
 
   if (!isStandalone) {
@@ -1095,6 +1113,12 @@ async function sendDeviceCommand() {
       return;
     }
 
+    if (state.deviceId === MODBUS_DEVICE_ID) {
+      // Queued behind any poll in flight, then timed and matched like a poll.
+      await modbusController.send(frames[0]);
+      return;
+    }
+
     if (
       state.deviceId === HART_DEVICE_ID &&
       command.requiresConfirmation &&
@@ -1116,6 +1140,14 @@ async function sendDeviceCommand() {
   } catch (error) {
     appendLog("error", i18n("log.send"), error.message);
   }
+}
+
+function buildModbusRequest() {
+  const command = createDeviceSetOutputCommand(MODBUS_DEVICE_ID, state, customConfig, modbusConfig);
+  if (!command.supported || !command.bytes) {
+    throw new Error(command.preview || i18n("common.noDriverCmd"));
+  }
+  return command.bytes;
 }
 
 async function sendManualCommand() {
@@ -1251,6 +1283,8 @@ function renderParserPreview(target, telemetry) {
 
 function updateModbusDraftConfig() {
   modbusConfig = modbusConfigUi.readConfigForm();
+  modbusConfigUi.syncModeFields(modbusConfig);
+  modbusController.refresh();
   debugCurveController.syncRows("modbus", modbusConfig);
   chartController.syncCurvePanelUi();
 

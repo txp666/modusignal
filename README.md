@@ -190,6 +190,14 @@ MicroScope Power 页面嵌入了 `pages/devices/microscope-power/` 下的浏览�
 
 默认轮询周期 50 ms（约 20 点/秒），用于低速指令值回读，不能还原 50 Hz 波形。设定预览是理想数学曲线；频率、抖动、幅值及模拟输出建立时间需通过示波器或采集设备验证。
 
+## Modbus
+
+读取（03/04）和轮询都按“一问一答”进行：每个请求都等到响应、异常或超时后才发下一条，轮询间隔是两次请求的起始间隔（最小间隙 20 ms）。响应超时默认 1000 ms，可设 50–10000 ms。页面统计请求、成功、异常、超时次数和最近一次响应时间；异常响应会显示异常码及含义（如 `02 非法数据地址`），超时会区分“未收到任何数据”“收到字节但没有有效帧”“响应与请求不匹配”，便于判断是接线、地址还是波特率问题。收发调试区手动发送的 RTU 请求同样会被匹配和计时。
+
+寄存器表显示最近一次成功读取的地址、原始 HEX 和数值，可切换 UInt16、Int16、HEX、二进制以及 UInt32 / Int32 / Float32（ABCD、CDAB、BADC、DCBA 字序），变化的值会高亮。
+
+写入时直接输入值，多个值用逗号或空格分隔，支持负数（补码）和 `0x` 十六进制，也可按 32 位整数或 Float32 编码。功能码 06 只写 1 个 16 位值；功能码 16 写入的寄存器数量由输入的值决定，不会对相邻寄存器补零。
+
 ## 自定义设备
 
 “常用指令”页签支持文本（UTF-8）和 HEX，发送前可预览实际字节、字节数及追加的 Modbus CRC16 / SUM8 / XOR8。文本可选无行尾、LF、CR、CRLF；HEX 不追加行尾。校验覆盖全部内容（含文本行尾），CRC16 低字节在前；已有校验的报文应选择“无”，避免重复追加。
@@ -384,6 +392,14 @@ The response must include all seven registers. Register `0x0000` selects the eng
 Ramp, square, triangle and sine periods are limited to `20..65535 ms` in 1 ms steps before preview and transmission. Period `0` restores the `1000 ms` default, matching the firmware; other out-of-range values are clamped. Configured frequency is `1000 / period(ms)`, up to 50 Hz. Step dwell remains `1..65535 ms`, with loop count `0` meaning infinite; the sequence is written before the header.
 
 Default 50 ms polling (about 20 points/s) provides low-rate command readback and cannot reconstruct a 50 Hz waveform. The setpoint preview is an ideal mathematical curve; verify output frequency, jitter, amplitude and settling time with a scope or acquisition device.
+
+## Modbus
+
+Reads (03/04) and polling are strictly request/response: each request waits for its response, exception or timeout before the next is sent, and the poll interval is the time between request starts (at least a 20 ms gap). The response timeout defaults to 1000 ms (50–10000 ms). The page counts requests, successes, exceptions and timeouts and shows the latest response time. Exceptions show their code and meaning (e.g. `02 Illegal data address`); timeouts tell apart "no data", "bytes but no valid frame" and "response did not match the request", which points at wiring, addressing or baud rate. RTU requests sent from the manual sender are matched and timed too.
+
+The register table shows the address, raw HEX and value of the latest successful read as UInt16, Int16, HEX, binary, or UInt32 / Int32 / Float32 in ABCD, CDAB, BADC or DCBA word order, highlighting values that changed.
+
+To write, type the values separated by commas or spaces; negatives (two's complement) and `0x` hex are accepted, and values can be encoded as 32-bit integers or Float32. FC06 writes one 16-bit value; FC16 writes exactly as many registers as the values need and never zero-pads neighbouring registers.
 
 ## Custom device
 

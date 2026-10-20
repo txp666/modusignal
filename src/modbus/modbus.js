@@ -5,6 +5,21 @@ const FUNCTION_CODES = {
   WRITE_MULTIPLE: 16,
 };
 
+/** Standard exception codes; names are i18n key suffixes (`modbus.exception.<name>`). */
+export const MODBUS_EXCEPTION_NAMES = {
+  1: "illegalFunction",
+  2: "illegalDataAddress",
+  3: "illegalDataValue",
+  4: "slaveDeviceFailure",
+  5: "acknowledge",
+  6: "slaveDeviceBusy",
+  8: "memoryParityError",
+  10: "gatewayPathUnavailable",
+  11: "gatewayTargetFailed",
+};
+
+export const MODBUS_WORD_ORDERS = ["ABCD", "CDAB", "BADC", "DCBA"];
+
 export function crc16Modbus(bytes) {
   let crc = 0xffff;
 
@@ -132,6 +147,98 @@ export function extractRtuFrames(buffer) {
     frames,
     remaining: buffer.subarray(offset),
   };
+}
+
+/** Parses a master request this app can build (03/04/06/16); returns null for anything else. */
+export function parseRtuRequest(bytes) {
+  if (!(bytes instanceof Uint8Array) || bytes.length < 8 || !verifyCrc(bytes)) {
+    return null;
+  }
+
+  const slaveId = bytes[0];
+  const functionCode = bytes[1];
+  const address = (bytes[2] << 8) | bytes[3];
+  const word = (bytes[4] << 8) | bytes[5];
+
+  if (isReadFunctionCode(functionCode) && bytes.length === 8) {
+    return { slaveId, functionCode, address, quantity: word };
+  }
+
+  if (functionCode === FUNCTION_CODES.WRITE_SINGLE && bytes.length === 8) {
+    return { slaveId, functionCode, address, quantity: 1, value: word };
+  }
+
+  if (functionCode === FUNCTION_CODES.WRITE_MULTIPLE && bytes[6] === word * 2 && bytes.length === 9 + bytes[6]) {
+    return { slaveId, functionCode, address, quantity: word };
+  }
+
+  return null;
+}
+
+/** Splits a CRC-checked response frame into its exception, read data or write echo. */
+export function parseRtuResponse(frame) {
+  const slaveId = frame[0];
+  const code = frame[1];
+
+  if (code & 0x80) {
+    return { slaveId, functionCode: code & 0x7f, exceptionCode: frame[2] };
+  }
+
+  if (isReadFunctionCode(code)) {
+    return { slaveId, functionCode: code, data: frame.subarray(3, 3 + frame[2]) };
+  }
+
+  if (code === FUNCTION_CODES.WRITE_SINGLE || code === FUNCTION_CODES.WRITE_MULTIPLE) {
+    const address = (frame[2] << 8) | frame[3];
+    const word = (frame[4] << 8) | frame[5];
+    return code === FUNCTION_CODES.WRITE_SINGLE
+      ? { slaveId, functionCode: code, address, value: word }
+      : { slaveId, functionCode: code, address, quantity: word };
+  }
+
+  return null;
+}
+
+export function matchRtuResponse(request, response) {
+  if (!request || !response || request.slaveId !== response.slaveId || request.functionCode !== response.functionCode) {
+    return false;
+  }
+
+  if (response.exceptionCode !== undefined) {
+    return true;
+  }
+
+  if (isReadFunctionCode(request.functionCode)) {
+    return response.data.length === request.quantity * 2;
+  }
+
+  if (request.functionCode === FUNCTION_CODES.WRITE_SINGLE) {
+    return response.address === request.address && response.value === request.value;
+  }
+
+  return response.address === request.address && response.quantity === request.quantity;
+}
+
+/** Encodes one 32-bit value (big-endian ABCD) into two registers in the given word order. */
+export function encodeRegisterPair(value, dataType, wordOrder) {
+  const view = new DataView(new ArrayBuffer(4));
+  if (dataType === "float32") {
+    view.setFloat32(0, value, false);
+  } else {
+    view.setUint32(0, value >>> 0, false);
+  }
+
+  const wire = orderBytes(new Uint8Array(view.buffer), wordOrder);
+  return [(wire[0] << 8) | wire[1], (wire[2] << 8) | wire[3]];
+}
+
+/** Decodes two registers (4 wire bytes) as uint32, int32 or float32 in the given word order. */
+export function decodeRegisterPair(bytes, dataType, wordOrder) {
+  const ordered = orderBytes(bytes.subarray(0, 4), wordOrder);
+  const view = new DataView(ordered.buffer, ordered.byteOffset, 4);
+  if (dataType === "float32") return view.getFloat32(0, false);
+  if (dataType === "int32") return view.getInt32(0, false);
+  return view.getUint32(0, false);
 }
 
 export function parseReadRegistersResponse(frame, config) {

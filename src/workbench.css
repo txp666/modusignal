@@ -274,6 +274,45 @@
 @media (min-width:1051px) and (max-height:800px) {
   .app-shell:not(.overview-page) .workspace .custom-command-panel { gap:4px; }
 }
+
+/* Modbus master: write values, exchange statistics and the register table. */
+.workspace .modbus-write-row { display:grid; grid-template-columns:minmax(0,2fr) repeat(2,minmax(0,1fr)); gap:8px; align-items:end; }
+.workspace .modbus-write-row label { margin:0; }
+.workspace .modbus-write-row input { font-family:ui-monospace,monospace; }
+.workspace .modbus-write-row small { grid-column:1/-1; font-size:11px; line-height:1.5; color:var(--muted); }
+.workspace .modbus-stats { display:flex; flex-wrap:wrap; align-items:center; gap:4px 16px; font-size:12px; color:var(--muted); }
+.workspace .modbus-stats [data-stat] { display:inline-flex; align-items:baseline; gap:6px; }
+.workspace .modbus-stats strong { color:var(--text); font:600 13px/1.4 ui-monospace,monospace; }
+.workspace .modbus-stats [data-stat].alert strong { color:var(--red); }
+.workspace .modbus-stats button { margin-left:auto; min-height:28px; padding:2px 10px; font-size:12px; }
+.workspace .modbus-last-result { margin:0; min-height:18px; font-size:12px; line-height:1.5; color:var(--muted); overflow-wrap:anywhere; }
+.workspace .modbus-last-result.ok { color:var(--green); }
+.workspace .modbus-last-result.error { color:var(--red); }
+.workspace .modbus-table-panel { display:grid; gap:10px; flex:none; }
+.workspace .modbus-table-panel .panel-heading { margin:0; }
+.workspace .modbus-table-panel .panel-heading p { font-family:ui-monospace,monospace; font-size:12px; }
+.workspace .modbus-table-options { display:flex; gap:8px; }
+.workspace .modbus-table-options label { margin:0; min-width:0; }
+.workspace .modbus-table-options select { min-height:34px; }
+.workspace .modbus-table-wrap { max-height:320px; overflow:auto; border:1px solid var(--line); border-radius:6px; }
+.workspace .modbus-register-table { width:100%; border-collapse:collapse; font:12px/1.5 ui-monospace,monospace; font-variant-numeric:tabular-nums; }
+.workspace .modbus-register-table th { position:sticky; top:0; z-index:1; padding:6px 10px; background:var(--surface-muted); border-bottom:1px solid var(--line); color:var(--muted); font-size:11px; font-weight:600; line-height:1.4; text-align:left; }
+.workspace .modbus-register-table td { padding:4px 10px; border-bottom:1px solid var(--line); color:var(--text); white-space:nowrap; }
+.workspace .modbus-register-table tr:last-child td { border-bottom:0; }
+.workspace .modbus-register-table td small { margin-left:8px; color:var(--muted); font-size:11px; }
+.workspace .modbus-register-table td:last-child { width:100%; }
+.workspace .modbus-register-table td.continued::before { content:"↑"; color:var(--muted); }
+.workspace .modbus-register-table .modbus-table-empty { padding:16px 10px; color:var(--muted); text-align:center; white-space:normal; font-family:inherit; }
+.workspace .modbus-register-table tr.changed td { animation:modbus-value-changed 1.2s ease-out; }
+@keyframes modbus-value-changed { from { background:color-mix(in srgb, var(--accent) 22%, transparent); } to { background:transparent; } }
+@media (prefers-reduced-motion:reduce) { .workspace .modbus-register-table tr.changed td { animation:none; background:color-mix(in srgb, var(--accent) 12%, transparent); } }
+@media (max-width:600px) {
+  .workspace .modbus-write-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .workspace .modbus-write-row .modbus-write-values { grid-column:1/-1; }
+  .workspace .modbus-table-options { width:100%; }
+  .workspace .modbus-table-options label { flex:1; }
+  .workspace .modbus-table-options select, .workspace .modbus-stats button { min-height:44px; }
+}
 .workspace .hart-workspace-grid.has-workspace-tabs { display:flex; flex-direction:column; gap:12px; }
 .workspace .hart-workspace-grid.has-workspace-tabs > article { order:0; grid-column:auto; }
 .workspace .hart-workspace-grid.has-workspace-tabs .hart-tool-fields { grid-template-columns:repeat(3,minmax(0,1fr)); }

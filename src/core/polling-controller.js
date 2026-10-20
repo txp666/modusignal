@@ -25,16 +25,18 @@ const DEVICE_LABELS = {
 };
 
 export function createPollingController(options) {
-  const { elements, state, getSession, getConfigs, sendDeviceCommand, sendHartPoll, sendAomasterPoll, appendLog } = options;
+  const { elements, state, getSession, getConfigs, sendDeviceCommand, sendHartPoll, sendAomasterPoll, modbusPolling, appendLog } = options;
   const timers = new Map();
 
   function stop(deviceId) {
+    if (deviceId === MODBUS_DEVICE_ID) modbusPolling.stop();
     const timer = timers.get(deviceId);
     if (timer) window.clearInterval(timer);
     timers.delete(deviceId);
   }
 
   function stopAll() {
+    modbusPolling.stop();
     [...timers.keys()].forEach(stop);
   }
 
@@ -82,8 +84,11 @@ export function createPollingController(options) {
   function updateActive() {
     const configs = getConfigs();
     const modbus = normalizeModbusConfig(configs.modbusConfig);
-    if (isReadFunctionCode(modbus.functionCode)) schedule(MODBUS_DEVICE_ID, sendDeviceCommand, modbus.pollIntervalMs);
-    else stop(MODBUS_DEVICE_ID);
+    // Modbus polls one request at a time (next request after response or timeout), not on a fixed timer.
+    const modbusDue = state.deviceId === MODBUS_DEVICE_ID && state.pollingActive && getSession()?.connected &&
+      isReadFunctionCode(modbus.functionCode) && modbus.pollIntervalMs > 0;
+    if (modbusDue) modbusPolling.start();
+    else modbusPolling.stop();
     const hart = normalizeHartConfig(configs.hartConfig);
     schedule(HART_DEVICE_ID, sendHartPoll, hart.pollIntervalMs);
     const aomaster = normalizeAomasterConfig(configs.aomasterConfig);

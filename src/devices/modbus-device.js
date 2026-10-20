@@ -12,9 +12,11 @@ import {
   buildReadRegistersRequest,
   buildWriteMultipleRegistersRequest,
   buildWriteSingleRegisterRequest,
+  encodeRegisterPair,
   extractRtuFrames,
   isReadFunctionCode,
   isWriteFunctionCode,
+  MODBUS_WORD_ORDERS,
 } from "../modbus/modbus.js";
 
 export const MODBUS_DEVICE_ID = "modbus";
@@ -34,12 +36,23 @@ export const MODBUS_WEBSOCKET_TRANSPORT_DEFAULTS = {
   url: "ws://127.0.0.1:8080",
 };
 
+export const MODBUS_WRITE_FORMATS = ["int16", "int32", "float32"];
+export const MODBUS_TABLE_FORMATS = ["uint16", "int16", "hex", "binary", "uint32", "int32", "float32"];
+const MAX_WRITE_VALUES_LENGTH = 2000;
+const MAX_WRITE_REGISTERS = 123;
+
 export const DEFAULT_MODBUS_CONFIG = {
   slaveId: 1,
   functionCode: 3,
   address: 0,
   quantity: 1,
   pollIntervalMs: 500,
+  responseTimeoutMs: 1000,
+  writeValues: "",
+  writeFormat: "int16",
+  writeWordOrder: "ABCD",
+  tableFormat: "uint16",
+  tableWordOrder: "ABCD",
   fieldName: "寄存器值",
   unit: "",
   curveSlotCount: 1,
@@ -145,6 +158,12 @@ export function normalizeModbusConfig(config = {}) {
     address,
     quantity,
     pollIntervalMs: Math.max(0, Math.trunc(toFiniteNumber(merged.pollIntervalMs, DEFAULT_MODBUS_CONFIG.pollIntervalMs))),
+    responseTimeoutMs: clamp(Math.trunc(toFiniteNumber(merged.responseTimeoutMs, DEFAULT_MODBUS_CONFIG.responseTimeoutMs)), 50, 10000),
+    writeValues: String(merged.writeValues ?? "").slice(0, MAX_WRITE_VALUES_LENGTH),
+    writeFormat: MODBUS_WRITE_FORMATS.includes(merged.writeFormat) ? merged.writeFormat : DEFAULT_MODBUS_CONFIG.writeFormat,
+    writeWordOrder: normalizeWordOrder(merged.writeWordOrder),
+    tableFormat: MODBUS_TABLE_FORMATS.includes(merged.tableFormat) ? merged.tableFormat : DEFAULT_MODBUS_CONFIG.tableFormat,
+    tableWordOrder: normalizeWordOrder(merged.tableWordOrder),
     ...jsonNormalized,
     ...binaryNormalized,
     dataType: binaryNormalized.modbusDataType,
@@ -185,18 +204,28 @@ export function createModbusSetOutputCommand(state, config, helpers) {
   const normalized = normalizeModbusConfig(config);
   let bytes = null;
 
-  if (isReadFunctionCode(normalized.functionCode)) {
-    bytes = buildReadRegistersRequest(
-      normalized.slaveId,
-      normalized.functionCode,
-      normalized.address,
-      normalized.quantity,
-    );
-  } else if (normalized.functionCode === 6) {
-    bytes = buildWriteSingleRegisterRequest(normalized.slaveId, normalized.address, state.setpoint);
-  } else if (normalized.functionCode === 16) {
-    const registerValues = buildWriteValues(state.setpoint, normalized.quantity, normalized.dataType);
-    bytes = buildWriteMultipleRegistersRequest(normalized.slaveId, normalized.address, registerValues);
+  try {
+    if (isReadFunctionCode(normalized.functionCode)) {
+      bytes = buildReadRegistersRequest(
+        normalized.slaveId,
+        normalized.functionCode,
+        normalized.address,
+        normalized.quantity,
+      );
+    } else if (normalized.functionCode === 6) {
+      const registers = parseModbusWriteValues(normalized.writeValues, normalized.writeFormat, normalized.writeWordOrder);
+      if (registers.length !== 1) {
+        throw new Error(i18n("modbus.write.singleOnly"));
+      }
+      bytes = buildWriteSingleRegisterRequest(normalized.slaveId, normalized.address, registers[0]);
+    } else if (normalized.functionCode === 16) {
+      // The register count always comes from the entered values: never pad, or
+      // neighbouring registers would silently be overwritten with zero.
+      const registers = parseModbusWriteValues(normalized.writeValues, normalized.writeFormat, normalized.writeWordOrder);
+      bytes = buildWriteMultipleRegistersRequest(normalized.slaveId, normalized.address, registers);
+    }
+  } catch (error) {
+    return { supported: false, preview: error.message, bytes: null };
   }
 
   if (!bytes) {
@@ -212,6 +241,47 @@ export function createModbusSetOutputCommand(state, config, helpers) {
     preview: helpers.bytesToHex(bytes),
     bytes,
   };
+}
+
+/**
+ * Converts "100, -5, 0x1F" into register words. 16-bit values accept -32768..65535
+ * (negatives as two's complement); 32-bit values use two registers in `wordOrder`.
+ */
+export function parseModbusWriteValues(text, format = "int16", wordOrder = "ABCD") {
+  const tokens = String(text ?? "").trim().split(/[\s,，;；]+/).filter(Boolean);
+  if (!tokens.length) {
+    throw new Error(i18n("modbus.write.empty"));
+  }
+
+  const registers = [];
+  for (const token of tokens) {
+    if (format === "float32") {
+      const value = Number(token);
+      if (!/^[+-]?(\d+\.?\d*|\.\d+)(e[+-]?\d+)?$/i.test(token) || !Number.isFinite(value) || Math.abs(value) > 3.4028234663852886e38) {
+        throw new Error(`${i18n("modbus.write.invalidValue")}: ${token}`);
+      }
+      registers.push(...encodeRegisterPair(value, "float32", wordOrder));
+    } else if (format === "int32") {
+      const value = parseIntegerToken(token, -2147483648, 4294967295);
+      registers.push(...encodeRegisterPair(value, "uint32", wordOrder));
+    } else {
+      registers.push(parseIntegerToken(token, -32768, 65535) & 0xffff);
+    }
+  }
+
+  if (registers.length > MAX_WRITE_REGISTERS) {
+    throw new Error(i18n("modbus.write.tooMany"));
+  }
+  return registers;
+}
+
+function parseIntegerToken(token, min, max) {
+  const hex = /^0x([0-9a-f]+)$/i.exec(token);
+  const value = hex ? parseInt(hex[1], 16) : /^[+-]?\d+$/.test(token) ? Number(token) : NaN;
+  if (!Number.isSafeInteger(value) || value < min || value > max) {
+    throw new Error(`${i18n("modbus.write.invalidValue")}: ${token}`);
+  }
+  return value;
 }
 
 export function parseModbusTelemetry(bytes, config) {
@@ -234,14 +304,18 @@ export function parseModbusTelemetry(bytes, config) {
     }
 
     const byteCount = frame[2];
-    const data = frame.subarray(3, 3 + byteCount);
-    const telemetry = decodeModbusReadDataCurves(data, toModbusCurveConfig(normalized), DEFAULT_MODBUS_CONFIG);
+    const telemetry = decodeModbusDataTelemetry(frame.subarray(3, 3 + byteCount), normalized);
     if (telemetry) {
       return telemetry;
     }
   }
 
   return null;
+}
+
+/** Decodes the configured curves from the data area of a read response. */
+export function decodeModbusDataTelemetry(data, config) {
+  return decodeModbusReadDataCurves(data, toModbusCurveConfig(normalizeModbusConfig(config)), DEFAULT_MODBUS_CONFIG);
 }
 
 export function describeModbusSummary(config) {
@@ -297,27 +371,13 @@ function migrateLegacyModbusConfig(config) {
   return migrated;
 }
 
-function buildWriteValues(setpoint, quantity, dataType) {
-  if (dataType === "float32") {
-    const buffer = new ArrayBuffer(4);
-    const view = new DataView(buffer);
-    view.setFloat32(0, Number(setpoint), false);
-    const bytes = new Uint8Array(buffer);
-    return [bytes[0] << 8 | bytes[1], bytes[2] << 8 | bytes[3]];
-  }
-
-  const values = [clampUint16(setpoint)];
-
-  while (values.length < quantity) {
-    values.push(0);
-  }
-
-  return values.slice(0, quantity);
-}
-
 function normalizeFunctionCode(value) {
   const code = Math.trunc(Number(value));
   return [3, 4, 6, 16].includes(code) ? code : DEFAULT_MODBUS_CONFIG.functionCode;
+}
+
+function normalizeWordOrder(value) {
+  return MODBUS_WORD_ORDERS.includes(value) ? value : "ABCD";
 }
 
 function concatBytes(left, right) {
@@ -334,8 +394,4 @@ function toFiniteNumber(value, fallback) {
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
-}
-
-function clampUint16(value) {
-  return clamp(Math.trunc(Number(value)), 0, 65535);
 }

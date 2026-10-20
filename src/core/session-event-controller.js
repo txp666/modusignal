@@ -43,8 +43,9 @@ export function createSessionEventController(options) {
 
   function bind(target) {
     target.addEventListener("connected", () => {
-      const { messageDebugController, transportController, pollingController } = getControllers();
+      const { messageDebugController, transportController, pollingController, modbusController } = getControllers();
       messageDebugController.resetStats();
+      modbusController.reset();
       resetMessageBuffers(getConfigs().customConfig);
       transportController.updateConnectionUi(true);
       pollingController.updateActive();
@@ -53,9 +54,10 @@ export function createSessionEventController(options) {
 
     target.addEventListener("disconnected", () => {
       getControllers().customCommandUi?.stop("disconnected");
-      const { pollingController, hartSessionController, transportController, messageDebugController } = getControllers();
+      const { pollingController, hartSessionController, transportController, messageDebugController, modbusController } = getControllers();
       state.pollingActive = false;
       pollingController.stopAll();
+      modbusController.reset();
       resetModbusRxBuffer();
       resetHartRxBuffer();
       hartSessionController.resetLinkProbe();
@@ -96,6 +98,11 @@ export function createSessionEventController(options) {
 
     if (state.deviceId === WEBSOCKET_DEVICE_ID) messageDebugController.increment("websocket", "rx");
     if (state.deviceId === MQTT_DEVICE_ID) messageDebugController.increment("mqtt", "rx");
+    if (state.deviceId === MODBUS_DEVICE_ID) {
+      // The Modbus master matches responses to requests and feeds the table and chart itself.
+      getControllers().modbusController.handleRx(bytes);
+      return;
+    }
 
     const telemetry = parseDeviceTelemetry(
       state.deviceId,
@@ -148,6 +155,7 @@ export function createSessionEventController(options) {
       payload = `[${topic}${flags.length ? ` ${flags.join(" ")}` : ""}] ${payload}`;
     }
     appendLog("tx", "TX", payload);
+    if (state.deviceId === MODBUS_DEVICE_ID && bytes) getControllers().modbusController.handleTx(bytes);
     if (state.deviceId === WEBSOCKET_DEVICE_ID) messageDebugController.increment("websocket", "tx");
     if (state.deviceId === MQTT_DEVICE_ID) messageDebugController.increment("mqtt", "tx");
   }
