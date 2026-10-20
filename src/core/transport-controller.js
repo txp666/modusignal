@@ -83,6 +83,9 @@ export function createTransportController(options) {
     onConnectionChange = () => {},
   } = options;
   let transportOptions = {};
+  // Options each session was connected with, so the connection summary follows the
+  // live session rather than unsaved edits in the form.
+  const sessionOptions = new WeakMap();
 
   function getDeviceDefaults(deviceId = state.deviceId) {
     const entry = DEVICE_DEFAULTS[deviceId];
@@ -100,6 +103,19 @@ export function createTransportController(options) {
     });
     transportOptions = { ...transportOptions, ...values };
     return values;
+  }
+
+  function readFieldValues() {
+    const values = {};
+    elements.transportFields.querySelectorAll("[data-field-key]").forEach((control) => {
+      values[control.dataset.fieldKey] = control.value;
+    });
+    return values;
+  }
+
+  function readConnectedOptions() {
+    const session = getSession();
+    return (session?.connected && sessionOptions.get(session)) || readOptions();
   }
 
   function readCurrentField(key) {
@@ -155,7 +171,7 @@ export function createTransportController(options) {
 
   function describeConnectionSummary() {
     const descriptor = getTransportDescriptor(state.transportId);
-    const values = readOptions();
+    const values = readConnectedOptions();
     if (state.transportId === MQTT_TRANSPORT_ID) {
       return `${i18n("conn.mqttConnected")} · ${values.brokerUrl} · ${i18n("conn.subscribed")} ${values.subscribeTopic}`;
     }
@@ -224,8 +240,11 @@ export function createTransportController(options) {
     onConnectionChange(connected);
   }
 
-  function renderFields() {
+  // keepValues re-renders the labels (e.g. after a language switch) without replacing
+  // what is in the form with device defaults.
+  function renderFields({ keepValues = false } = {}) {
     const descriptor = getTransportDescriptor(state.transportId);
+    const kept = keepValues ? readFieldValues() : {};
     elements.transportFields.innerHTML = "";
     descriptor.fields.forEach((field) => {
       const label = document.createElement("label");
@@ -234,14 +253,14 @@ export function createTransportController(options) {
       control.dataset.fieldKey = field.key;
       control.dataset.fieldType = typeof field.default === "number" ? "number" : "string";
       const defaults = getDeviceDefaults();
-      const resolved = defaults?.[field.key] ?? transportOptions[field.key] ?? field.default;
+      const resolved = kept[field.key] ?? defaults?.[field.key] ?? transportOptions[field.key] ?? field.default;
       if (field.type === "select") {
         (field.options ?? []).forEach((entry) => {
           const value = typeof entry === "object" ? entry.value : entry;
           const option = document.createElement("option");
           option.value = String(value);
           option.textContent = typeof entry === "object" ? entry.label : String(entry);
-          option.selected = value === resolved;
+          option.selected = String(value) === String(resolved);
           control.append(option);
         });
       } else {
@@ -263,8 +282,13 @@ export function createTransportController(options) {
         control.addEventListener("change", handler);
       }
     });
-    applyDeviceTransportDefaults();
+    if (!keepValues) applyDeviceTransportDefaults();
     updateSecureState();
+  }
+
+  function localize() {
+    populateSelect();
+    renderFields({ keepValues: true });
   }
 
   function populateSelect() {
@@ -304,7 +328,10 @@ export function createTransportController(options) {
   async function connect() {
     try {
       const session = getSession();
-      await session.connect(readOptions());
+      const connectOptions = readOptions();
+      // Recorded first: the session emits "connected" before connect() resolves.
+      sessionOptions.set(session, connectOptions);
+      await session.connect(connectOptions);
       if (session?.connected) {
         updateConnectionUi(true);
         if (state.deviceId === HART_DEVICE_ID && state.transportId === DEFAULT_TRANSPORT_ID) detectHartLink(session);
@@ -324,6 +351,7 @@ export function createTransportController(options) {
     connect,
     describeConnectionSummary,
     disconnect,
+    localize,
     populateSelect,
     readCurrentField,
     readOptions,

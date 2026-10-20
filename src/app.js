@@ -337,8 +337,7 @@ function refreshAllDynamicUi() {
   chartController.syncCurvePanelUi();
   chartController.refreshLabels();
   deviceNavigationUi.updatePage();
-  transportController.populateSelect();
-  transportController.renderFields();
+  transportController.localize();
   chartController.updatePointLabels();
   customConfigUi.populate(customConfig);
   modbusConfigUi.populateConfigForm(modbusConfig);
