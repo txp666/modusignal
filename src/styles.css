@@ -1050,7 +1050,8 @@ button:focus-visible {
 }
 
 .fluent-serial-card-media img,
-.pyqt-designer-card-media img {
+.pyqt-designer-card-media img,
+.pagebridge-card-media img {
   width: 100%;
   height: auto;
   border: 1px solid var(--line);
@@ -1062,6 +1063,13 @@ button:focus-visible {
   padding: 0.65rem;
   background:
     radial-gradient(circle at 50% 48%, rgba(31, 159, 218, 0.13), transparent 48%),
+    var(--surface-muted);
+}
+
+.pagebridge-card-media {
+  padding: 0.65rem;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(37, 99, 201, 0.12), transparent 48%),
     var(--surface-muted);
 }
 
