@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="PageBridge：Mac 与 Windows 原生 PDF 阅读与翻译工作区。保留排版翻译 PDF，原文译文并排阅读，支持批注、文档助手与在线文献检索，可接入本机 Ollama 或 OpenAI 兼容 API。" />
+  <meta name="keywords" content="PageBridge,PDF 翻译,保留排版,双语对照,PDF 阅读器,论文翻译,BabelDOC,PDFMathTranslate,Ollama,DeepSeek,文档助手,OpenAlex" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#f5f7f8" />
+  <meta name="color-scheme" content="light dark" />
+  <script>
+    (() => {
+      try {
+        const saved = localStorage.getItem("modusignal-theme");
+        const theme = saved === "light" || saved === "dark"
+          ? saved
+          : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+      } catch {}
+    })();
+  </script>
+  <link rel="canonical" href="https://modusignal.cn/pagebridge/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:site_name" content="modusignal" />
+  <meta property="og:title" content="PageBridge · PDF 阅读与翻译工作区" />
+  <meta property="og:description" content="保留排版翻译 PDF，原文与译文并排阅读，并可批注、提问和检索文献。Mac 与 Windows 原生应用。" />
+  <meta property="og:url" content="https://modusignal.cn/pagebridge/" />
+  <meta property="og:image" content="https://modusignal.cn/pagebridge/assets/reader-dual.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <title>PageBridge · PDF 阅读与翻译工作区</title>
+  <link rel="icon" href="../logo.ico" type="image/x-icon" />
+  <link rel="stylesheet" href="./styles.css?v=20261026.1" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "PageBridge",
+      "softwareVersion": "0.4.0",
+      "applicationCategory": "ProductivityApplication",
+      "operatingSystem": "macOS 14+ (Apple Silicon), Windows 11 x64",
+      "license": "https://www.gnu.org/licenses/agpl-3.0.html",
+      "description": "Mac 与 Windows 原生 PDF 阅读与翻译工作区，保留排版翻译，原文译文对照阅读。",
+      "url": "https://modusignal.cn/pagebridge/",
+      "downloadUrl": "https://github.com/txp666/PageBridge/releases/latest"
+    }
+  </script>
+  <link rel="stylesheet" href="../pages/shared/editorial.css?v=__ASSET_VERSION__" />
+</head>
+
+<body class="design-page pagebridge-page">
+  <a class="skip-link" href="#mainContent" data-copy="skipLink">跳到主要内容</a>
+
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="PageBridge 首页" data-copy-label="brandLabel">
+      <img src="./assets/logo.png" alt="" width="512" height="512" />
+      <span>
+        <strong>PageBridge</strong>
+        <small data-copy="brandTagline">PDF 阅读与翻译</small>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="产品页面导航" data-copy-label="navLabel">
+      <a href="#reading" data-copy="navReading">对照阅读</a>
+      <a href="#features" data-copy="navFeatures">功能</a>
+      <a href="#platforms" data-copy="navPlatforms">双平台</a>
+      <a href="#privacy" data-copy="navPrivacy">数据与限制</a>
+      <a href="#downloads" data-copy="navDownloads">下载</a>
+    </nav>
+    <div class="header-actions">
+      <button class="theme-button" type="button" data-theme-toggle aria-label="切换到深色主题" title="切换到深色主题">☾</button>
+      <button class="language-button" type="button" data-language-toggle aria-label="Switch to English">EN</button>
+      <a class="back-link" href="../" data-copy="backToModusignal">返回 modusignal</a>
+    </div>
+  </header>
+
+  <main id="mainContent">
+    <section id="top" class="pb-hero section-shell" aria-labelledby="heroTitle">
+      <div class="pb-hero-head">
+        <div class="pb-hero-copy">
+          <p class="pb-release">
+            <strong>v<span data-release-version>0.4.0</span></strong>
+            <span data-release-date>2026-10-25 发布</span>
+            <span data-copy="heroPlatforms">macOS 14+ 与 Windows 11</span>
+          </p>
+          <h1 id="heroTitle" data-copy="heroTitle"><span class="pb-title-line">保留排版翻译 PDF</span><span class="pb-title-line">原文与译文并排读</span></h1>
+          <p class="pb-lede" data-copy="heroLede">PageBridge 是 Mac 与 Windows 原生的 PDF 阅读工作区。整篇或按页翻译，图表、公式和版面留在原位；对照阅读时可以同步滚动、批注，也可以向文档助手提问。翻译用你自己的模型：本机 Ollama 或 OpenAI 兼容 API。</p>
+        </div>
+        <div class="pb-hero-actions">
+          <a
+            class="button button-primary"
+            data-primary-download
+            href="https://github.com/txp666/PageBridge/releases/download/v0.4.0/PageBridge-0.4.0-windows-x64-setup.exe"
+          >
+            <span data-copy="downloadNow">立即下载</span>
+            <small data-primary-download-label>Windows 11 x64 · EXE · 185.0 MB</small>
+          </a>
+          <a class="button button-secondary" href="#downloads" data-copy="allDownloads">全部下载选项</a>
+          <p class="pb-release-source" data-copy="releaseSource">下载链接来自 GitHub Releases，页面会自动检查最新版本。</p>
+        </div>
+      </div>
+
+      <figure id="reading" class="pb-stage">
+        <div class="pb-stage-bar">
+          <div class="pb-modes" role="group" aria-label="阅读视图" data-copy-label="modeGroupLabel">
+            <button type="button" data-mode="original" aria-pressed="false" data-copy="modeOriginal">原文</button>
+            <button type="button" data-mode="dual" aria-pressed="true" data-copy="modeDual">对照</button>
+            <button type="button" data-mode="translation" aria-pressed="false" data-copy="modeTranslation">译文</button>
+          </div>
+          <p class="pb-mode-note" data-mode-note data-copy="modeNoteDual" aria-live="polite">对照：左侧原文、右侧译文，可开启同步滚动。</p>
+        </div>
+        <div class="pb-window">
+          <img
+            class="is-active"
+            data-mode-image="dual"
+            src="./assets/reader-dual.jpg"
+            alt="PageBridge 对照视图：左侧英文原文，右侧保留版面的中文译文"
+            width="2000"
+            height="1283"
+            fetchpriority="high"
+          />
+          <img
+            data-mode-image="original"
+            src="./assets/reader-original.jpg"
+            alt="PageBridge 原文视图：英文论文首页"
+            width="1600"
+            height="1026"
+            loading="lazy"
+            decoding="async"
+            aria-hidden="true"
+          />
+          <img
+            data-mode-image="translation"
+            src="./assets/reader-translation.jpg"
+            alt="PageBridge 译文视图：保留原版面的中文译文首页"
+            width="1600"
+            height="1026"
+            loading="lazy"
+            decoding="async"
+            aria-hidden="true"
+          />
+        </div>
+        <figcaption data-copy="stageCaption">示例文档：Rougier 等，<cite>Ten Simple Rules for Better Figures</cite>，PLOS Computational Biology 2014（CC0）。中文为 PageBridge 机器翻译结果，界面为 Mac 版 0.4.0。</figcaption>
+      </figure>
+    </section>
+
+    <section id="workflow" class="pb-flow" aria-labelledby="flowTitle">
+      <div class="section-shell">
+        <h2 id="flowTitle" data-copy="flowTitle">从打开一篇 PDF 到导出译文</h2>
+        <ol class="pb-steps">
+          <li>
+            <h3 data-copy="stepImportTitle">导入或检索</h3>
+            <p data-copy="stepImportDesc">拖入 PDF 或点击 + 导入；也可以按标题、关键词或 DOI 检索 OpenAlex，下载全文后直接打开。</p>
+          </li>
+          <li>
+            <h3 data-copy="stepTranslateTitle">选页翻译</h3>
+            <p data-copy="stepTranslateDesc">选择目标语言和页码，例如 <code>1-5, 8</code>。任务可随时取消，失败或取消都不会覆盖上次成功的译文。</p>
+          </li>
+          <li>
+            <h3 data-copy="stepReadTitle">对照阅读</h3>
+            <p data-copy="stepReadDesc">在原文、对照、译文间切换，同步滚动、文内搜索，用缩略图、目录和书签定位，边读边批注或提问。</p>
+          </li>
+          <li>
+            <h3 data-copy="stepExportTitle">导出</h3>
+            <p data-copy="stepExportDesc">导出原文、译文或原译逐页交替的双语 PDF；批注另存为批注 PDF 或 Markdown 笔记。</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="features" class="pb-features" aria-labelledby="featuresTitle">
+      <div class="section-shell">
+        <header class="pb-section-head">
+          <h2 id="featuresTitle" data-copy="featuresTitle">读的时候顺手做的事</h2>
+          <p data-copy="featuresDesc">批注、提问和找文献都在同一个窗口里完成，不用在阅读器、翻译网站和笔记软件之间来回切换。</p>
+        </header>
+
+        <article class="pb-feature" aria-labelledby="notesTitle">
+          <div class="pb-feature-copy">
+            <h3 id="notesTitle" data-copy="notesTitle">批注与笔记</h3>
+            <p data-copy="notesDesc">选中文字即可高亮、加下划线或写笔记，也可以给当前页加笔记和书签。笔记面板按页列出所有批注，点一下回到原处。</p>
+            <ul class="pb-points">
+              <li data-copy="notesPointSource">原文和译文的批注分开保存，添加前可选择来源</li>
+              <li data-copy="notesPointHash">批注绑定 PDF 的哈希，重新翻译不会让旧批注错位</li>
+              <li data-copy="notesPointExport">导出带批注的 PDF，或带页码和摘录的 Markdown 笔记</li>
+            </ul>
+          </div>
+          <figure class="pb-feature-media">
+            <img
+              src="./assets/notes.jpg"
+              alt="PageBridge 笔记面板：按页列出高亮、下划线和笔记，左侧译文中显示黄色高亮"
+              width="1444"
+              height="1500"
+              loading="lazy"
+              decoding="async"
+            />
+          </figure>
+        </article>
+
+        <article class="pb-feature" aria-labelledby="assistantTitle">
+          <div class="pb-feature-copy">
+            <h3 id="assistantTitle" data-copy="assistantTitle">文档助手</h3>
+            <p data-copy="assistantDesc">在阅读时向文档提问，助手使用你已配置的模型，可以和翻译用不同的模型。回答里的 <code>[P3]</code> 引用能展开，核对当次实际交给模型的原文片段，并跳回对应页面。</p>
+            <dl class="pb-scope" aria-label="提问范围与每次提供的内容" data-copy-label="scopeLabel">
+              <div><dt data-copy="scopeDocTitle">文档问答</dt><dd data-copy="scopeDocDesc">本机挑选相关片段，最多 6 页、12,000 字符</dd></div>
+              <div><dt data-copy="scopePageTitle">当前页</dt><dd data-copy="scopePageDesc">最多 2,400 字符，不一定是整页</dd></div>
+              <div><dt data-copy="scopeSelectionTitle">选中文字</dt><dd data-copy="scopeSelectionDesc">当前选区，最多 6,000 字符</dd></div>
+              <div><dt data-copy="scopeFreeTitle">自由提问</dt><dd data-copy="scopeFreeDesc">只发送问题和近期对话，不再提取 PDF</dd></div>
+            </dl>
+            <p class="pb-fineprint" data-copy="assistantNote">助手每次只看到有限的片段，不代表模型通读了全文；引用只说明该页片段被提供过，结论仍需对照原文。</p>
+          </div>
+          <figure class="pb-feature-media">
+            <img
+              src="./assets/assistant.jpg"
+              alt="PageBridge 文档助手面板：一段关于论文证据不足之处的回答，下方是可展开的 P1、P2、P3 原文片段"
+              width="1444"
+              height="1500"
+              loading="lazy"
+              decoding="async"
+            />
+          </figure>
+        </article>
+
+        <article class="pb-feature" aria-labelledby="searchTitle">
+          <div class="pb-feature-copy">
+            <h3 id="searchTitle" data-copy="searchTitle">在线文献检索</h3>
+            <p data-copy="searchDesc">用标题、关键词或 DOI 检索 OpenAlex，选择全文来源后直接下载到文档库。下载会先校验文件；与库里已有的文档相同时，直接打开原来那份，保留译文和笔记。</p>
+            <ul class="pb-points">
+              <li data-copy="searchPointQuery">输入时不发请求，点击搜索后检索词才发送给 OpenAlex</li>
+              <li data-copy="searchPointVerify">遇到网站验证时在应用内自行完成，应用不代答验证码</li>
+              <li data-copy="searchPointLimit">单文件上限 100 MB，网页、登录页和无效文件不会被当作 PDF 导入</li>
+            </ul>
+          </div>
+          <figure class="pb-feature-media pb-feature-media-sheet">
+            <img
+              src="./assets/search.jpg"
+              alt="PageBridge 文献检索面板：搜索 Ten Simple Rules for Better Figures 的 OpenAlex 结果，全文来源为公开 PDF"
+              width="1400"
+              height="1138"
+              loading="lazy"
+              decoding="async"
+            />
+          </figure>
+        </article>
+
+        <dl class="pb-also" aria-label="其他功能" data-copy-label="alsoLabel">
+          <div><dt data-copy="alsoLibraryTitle">文档库</dt><dd data-copy="alsoLibraryDesc">文件夹、名称搜索、排序、收藏、最近阅读和回收站。</dd></div>
+          <div><dt data-copy="alsoModelsTitle">翻译服务</dt><dd data-copy="alsoModelsDesc">DeepSeek、阿里云百炼、硅基流动、OpenAI、本机 Ollama，或任意 OpenAI 兼容 API。</dd></div>
+          <div><dt data-copy="alsoExportTitle">导出</dt><dd data-copy="alsoExportDesc">原文、译文和逐页交替的双语 PDF，另存到你选择的位置。</dd></div>
+          <div><dt data-copy="alsoUpdateTitle">更新</dt><dd data-copy="alsoUpdateDesc">应用内检查更新并校验签名，由你确认后再安装。</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section id="platforms" class="pb-platforms section-shell" aria-labelledby="platformsTitle">
+      <header class="pb-section-head">
+        <h2 id="platformsTitle" data-copy="platformsTitle">Mac 和 Windows 各有一个原生版本</h2>
+        <p data-copy="platformsDesc">两个版本共用同一套翻译引擎，界面分别用各自平台的原生框架编写，功能基本一致。</p>
+      </header>
+      <div class="pb-platform-grid">
+        <div class="pb-platform-list">
+          <section class="pb-platform" aria-labelledby="macTitle">
+            <h3 id="macTitle">macOS</h3>
+            <dl>
+              <div><dt data-copy="platformSystem">系统</dt><dd data-copy="macSystem">macOS 14 或更新，Apple Silicon</dd></div>
+              <div><dt data-copy="platformUi">界面</dt><dd>SwiftUI · AppKit · PDFKit</dd></div>
+              <div><dt data-copy="platformKeys">密钥</dt><dd data-copy="macKeys">macOS 钥匙串</dd></div>
+              <div><dt data-copy="platformUpdates">更新</dt><dd data-copy="macUpdates">Sparkle，校验更新签名</dd></div>
+            </dl>
+          </section>
+          <section class="pb-platform" aria-labelledby="windowsTitle">
+            <h3 id="windowsTitle">Windows</h3>
+            <dl>
+              <div><dt data-copy="platformSystem">系统</dt><dd data-copy="windowsSystem">Windows 11 x64</dd></div>
+              <div><dt data-copy="platformUi">界面</dt><dd>WinUI 3</dd></div>
+              <div><dt data-copy="platformKeys">密钥</dt><dd data-copy="windowsKeys">Windows 凭据管理器</dd></div>
+              <div><dt data-copy="platformUpdates">更新</dt><dd data-copy="windowsUpdates">签名更新清单，经你确认后运行安装向导</dd></div>
+            </dl>
+          </section>
+          <p class="pb-fineprint" data-copy="platformsNote">两端文档库格式不同，暂不支持直接互拷数据目录或跨平台同步。尚无 Intel Mac 和原生 Windows ARM64 版本。</p>
+          <a class="pb-text-link" href="https://github.com/txp666/PageBridge/blob/main/docs/WINDOWS.md" target="_blank" rel="noreferrer">
+            <span data-copy="windowsNotes">Windows 版功能与已知差异</span>
+            <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+        <figure class="pb-platform-figure">
+          <img
+            src="./assets/windows.jpg"
+            alt="PageBridge Windows 版：原文视图，左侧页面缩略图，顶部为阅读模式、缩放、翻译和导出"
+            width="2000"
+            height="1392"
+            loading="lazy"
+            decoding="async"
+          />
+          <figcaption data-copy="windowsCaption">Windows 11 上的 PageBridge 0.4.0（浅色主题）</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="privacy" class="pb-privacy" aria-labelledby="privacyTitle">
+      <div class="section-shell">
+        <header class="pb-section-head">
+          <h2 id="privacyTitle" data-copy="privacyTitle">哪些数据会离开你的电脑</h2>
+          <p data-copy="privacyDesc">文档解析与排版都在本机完成。只有你调用在线服务时，相应的内容才会发出去。</p>
+        </header>
+        <div class="pb-privacy-grid">
+          <section aria-labelledby="localTitle">
+            <h3 id="localTitle" data-copy="localTitle">只留在本机</h3>
+            <ul class="pb-points">
+              <li data-copy="localPdf">PDF 原文、译文和文档库</li>
+              <li data-copy="localNotes">批注、笔记和书签</li>
+              <li data-copy="localChat">助手对话记录（每份文档最多保留最近 40 条）</li>
+              <li data-copy="localKeys">API Key，保存在钥匙串或 Windows 凭据管理器</li>
+            </ul>
+          </section>
+          <section aria-labelledby="sentTitle">
+            <h3 id="sentTitle" data-copy="sentTitle">调用在线服务时发送</h3>
+            <dl class="pb-sent">
+              <div><dt data-copy="sentTranslateWhat">待翻译的文本</dt><dd data-copy="sentTranslateWhere">你选择的模型服务；用本机 Ollama 时不出本机</dd></div>
+              <div><dt data-copy="sentAssistantWhat">助手的问题、片段与近期对话</dt><dd data-copy="sentAssistantWhere">你为助手选择的模型服务</dd></div>
+              <div><dt data-copy="sentSearchWhat">文献检索词</dt><dd>OpenAlex</dd></div>
+              <div><dt data-copy="sentDoiWhat">DOI 或下载请求</dt><dd data-copy="sentDoiWhere">你选择的全文来源</dd></div>
+            </dl>
+          </section>
+        </div>
+        <ul class="pb-limits" aria-label="使用限制" data-copy-label="limitsLabel">
+          <li data-copy="limitOcr">不提供通用 OCR，扫描件需要自带文本层。</li>
+          <li data-copy="limitAccuracy">机器翻译和 AI 回答可能出错，公式、数字和关键条款请对照原文。</li>
+          <li data-copy="limitModels">应用不包含语言模型，也不附带云服务额度；Ollama 和模型需要另行安装。</li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="downloads" class="pb-downloads section-shell" aria-labelledby="downloadsTitle">
+      <header class="pb-download-head">
+        <div>
+          <h2 id="downloadsTitle"><span data-copy="downloadsTitle">下载</span> v<span data-release-version>0.4.0</span></h2>
+          <p data-copy="downloadsDesc">安装包自带 Python 和翻译引擎，无需另装 Python；首次翻译可能还会下载字体和版面资源。</p>
+        </div>
+        <a class="pb-text-link" data-release-page href="https://github.com/txp666/PageBridge/releases/tag/v0.4.0" target="_blank" rel="noreferrer">
+          <span data-copy="viewRelease">在 GitHub 查看发行说明</span>
+          <span aria-hidden="true">↗</span>
+        </a>
+      </header>
+
+      <div class="pb-download-grid">
+        <article class="download-card" data-platform="macos-arm64">
+          <header><span>macOS</span><strong>Apple Silicon</strong></header>
+          <p class="pb-match" data-match-note hidden data-copy="matchDevice">适合这台设备</p>
+          <h3 data-copy="macCardTitle">Mac 版</h3>
+          <p data-copy="macCardDesc">解压后把 PageBridge.app 拖入“应用程序”。需要 macOS 14 或更新。</p>
+          <dl>
+            <div><dt data-copy="format">格式</dt><dd>ZIP</dd></div>
+            <div><dt data-copy="size">大小</dt><dd data-asset-size="macos-arm64">211.1 MB</dd></div>
+          </dl>
+          <a class="button button-secondary" data-asset="macos-arm64" href="https://github.com/txp666/PageBridge/releases/download/v0.4.0/PageBridge-0.4.0-macOS-arm64.zip" data-copy="downloadMac">下载 Mac 版</a>
+          <a class="pb-checksum" data-checksum="macos-arm64" href="https://github.com/txp666/PageBridge/releases/download/v0.4.0/PageBridge-0.4.0-macOS-arm64.zip.sha256">SHA-256</a>
+        </article>
+
+        <article class="download-card recommended" data-platform="windows-setup">
+          <header><span>Windows</span><strong>x64</strong></header>
+          <p class="pb-match" data-match-note data-copy="matchDevice">适合这台设备</p>
+          <h3 data-copy="setupCardTitle">Windows 安装器</h3>
+          <p data-copy="setupCardDesc">按向导选择目录和快捷方式，默认装到当前用户目录。卸载会保留文档库、配置和系统凭据。</p>
+          <dl>
+            <div><dt data-copy="format">格式</dt><dd>EXE</dd></div>
+            <div><dt data-copy="size">大小</dt><dd data-asset-size="windows-setup">185.0 MB</dd></div>
+          </dl>
+          <a class="button button-primary" data-asset="windows-setup" href="https://github.com/txp666/PageBridge/releases/download/v0.4.0/PageBridge-0.4.0-windows-x64-setup.exe" data-copy="downloadSetup">下载安装器</a>
+          <a class="pb-checksum" data-checksum="windows-setup" href="https://github.com/txp666/PageBridge/releases/download/v0.4.0/PageBridge-0.4.0-windows-x64-setup.exe.sha256">SHA-256</a>
+        </article>
+
+        <article class="download-card" data-platform="windows-zip">
+          <header><span>Windows</span><strong>x64</strong></header>
+          <p class="pb-match" data-match-note hidden data-copy="matchDevice">适合这台设备</p>
+          <h3 data-copy="portableCardTitle">Windows 便携 ZIP</h3>
+          <p data-copy="portableCardDesc">完整解压后运行 PageBridge.Windows.exe，保留所有子目录。应用内更新会启动安装向导，不会就地替换便携目录。</p>
+          <dl>
+            <div><dt data-copy="format">格式</dt><dd>ZIP</dd></div>
+            <div><dt data-copy="size">大小</dt><dd data-asset-size="windows-zip">282.3 MB</dd></div>
+          </dl>
+          <a class="button button-secondary" data-asset="windows-zip" href="https://github.com/txp666/PageBridge/releases/download/v0.4.0/PageBridge-0.4.0-windows-x64.zip" data-copy="downloadPortable">下载便携版</a>
+          <a class="pb-checksum" data-checksum="windows-zip" href="https://github.com/txp666/PageBridge/releases/download/v0.4.0/PageBridge-0.4.0-windows-x64.zip.sha256">SHA-256</a>
+        </article>
+      </div>
+
+      <p class="pb-download-note" data-copy="signingNote">Mac 包目前为 ad-hoc 签名，尚未经过 Developer ID 签名和 Apple 公证；Windows 安装器和程序尚无 Authenticode 签名。请核对下载来源和 SHA-256，再按系统提示确认打开。Windows 应用内的网页验证需要系统 WebView2 Runtime。</p>
+    </section>
+
+    <section class="pb-open-source" aria-labelledby="openTitle">
+      <div class="section-shell pb-open-grid">
+        <div>
+          <h2 id="openTitle" data-copy="openTitle">开放源码</h2>
+          <p data-copy="openDesc">PageBridge 的原创代码采用 AGPL-3.0-only。翻译基于 <a href="https://github.com/PDFMathTranslate-next/PDFMathTranslate-next" target="_blank" rel="noreferrer">PDFMathTranslate-next</a> 与 <a href="https://github.com/funstory-ai/BabelDOC" target="_blank" rel="noreferrer">BabelDOC</a>，第三方组件保留各自的许可。每个发行版都附有项目源码和第三方对应源码。</p>
+        </div>
+        <div class="pb-open-actions">
+          <a class="button button-secondary" href="https://github.com/txp666/PageBridge" target="_blank" rel="noreferrer" data-copy="githubRepository">GitHub 仓库</a>
+          <a class="button button-secondary" href="https://github.com/txp666/PageBridge/blob/main/docs/USER_GUIDE.md" target="_blank" rel="noreferrer" data-copy="userGuide">使用指南</a>
+          <a class="button button-secondary" href="https://github.com/txp666/PageBridge/issues" target="_blank" rel="noreferrer" data-copy="reportIssue">反馈问题</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer section-shell">
+    <div>
+      <p><strong>PageBridge</strong> <span data-copy="footerTagline">Mac 与 Windows 原生 PDF 阅读与翻译工作区。</span></p>
+      <p class="pb-credits" data-copy="footerCredits">截图来自 PageBridge 0.4.0 实际界面。示例论文：Rougier 等 2014（CC0）与 Sandve 等 2013（CC BY）；译文和助手回答为机器生成。</p>
+    </div>
+    <nav aria-label="页脚导航" data-copy-label="footerNavLabel">
+      <a href="#reading" data-copy="navReading">对照阅读</a>
+      <a href="#features" data-copy="navFeatures">功能</a>
+      <a href="#downloads" data-copy="navDownloads">下载</a>
+      <a href="../" data-copy="backToModusignal">返回 modusignal</a>
+    </nav>
+  </footer>
+
+  <script src="./app.js?v=20261026.1" defer></script>
+</body>
+
+</html>
