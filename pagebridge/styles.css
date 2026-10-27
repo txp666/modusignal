@@ -237,6 +237,25 @@ html[lang="zh-CN"] .pb-title-line { white-space: nowrap; }
 
 .pb-stage figcaption, .pb-platform-figure figcaption { color: var(--muted); font-size: 0.78rem; line-height: 1.6; }
 
+/* Translation choices: a quiet comparison beside the actual reading view. */
+.pb-reading-options { padding-block: 0 56px; }
+.pb-options-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.pb-option { display: grid; align-content: start; gap: 1rem; padding: 1.75rem; background: var(--paper); }
+.pb-option + .pb-option { border-left: 1px solid var(--line); }
+.pb-option-reading { background: var(--paper-soft); }
+.pb-option header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.35rem 1rem; }
+.pb-option-tag { color: var(--teal); font-size: 0.8rem; }
+.pb-option > p { color: var(--ink-soft); font-size: 0.95rem; line-height: 1.8; }
+.pb-option > .pb-fineprint { color: var(--muted); font-size: 0.8rem; }
+.pb-verification { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem 1.5rem; margin-top: 1.25rem; }
+.pb-verification p { max-width: 48rem; color: var(--muted); font-size: 0.8rem; line-height: 1.7; }
+.pb-verification a { font-size: 0.8rem; }
+@media (max-width: 768px) {
+  .pb-options-grid { grid-template-columns: 1fr; }
+  .pb-option { padding: 1.25rem; }
+  .pb-option + .pb-option { border-left: 0; border-top: 1px solid var(--line); }
+}
+
 /* Sequence: the only numbered list on the page, because it is a real order of steps. */
 
 .pb-flow { padding-block: 56px; border-top: 1px solid var(--line); }
@@ -432,3 +451,9 @@ body.design-page.pagebridge-page .download-card h3 { margin-top: 0; font-size: 1
   html { scroll-behavior: auto; }
   .pb-window img { transition: none; }
 }
+
+.pb-reflow-preview { margin-top: 1.5rem; border-block: 1px solid var(--line); }
+.pb-reflow-preview summary { padding-block: 1rem; color: var(--teal); cursor: pointer; font-weight: 600; }
+.pb-reflow-preview[open] summary { margin-bottom: 0.5rem; }
+.pb-reflow-preview .pb-stage { padding-bottom: 1.25rem; }
+.pb-stage figcaption a { text-underline-offset: 3px; }
