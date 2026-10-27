@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { access, readFile } from "node:fs/promises";
 import test from "node:test";
+import { runInNewContext } from "node:vm";
 
 const pageUrl = new URL("../pagebridge/index.html", import.meta.url);
 const scriptUrl = new URL("../pagebridge/app.js", import.meta.url);
@@ -79,4 +80,78 @@ test("modusignal home and production build include PageBridge", async () => {
   assert.match(build, /join\(siteRoot, "pagebridge"\),/);
   assert.match(headers, /\/pagebridge\/assets\/\*/);
   assert.match(sitemap, /https:\/\/modusignal\.cn\/pagebridge\//);
+});
+
+
+test("public PDF regression records match all 20 bilingual table rows and tested coverage", async () => {
+  const [html, script, raw] = await Promise.all([
+    readFile(pageUrl, "utf8"),
+    readFile(scriptUrl, "utf8"),
+    readFile(new URL("../pagebridge/test-results.json", import.meta.url), "utf8"),
+  ]);
+  const { aggregate, cases } = JSON.parse(raw);
+  const copySource = script.match(/const copy = (\{[\s\S]*?\n\});/);
+  assert.ok(copySource, "the language copy must remain inspectable");
+  const copy = runInNewContext(`(${copySource[1]})`, {}, { timeout: 1000 });
+  const rows = [...html.matchAll(/<tr data-case="([^"]+)">([\s\S]*?)<\/tr>/g)];
+  const decode = (value) => value.replace(/&(amp|lt|gt|quot|#39|#x27);/g, (_, entity) => ({
+    amp: "&", lt: "<", gt: ">", quot: '"', "#39": "'", "#x27": "'",
+  })[entity]);
+  const publicHosts = new Set([
+    "aclanthology.org", "proceedings.mlr.press", "www.ti.com", "nvlpubs.nist.gov",
+    "www.irs.gov", "ntrs.nasa.gov", "tsapps.nist.gov", "arxiv.org", "www.ietf.org",
+    "www.uscis.gov", "www.caict.ac.cn", "www.inrs.fr", "www.berkshirehathaway.com",
+    "www.unicef.org",
+  ]);
+
+  assert.equal(cases.length, 20);
+  assert.equal(new Set(cases.map((item) => item.id)).size, 20);
+  assert.equal(new Set(cases.map((item) => item.sourceSHA256)).size, 20);
+  assert.equal(rows.length, 20);
+  assert.deepEqual(rows.map((row) => row[1]), cases.map((item) => item.id));
+  assert.equal(cases.reduce((sum, item) => sum + item.sourcePages, 0), 746);
+  assert.equal(cases.reduce((sum, item) => sum + item.testedPages.length, 0), 134);
+  const outcomes = Object.fromEntries(["complete", "partial", "unsupported"].map((outcome) => [
+    outcome, cases.filter((item) => item.outcome === outcome).length,
+  ]));
+  assert.deepEqual(outcomes, { complete: 18, partial: 1, unsupported: 1 });
+  assert.equal(aggregate.documents, 20);
+  assert.equal(aggregate.sourcePages, 746);
+  assert.equal(aggregate.testedPages, 134);
+  for (const [outcome, count] of Object.entries(outcomes)) assert.equal(aggregate[outcome], count);
+  assert.equal(aggregate.originalsUnchanged, true);
+  assert.equal(aggregate.semanticQualityPassClaimed, false);
+  assert.doesNotMatch(raw, /(?:file:\/\/|https?:\/\/(?:localhost|127\.|\[::1\]|10\.|192\.168\.|172\.(?:1[6-9]|2\d|3[01])\.)|\/Users\/|\/private\/|[A-Z]:\\Users\\)/i);
+  assert.match(html, /href="\.\/test-results\.json"[^>]*download=/);
+
+  cases.forEach((item, index) => {
+    const row = rows[index][2];
+    const source = new URL(item.sourceUrl);
+    assert.equal(source.protocol, "https:");
+    assert.ok(publicHosts.has(source.hostname), `unrecognized public source for ${item.id}`);
+    assert.equal(source.username + source.password, "");
+    assert.match(item.sourceSHA256, /^[a-f0-9]{64}$/);
+    assert.equal(item.originalUnchanged, true);
+    assert.equal(new Set(item.testedPages).size, item.testedPages.length);
+    assert.ok(item.testedPages.every((page) => Number.isInteger(page) && page >= 1 && page <= item.sourcePages));
+    const isFull = item.testedPages.length === item.sourcePages;
+    assert.equal(item.scope, isFull ? "full" : "selected");
+    assert.ok(Object.values(item.visualReview).flat().every((page) => item.testedPages.includes(page)));
+    const link = row.match(/<a href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/);
+    assert.equal(decode(link?.[1] || ""), item.sourceUrl);
+    assert.equal(decode(link?.[2] || ""), item.title);
+    assert.ok(row.includes(`pb-case-${item.outcome}`));
+    const prefix = `case${String(index + 1).padStart(2, "0")}`;
+    const coverage = isFull
+      ? { zh: `全文 ${item.sourcePages} 页（1–${item.sourcePages}）`, en: `Full document: ${item.sourcePages} pages (1–${item.sourcePages})` }
+      : { zh: `选测 ${item.testedPages.length} / ${item.sourcePages} 页：${item.testedPages.join("、")}`, en: `${item.testedPages.length} of ${item.sourcePages} pages: ${item.testedPages.join(", ")}` };
+    for (const [field, expected] of Object.entries({ Category: item.category, Coverage: coverage, Finding: item.finding, Limitation: item.limitation })) {
+      const key = `${prefix}${field}`;
+      const value = row.match(new RegExp(`data-copy="${key}">([\\s\\S]*?)<\\/`));
+      assert.equal(decode(value?.[1] || ""), expected.zh, `${item.id} ${field}: HTML differs from record`);
+      for (const language of ["zh", "en"]) {
+        assert.equal(copy[key]?.[language], expected[language], `${item.id} ${field}: ${language} differs from record`);
+      }
+    }
+  });
 });
