@@ -458,35 +458,15 @@ body.design-page.pagebridge-page .download-card h3 { margin-top: 0; font-size: 1
 .pb-reflow-preview .pb-stage { padding-bottom: 1.25rem; }
 .pb-stage figcaption a { text-underline-offset: 3px; }
 
-/* Public regression evidence: a readable table, stacked into records on small screens. */
-.pb-validation { padding-block: 56px; border-top: 1px solid var(--line); }
-.pb-validation .pb-section-head { max-width: 52rem; }
-.pb-validation-scope { max-width: 58rem; margin-bottom: 1.5rem; color: var(--ink-soft); line-height: 1.8; }
-.pb-conclusion { display: grid; gap: 0.8rem; padding: 1.5rem; margin-bottom: 2rem; border-left: 3px solid var(--teal); background: var(--paper); }
-.pb-conclusion > p { color: var(--ink-soft); line-height: 1.8; }
-.pb-case-table { width: 100%; table-layout: fixed; border-collapse: collapse; text-align: left; font-size: 0.875rem; line-height: 1.7; }
-.pb-case-table caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-.pb-case-table th, .pb-case-table td { padding: 1.1rem 0.9rem; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: anywhere; }
-.pb-case-table thead th { padding-top: 0.7rem; padding-bottom: 0.7rem; color: var(--muted); font-size: 0.8rem; font-weight: 600; }
-.pb-case-table thead th:nth-child(1) { width: 24%; }
-.pb-case-table thead th:nth-child(2) { width: 17%; }
-.pb-case-table thead th:nth-child(3) { width: 13%; }
-.pb-case-table tbody th { font-weight: 600; }
-.pb-case-table th a { text-decoration-thickness: 1px; text-underline-offset: 3px; }
-.pb-case-category { display: block; margin-top: 0.45rem; color: var(--muted); font-weight: 400; font-size: 0.8rem; }
-.pb-case-coverage { color: var(--ink-soft); }
-.pb-case-outcome { font-size: 0.8rem; }
-.pb-case-partial, .pb-case-unsupported { font-weight: 600; }
-.pb-case-findings { color: var(--ink-soft); }
-.pb-case-limit { margin-top: 0.65rem; padding-top: 0.65rem; border-top: 1px dashed var(--line); color: var(--ink); }
-.pb-validation-method { display: grid; gap: 0.8rem; margin-top: 1.5rem; max-width: 64rem; color: var(--muted); font-size: 0.8rem; line-height: 1.8; }
-.pb-validation-links { display: flex; flex-wrap: wrap; gap: 0.65rem 1.5rem; }
-.pb-validation-links a { font-size: 0.8rem; }
-@media (max-width: 900px) {
-  .pb-case-table, .pb-case-table tbody { display: block; }
-  .pb-case-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-  .pb-case-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; padding-block: 1.25rem; border-bottom: 1px solid var(--line); gap: 0.65rem 1rem; }
-  .pb-case-table th, .pb-case-table td { display: block; padding: 0; border: 0; }
-  .pb-case-table tbody th, .pb-case-findings { grid-column: 1 / -1; }
-  .pb-case-table td:nth-child(3) { max-width: 8rem; text-align: right; }
+/* Real source/translation sheets keep the product preview focused on reading. */
+.pb-reading-spread { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; padding: 1rem; border: 1px solid var(--line); border-radius: 8px; background: var(--paper-soft); text-decoration: none; }
+.pb-reading-sheet { min-width: 0; }
+.pb-sheet-label { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.15rem 0.5rem; margin-bottom: 0.6rem; color: var(--ink-soft); font-size: 0.8rem; }
+.pb-sheet-label span:first-child { color: var(--ink); font-weight: 600; }
+.pb-reading-sheet img { width: 100%; height: auto; border: 1px solid var(--line); background: #fff; }
+.pb-reading-spread:hover { border-color: var(--teal); }
+@media (max-width: 600px) {
+  .pb-reading-spread { gap: 0.5rem; padding: 0.5rem; }
+  .pb-sheet-label { font-size: 0.7rem; }
+  .pb-sheet-label span:last-child { display: none; }
 }

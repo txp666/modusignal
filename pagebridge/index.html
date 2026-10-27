@@ -28,7 +28,7 @@
   <meta property="og:title" content="PageBridge · PDF 阅读与翻译工作区" />
   <meta property="og:description" content="MinerU 本地识别 PDF 与扫描页，尽量保留原版式对照阅读、双向同步滚动。Mac 与 Windows 原生应用。" />
   <meta property="og:url" content="https://modusignal.cn/pagebridge/" />
-  <meta property="og:image" content="https://modusignal.cn/pagebridge/assets/reading-050.png" />
+  <meta property="og:image" content="https://modusignal.cn/pagebridge/assets/comparisons/bert-p3-translated.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <title>PageBridge · PDF 阅读与翻译工作区</title>
   <link rel="icon" href="../logo.ico" type="image/x-icon" />
@@ -63,7 +63,7 @@
     </a>
     <nav class="site-nav" aria-label="产品页面导航" data-copy-label="navLabel">
       <a href="#reading" data-copy="navReading">对照阅读</a>
-      <a href="#validation" data-copy="navValidation">实测结果</a>
+      <a href="./tests/" data-copy="navValidation">PDF 实测</a>
       <a href="#features" data-copy="navFeatures">功能</a>
       <a href="#platforms" data-copy="navPlatforms">双平台</a>
       <a href="#privacy" data-copy="navPrivacy">数据与限制</a>
@@ -103,10 +103,17 @@
       </div>
 
       <figure id="reading" class="pb-stage">
-        <div class="pb-window">
-          <img class="is-active" src="./assets/reading-050.png" alt="PageBridge 0.5 Windows 对照阅读：NASA 幻灯片原图与中文译文并排，保留照片背景，开启同步滚动" width="1480" height="960" fetchpriority="high" />
-        </div>
-        <figcaption data-copy="readingCaption">PageBridge 0.5.0，Windows 实际界面。示例：<a href="https://ntrs.nasa.gov/citations/20240009082" target="_blank" rel="noreferrer">2024 NASA Balloon Program Overview</a>，本次仅翻译第 1 页；下方未选页保留原文。译文为机器生成。</figcaption>
+        <a class="pb-reading-spread" href="./tests/?case=bert&amp;page=3" aria-label="查看 BERT 第 3 页的完整对比与结论" data-copy-label="heroCompareLabel">
+          <div class="pb-reading-sheet">
+            <div class="pb-sheet-label"><span data-copy="heroSourceLabel">英文原文</span><span data-copy="heroPageLabel">BERT · 第 3 页</span></div>
+            <img src="./assets/comparisons/bert-p3-source.png" alt="BERT 第 3 页原文：结构图与双栏英文正文" data-copy-label="heroSourceAlt" width="893" height="1263" fetchpriority="high" />
+          </div>
+          <div class="pb-reading-sheet">
+            <div class="pb-sheet-label"><span data-copy="heroTranslationLabel">中文译文</span><span data-copy="heroPageLabel">BERT · 第 3 页</span></div>
+            <img src="./assets/comparisons/bert-p3-translated.png" alt="BERT 第 3 页译文：结构图保持原位，下方为双栏中文" data-copy-label="heroTranslationAlt" width="893" height="1263" fetchpriority="high" />
+          </div>
+        </a>
+        <figcaption data-copy="readingCaption">BERT 第 3 页，PageBridge 0.5 生产阅读画布的实际渲染。结构图沿用原图，正文为机器翻译。点击图片查看完整对比和已知问题。</figcaption>
       </figure>
     </section>
 
@@ -178,9 +185,9 @@
         <figcaption data-copy="stageCaption">Mac 版 0.5.0 的重排 PDF 模式，非 MinerU 阅读稿。示例：Rougier 等，<cite>Ten Simple Rules for Better Figures</cite>，2014（CC0）。中文为机器翻译。</figcaption>
       </figure>
       </details>
-      <div class="pb-verification">
-        <p data-copy="verificationText">0.5.0 回归覆盖 20 份 PDF 的 134 个物理页；完成 Windows 首次安装与 Mac、Windows 0.4 → 0.5 升级验收。</p>
-        <a class="pb-text-link" href="#validation" data-copy="verificationLink">查看 20 份 PDF 与测试结论</a>
+      <div id="validation" class="pb-verification">
+        <p data-copy="verificationText">20 份 PDF，实际测试 134 页。18 份处理完成，1 份部分完成，1 份扫描识别不支持；可逐篇查看对比与剩余问题。</p>
+        <a class="pb-text-link" href="./tests/" data-copy="verificationLink">查看对比图与实测结论</a>
       </div>
     </section>
 
@@ -205,154 +212,6 @@
             <p data-copy="stepExportDesc">在翻译窗口选择“重排 PDF”，生成可导出的译文或原译逐页交替的双语 PDF。对照阅读稿与重排 PDF 分开保存。</p>
           </li>
         </ol>
-      </div>
-    </section>
-
-    <section id="validation" class="pb-validation section-shell" aria-labelledby="validationTitle">
-      <header class="pb-section-head">
-        <h2 id="validationTitle" data-copy="validationTitle">20 份 PDF，测了什么</h2>
-        <p data-copy="validationIntro">覆盖论文、财报、技术手册、表单、彩色幻灯片与扫描件。下面列的是修复后的真实结果，包括仍未解决的问题。点击文档标题可查看公开原件。</p>
-      </header>
-      <p class="pb-validation-scope" data-copy="validationScope">20 份原件共 746 页，实际测试 134 个不重复物理页：6 份全文共 87 页，14 份选页共 47 页。页码从 1 开始，按 PDF 物理页计算。</p>
-      <article class="pb-conclusion" aria-labelledby="validationConclusionTitle">
-        <h3 id="validationConclusionTitle" data-copy="validationConclusionTitle">结论：适合辅助阅读，关键内容仍需核对</h3>
-        <p data-copy="validationConclusion">18 份处理完成，Adam 部分完成，阿语扫描不支持。这组结果说明原页对照阅读已经可用，但不能将“处理完成”当成翻译质量全部合格。</p>
-        <ul class="pb-points"><li data-copy="validationFixed">版式修复有效：所测背景、色块、细边框和图表位置得到保留；公式占位符泄漏为 0。财报 5 页的 516 个数值区域核对未改变原数字。</li><li data-copy="validationLimits">复杂内容仍有限制：部分公式符号会丢失，金融与技术术语会误译；密集表格和参考文献常需点击展开。阿语扫描本例没有生成中文译文。</li></ul>
-      </article>
-      <table class="pb-case-table">
-        <caption data-copy="validationTitle">20 份 PDF，测了什么</caption>
-        <thead><tr><th scope="col" data-copy="caseDocument">文档与类型</th><th scope="col" data-copy="caseCoverage">实际测试范围</th><th scope="col" data-copy="caseOutcome">处理结果</th><th scope="col" data-copy="caseFinding">观察与剩余问题</th></tr></thead>
-        <tbody>
-            <tr data-case="bert">
-              <th scope="row"><a href="https://aclanthology.org/N19-1423.pdf" target="_blank" rel="noreferrer">BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding</a><span class="pb-case-category" data-copy="case01Category">双栏论文 / 图表 / 公式</span></th>
-              <td class="pb-case-coverage" data-copy="case01Coverage">选测 5 / 16 页：1、3、5、11、16</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case01Finding">双栏、示意图、细框与数值列保持原区域，已识别行内公式正常显示。</p><p class="pb-case-limit" data-copy="case01Limitation">未单独识别的上标/下标仍有扁平化或丢失；引用样式、换行和留白与原稿不同。</p></td>
-            </tr>
-            <tr data-case="batch-normalization">
-              <th scope="row"><a href="https://proceedings.mlr.press/v37/ioffe15.pdf" target="_blank" rel="noreferrer">Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift</a><span class="pb-case-category" data-copy="case02Category">双栏论文 / 密集数学公式</span></th>
-              <td class="pb-case-coverage" data-copy="case02Coverage">选测 1 / 9 页：3</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case02Finding">第3页双栏、页眉横线和独立公式保留，21个已识别行内公式附件显示，无占位符泄漏。</p><p class="pb-case-limit" data-copy="case02Limitation">一个Jacobian分式未识别成公式而被压平；数值稳定项epsilon符号仍丢失。</p></td>
-            </tr>
-            <tr data-case="ti-lm358">
-              <th scope="row"><a href="https://www.ti.com/lit/ds/symlink/lm358.pdf" target="_blank" rel="noreferrer">Industry-Standard Dual Operational Amplifiers (LM358 family)</a><span class="pb-case-category" data-copy="case03Category">芯片数据手册 / 参数表</span></th>
-              <td class="pb-case-coverage" data-copy="case03Coverage">选测 1 / 68 页：6</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case03Finding">第6页细表格线、灰色表头和MIN/TYP/MAX数值列保持原行列位置。</p><p class="pb-case-limit" data-copy="case03Limitation">23处紧凑标签、条件或页脚需展开；工程符号En曾被误译成“恩”，需核对原文。</p></td>
-            </tr>
-            <tr data-case="nist-en">
-              <th scope="row"><a href="https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf" target="_blank" rel="noreferrer">Artificial Intelligence Risk Management Framework (AI RMF 1.0)</a><span class="pb-case-category" data-copy="case04Category">英文报告 / 目录 / 表格</span></th>
-              <td class="pb-case-coverage" data-copy="case04Coverage">选测 2 / 48 页：4、28</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case04Finding">目录缩进和右侧页码对齐，表格细线、分行边界与标识编号保留。</p><p class="pb-case-limit" data-copy="case04Limitation">部分原文断词残留，中英文片段混杂；MAP/GOVERN术语不统一，居中标题会偏左。</p></td>
-            </tr>
-            <tr data-case="irs-w9">
-              <th scope="row"><a href="https://www.irs.gov/pub/irs-pdf/fw9.pdf" target="_blank" rel="noreferrer">Form W-9 (Rev. March 2024)</a><span class="pb-case-category" data-copy="case05Category">空白官方表单 / 细边框</span></th>
-              <td class="pb-case-coverage" data-copy="case05Coverage">选测 1 / 6 页：1</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case05Finding">复选框、纳税人号码框、签名线和细边框保留；混色标题保留原图，可点击查看译文。</p><p class="pb-case-limit" data-copy="case05Limitation">短字段说明、链接及日期/页脚等12处需展开；这不是可填写译文表单的验收。</p></td>
-            </tr>
-            <tr data-case="nasa-scan">
-              <th scope="row"><a href="https://ntrs.nasa.gov/api/citations/19770010056/downloads/19770010056.pdf" target="_blank" rel="noreferrer">Analysis of the development of dynamic stall based on oscillating airfoil experiments</a><span class="pb-case-category" data-copy="case06Category">历史扫描技术报告</span></th>
-              <td class="pb-case-coverage" data-copy="case06Coverage">选测 1 / 107 页：9</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case06Finding">所测第9页生成9个可读译文块，段落起点保持，无失败块或可见OCR乱码。</p><p class="pb-case-limit" data-copy="case06Limitation">仅测1页；兼容文字画布使用较小固定字号，留白和标题居中改变，未复刻扫描纹理。</p></td>
-            </tr>
-            <tr data-case="nist-ja">
-              <th scope="row"><a href="https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=958044" target="_blank" rel="noreferrer">AI Risk Management Framework - Japanese translation</a><span class="pb-case-category" data-copy="case07Category">日文报告 / 彩色提示框</span></th>
-              <td class="pb-case-coverage" data-copy="case07Coverage">选测 1 / 52 页：7</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case07Finding">第7页浅青底色和圆角细边框连续完整，中文正文未碰到边框。</p><p class="pb-case-limit" data-copy="case07Limitation">短译文增加留白，原页标签仍为日文，部分术语翻译较直译。</p></td>
-            </tr>
-            <tr data-case="attention-is-all-you-need">
-              <th scope="row"><a href="https://arxiv.org/pdf/1706.03762" target="_blank" rel="noreferrer">Attention Is All You Need</a><span class="pb-case-category" data-copy="case08Category">论文 / 公式 / 架构图 / 表格</span></th>
-              <td class="pb-case-coverage" data-copy="case08Coverage">全文 15 页（1–15）</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case08Finding">全文生成；总览未见大面积图像擦除或数值列移位，抽查注意力图、公式和结果表保持原位置。</p><p class="pb-case-limit" data-copy="case08Limitation">第9/10页表头有2处需展开；h、train、Transformer存在“小时/火车/变压器”等误译。</p></td>
-            </tr>
-            <tr data-case="rfc8259-json">
-              <th scope="row"><a href="https://www.ietf.org/ietf-ftp/rfc/rfc8259.txt.pdf" target="_blank" rel="noreferrer">RFC 8259 — The JavaScript Object Notation (JSON) Data Interchange Format</a><span class="pb-case-category" data-copy="case09Category">技术规范 / 等宽代码 / ABNF</span></th>
-              <td class="pb-case-coverage" data-copy="case09Coverage">全文 16 页（1–16）</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case09Finding">全文生成；抽查目录点线、页码和JSON示例缩进保留，多数语法/代码块保持原文。</p><p class="pb-case-limit" data-copy="case09Limitation">部分ABNF行被当作正文翻译，代码保留并不完整；Value标题有字面误译。</p></td>
-            </tr>
-            <tr data-case="uscis-i9">
-              <th scope="row"><a href="https://www.uscis.gov/sites/default/files/document/forms/i-9.pdf" target="_blank" rel="noreferrer">USCIS Form I-9 — Employment Eligibility Verification</a><span class="pb-case-category" data-copy="case10Category">空白官方表单 / 多栏字段</span></th>
-              <td class="pb-case-coverage" data-copy="case10Coverage">全文 4 页（1–4）</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case10Finding">全文4页生成；复选框、空白输入框、灰表头和签名区保留，混色说明保留原文并可点开译文。</p><p class="pb-case-limit" data-copy="case10Limitation">部分说明有未译片段或分离的引用数字，6处短标签/页脚需展开。</p></td>
-            </tr>
-            <tr data-case="adam">
-              <th scope="row"><a href="https://arxiv.org/pdf/1412.6980" target="_blank" rel="noreferrer">Adam: A Method for Stochastic Optimization</a><span class="pb-case-category" data-copy="case11Category">论文 / 密集行内公式 / 算法</span></th>
-              <td class="pb-case-coverage" data-copy="case11Coverage">全文 15 页（1–15）</td>
-              <td><span class="pb-case-outcome pb-case-partial" data-copy="casePartial">部分完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case11Finding">15页已生成并重开；公式、算法框和图表的原位置保留，已识别公式附件显示。</p><p class="pb-case-limit" data-copy="case11Limitation">第14页1个含7个公式的段落重试后仍保留原文；参考文献及短图注等23处需展开。</p></td>
-            </tr>
-            <tr data-case="resnet">
-              <th scope="row"><a href="https://arxiv.org/pdf/1512.03385" target="_blank" rel="noreferrer">Deep Residual Learning for Image Recognition</a><span class="pb-case-category" data-copy="case12Category">双栏论文 / 网络图 / 数值表</span></th>
-              <td class="pb-case-coverage" data-copy="case12Coverage">全文 12 页（1–12）</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case12Finding">全文12页生成；双栏、网络图、曲线及数值列保留，普通正文没有记录到区域溢出。</p><p class="pb-case-limit" data-copy="case12Limitation">99处需展开：48处表格、46处参考文献、5处图注/脚注，密集区域不能只看页内缩略译文。</p></td>
-            </tr>
-            <tr data-case="ddpm">
-              <th scope="row"><a href="https://arxiv.org/pdf/2006.11239" target="_blank" rel="noreferrer">Denoising Diffusion Probabilistic Models</a><span class="pb-case-category" data-copy="case13Category">论文 / 密集公式 / 彩色图像</span></th>
-              <td class="pb-case-coverage" data-copy="case13Coverage">全文 25 页（1–25）</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case13Finding">全文25页生成；总览图像区域保留，原尺寸抽查公式分式线、公式编号和结果表数值位置稳定。</p><p class="pb-case-limit" data-copy="case13Limitation">共8处表头/图注等需展开；第5页objective断词后的tive残留，译文未做逐字专业审校。</p></td>
-            </tr>
-            <tr data-case="caict-ai-development-2024">
-              <th scope="row"><a href="https://www.caict.ac.cn/kxyj/qwfb/bps/202412/P020241210548865982463.pdf" target="_blank" rel="noreferrer">人工智能发展报告（2024年）</a><span class="pb-case-category" data-copy="case14Category">中文报告译英文 / 水印 / 表格</span></th>
-              <td class="pb-case-coverage" data-copy="case14Coverage">选测 5 / 64 页：13、18、21、22、28</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case14Finding">5个选页的斜水印、架构图和表格细线保留，未见白块覆盖图片或跨栏正文。</p><p class="pb-case-limit" data-copy="case14Limitation">英文膨胀使多处表头、单元格、标题与脚注截断，需点击展开；图内中文保持原图。</p></td>
-            </tr>
-            <tr data-case="inrs-lithium-fr">
-              <th scope="row"><a href="https://www.inrs.fr/dam/inrs/CataloguePapier/ED/TI-ED-6407.pdf" target="_blank" rel="noreferrer">Les batteries au lithium — Connaître et prévenir les risques (ED 6407)</a><span class="pb-case-category" data-copy="case15Category">法语手册 / 照片 / 装饰 / 表格</span></th>
-              <td class="pb-case-coverage" data-copy="case15Coverage">选测 5 / 24 页：8、12、14、19、20</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case15Finding">照片、灰底、彩色装饰、细表框与危险品编号保留；混色标题保留原图并可展开中文。</p><p class="pb-case-limit" data-copy="case15Limitation">第14页“12+三角”被识别并译为“12吨”；部分图内法文保留，短表格片段语序生硬。</p></td>
-            </tr>
-            <tr data-case="berkshire-2024-annual">
-              <th scope="row"><a href="https://www.berkshirehathaway.com/2024ar/2024ar.pdf" target="_blank" rel="noreferrer">Berkshire Hathaway Inc. 2024 Annual Report</a><span class="pb-case-category" data-copy="case16Category">财务年报 / 多列数字 / 灰底表格</span></th>
-              <td class="pb-case-coverage" data-copy="case16Coverage">选测 5 / 150 页：88、89、113、117、124</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case16Finding">5页灰条纹、细线和财务数值列保留；516个数值区域核对未改变原数字，邻近标题未被擦除。</p><p class="pb-case-limit" data-copy="case16Limitation">1个IBNR标题需展开；Goodwill、ALAE、Development等金融术语仍有误译或不一致。</p></td>
-            </tr>
-            <tr data-case="nasa-balloon-2024-slides">
-              <th scope="row"><a href="https://ntrs.nasa.gov/api/citations/20240009082/downloads/2024%20-%20BPO%20Overview.pdf" target="_blank" rel="noreferrer">2024 NASA Balloon Program Overview</a><span class="pb-case-category" data-copy="case17Category">彩色横版幻灯片 / 照片背景</span></th>
-              <td class="pb-case-coverage" data-copy="case17Coverage">选测 5 / 24 页：1、5、6、8、18</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case17Finding">照片背景、Logo、彩色填充、细网格及数值位置保留，标题阴影覆盖问题已修复。</p><p class="pb-case-limit" data-copy="case17Limitation">封面小页脚需展开，专业词/缩写仍需核对；6个数字字框边沿有差异，但数字笔画未被遮盖。</p></td>
-            </tr>
-            <tr data-case="ti-lm5160-evm">
-              <th scope="row"><a href="https://www.ti.com/lit/ug/snvu441b/snvu441b.pdf" target="_blank" rel="noreferrer">LM5160A, LM5160 Buck EVM User&#x27;s Guide (Rev. B), SNVU441B</a><span class="pb-case-category" data-copy="case18Category">工程手册 / 原理图 / PCB</span></th>
-              <td class="pb-case-coverage" data-copy="case18Coverage">选测 5 / 15 页：4、5、6、7、8</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case18Finding">PCB图、原理图、曲线、Logo、细表格线与已识别公式图像保留。</p><p class="pb-case-limit" data-copy="case18Limitation">26处小图注/页脚等需展开；文字变化后，原链接下划线可能仍停留在原坐标。</p></td>
-            </tr>
-            <tr data-case="nasa-patent-8108023">
-              <th scope="row"><a href="https://ntrs.nasa.gov/api/citations/20120001631/downloads/20120001631.pdf" target="_blank" rel="noreferrer">US 8,108,023 B2 — Blood Monitoring Systems and Methods Thereof</a><span class="pb-case-category" data-copy="case19Category">扫描专利 / 双栏 / 旋转线稿</span></th>
-              <td class="pb-case-coverage" data-copy="case19Coverage">选测 5 / 14 页：1、5、6、11、12</td>
-              <td><span class="pb-case-outcome pb-case-complete" data-copy="caseComplete">处理完成</span></td>
-              <td class="pb-case-findings"><p data-copy="case19Finding">条码经逐像素复核完整，剖面图、细线、箭头和双栏正文区域保留。</p><p class="pb-case-limit" data-copy="case19Limitation">第1页专利引用列合并成段落，第6页旋转图注方向/内容错误；部分编号、日期需展开。</p></td>
-            </tr>
-            <tr data-case="unicef-child-rights-ar">
-              <th scope="row"><a href="https://www.unicef.org/sop/media/826/file" target="_blank" rel="noreferrer">UNICEF 儿童权利与义务（阿拉伯语图文手册）</a><span class="pb-case-category" data-copy="case20Category">阿拉伯语 / 扫描或轮廓字 / 插画</span></th>
-              <td class="pb-case-coverage" data-copy="case20Coverage">选测 5 / 62 页：7、9、12、38、46</td>
-              <td><span class="pb-case-outcome pb-case-unsupported" data-copy="caseUnsupported">不支持，保留原页</span></td>
-              <td class="pb-case-findings"><p data-copy="case20Finding">所选5页明确保留原页，彩色背景、插画与边框完整，没有错误OCR译文叠印。</p><p class="pb-case-limit" data-copy="case20Limitation">当前MinerU Basic/ONNX不支持无阿语文本层的扫描页；本例没有生成中文译文。</p></td>
-            </tr>
-        </tbody>
-      </table>
-      <div class="pb-validation-method">
-        <p data-copy="validationMethod">测试环境：MinerU 4.0.12 Basic / ONNX CPU + DeepSeek deepseek-flash，2026-10-27。全部 134 页已重新打开，原 PDF 哈希均未变。视觉复查包含总览和原尺寸抽查，不等于逐字专业审校。</p>
-        <p data-copy="validationWindows">这组 20 份的排版回归使用 Mac 生产画布。Windows 另选论文、财报、彩色幻灯片、表单、法语手册与扫描稿各 1 页实测，共 6 页；同时完成首次安装与升级验收。</p>
-        <p data-copy="validationSourceNote">公开原件可能随来源更新；这里的页数与结论对应本次留存版本。完整清单包含原件哈希与每份的视觉抽查范围。</p>
-        <div class="pb-validation-links">
-          <a class="pb-text-link" href="./test-results.json" download="PageBridge-0.5.0-PDF-tests.json" data-copy="validationData">下载完整实测清单（JSON）</a>
-          <a class="pb-text-link" href="https://github.com/txp666/PageBridge/blob/main/docs/VERIFICATION.md" target="_blank" rel="noreferrer" data-copy="validationRecord">查看安装、升级与完整验证记录</a>
-        </div>
       </div>
     </section>
 
@@ -594,11 +453,11 @@
   <footer class="site-footer section-shell">
     <div>
       <p><strong>PageBridge</strong> <span data-copy="footerTagline">Mac 与 Windows 原生 PDF 阅读与翻译工作区。</span></p>
-      <p class="pb-credits" data-copy="footerCredits">对照阅读与重排 PDF 截图来自 0.5.0；批注、助手和检索示例保留 0.4.0 界面。文档来源：NASA、IRS、Rougier 等 2014（CC0）、Sandve 等 2013（CC BY）。译文与助手回答为机器生成。</p>
+      <p class="pb-credits" data-copy="footerCredits">阅读画布与重排 PDF 示例来自 0.5；批注、助手和检索截图保留 0.4 界面。文档来源：Devlin 等 BERT、IRS、Rougier 等 2014（CC0）、Sandve 等 2013（CC BY）。译文与助手回答为机器生成。</p>
     </div>
     <nav aria-label="页脚导航" data-copy-label="footerNavLabel">
       <a href="#reading" data-copy="navReading">对照阅读</a>
-      <a href="#validation" data-copy="navValidation">实测结果</a>
+      <a href="./tests/" data-copy="navValidation">PDF 实测</a>
       <a href="#features" data-copy="navFeatures">功能</a>
       <a href="#downloads" data-copy="navDownloads">下载</a>
       <a href="../" data-copy="backToModusignal">返回 modusignal</a>

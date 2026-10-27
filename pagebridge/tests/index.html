@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="PageBridge 0.5 的 20 份 PDF 实测：选择论文、财报、表单或扫描件，查看真实原文与译文对比、测试页范围及剩余问题。" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="theme-color" content="#f5f7f8" />
+  <link rel="canonical" href="https://modusignal.cn/pagebridge/tests/" />
+  <link rel="icon" href="../../logo.ico" type="image/x-icon" />
+  <link rel="stylesheet" href="../../pages/shared/editorial.css?v=__ASSET_VERSION__" />
+  <link rel="stylesheet" href="./styles.css?v=__ASSET_VERSION__" />
+  <script src="./app.js?v=__ASSET_VERSION__" defer></script>
+  <title>PDF 实测对比 · PageBridge</title>
+</head>
+<body class="design-page comparison-page">
+  <a class="skip-link" href="#mainContent" data-copy="skip">跳到主要内容</a>
+  <header class="site-header">
+    <a class="brand" href="../"><img src="../assets/logo.png" alt="" width="40" height="40" /><span>PageBridge<small data-copy="brandSubtitle">PDF 实测对比</small></span></a>
+    <div class="header-actions">
+      <button class="theme-button" type="button" data-theme-toggle aria-label="切换到深色主题">☾</button>
+      <button class="language-button" type="button" data-language-toggle aria-label="Switch to English">EN</button>
+      <a class="back-link" href="../" data-copy="back">返回软件介绍</a>
+    </div>
+  </header>
+  <main id="mainContent" class="shell">
+    <header class="page-intro">
+      <div><p class="release">PageBridge 0.5.0</p><h1 data-copy="title">真实 PDF，逐份看效果</h1></div>
+      <p class="intro-scope" data-copy="intro">20 份原件，实测 134 / 746 页。每份展示 1 个代表页；选择样本，查看原文、译文和实际结论。</p>
+    </header>
+    <details class="overall-conclusion">
+      <summary data-copy="overallTitle">总体结论：适合辅助阅读，关键内容仍需核对</summary>
+      <div class="overall-content">
+        <p data-copy="overallResult">18 份处理完成，Adam 部分完成，阿语扫描不支持。处理完成不等于翻译质量全部合格。</p>
+        <p data-copy="overallFixed">背景、色块、细边框及图表位置的修复有效；本轮无公式占位符泄漏。财报 5 页的 516 个数值区域核对未改变原数字。</p>
+        <p data-copy="overallLimits">复杂公式仍可能丢符号，金融与技术术语会误译，密集表格和参考文献常需展开。图像为页内视图，不包含应用中点击展开的长译文。</p>
+      </div>
+    </details>
+
+    <section class="sample-workspace" aria-labelledby="sampleTitle" aria-busy="false">
+      <div class="sample-toolbar">
+        <div class="sample-field">
+          <label for="sampleSelect" data-copy="chooseSample">选择测试文档</label>
+          <select id="sampleSelect" aria-describedby="selectionNote"><option value="bert">BERT · 双栏论文 / 图表 / 公式</option></select>
+        </div>
+        <div class="page-field" hidden>
+          <label for="pageSelect" data-copy="choosePage">对比页</label>
+          <select id="pageSelect"><option value="3">第 3 页</option></select>
+        </div>
+        <p id="selectionNote" class="selection-note" data-copy="selectionNote">共 20 份，每次查看 1 份</p>
+      </div>
+      <p class="load-status" role="status" data-loading data-copy="loading" hidden>正在载入实测清单…</p>
+      <div class="case-heading">
+        <div><h2 id="sampleTitle">BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding</h2><p class="case-category" data-case-category>双栏论文 / 图表 / 公式</p></div>
+        <a class="text-link" data-original-pdf href="https://aclanthology.org/N19-1423.pdf" target="_blank" rel="noreferrer" data-copy="openPdf">查看原始 PDF</a>
+      </div>
+      <div class="case-meta"><p data-case-coverage>实测 5 / 16 页：1、3、5、11、16</p><p class="outcome" data-case-outcome>处理完成，仍有质量限制</p></div>
+      <div class="case-findings">
+        <div><h3 data-copy="findingLabel">观察结果</h3><p data-case-finding>双栏、示意图、细框与数值列保持原区域，已识别行内公式正常显示。</p></div>
+        <div><h3 data-copy="limitationLabel">仍需核对</h3><p data-case-limitation>未单独识别的上标/下标仍有扁平化或丢失；引用样式、换行和留白与原稿不同。</p></div>
+      </div>
+      <div class="comparison-toolbar">
+        <p class="preview-page" data-preview-page aria-live="polite">当前展示 PDF 物理第 3 页</p>
+        <div class="view-switch" role="group" aria-label="对比视图" data-copy-label="viewLabel">
+          <button type="button" data-view="source" aria-pressed="false" data-copy="original">原文</button>
+          <button type="button" data-view="both" aria-pressed="true" data-copy="sideBySide">并排对比</button>
+          <button type="button" data-view="translation" aria-pressed="false" data-translation-tab>译文</button>
+        </div>
+      </div>
+      <div class="comparison-grid" data-view="both">
+        <figure class="page-figure" data-panel="source">
+          <figcaption><strong data-copy="original">原文</strong><a class="text-link" data-open-source href="../assets/comparisons/bert-p3-source.png" target="_blank" rel="noreferrer" data-copy="openImage">打开大图</a></figcaption>
+          <a class="page-image-link" data-source-link href="../assets/comparisons/bert-p3-source.png" target="_blank" rel="noreferrer"><img data-source-image src="../assets/comparisons/bert-p3-source.png" alt="BERT 第 3 页原文" width="893" height="1263" decoding="async" /></a>
+        </figure>
+        <figure class="page-figure" data-panel="translation">
+          <figcaption><strong data-translation-label>译文</strong><a class="text-link" data-open-translation href="../assets/comparisons/bert-p3-translated.png" target="_blank" rel="noreferrer" data-copy="openImage">打开大图</a></figcaption>
+          <a class="page-image-link" data-translation-link href="../assets/comparisons/bert-p3-translated.png" target="_blank" rel="noreferrer"><img data-translation-image src="../assets/comparisons/bert-p3-translated.png" alt="BERT 第 3 页对照阅读稿" width="893" height="1263" decoding="async" /></a>
+        </figure>
+      </div>
+      <p class="image-notice" data-image-notice role="status" hidden></p>
+      <p class="image-caption" data-image-caption>真实 Mac 生产画布渲染，非重新排版的示意图。可打开大图核对细节。</p>
+    </section>
+    <noscript><p class="noscript-notice">当前显示 BERT 第 3 页。启用 JavaScript 可在 20 份样本之间切换；也可直接<a href="../test-results.json">下载完整测试清单</a>。</p></noscript>
+
+    <footer class="method-notes">
+      <details><summary data-copy="methodTitle">测试范围与方法</summary><div class="method-content">
+        <p data-copy="methodScope">6 份全文共 87 页，另外 14 份选页共 47 页；不是 746 页全部翻译。134 个测试页均已重开，原 PDF 哈希未变。全文处理不等于逐字审校，视觉复查包含全页总览和原尺寸抽查。</p>
+        <p data-copy="methodEnvironment">测试于 2026-10-27，使用 MinerU 4.0.12 Basic / ONNX CPU 与 DeepSeek deepseek-flash。图像来自 Mac 生产画布；Windows 另选 6 类文档各 1 页实测，并完成安装与升级验收。</p>
+        <p data-copy="methodSources">每份只展示 1 个代表页，完整实测页范围列于样本信息。公开原件可能随来源更新，结论对应本次留存版本；完整清单包含原件哈希和视觉抽查范围。</p>
+      </div></details>
+      <div class="footer-links"><a class="text-link" href="../test-results.json" download="PageBridge-0.5.0-PDF-tests.json" data-copy="downloadRecord">下载完整实测清单</a><a class="text-link" href="https://github.com/txp666/PageBridge/blob/main/docs/VERIFICATION.md" target="_blank" rel="noreferrer" data-copy="verification">完整验证记录</a><a class="text-link" href="../#downloads" data-copy="downloadApp">下载 PageBridge</a></div>
+    </footer>
+  </main>
+</body>
+</html>
