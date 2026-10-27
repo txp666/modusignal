@@ -28,7 +28,7 @@
   <meta property="og:title" content="PageBridge · PDF 阅读与翻译工作区" />
   <meta property="og:description" content="MinerU 本地识别 PDF 与扫描页，尽量保留原版式对照阅读、双向同步滚动。Mac 与 Windows 原生应用。" />
   <meta property="og:url" content="https://modusignal.cn/pagebridge/" />
-  <meta property="og:image" content="https://modusignal.cn/pagebridge/assets/reading-050.png" />
+  <meta property="og:image" content="https://modusignal.cn/pagebridge/assets/comparisons/bert-p3-translated.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <title>PageBridge · PDF 阅读与翻译工作区</title>
   <link rel="icon" href="../logo.ico" type="image/x-icon" />
@@ -63,6 +63,7 @@
     </a>
     <nav class="site-nav" aria-label="产品页面导航" data-copy-label="navLabel">
       <a href="#reading" data-copy="navReading">对照阅读</a>
+      <a href="./tests/" data-copy="navValidation">PDF 实测</a>
       <a href="#features" data-copy="navFeatures">功能</a>
       <a href="#platforms" data-copy="navPlatforms">双平台</a>
       <a href="#privacy" data-copy="navPrivacy">数据与限制</a>
@@ -102,10 +103,17 @@
       </div>
 
       <figure id="reading" class="pb-stage">
-        <div class="pb-window">
-          <img class="is-active" src="./assets/reading-050.png" alt="PageBridge 0.5 Windows 对照阅读：NASA 幻灯片原图与中文译文并排，保留照片背景，开启同步滚动" width="1480" height="960" fetchpriority="high" />
-        </div>
-        <figcaption data-copy="readingCaption">PageBridge 0.5.0，Windows 实际界面。示例：<a href="https://ntrs.nasa.gov/citations/20240009082" target="_blank" rel="noreferrer">2024 NASA Balloon Program Overview</a>，本次仅翻译第 1 页；下方未选页保留原文。译文为机器生成。</figcaption>
+        <a class="pb-reading-spread" href="./tests/?case=bert&amp;page=3" aria-label="查看 BERT 第 3 页的完整对比与结论" data-copy-label="heroCompareLabel">
+          <div class="pb-reading-sheet">
+            <div class="pb-sheet-label"><span data-copy="heroSourceLabel">英文原文</span><span data-copy="heroPageLabel">BERT · 第 3 页</span></div>
+            <img src="./assets/comparisons/bert-p3-source.png" alt="BERT 第 3 页原文：结构图与双栏英文正文" data-copy-label="heroSourceAlt" width="893" height="1263" fetchpriority="high" />
+          </div>
+          <div class="pb-reading-sheet">
+            <div class="pb-sheet-label"><span data-copy="heroTranslationLabel">中文译文</span><span data-copy="heroPageLabel">BERT · 第 3 页</span></div>
+            <img src="./assets/comparisons/bert-p3-translated.png" alt="BERT 第 3 页译文：结构图保持原位，下方为双栏中文" data-copy-label="heroTranslationAlt" width="893" height="1263" fetchpriority="high" />
+          </div>
+        </a>
+        <figcaption data-copy="readingCaption">BERT 第 3 页，PageBridge 0.5 生产阅读画布的实际渲染。结构图沿用原图，正文为机器翻译。点击图片查看完整对比和已知问题。</figcaption>
       </figure>
     </section>
 
@@ -177,9 +185,9 @@
         <figcaption data-copy="stageCaption">Mac 版 0.5.0 的重排 PDF 模式，非 MinerU 阅读稿。示例：Rougier 等，<cite>Ten Simple Rules for Better Figures</cite>，2014（CC0）。中文为机器翻译。</figcaption>
       </figure>
       </details>
-      <div class="pb-verification">
-        <p data-copy="verificationText">0.5.0 回归覆盖 20 份 PDF 的 134 个物理页；完成 Windows 首次安装与 Mac、Windows 0.4 → 0.5 升级验收。</p>
-        <a class="pb-text-link" href="https://github.com/txp666/PageBridge/blob/main/docs/VERIFICATION.md" target="_blank" rel="noreferrer" data-copy="verificationLink">查看验证范围与已知限制</a>
+      <div id="validation" class="pb-verification">
+        <p data-copy="verificationText">20 份 PDF，实际测试 134 页。18 份处理完成，1 份部分完成，1 份扫描识别不支持；可逐篇查看对比与剩余问题。</p>
+        <a class="pb-text-link" href="./tests/" data-copy="verificationLink">查看对比图与实测结论</a>
       </div>
     </section>
 
@@ -445,10 +453,11 @@
   <footer class="site-footer section-shell">
     <div>
       <p><strong>PageBridge</strong> <span data-copy="footerTagline">Mac 与 Windows 原生 PDF 阅读与翻译工作区。</span></p>
-      <p class="pb-credits" data-copy="footerCredits">对照阅读与重排 PDF 截图来自 0.5.0；批注、助手和检索示例保留 0.4.0 界面。文档来源：NASA、IRS、Rougier 等 2014（CC0）、Sandve 等 2013（CC BY）。译文与助手回答为机器生成。</p>
+      <p class="pb-credits" data-copy="footerCredits">阅读画布与重排 PDF 示例来自 0.5；批注、助手和检索截图保留 0.4 界面。文档来源：Devlin 等 BERT、IRS、Rougier 等 2014（CC0）、Sandve 等 2013（CC BY）。译文与助手回答为机器生成。</p>
     </div>
     <nav aria-label="页脚导航" data-copy-label="footerNavLabel">
       <a href="#reading" data-copy="navReading">对照阅读</a>
+      <a href="./tests/" data-copy="navValidation">PDF 实测</a>
       <a href="#features" data-copy="navFeatures">功能</a>
       <a href="#downloads" data-copy="navDownloads">下载</a>
       <a href="../" data-copy="backToModusignal">返回 modusignal</a>

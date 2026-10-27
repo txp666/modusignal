@@ -1,0 +1,945 @@
+{
+  "schemaVersion": 1,
+  "productVersion": "0.5.0",
+  "testDate": "2026-10-27",
+  "parser": "MinerU 4.0.12 Basic / ONNX CPU",
+  "translationModel": "DeepSeek deepseek-flash",
+  "verificationUrl": "https://github.com/txp666/PageBridge/blob/main/docs/VERIFICATION.md",
+  "aggregate": {
+    "documents": 20,
+    "sourcePages": 746,
+    "testedPages": 134,
+    "fullDocuments": 6,
+    "fullDocumentTestedPages": 87,
+    "selectedDocuments": 14,
+    "selectedDocumentTestedPages": 47,
+    "complete": 18,
+    "partial": 1,
+    "unsupported": 1,
+    "originalsUnchanged": true,
+    "reopenedPages": 134,
+    "semanticQualityPassClaimed": false,
+    "placeholderLeaks": 0
+  },
+  "scopeNote": {
+    "zh": "页码为从1开始的PDF物理页。20份完整原件共746页，本轮实际测试134个不重复页；6份全文、14份选页。18份处理完成、1份部分完成、1份能力不支持；这不是20份翻译质量全部合格。所有原件SHA-256保持不变。",
+    "en": "Page numbers are 1-based physical PDF pages. The 20 originals contain 746 pages; 134 unique pages were tested: six full documents and selected pages from 14 others. Processing completed for 18, one was partial, and one was unsupported. This is not a claim that all 20 passed translation-quality review. All original SHA-256 hashes were unchanged."
+  },
+  "reviewNote": {
+    "zh": "结论来自修复后的真实输出、原生渲染与视觉记录。全文处理不等于逐字审校：部分长文仅做全页总览与指定页原尺寸抽查，具体范围列于每例visualReview。公开原件链接可能随后更新，页数和结论对应本次留存原件。",
+    "en": "Findings come from final repaired outputs, native renders and visual records. Full-document processing is not word-by-word review: some long documents received overview checks plus full-size inspection of selected pages, listed in each visualReview. Public source files may later change; page counts and findings refer to the tested snapshots."
+  },
+  "outcomeLabels": {
+    "complete": {
+      "zh": "处理完成（仍有质量限制）",
+      "en": "Processing complete; limitations remain"
+    },
+    "partial": {
+      "zh": "部分完成",
+      "en": "Partially complete"
+    },
+    "unsupported": {
+      "zh": "能力不支持，保留原文",
+      "en": "Unsupported; original preserved"
+    }
+  },
+  "cases": [
+    {
+      "id": "bert",
+      "title": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+      "sourceUrl": "https://aclanthology.org/N19-1423.pdf",
+      "sourceSHA256": "987545ffb087f1ece898142c403a516baeabeb70ce19089397fac6f7db12c3d4",
+      "sourcePages": 16,
+      "testedPages": [
+        1,
+        3,
+        5,
+        11,
+        16
+      ],
+      "scope": "selected",
+      "outcome": "complete",
+      "sourceLanguage": "en",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "双栏论文 / 图表 / 公式",
+        "en": "Two-column paper / figures / formulas"
+      },
+      "finding": {
+        "zh": "双栏、示意图、细框与数值列保持原区域，已识别行内公式正常显示。",
+        "en": "Columns, diagrams, fine borders and numeric columns remain in their source areas; recognized inline formulas render."
+      },
+      "limitation": {
+        "zh": "未单独识别的上标/下标仍有扁平化或丢失；引用样式、换行和留白与原稿不同。",
+        "en": "Some unrecognized superscripts/subscripts are flattened or lost; citation styling, line breaks and whitespace differ."
+      },
+      "visualReview": {
+        "overviewPages": [],
+        "fullSizePages": [
+          1,
+          3,
+          5,
+          11,
+          16
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "batch-normalization",
+      "title": "Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift",
+      "sourceUrl": "https://proceedings.mlr.press/v37/ioffe15.pdf",
+      "sourceSHA256": "f2eb20b4e97409aef516a6506ea76c7c051860eeded3006a6d9687c364847b27",
+      "sourcePages": 9,
+      "testedPages": [
+        3
+      ],
+      "scope": "selected",
+      "outcome": "complete",
+      "sourceLanguage": "en",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "双栏论文 / 密集数学公式",
+        "en": "Two-column paper / dense math"
+      },
+      "finding": {
+        "zh": "第3页双栏、页眉横线和独立公式保留，21个已识别行内公式附件显示，无占位符泄漏。",
+        "en": "Page 3 keeps both columns, the header rule and displayed equations; 21 recognized inline formula images render without placeholder leaks."
+      },
+      "limitation": {
+        "zh": "一个Jacobian分式未识别成公式而被压平；数值稳定项epsilon符号仍丢失。",
+        "en": "One Jacobian fraction is flattened as text; the numerical-stability epsilon symbol is still missing."
+      },
+      "visualReview": {
+        "overviewPages": [],
+        "fullSizePages": [
+          3
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "ti-lm358",
+      "title": "Industry-Standard Dual Operational Amplifiers (LM358 family)",
+      "sourceUrl": "https://www.ti.com/lit/ds/symlink/lm358.pdf",
+      "sourceSHA256": "8277dff7b89138c63b3582d37f378065a1dea3cae5ed1e2926ddc2779eb7e3a2",
+      "sourcePages": 68,
+      "testedPages": [
+        6
+      ],
+      "scope": "selected",
+      "outcome": "complete",
+      "sourceLanguage": "en",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "芯片数据手册 / 参数表",
+        "en": "Chip datasheet / electrical table"
+      },
+      "finding": {
+        "zh": "第6页细表格线、灰色表头和MIN/TYP/MAX数值列保持原行列位置。",
+        "en": "Page 6 keeps fine table rules, the gray header and MIN/TYP/MAX values in their original cells."
+      },
+      "limitation": {
+        "zh": "23处紧凑标签、条件或页脚需展开；工程符号En曾被误译成“恩”，需核对原文。",
+        "en": "23 compact labels, conditions or footers require expansion; the engineering symbol En is mistranslated as “恩”."
+      },
+      "visualReview": {
+        "overviewPages": [],
+        "fullSizePages": [
+          6
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "nist-en",
+      "title": "Artificial Intelligence Risk Management Framework (AI RMF 1.0)",
+      "sourceUrl": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
+      "sourceSHA256": "7576edb531d9848825814ee88e28b1795d3a84b435b4b797d3670eafdc4a89f1",
+      "sourcePages": 48,
+      "testedPages": [
+        4,
+        28
+      ],
+      "scope": "selected",
+      "outcome": "complete",
+      "sourceLanguage": "en",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "英文报告 / 目录 / 表格",
+        "en": "English report / contents / tables"
+      },
+      "finding": {
+        "zh": "目录缩进和右侧页码对齐，表格细线、分行边界与标识编号保留。",
+        "en": "Contents indentation and page-number columns align; table rules, row boundaries and identifiers remain intact."
+      },
+      "limitation": {
+        "zh": "部分原文断词残留，中英文片段混杂；MAP/GOVERN术语不统一，居中标题会偏左。",
+        "en": "Broken-word fragments remain, MAP/GOVERN terminology varies, and formerly centered headings can appear left-aligned."
+      },
+      "visualReview": {
+        "overviewPages": [],
+        "fullSizePages": [
+          4,
+          28
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "irs-w9",
+      "title": "Form W-9 (Rev. March 2024)",
+      "sourceUrl": "https://www.irs.gov/pub/irs-pdf/fw9.pdf",
+      "sourceSHA256": "2d420cbb4123dcf1fb82595b2359cfbb5d81f00b9df9d359fcc7af361d093f53",
+      "sourcePages": 6,
+      "testedPages": [
+        1
+      ],
+      "scope": "selected",
+      "outcome": "complete",
+      "sourceLanguage": "en",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "空白官方表单 / 细边框",
+        "en": "Blank official form / fine borders"
+      },
+      "finding": {
+        "zh": "复选框、纳税人号码框、签名线和细边框保留；混色标题保留原图，可点击查看译文。",
+        "en": "Checkboxes, taxpayer-number boxes, signature lines and fine borders remain; mixed-color headings retain their source image with click-to-view translation."
+      },
+      "limitation": {
+        "zh": "短字段说明、链接及日期/页脚等12处需展开；这不是可填写译文表单的验收。",
+        "en": "12 short instructions, links or date/footer labels require expansion; this does not validate an editable translated form."
+      },
+      "visualReview": {
+        "overviewPages": [],
+        "fullSizePages": [
+          1
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "nasa-scan",
+      "title": "Analysis of the development of dynamic stall based on oscillating airfoil experiments",
+      "sourceUrl": "https://ntrs.nasa.gov/api/citations/19770010056/downloads/19770010056.pdf",
+      "sourceSHA256": "61c7c4a0447e71f9ccf445d04a4dafca5a13792536226ee38c3efc2c46bb73f1",
+      "sourcePages": 107,
+      "testedPages": [
+        9
+      ],
+      "scope": "selected",
+      "outcome": "complete",
+      "sourceLanguage": "en",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "历史扫描技术报告",
+        "en": "Historical scanned technical report"
+      },
+      "finding": {
+        "zh": "所测第9页生成9个可读译文块，段落起点保持，无失败块或可见OCR乱码。",
+        "en": "The tested page 9 produces nine readable translated blocks, retaining paragraph starts without fallback blocks or visible OCR gibberish."
+      },
+      "limitation": {
+        "zh": "仅测1页；兼容文字画布使用较小固定字号，留白和标题居中改变，未复刻扫描纹理。",
+        "en": "Only one page was tested. The compatibility text canvas uses small fixed-size text with changed whitespace and heading alignment, not the original scan texture."
+      },
+      "visualReview": {
+        "overviewPages": [],
+        "fullSizePages": [
+          9
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "nist-ja",
+      "title": "AI Risk Management Framework - Japanese translation",
+      "sourceUrl": "https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=958044",
+      "sourceSHA256": "b7373872914de4dca2cd1a7a3e32ce923957b7f72506ed1cd00371d1106355dd",
+      "sourcePages": 52,
+      "testedPages": [
+        7
+      ],
+      "scope": "selected",
+      "outcome": "complete",
+      "sourceLanguage": "ja",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "日文报告 / 彩色提示框",
+        "en": "Japanese report / colored callout"
+      },
+      "finding": {
+        "zh": "第7页浅青底色和圆角细边框连续完整，中文正文未碰到边框。",
+        "en": "Page 7 retains the pale-cyan fill and continuous rounded border, with Chinese text staying inside it."
+      },
+      "limitation": {
+        "zh": "短译文增加留白，原页标签仍为日文，部分术语翻译较直译。",
+        "en": "Shorter translations add whitespace; the page label remains Japanese and some terms are literal."
+      },
+      "visualReview": {
+        "overviewPages": [],
+        "fullSizePages": [
+          7
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "attention-is-all-you-need",
+      "title": "Attention Is All You Need",
+      "sourceUrl": "https://arxiv.org/pdf/1706.03762",
+      "sourceSHA256": "bdfaa68d8984f0dc02beaca527b76f207d99b666d31d1da728ee0728182df697",
+      "sourcePages": 15,
+      "testedPages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "scope": "full",
+      "outcome": "complete",
+      "sourceLanguage": "en",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "论文 / 公式 / 架构图 / 表格",
+        "en": "Paper / formulas / architecture / tables"
+      },
+      "finding": {
+        "zh": "全文生成；总览未见大面积图像擦除或数值列移位，抽查注意力图、公式和结果表保持原位置。",
+        "en": "All pages were generated; overviews show no gross image erasure or numeric-column shifts, and inspected attention diagrams, formulas and result tables stay in place."
+      },
+      "limitation": {
+        "zh": "第9/10页表头有2处需展开；h、train、Transformer存在“小时/火车/变压器”等误译。",
+        "en": "Two headers on pages 9/10 need expansion; h, train and Transformer have incorrect literal translations."
+      },
+      "visualReview": {
+        "overviewPages": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "fullSizePages": [
+          4,
+          9,
+          10
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "rfc8259-json",
+      "title": "RFC 8259 — The JavaScript Object Notation (JSON) Data Interchange Format",
+      "sourceUrl": "https://www.ietf.org/ietf-ftp/rfc/rfc8259.txt.pdf",
+      "sourceSHA256": "36eae5d5812250c57e31cd87e591e6fd63fa2384ac4d8c53d7e0306807c75680",
+      "sourcePages": 16,
+      "testedPages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16
+      ],
+      "scope": "full",
+      "outcome": "complete",
+      "sourceLanguage": "en",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "技术规范 / 等宽代码 / ABNF",
+        "en": "Technical standard / monospace code / ABNF"
+      },
+      "finding": {
+        "zh": "全文生成；抽查目录点线、页码和JSON示例缩进保留，多数语法/代码块保持原文。",
+        "en": "All pages were generated; inspected contents leaders, page numbers and JSON indentation remain, with most grammar/code kept as source."
+      },
+      "limitation": {
+        "zh": "部分ABNF行被当作正文翻译，代码保留并不完整；Value标题有字面误译。",
+        "en": "Some ABNF lines are translated as prose, so code preservation is incomplete; a Value heading is mistranslated literally."
+      },
+      "visualReview": {
+        "overviewPages": [],
+        "fullSizePages": [
+          3,
+          6,
+          13
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "uscis-i9",
+      "title": "USCIS Form I-9 — Employment Eligibility Verification",
+      "sourceUrl": "https://www.uscis.gov/sites/default/files/document/forms/i-9.pdf",
+      "sourceSHA256": "780f348c34df694bb0b4dbbfaf9f22b99b9757b80d16a37ba89aadf069597281",
+      "sourcePages": 4,
+      "testedPages": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "scope": "full",
+      "outcome": "complete",
+      "sourceLanguage": "en",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "空白官方表单 / 多栏字段",
+        "en": "Blank official form / multi-column fields"
+      },
+      "finding": {
+        "zh": "全文4页生成；复选框、空白输入框、灰表头和签名区保留，混色说明保留原文并可点开译文。",
+        "en": "All four pages were generated; checkboxes, blank fields, gray headers and signature areas remain, with mixed-color instructions preserved and translations available on click."
+      },
+      "limitation": {
+        "zh": "部分说明有未译片段或分离的引用数字，6处短标签/页脚需展开。",
+        "en": "Some instructions retain untranslated fragments or detached reference numbers; six short labels/footers need expansion."
+      },
+      "visualReview": {
+        "overviewPages": [
+          1,
+          2,
+          3,
+          4
+        ],
+        "fullSizePages": [
+          1
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "adam",
+      "title": "Adam: A Method for Stochastic Optimization",
+      "sourceUrl": "https://arxiv.org/pdf/1412.6980",
+      "sourceSHA256": "eab9c73ae2ceda884b94830bda99312254bac4806f6c9f045cbab90721ecda31",
+      "sourcePages": 15,
+      "testedPages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ],
+      "scope": "full",
+      "outcome": "partial",
+      "sourceLanguage": "en",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "论文 / 密集行内公式 / 算法",
+        "en": "Paper / dense inline math / algorithms"
+      },
+      "finding": {
+        "zh": "15页已生成并重开；公式、算法框和图表的原位置保留，已识别公式附件显示。",
+        "en": "All 15 pages were generated and reopened; formulas, algorithm frames and graphs retain their positions, and recognized formula images render."
+      },
+      "limitation": {
+        "zh": "第14页1个含7个公式的段落重试后仍保留原文；参考文献及短图注等23处需展开。",
+        "en": "One paragraph with seven formulas on page 14 remains untranslated after retry; 23 reference/caption regions need expansion."
+      },
+      "visualReview": {
+        "overviewPages": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15
+        ],
+        "fullSizePages": [
+          4,
+          12
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "resnet",
+      "title": "Deep Residual Learning for Image Recognition",
+      "sourceUrl": "https://arxiv.org/pdf/1512.03385",
+      "sourceSHA256": "1e0651b6810ecba34a3dbc5b5b0209226f889004607c1f203540a48d64e5a93a",
+      "sourcePages": 12,
+      "testedPages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "scope": "full",
+      "outcome": "complete",
+      "sourceLanguage": "en",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "双栏论文 / 网络图 / 数值表",
+        "en": "Two-column paper / network diagrams / tables"
+      },
+      "finding": {
+        "zh": "全文12页生成；双栏、网络图、曲线及数值列保留，普通正文没有记录到区域溢出。",
+        "en": "All 12 pages were generated; columns, network diagrams, plots and numeric columns remain, with no recorded overflow in ordinary body paragraphs."
+      },
+      "limitation": {
+        "zh": "99处需展开：48处表格、46处参考文献、5处图注/脚注，密集区域不能只看页内缩略译文。",
+        "en": "99 regions need expansion: 48 table labels, 46 references and five captions/footnotes; dense areas cannot be fully read in the page view."
+      },
+      "visualReview": {
+        "overviewPages": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12
+        ],
+        "fullSizePages": [
+          2,
+          9,
+          11
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "ddpm",
+      "title": "Denoising Diffusion Probabilistic Models",
+      "sourceUrl": "https://arxiv.org/pdf/2006.11239",
+      "sourceSHA256": "aee5e07a802e8dfd2a386374c94fd61d1d056cb7e1e0fec4f28e8120ff5d8505",
+      "sourcePages": 25,
+      "testedPages": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25
+      ],
+      "scope": "full",
+      "outcome": "complete",
+      "sourceLanguage": "en",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "论文 / 密集公式 / 彩色图像",
+        "en": "Paper / dense equations / color figures"
+      },
+      "finding": {
+        "zh": "全文25页生成；总览图像区域保留，原尺寸抽查公式分式线、公式编号和结果表数值位置稳定。",
+        "en": "All 25 pages were generated; image regions remain in overviews, and full-size checks retain fraction bars, equation numbers and numeric table positions."
+      },
+      "limitation": {
+        "zh": "共8处表头/图注等需展开；第5页objective断词后的tive残留，译文未做逐字专业审校。",
+        "en": "Eight headers/captions need expansion; a broken “objective” leaves “tive” in the page-5 caption. Translation has not had a word-by-word expert review."
+      },
+      "visualReview": {
+        "overviewPages": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25
+        ],
+        "fullSizePages": [
+          3,
+          5
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "caict-ai-development-2024",
+      "title": "人工智能发展报告（2024年）",
+      "sourceUrl": "https://www.caict.ac.cn/kxyj/qwfb/bps/202412/P020241210548865982463.pdf",
+      "sourceSHA256": "3dbffa656dea8ae3616be630395d50d5cd9d915631b7ede242c11202de219038",
+      "sourcePages": 64,
+      "testedPages": [
+        13,
+        18,
+        21,
+        22,
+        28
+      ],
+      "scope": "selected",
+      "outcome": "complete",
+      "sourceLanguage": "zh",
+      "targetLanguage": "en",
+      "category": {
+        "zh": "中文报告译英文 / 水印 / 表格",
+        "en": "Chinese-to-English report / watermarks / tables"
+      },
+      "finding": {
+        "zh": "5个选页的斜水印、架构图和表格细线保留，未见白块覆盖图片或跨栏正文。",
+        "en": "The five selected pages retain diagonal watermarks, architecture figures and fine table rules, without observed white-box image erasure or body text crossing columns."
+      },
+      "limitation": {
+        "zh": "英文膨胀使多处表头、单元格、标题与脚注截断，需点击展开；图内中文保持原图。",
+        "en": "Expanded English clips several table cells, headers, headings and footnotes; click to expand. Chinese text inside figures remains in the original image."
+      },
+      "visualReview": {
+        "overviewPages": [],
+        "fullSizePages": [
+          13,
+          18,
+          21,
+          22,
+          28
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "inrs-lithium-fr",
+      "title": "Les batteries au lithium — Connaître et prévenir les risques (ED 6407)",
+      "sourceUrl": "https://www.inrs.fr/dam/inrs/CataloguePapier/ED/TI-ED-6407.pdf",
+      "sourceSHA256": "f0e6dc407dbd88a50f88d756340e883c9b21988732eff15e345096ba87d57cf0",
+      "sourcePages": 24,
+      "testedPages": [
+        8,
+        12,
+        14,
+        19,
+        20
+      ],
+      "scope": "selected",
+      "outcome": "complete",
+      "sourceLanguage": "fr",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "法语手册 / 照片 / 装饰 / 表格",
+        "en": "French guide / photos / decoration / tables"
+      },
+      "finding": {
+        "zh": "照片、灰底、彩色装饰、细表框与危险品编号保留；混色标题保留原图并可展开中文。",
+        "en": "Photos, gray fills, colored decoration, fine table borders and dangerous-goods numbers remain; mixed-color headings retain their image with expandable Chinese."
+      },
+      "limitation": {
+        "zh": "第14页“12+三角”被识别并译为“12吨”；部分图内法文保留，短表格片段语序生硬。",
+        "en": "On page 14, “12 + triangle” becomes “12 tons”; some figure labels stay French and short table fragments read awkwardly."
+      },
+      "visualReview": {
+        "overviewPages": [],
+        "fullSizePages": [
+          8,
+          12,
+          14,
+          19,
+          20
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "berkshire-2024-annual",
+      "title": "Berkshire Hathaway Inc. 2024 Annual Report",
+      "sourceUrl": "https://www.berkshirehathaway.com/2024ar/2024ar.pdf",
+      "sourceSHA256": "6aa0a501680c50a57e0a1a2e841b46800e1fed828a8a7889d83d8eae7953e4bb",
+      "sourcePages": 150,
+      "testedPages": [
+        88,
+        89,
+        113,
+        117,
+        124
+      ],
+      "scope": "selected",
+      "outcome": "complete",
+      "sourceLanguage": "en",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "财务年报 / 多列数字 / 灰底表格",
+        "en": "Annual report / numeric columns / shaded tables"
+      },
+      "finding": {
+        "zh": "5页灰条纹、细线和财务数值列保留；516个数值区域核对未改变原数字，邻近标题未被擦除。",
+        "en": "Across five pages, gray bands, fine rules and numeric columns remain; 516 checked numeric regions preserve source numbers and nearby headings are not erased."
+      },
+      "limitation": {
+        "zh": "1个IBNR标题需展开；Goodwill、ALAE、Development等金融术语仍有误译或不一致。",
+        "en": "One IBNR heading needs expansion; financial terms such as Goodwill, ALAE and Development remain mistranslated or inconsistent."
+      },
+      "visualReview": {
+        "overviewPages": [],
+        "fullSizePages": [
+          88,
+          89,
+          113,
+          117,
+          124
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "nasa-balloon-2024-slides",
+      "title": "2024 NASA Balloon Program Overview",
+      "sourceUrl": "https://ntrs.nasa.gov/api/citations/20240009082/downloads/2024%20-%20BPO%20Overview.pdf",
+      "sourceSHA256": "808fc396b680d5a86a0aa060be02d24040efcd3bbad86085b9c18d5658f281a1",
+      "sourcePages": 24,
+      "testedPages": [
+        1,
+        5,
+        6,
+        8,
+        18
+      ],
+      "scope": "selected",
+      "outcome": "complete",
+      "sourceLanguage": "en",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "彩色横版幻灯片 / 照片背景",
+        "en": "Color landscape slides / photo backgrounds"
+      },
+      "finding": {
+        "zh": "照片背景、Logo、彩色填充、细网格及数值位置保留，标题阴影覆盖问题已修复。",
+        "en": "Photo backgrounds, logos, colored fills, fine grids and number positions remain; the title-shadow coverage issue is fixed."
+      },
+      "limitation": {
+        "zh": "封面小页脚需展开，专业词/缩写仍需核对；6个数字字框边沿有差异，但数字笔画未被遮盖。",
+        "en": "The small cover footer needs expansion and terms/abbreviations need checking; six numeric-box edges differ, but numeric strokes are not covered."
+      },
+      "visualReview": {
+        "overviewPages": [
+          1,
+          5,
+          6,
+          8,
+          18
+        ],
+        "fullSizePages": [
+          1,
+          6,
+          8
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "ti-lm5160-evm",
+      "title": "LM5160A, LM5160 Buck EVM User's Guide (Rev. B), SNVU441B",
+      "sourceUrl": "https://www.ti.com/lit/ug/snvu441b/snvu441b.pdf",
+      "sourceSHA256": "60fba6cb8f9c33fcfd9d51ab53f19b418596ed7566967ef5dc3d3847706da68f",
+      "sourcePages": 15,
+      "testedPages": [
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "scope": "selected",
+      "outcome": "complete",
+      "sourceLanguage": "en",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "工程手册 / 原理图 / PCB",
+        "en": "Engineering guide / schematics / PCB"
+      },
+      "finding": {
+        "zh": "PCB图、原理图、曲线、Logo、细表格线与已识别公式图像保留。",
+        "en": "PCB artwork, schematics, plots, logos, fine table rules and recognized formula images remain intact."
+      },
+      "limitation": {
+        "zh": "26处小图注/页脚等需展开；文字变化后，原链接下划线可能仍停留在原坐标。",
+        "en": "26 small caption/footer regions need expansion; original link underlines may remain at source coordinates after text changes."
+      },
+      "visualReview": {
+        "overviewPages": [
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "fullSizePages": [
+          5
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "nasa-patent-8108023",
+      "title": "US 8,108,023 B2 — Blood Monitoring Systems and Methods Thereof",
+      "sourceUrl": "https://ntrs.nasa.gov/api/citations/20120001631/downloads/20120001631.pdf",
+      "sourceSHA256": "270a441a6ed75f56d5c46364ede627cb941fb92c56ff0f2c023a4b6036df6b4e",
+      "sourcePages": 14,
+      "testedPages": [
+        1,
+        5,
+        6,
+        11,
+        12
+      ],
+      "scope": "selected",
+      "outcome": "complete",
+      "sourceLanguage": "en",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "扫描专利 / 双栏 / 旋转线稿",
+        "en": "Scanned patent / two columns / rotated line art"
+      },
+      "finding": {
+        "zh": "条码经逐像素复核完整，剖面图、细线、箭头和双栏正文区域保留。",
+        "en": "Pixel checks confirm the barcode is intact; cross-section drawings, fine lines, arrows and two-column body areas remain."
+      },
+      "limitation": {
+        "zh": "第1页专利引用列合并成段落，第6页旋转图注方向/内容错误；部分编号、日期需展开。",
+        "en": "Citation columns collapse into prose on page 1; rotated captions have incorrect orientation/content on page 6, and some numbers/dates need expansion."
+      },
+      "visualReview": {
+        "overviewPages": [],
+        "fullSizePages": [
+          1,
+          5,
+          6,
+          11,
+          12
+        ]
+      },
+      "originalUnchanged": true
+    },
+    {
+      "id": "unicef-child-rights-ar",
+      "title": "UNICEF 儿童权利与义务（阿拉伯语图文手册）",
+      "sourceUrl": "https://www.unicef.org/sop/media/826/file",
+      "sourceSHA256": "7e8954bb7c6a2f70e9502f1f2c85f7167dd5f109cef6327d191d27a629cce621",
+      "sourcePages": 62,
+      "testedPages": [
+        7,
+        9,
+        12,
+        38,
+        46
+      ],
+      "scope": "selected",
+      "outcome": "unsupported",
+      "sourceLanguage": "ar",
+      "targetLanguage": "zh",
+      "category": {
+        "zh": "阿拉伯语 / 扫描或轮廓字 / 插画",
+        "en": "Arabic / scanned or outlined text / illustrations"
+      },
+      "finding": {
+        "zh": "所选5页明确保留原页，彩色背景、插画与边框完整，没有错误OCR译文叠印。",
+        "en": "All five selected pages explicitly preserve the original, including colored backgrounds, illustrations and borders, with no incorrect OCR overlays."
+      },
+      "limitation": {
+        "zh": "当前MinerU Basic/ONNX不支持无阿语文本层的扫描页；本例没有生成中文译文。",
+        "en": "The pinned MinerU Basic/ONNX runtime does not support Arabic scans without an Arabic text layer; no Chinese translation was generated."
+      },
+      "visualReview": {
+        "overviewPages": [],
+        "fullSizePages": [
+          7,
+          9,
+          12,
+          38,
+          46
+        ]
+      },
+      "originalUnchanged": true
+    }
+  ]
+}

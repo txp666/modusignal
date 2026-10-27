@@ -1,0 +1,334 @@
+{
+  "schemaVersion": 1,
+  "renderer": "PageBridge production Mac reading canvas",
+  "renderScale": 1.5,
+  "caseCount": 20,
+  "displayedPagePairs": 20,
+  "testedPages": 134,
+  "cases": [
+    {
+      "id": "bert",
+      "representativePage": 3,
+      "pages": [
+        {
+          "page": 3,
+          "source": "assets/comparisons/bert-p3-source.png",
+          "translation": "assets/comparisons/bert-p3-translated.png",
+          "width": 893,
+          "height": 1263,
+          "sourceSHA256": "cdc01a2b06ce17cc7e5f3a3ca50db3ff4d5b484178fbb4e2dc79edda06156f08",
+          "translationSHA256": "6327c925262a2217dfd60e27dda74d22a693ed9e548cf794e4bd2245ba6b2172",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "batch-normalization",
+      "representativePage": 3,
+      "pages": [
+        {
+          "page": 3,
+          "source": "assets/comparisons/batch-normalization-p3-source.png",
+          "translation": "assets/comparisons/batch-normalization-p3-translated.png",
+          "width": 918,
+          "height": 1188,
+          "sourceSHA256": "ed688c63dbf08aa2d85fef06bed84094da60e915f323b23880dff303c724e6e9",
+          "translationSHA256": "dfe2c4213438c6f0db03441a94673df1dde0e25123cca5379d83b6e65a64b1c2",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "ti-lm358",
+      "representativePage": 6,
+      "pages": [
+        {
+          "page": 6,
+          "source": "assets/comparisons/ti-lm358-p6-source.png",
+          "translation": "assets/comparisons/ti-lm358-p6-translated.png",
+          "width": 918,
+          "height": 1188,
+          "sourceSHA256": "efafac0573213fc166e196950ee30f519068600da6c4ecfd82beb309d8160d0e",
+          "translationSHA256": "12b0dd8ec15db4128ab178d9741cd2e1d32f7759e1cfd2486527b9a8c6120ad8",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "nist-en",
+      "representativePage": 28,
+      "pages": [
+        {
+          "page": 28,
+          "source": "assets/comparisons/nist-en-p28-source.png",
+          "translation": "assets/comparisons/nist-en-p28-translated.png",
+          "width": 918,
+          "height": 1188,
+          "sourceSHA256": "516801c19a0ee4f03dc675727299a532a3b2938ec807ff5a295d6f109fb76b11",
+          "translationSHA256": "fd2423b9395fa01d37458391ecb718bc6fff72fd8a2a40d1d6e3fc335ee2556e",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "irs-w9",
+      "representativePage": 1,
+      "pages": [
+        {
+          "page": 1,
+          "source": "assets/comparisons/irs-w9-p1-source.png",
+          "translation": "assets/comparisons/irs-w9-p1-translated.png",
+          "width": 918,
+          "height": 1188,
+          "sourceSHA256": "abe1b44e52a30ffd412400d7cb0bcca6e8dd72960d9b0929dad93de8ad81c977",
+          "translationSHA256": "bac7fbd791f92b0feee26dc044796205d26089cc063352b1819eca486ce11bd3",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "nasa-scan",
+      "representativePage": 9,
+      "pages": [
+        {
+          "page": 9,
+          "source": "assets/comparisons/nasa-scan-p9-source.png",
+          "translation": "assets/comparisons/nasa-scan-p9-translated.png",
+          "width": 915,
+          "height": 1188,
+          "sourceSHA256": "ce6f083e7902cd0abf5505a49321d42dfbdb76e3319dd715b9a2acb13fb2a481",
+          "translationSHA256": "d8bf106ca5b74103da5e6af4eaa9e8bf6d168d688aa5f33d69a82754b05eee67",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "nist-ja",
+      "representativePage": 7,
+      "pages": [
+        {
+          "page": 7,
+          "source": "assets/comparisons/nist-ja-p7-source.png",
+          "translation": "assets/comparisons/nist-ja-p7-translated.png",
+          "width": 893,
+          "height": 1263,
+          "sourceSHA256": "f9bb4702c226eff5d30b318db4dd9b345bd6127627ec57d6178cac64e1374df9",
+          "translationSHA256": "ebe9453ada1a6f824aa62ab284907b8b32b5702eb8a61b47940c0dbaa3ca2587",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "attention-is-all-you-need",
+      "representativePage": 3,
+      "pages": [
+        {
+          "page": 3,
+          "source": "assets/comparisons/attention-is-all-you-need-p3-source.png",
+          "translation": "assets/comparisons/attention-is-all-you-need-p3-translated.png",
+          "width": 918,
+          "height": 1188,
+          "sourceSHA256": "c92290a825fb404457d60a89b02901ae6f7f952379eb94039f9c03f33229d6cf",
+          "translationSHA256": "581cfe1e6b94c60c1ca521e715492bdd86df4254a39fd4057a26ad14d1548ff0",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "rfc8259-json",
+      "representativePage": 6,
+      "pages": [
+        {
+          "page": 6,
+          "source": "assets/comparisons/rfc8259-json-p6-source.png",
+          "translation": "assets/comparisons/rfc8259-json-p6-translated.png",
+          "width": 918,
+          "height": 1188,
+          "sourceSHA256": "652cda005dc75d192d3ca0d85035056ab06ee4619f2f472f1ec45faff67f11f6",
+          "translationSHA256": "e488540d63744ca136070cc517b138be9a989379c93b916898395a3b5bc4f03f",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "uscis-i9",
+      "representativePage": 1,
+      "pages": [
+        {
+          "page": 1,
+          "source": "assets/comparisons/uscis-i9-p1-source.png",
+          "translation": "assets/comparisons/uscis-i9-p1-translated.png",
+          "width": 918,
+          "height": 1188,
+          "sourceSHA256": "8909711b1fc9b6862a4b497447719bfce47d18bd3468821abbb3f679bffd60f6",
+          "translationSHA256": "70ba1b38063f10cc479064d7d6a0d692ccd6bfd21dc84ca9c08b9a134b532fdf",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "adam",
+      "representativePage": 14,
+      "pages": [
+        {
+          "page": 14,
+          "source": "assets/comparisons/adam-p14-source.png",
+          "translation": "assets/comparisons/adam-p14-translated.png",
+          "width": 893,
+          "height": 1263,
+          "sourceSHA256": "25bb42589b9d8cddadf20f9945fb2efc6e62f598c03705cf9884c59ea1a5a683",
+          "translationSHA256": "5ef8d7df6f80a1461c20ce675f9202d128a29829ea43154f4ea77f89945ab624",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "resnet",
+      "representativePage": 2,
+      "pages": [
+        {
+          "page": 2,
+          "source": "assets/comparisons/resnet-p2-source.png",
+          "translation": "assets/comparisons/resnet-p2-translated.png",
+          "width": 918,
+          "height": 1188,
+          "sourceSHA256": "97fd82f53c323972a649d86a49c23194f295bbd02ce1905be451cbf70da15d6d",
+          "translationSHA256": "9acacea7c4e7fec7cdeed24454484a76818bed8438bb9e8b1be89fbf1f5e7751",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "ddpm",
+      "representativePage": 3,
+      "pages": [
+        {
+          "page": 3,
+          "source": "assets/comparisons/ddpm-p3-source.png",
+          "translation": "assets/comparisons/ddpm-p3-translated.png",
+          "width": 918,
+          "height": 1188,
+          "sourceSHA256": "d7f2f1812e955f19c95f3d37bfedabdcb88ab4c4a0d67722e1553112b51836e6",
+          "translationSHA256": "93fb5ec604207bf2eabde6c0e9730008b48b80405ddd9ca89dea87c8826a42ee",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "caict-ai-development-2024",
+      "representativePage": 21,
+      "pages": [
+        {
+          "page": 21,
+          "source": "assets/comparisons/caict-ai-development-2024-p21-source.png",
+          "translation": "assets/comparisons/caict-ai-development-2024-p21-translated.png",
+          "width": 894,
+          "height": 1212,
+          "sourceSHA256": "b499cd9b9c78f97f50cef48841b9ecccd0db96f2882a22439272c2f37cd07c0f",
+          "translationSHA256": "77f2bee225f2bad2bac4331c27577b764f760c599aa335c95d73377f9c3d0bdc",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "inrs-lithium-fr",
+      "representativePage": 19,
+      "pages": [
+        {
+          "page": 19,
+          "source": "assets/comparisons/inrs-lithium-fr-p19-source.png",
+          "translation": "assets/comparisons/inrs-lithium-fr-p19-translated.png",
+          "width": 893,
+          "height": 1263,
+          "sourceSHA256": "5f5ae73d7d983abbc0ab5d0b5e0d5d37cb02f1f040dfd3706cb8e9f147ef59f1",
+          "translationSHA256": "9e0fb899317191d1cc7417ffefede0d4d985882b723f0038f98fcf8b168441be",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "berkshire-2024-annual",
+      "representativePage": 113,
+      "pages": [
+        {
+          "page": 113,
+          "source": "assets/comparisons/berkshire-2024-annual-p113-source.png",
+          "translation": "assets/comparisons/berkshire-2024-annual-p113-translated.png",
+          "width": 891,
+          "height": 1161,
+          "sourceSHA256": "c120f3e185489413b085fc337ea6913ad2ff806864b2995f5b6ffeeb01af0d4f",
+          "translationSHA256": "9a8e3a5c6a066e3cc9180c0198d34f2b4cffcfd202a20063101f78f193113586",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "nasa-balloon-2024-slides",
+      "representativePage": 6,
+      "pages": [
+        {
+          "page": 6,
+          "source": "assets/comparisons/nasa-balloon-2024-slides-p6-source.png",
+          "translation": "assets/comparisons/nasa-balloon-2024-slides-p6-translated.png",
+          "width": 1440,
+          "height": 810,
+          "sourceSHA256": "a2afc3cb801bd2789d03e3042f6078008279f13ebbf81c8f56b2e3f22a8fbd2e",
+          "translationSHA256": "00ba59c181fff0ff262de329eb0238792025b7e17951794b76e5273694bd3a3d",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "ti-lm5160-evm",
+      "representativePage": 5,
+      "pages": [
+        {
+          "page": 5,
+          "source": "assets/comparisons/ti-lm5160-evm-p5-source.png",
+          "translation": "assets/comparisons/ti-lm5160-evm-p5-translated.png",
+          "width": 918,
+          "height": 1188,
+          "sourceSHA256": "cd8b67f48609520ecb8005142a5dc82b352ffe55358fc19f8e366886307447bd",
+          "translationSHA256": "ab4ecaab2881dd570b70b404cfa63bc78a55a676607fd51936daeeb85dfb2ede",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "nasa-patent-8108023",
+      "representativePage": 6,
+      "pages": [
+        {
+          "page": 6,
+          "source": "assets/comparisons/nasa-patent-8108023-p6-source.png",
+          "translation": "assets/comparisons/nasa-patent-8108023-p6-translated.png",
+          "width": 921,
+          "height": 1188,
+          "sourceSHA256": "4e28b6a75673fce5cce80939c2ed37c04687637b92cc2c7c9b6669f7ee7dd08d",
+          "translationSHA256": "6442498591265808fab1bbbc3e9bc01f1df203bd624426f0cb6a5645faa16a38",
+          "translationSameAsSource": false
+        }
+      ]
+    },
+    {
+      "id": "unicef-child-rights-ar",
+      "representativePage": 7,
+      "pages": [
+        {
+          "page": 7,
+          "source": "assets/comparisons/unicef-child-rights-ar-p7-source.png",
+          "translation": "assets/comparisons/unicef-child-rights-ar-p7-translated.png",
+          "width": 630,
+          "height": 893,
+          "sourceSHA256": "0ee8a403cd7c0ae315d7965912a1907d9fad22aa734152e962cdc38e8cd8ed4c",
+          "translationSHA256": "0ee8a403cd7c0ae315d7965912a1907d9fad22aa734152e962cdc38e8cd8ed4c",
+          "translationSameAsSource": true
+        }
+      ]
+    }
+  ],
+  "scopeNote": {
+    "zh": "每份展示一个代表页，共20对图片；实际测试范围为134个物理页，详见test-results.json。图像为最终生产阅读画布的真实渲染，不是逐字质量通过证明。",
+    "en": "One representative page is shown per document, for 20 image pairs. The actual tested scope is 134 physical pages; see test-results.json. These are genuine final production reading-canvas renders, not proof of word-by-word translation accuracy."
+  }
+}

@@ -171,6 +171,7 @@ function injectContentSecurityPolicyHashes() {
     join(siteRoot, "pyqt-ui-designer", "index.html"),
     join(siteRoot, "pyqt-ui-designer", "guide", "index.html"),
     join(siteRoot, "pagebridge", "index.html"),
+    join(siteRoot, "pagebridge", "tests", "index.html"),
   ];
   const hashes = [];
 

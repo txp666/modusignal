@@ -3,10 +3,17 @@ const RELEASE_API = `https://api.github.com/repos/${REPOSITORY}/releases/latest`
 const FALLBACK_RELEASE_DATE = "2026-10-27T13:06:48Z";
 
 const copy = {
+  heroTranslationAlt: { zh: "BERT 第 3 页译文：结构图保持原位，下方为双栏中文", en: "BERT page 3 translation: the original diagram remains above two-column Chinese text" },
+  heroSourceAlt: { zh: "BERT 第 3 页原文：结构图与双栏英文正文", en: "BERT page 3: an architecture diagram above the original two-column English text" },
+  heroPageLabel: { zh: "BERT · 第 3 页", en: "BERT · Page 3" },
+  heroTranslationLabel: { zh: "中文译文", en: "Chinese translation" },
+  heroSourceLabel: { zh: "英文原文", en: "English original" },
+  heroCompareLabel: { zh: "查看 BERT 第 3 页的完整对比与结论", en: "View the full comparison and findings for BERT page 3" },
+  navValidation: { zh: "PDF 实测", en: "PDF tests" },
   reflowPreviewLabel: { zh: "查看重排 PDF 的原文、对照与译文", en: "Preview the original, side-by-side and translated reflow PDF" },
-  readingCaption: { zh: "PageBridge 0.5.0，Windows 实际界面。示例：<a href=\"https://ntrs.nasa.gov/citations/20240009082\" target=\"_blank\" rel=\"noreferrer\">2024 NASA Balloon Program Overview</a>，本次仅翻译第 1 页；下方未选页保留原文。译文为机器生成。", en: "Actual PageBridge 0.5.0 interface on Windows. Sample: <a href=\"https://ntrs.nasa.gov/citations/20240009082\" target=\"_blank\" rel=\"noreferrer\">2024 NASA Balloon Program Overview</a>. Only page 1 was translated in this run; unselected pages below keep the original. Translation is machine-generated." },
-  verificationLink: { zh: "查看验证范围与已知限制", en: "View verification scope and known limits" },
-  verificationText: { zh: "0.5.0 回归覆盖 20 份 PDF 的 134 个物理页；完成 Windows 首次安装与 Mac、Windows 0.4 → 0.5 升级验收。", en: "The 0.5.0 regression covered 134 physical pages across 20 PDFs. Windows fresh installation and Mac/Windows upgrades from 0.4 to 0.5 were verified." },
+  readingCaption: { zh: "BERT 第 3 页，PageBridge 0.5 生产阅读画布的实际渲染。结构图沿用原图，正文为机器翻译。点击图片查看完整对比和已知问题。", en: "BERT page 3, rendered by the PageBridge 0.5 production reading canvas. The diagram retains its source image; the body text is machine-translated. Open the image to see the full comparison and known issues." },
+  verificationLink: { zh: "查看对比图与实测结论", en: "Explore comparisons and findings" },
+  verificationText: { zh: "20 份 PDF，实际测试 134 页。18 份处理完成，1 份部分完成，1 份扫描识别不支持；可逐篇查看对比与剩余问题。", en: "20 PDFs, 134 pages tested. Processing completed for 18, one was partial and one scan was unsupported. View the comparisons and remaining issues for each sample." },
   reflowDetails: { zh: "可搜索、批注和导出；字距、换行或局部布局可能变化。适合需要保存或分享译文的情况。", en: "Search, annotate and export the result. Spacing, line breaks or local layout may change. Use this when you need to save or share a translation." },
   reflowDesc: { zh: "文字按译后长度重新排版，生成独立的译文 PDF，也能生成原译交替页。", en: "Text is reflowed to fit its translated length in a separate PDF, with an optional alternating original-and-translation version." },
   reflowTag: { zh: "适合导出与批注", en: "For export and annotation" },
@@ -145,7 +152,7 @@ const copy = {
   reportIssue: { zh: "反馈问题", en: "Report an issue" },
   footerTagline: { zh: "Mac 与 Windows 原生 PDF 阅读与翻译工作区。", en: "A native PDF reading and translation workspace for Mac and Windows." },
   footerNavLabel: { zh: "页脚导航", en: "Footer navigation" },
-  footerCredits: { zh: "对照阅读与重排 PDF 截图来自 0.5.0；批注、助手和检索示例保留 0.4.0 界面。文档来源：NASA、IRS、Rougier 等 2014（CC0）、Sandve 等 2013（CC BY）。译文与助手回答为机器生成。", en: "Reading and reflow PDF screenshots show 0.5.0; annotation, assistant and search examples retain the 0.4.0 interface. Sources: NASA, IRS, Rougier et al. 2014 (CC0), and Sandve et al. 2013 (CC BY). Translations and assistant answers are machine-generated." },
+  footerCredits: { zh: "阅读画布与重排 PDF 示例来自 0.5；批注、助手和检索截图保留 0.4 界面。文档来源：Devlin 等 BERT、IRS、Rougier 等 2014（CC0）、Sandve 等 2013（CC BY）。译文与助手回答为机器生成。", en: "Reading-canvas and reflow PDF examples come from 0.5; annotation, assistant and search screenshots retain the 0.4 interface. Sources: Devlin et al. (BERT), IRS, Rougier et al. 2014 (CC0), and Sandve et al. 2013 (CC BY). Translations and assistant answers are machine-generated." },
 };
 
 const MODE_NOTES = { original: "modeNoteOriginal", dual: "modeNoteDual", translation: "modeNoteTranslation" };
