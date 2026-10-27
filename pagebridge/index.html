@@ -4,8 +4,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="PageBridge：Mac 与 Windows 原生 PDF 阅读与翻译工作区。保留排版翻译 PDF，原文译文并排阅读，支持批注、文档助手与在线文献检索，可接入本机 Ollama 或 OpenAI 兼容 API。" />
-  <meta name="keywords" content="PageBridge,PDF 翻译,保留排版,双语对照,PDF 阅读器,论文翻译,BabelDOC,PDFMathTranslate,Ollama,DeepSeek,文档助手,OpenAlex" />
+  <meta name="description" content="PageBridge 0.5：在 Mac 与 Windows 上对照阅读 PDF。MinerU 本地识别文本与扫描页，尽量保留原版式，支持双向同步滚动；重排模式可导出译文 PDF。" />
+  <meta name="keywords" content="PageBridge,PDF 翻译,保留排版,双语对照,PDF 阅读器,论文翻译,MinerU,扫描件 OCR,BabelDOC,PDFMathTranslate,Ollama,DeepSeek,文档助手,OpenAlex" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#f5f7f8" />
   <meta name="color-scheme" content="light dark" />
@@ -26,23 +26,23 @@
   <meta property="og:locale" content="zh_CN" />
   <meta property="og:site_name" content="modusignal" />
   <meta property="og:title" content="PageBridge · PDF 阅读与翻译工作区" />
-  <meta property="og:description" content="保留排版翻译 PDF，原文与译文并排阅读，并可批注、提问和检索文献。Mac 与 Windows 原生应用。" />
+  <meta property="og:description" content="MinerU 本地识别 PDF 与扫描页，尽量保留原版式对照阅读、双向同步滚动。Mac 与 Windows 原生应用。" />
   <meta property="og:url" content="https://modusignal.cn/pagebridge/" />
-  <meta property="og:image" content="https://modusignal.cn/pagebridge/assets/reader-dual.jpg" />
+  <meta property="og:image" content="https://modusignal.cn/pagebridge/assets/reading-050.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <title>PageBridge · PDF 阅读与翻译工作区</title>
   <link rel="icon" href="../logo.ico" type="image/x-icon" />
-  <link rel="stylesheet" href="./styles.css?v=20261026.1" />
+  <link rel="stylesheet" href="./styles.css?v=__ASSET_VERSION__" />
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "PageBridge",
-      "softwareVersion": "0.4.0",
+      "softwareVersion": "0.5.0",
       "applicationCategory": "ProductivityApplication",
       "operatingSystem": "macOS 14+ (Apple Silicon), Windows 11 x64",
       "license": "https://www.gnu.org/licenses/agpl-3.0.html",
-      "description": "Mac 与 Windows 原生 PDF 阅读与翻译工作区，保留排版翻译，原文译文对照阅读。",
+      "description": "Mac 与 Windows 原生 PDF 阅读与翻译工作区，MinerU 本地识别，原页对照阅读与重排 PDF 导出。",
       "url": "https://modusignal.cn/pagebridge/",
       "downloadUrl": "https://github.com/txp666/PageBridge/releases/latest"
     }
@@ -80,21 +80,21 @@
       <div class="pb-hero-head">
         <div class="pb-hero-copy">
           <p class="pb-release">
-            <strong>v<span data-release-version>0.4.0</span></strong>
-            <span data-release-date>2026-10-25 发布</span>
+            <strong>v<span data-release-version>0.5.0</span></strong>
+            <span data-release-date>2026-10-27 发布</span>
             <span data-copy="heroPlatforms">macOS 14+ 与 Windows 11</span>
           </p>
-          <h1 id="heroTitle" data-copy="heroTitle"><span class="pb-title-line">保留排版翻译 PDF</span><span class="pb-title-line">原文与译文并排读</span></h1>
-          <p class="pb-lede" data-copy="heroLede">PageBridge 是 Mac 与 Windows 原生的 PDF 阅读工作区。整篇或按页翻译，图表、公式和版面留在原位；对照阅读时可以同步滚动、批注，也可以向文档助手提问。翻译用你自己的模型：本机 Ollama 或 OpenAI 兼容 API。</p>
+          <h1 id="heroTitle" data-copy="heroTitle"><span class="pb-title-line">循着原来的版式</span><span class="pb-title-line">读懂另一种语言</span></h1>
+          <p class="pb-lede" data-copy="heroLede">在原文旁读译文，两边一起滚动。PageBridge 0.5 用 MinerU 在本机识别 PDF 与扫描页，把译文放回原段落的位置，尽量保留分栏、图片和表格。翻译使用你选择的 Ollama 或 OpenAI 兼容服务。</p>
         </div>
         <div class="pb-hero-actions">
           <a
             class="button button-primary"
             data-primary-download
-            href="https://github.com/txp666/PageBridge/releases/download/v0.4.0/PageBridge-0.4.0-windows-x64-setup.exe"
+            href="https://github.com/txp666/PageBridge/releases/download/v0.5.0/PageBridge-0.5.0-windows-x64-setup.exe"
           >
             <span data-copy="downloadNow">立即下载</span>
-            <small data-primary-download-label>Windows 11 x64 · EXE · 185.0 MB</small>
+            <small data-primary-download-label>Windows 11 x64 · EXE · 197.3 MB</small>
           </a>
           <a class="button button-secondary" href="#downloads" data-copy="allDownloads">全部下载选项</a>
           <p class="pb-release-source" data-copy="releaseSource">下载链接来自 GitHub Releases，页面会自动检查最新版本。</p>
@@ -102,52 +102,90 @@
       </div>
 
       <figure id="reading" class="pb-stage">
+        <div class="pb-window">
+          <img class="is-active" src="./assets/reading-050.png" alt="PageBridge 0.5 Windows 对照阅读：NASA 幻灯片原图与中文译文并排，保留照片背景，开启同步滚动" width="1480" height="960" fetchpriority="high" />
+        </div>
+        <figcaption data-copy="readingCaption">PageBridge 0.5.0，Windows 实际界面。示例：<a href="https://ntrs.nasa.gov/citations/20240009082" target="_blank" rel="noreferrer">2024 NASA Balloon Program Overview</a>，本次仅翻译第 1 页；下方未选页保留原文。译文为机器生成。</figcaption>
+      </figure>
+    </section>
+
+    <section id="translation-options" class="pb-reading-options section-shell" aria-labelledby="readingTitle">
+      <header class="pb-section-head">
+        <h2 id="readingTitle" data-copy="readingTitle">同一份原文，两种翻译方式</h2>
+        <p data-copy="readingIntro">阅读时优先保留原页位置；需要带走译文时，生成可导出的 PDF。原 PDF 始终保留。</p>
+      </header>
+      <div class="pb-options-grid">
+        <article class="pb-option pb-option-reading" aria-labelledby="canvasTitle">
+          <header><h3 id="canvasTitle" data-copy="canvasTitle">对照阅读</h3><p class="pb-option-tag" data-copy="canvasTag">0.5 新增 · 默认方式</p></header>
+          <p data-copy="canvasDesc">译文回到原段落区域，原文与译文的页顶、缩放和滚动保持一致。</p>
+          <ul class="pb-points">
+            <li data-copy="canvasLayout">尽量保留背景、色块、细边框和图表位置。</li>
+            <li data-copy="canvasTables">原生表格保留数字与格线，翻译文字标签；扫描表格保留原图并提供辅助译文。</li>
+            <li data-copy="canvasOverflow">已识别行内公式使用原页裁图；文字放不下时点击展开。</li>
+          </ul>
+          <p class="pb-fineprint" data-copy="canvasLimit">阅读稿暂不支持自身搜索、批注或 PDF 导出。</p>
+        </article>
+        <article class="pb-option" aria-labelledby="reflowTitle">
+          <header><h3 id="reflowTitle" data-copy="reflowTitle">重排 PDF</h3><p class="pb-option-tag" data-copy="reflowTag">适合导出与批注</p></header>
+          <p data-copy="reflowDesc">文字按译后长度重新排版，生成独立的译文 PDF，也能生成原译交替页。</p>
+          <p data-copy="reflowDetails">可搜索、批注和导出；字距、换行或局部布局可能变化。适合需要保存或分享译文的情况。</p>
+        </article>
+      </div>
+      <details class="pb-reflow-preview">
+        <summary data-copy="reflowPreviewLabel">查看重排 PDF 的原文、对照与译文</summary>
+      <figure id="reflow-preview" class="pb-stage">
         <div class="pb-stage-bar">
           <div class="pb-modes" role="group" aria-label="阅读视图" data-copy-label="modeGroupLabel">
             <button type="button" data-mode="original" aria-pressed="false" data-copy="modeOriginal">原文</button>
             <button type="button" data-mode="dual" aria-pressed="true" data-copy="modeDual">对照</button>
             <button type="button" data-mode="translation" aria-pressed="false" data-copy="modeTranslation">译文</button>
           </div>
-          <p class="pb-mode-note" data-mode-note data-copy="modeNoteDual" aria-live="polite">对照：左侧原文、右侧译文，可开启同步滚动。</p>
+          <p class="pb-mode-note" data-mode-note data-copy="modeNoteDual" aria-live="polite">重排模式 · 对照：左侧原文、右侧译文，可开启同步滚动。</p>
         </div>
         <div class="pb-window">
           <img
             class="is-active"
             data-mode-image="dual"
-            src="./assets/reader-dual.jpg"
+            src="./assets/reader-dual-050.jpg"
             alt="PageBridge 对照视图：左侧英文原文，右侧保留版面的中文译文"
-            width="2000"
-            height="1283"
-            fetchpriority="high"
+            width="2960"
+            height="1898"
+            loading="lazy"
+            decoding="async"
           />
           <img
             data-mode-image="original"
-            src="./assets/reader-original.jpg"
+            src="./assets/reader-original-050.jpg"
             alt="PageBridge 原文视图：英文论文首页"
-            width="1600"
-            height="1026"
+            width="2960"
+            height="1898"
             loading="lazy"
             decoding="async"
             aria-hidden="true"
           />
           <img
             data-mode-image="translation"
-            src="./assets/reader-translation.jpg"
+            src="./assets/reader-translation-050.jpg"
             alt="PageBridge 译文视图：保留原版面的中文译文首页"
-            width="1600"
-            height="1026"
+            width="2960"
+            height="1898"
             loading="lazy"
             decoding="async"
             aria-hidden="true"
           />
         </div>
-        <figcaption data-copy="stageCaption">示例文档：Rougier 等，<cite>Ten Simple Rules for Better Figures</cite>，PLOS Computational Biology 2014（CC0）。中文为 PageBridge 机器翻译结果，界面为 Mac 版 0.4.0。</figcaption>
+        <figcaption data-copy="stageCaption">Mac 版 0.5.0 的重排 PDF 模式，非 MinerU 阅读稿。示例：Rougier 等，<cite>Ten Simple Rules for Better Figures</cite>，2014（CC0）。中文为机器翻译。</figcaption>
       </figure>
+      </details>
+      <div class="pb-verification">
+        <p data-copy="verificationText">0.5.0 回归覆盖 20 份 PDF 的 134 个物理页；完成 Windows 首次安装与 Mac、Windows 0.4 → 0.5 升级验收。</p>
+        <a class="pb-text-link" href="https://github.com/txp666/PageBridge/blob/main/docs/VERIFICATION.md" target="_blank" rel="noreferrer" data-copy="verificationLink">查看验证范围与已知限制</a>
+      </div>
     </section>
 
     <section id="workflow" class="pb-flow" aria-labelledby="flowTitle">
       <div class="section-shell">
-        <h2 id="flowTitle" data-copy="flowTitle">从打开一篇 PDF 到导出译文</h2>
+        <h2 id="flowTitle" data-copy="flowTitle">从打开 PDF 到开始阅读</h2>
         <ol class="pb-steps">
           <li>
             <h3 data-copy="stepImportTitle">导入或检索</h3>
@@ -155,15 +193,15 @@
           </li>
           <li>
             <h3 data-copy="stepTranslateTitle">选页翻译</h3>
-            <p data-copy="stepTranslateDesc">选择目标语言和页码，例如 <code>1-5, 8</code>。任务可随时取消，失败或取消都不会覆盖上次成功的译文。</p>
+            <p data-copy="stepTranslateDesc">默认生成对照阅读稿，选择语言与页码，例如 <code>1-5, 8</code>。首次使用会下载识别组件；取消或整体失败会保留上次成功的阅读稿。</p>
           </li>
           <li>
             <h3 data-copy="stepReadTitle">对照阅读</h3>
-            <p data-copy="stepReadDesc">在原文、对照、译文间切换，同步滚动、文内搜索，用缩略图、目录和书签定位，边读边批注或提问。</p>
+            <p data-copy="stepReadDesc">原文和译文按同一页对齐，双向同步滚动，也可关闭同步分别读。密集段落可以点击展开全文，失败的段落可单独重试。</p>
           </li>
           <li>
-            <h3 data-copy="stepExportTitle">导出</h3>
-            <p data-copy="stepExportDesc">导出原文、译文或原译逐页交替的双语 PDF；批注另存为批注 PDF 或 Markdown 笔记。</p>
+            <h3 data-copy="stepExportTitle">需要 PDF 时</h3>
+            <p data-copy="stepExportDesc">在翻译窗口选择“重排 PDF”，生成可导出的译文或原译逐页交替的双语 PDF。对照阅读稿与重排 PDF 分开保存。</p>
           </li>
         </ol>
       </div>
@@ -173,15 +211,15 @@
       <div class="section-shell">
         <header class="pb-section-head">
           <h2 id="featuresTitle" data-copy="featuresTitle">读的时候顺手做的事</h2>
-          <p data-copy="featuresDesc">批注、提问和找文献都在同一个窗口里完成，不用在阅读器、翻译网站和笔记软件之间来回切换。</p>
+          <p data-copy="featuresDesc">在同一个工作区管理文档、查找文献和向助手提问。原文与重排 PDF 还支持文字搜索、批注和笔记。</p>
         </header>
 
         <article class="pb-feature" aria-labelledby="notesTitle">
           <div class="pb-feature-copy">
             <h3 id="notesTitle" data-copy="notesTitle">批注与笔记</h3>
-            <p data-copy="notesDesc">选中文字即可高亮、加下划线或写笔记，也可以给当前页加笔记和书签。笔记面板按页列出所有批注，点一下回到原处。</p>
+            <p data-copy="notesDesc">在原文或重排 PDF 中选中文字，即可高亮、加下划线或写笔记，也可以添加页笔记和书签。笔记面板按页列出批注，点击回到原处。对照阅读稿暂不支持自身批注。</p>
             <ul class="pb-points">
-              <li data-copy="notesPointSource">原文和译文的批注分开保存，添加前可选择来源</li>
+              <li data-copy="notesPointSource">原文和重排译文的批注分开保存，添加前可选择来源</li>
               <li data-copy="notesPointHash">批注绑定 PDF 的哈希，重新翻译不会让旧批注错位</li>
               <li data-copy="notesPointExport">导出带批注的 PDF，或带页码和摘录的 Markdown 笔记</li>
             </ul>
@@ -247,7 +285,7 @@
         <dl class="pb-also" aria-label="其他功能" data-copy-label="alsoLabel">
           <div><dt data-copy="alsoLibraryTitle">文档库</dt><dd data-copy="alsoLibraryDesc">文件夹、名称搜索、排序、收藏、最近阅读和回收站。</dd></div>
           <div><dt data-copy="alsoModelsTitle">翻译服务</dt><dd data-copy="alsoModelsDesc">DeepSeek、阿里云百炼、硅基流动、OpenAI、本机 Ollama，或任意 OpenAI 兼容 API。</dd></div>
-          <div><dt data-copy="alsoExportTitle">导出</dt><dd data-copy="alsoExportDesc">原文、译文和逐页交替的双语 PDF，另存到你选择的位置。</dd></div>
+          <div><dt data-copy="alsoExportTitle">导出</dt><dd data-copy="alsoExportDesc">重排模式可导出译文和逐页交替的双语 PDF；对照阅读稿暂不支持 PDF 导出。</dd></div>
           <div><dt data-copy="alsoUpdateTitle">更新</dt><dd data-copy="alsoUpdateDesc">应用内检查更新并校验签名，由你确认后再安装。</dd></div>
         </dl>
       </div>
@@ -286,14 +324,14 @@
         </div>
         <figure class="pb-platform-figure">
           <img
-            src="./assets/windows.jpg"
-            alt="PageBridge Windows 版：原文视图，左侧页面缩略图，顶部为阅读模式、缩放、翻译和导出"
-            width="2000"
-            height="1392"
+            src="./assets/windows-050.png"
+            alt="PageBridge 0.5 Windows 版：空白 IRS W-9 表的原文与对照阅读稿，数字与表格线保留在原位"
+            width="1480"
+            height="960"
             loading="lazy"
             decoding="async"
           />
-          <figcaption data-copy="windowsCaption">Windows 11 上的 PageBridge 0.4.0（浅色主题）</figcaption>
+          <figcaption data-copy="windowsCaption">Windows 11 上的 PageBridge 0.5.0：空白 IRS W-9 表的对照阅读稿，未填写个人资料。</figcaption>
         </figure>
       </div>
     </section>
@@ -325,7 +363,8 @@
           </section>
         </div>
         <ul class="pb-limits" aria-label="使用限制" data-copy-label="limitsLabel">
-          <li data-copy="limitOcr">不提供通用 OCR，扫描件需要自带文本层。</li>
+          <li data-copy="limitOcr">MinerU 支持文本页与扫描页识别；复杂公式、低清扫描仍可能识别错误。阿语扫描页没有阿语文本层时暂不支持。</li>
+          <li data-copy="limitReading">对照阅读稿暂不支持自身全文搜索、批注或 PDF 导出；密集文字可能需要点击展开。</li>
           <li data-copy="limitAccuracy">机器翻译和 AI 回答可能出错，公式、数字和关键条款请对照原文。</li>
           <li data-copy="limitModels">应用不包含语言模型，也不附带云服务额度；Ollama 和模型需要另行安装。</li>
         </ul>
@@ -335,10 +374,10 @@
     <section id="downloads" class="pb-downloads section-shell" aria-labelledby="downloadsTitle">
       <header class="pb-download-head">
         <div>
-          <h2 id="downloadsTitle"><span data-copy="downloadsTitle">下载</span> v<span data-release-version>0.4.0</span></h2>
-          <p data-copy="downloadsDesc">安装包自带 Python 和翻译引擎，无需另装 Python；首次翻译可能还会下载字体和版面资源。</p>
+          <h2 id="downloadsTitle"><span data-copy="downloadsTitle">下载</span> v<span data-release-version>0.5.0</span></h2>
+          <p data-copy="downloadsDesc">安装包自带基础运行环境，无需另装 Python。首次使用对照阅读时会下载独立的识别环境与模型，请联网并预留约 4 GB 空间；模型权重不包含在安装包内。</p>
         </div>
-        <a class="pb-text-link" data-release-page href="https://github.com/txp666/PageBridge/releases/tag/v0.4.0" target="_blank" rel="noreferrer">
+        <a class="pb-text-link" data-release-page href="https://github.com/txp666/PageBridge/releases/tag/v0.5.0" target="_blank" rel="noreferrer">
           <span data-copy="viewRelease">在 GitHub 查看发行说明</span>
           <span aria-hidden="true">↗</span>
         </a>
@@ -352,10 +391,10 @@
           <p data-copy="macCardDesc">解压后把 PageBridge.app 拖入“应用程序”。需要 macOS 14 或更新。</p>
           <dl>
             <div><dt data-copy="format">格式</dt><dd>ZIP</dd></div>
-            <div><dt data-copy="size">大小</dt><dd data-asset-size="macos-arm64">211.1 MB</dd></div>
+            <div><dt data-copy="size">大小</dt><dd data-asset-size="macos-arm64">229.3 MB</dd></div>
           </dl>
-          <a class="button button-secondary" data-asset="macos-arm64" href="https://github.com/txp666/PageBridge/releases/download/v0.4.0/PageBridge-0.4.0-macOS-arm64.zip" data-copy="downloadMac">下载 Mac 版</a>
-          <a class="pb-checksum" data-checksum="macos-arm64" href="https://github.com/txp666/PageBridge/releases/download/v0.4.0/PageBridge-0.4.0-macOS-arm64.zip.sha256">SHA-256</a>
+          <a class="button button-secondary" data-asset="macos-arm64" href="https://github.com/txp666/PageBridge/releases/download/v0.5.0/PageBridge-0.5.0-macOS-arm64.zip" data-copy="downloadMac">下载 Mac 版</a>
+          <a class="pb-checksum" data-checksum="macos-arm64" href="https://github.com/txp666/PageBridge/releases/download/v0.5.0/PageBridge-0.5.0-macOS-arm64.zip.sha256">SHA-256</a>
         </article>
 
         <article class="download-card recommended" data-platform="windows-setup">
@@ -365,10 +404,10 @@
           <p data-copy="setupCardDesc">按向导选择目录和快捷方式，默认装到当前用户目录。卸载会保留文档库、配置和系统凭据。</p>
           <dl>
             <div><dt data-copy="format">格式</dt><dd>EXE</dd></div>
-            <div><dt data-copy="size">大小</dt><dd data-asset-size="windows-setup">185.0 MB</dd></div>
+            <div><dt data-copy="size">大小</dt><dd data-asset-size="windows-setup">197.3 MB</dd></div>
           </dl>
-          <a class="button button-primary" data-asset="windows-setup" href="https://github.com/txp666/PageBridge/releases/download/v0.4.0/PageBridge-0.4.0-windows-x64-setup.exe" data-copy="downloadSetup">下载安装器</a>
-          <a class="pb-checksum" data-checksum="windows-setup" href="https://github.com/txp666/PageBridge/releases/download/v0.4.0/PageBridge-0.4.0-windows-x64-setup.exe.sha256">SHA-256</a>
+          <a class="button button-primary" data-asset="windows-setup" href="https://github.com/txp666/PageBridge/releases/download/v0.5.0/PageBridge-0.5.0-windows-x64-setup.exe" data-copy="downloadSetup">下载安装器</a>
+          <a class="pb-checksum" data-checksum="windows-setup" href="https://github.com/txp666/PageBridge/releases/download/v0.5.0/PageBridge-0.5.0-windows-x64-setup.exe.sha256">SHA-256</a>
         </article>
 
         <article class="download-card" data-platform="windows-zip">
@@ -378,10 +417,10 @@
           <p data-copy="portableCardDesc">完整解压后运行 PageBridge.Windows.exe，保留所有子目录。应用内更新会启动安装向导，不会就地替换便携目录。</p>
           <dl>
             <div><dt data-copy="format">格式</dt><dd>ZIP</dd></div>
-            <div><dt data-copy="size">大小</dt><dd data-asset-size="windows-zip">282.3 MB</dd></div>
+            <div><dt data-copy="size">大小</dt><dd data-asset-size="windows-zip">302.4 MB</dd></div>
           </dl>
-          <a class="button button-secondary" data-asset="windows-zip" href="https://github.com/txp666/PageBridge/releases/download/v0.4.0/PageBridge-0.4.0-windows-x64.zip" data-copy="downloadPortable">下载便携版</a>
-          <a class="pb-checksum" data-checksum="windows-zip" href="https://github.com/txp666/PageBridge/releases/download/v0.4.0/PageBridge-0.4.0-windows-x64.zip.sha256">SHA-256</a>
+          <a class="button button-secondary" data-asset="windows-zip" href="https://github.com/txp666/PageBridge/releases/download/v0.5.0/PageBridge-0.5.0-windows-x64.zip" data-copy="downloadPortable">下载便携版</a>
+          <a class="pb-checksum" data-checksum="windows-zip" href="https://github.com/txp666/PageBridge/releases/download/v0.5.0/PageBridge-0.5.0-windows-x64.zip.sha256">SHA-256</a>
         </article>
       </div>
 
@@ -392,7 +431,7 @@
       <div class="section-shell pb-open-grid">
         <div>
           <h2 id="openTitle" data-copy="openTitle">开放源码</h2>
-          <p data-copy="openDesc">PageBridge 的原创代码采用 AGPL-3.0-only。翻译基于 <a href="https://github.com/PDFMathTranslate-next/PDFMathTranslate-next" target="_blank" rel="noreferrer">PDFMathTranslate-next</a> 与 <a href="https://github.com/funstory-ai/BabelDOC" target="_blank" rel="noreferrer">BabelDOC</a>，第三方组件保留各自的许可。每个发行版都附有项目源码和第三方对应源码。</p>
+          <p data-copy="openDesc">PageBridge 的原创代码采用 AGPL-3.0-only。对照阅读使用 <a href="https://github.com/opendatalab/MinerU" target="_blank" rel="noreferrer">MinerU</a> 解析，重排 PDF 使用 <a href="https://github.com/PDFMathTranslate-next/PDFMathTranslate-next" target="_blank" rel="noreferrer">PDFMathTranslate-next</a> 与 <a href="https://github.com/funstory-ai/BabelDOC" target="_blank" rel="noreferrer">BabelDOC</a>。第三方组件保留各自许可，每个发行版附项目源码与第三方对应源码。</p>
         </div>
         <div class="pb-open-actions">
           <a class="button button-secondary" href="https://github.com/txp666/PageBridge" target="_blank" rel="noreferrer" data-copy="githubRepository">GitHub 仓库</a>
@@ -406,7 +445,7 @@
   <footer class="site-footer section-shell">
     <div>
       <p><strong>PageBridge</strong> <span data-copy="footerTagline">Mac 与 Windows 原生 PDF 阅读与翻译工作区。</span></p>
-      <p class="pb-credits" data-copy="footerCredits">截图来自 PageBridge 0.4.0 实际界面。示例论文：Rougier 等 2014（CC0）与 Sandve 等 2013（CC BY）；译文和助手回答为机器生成。</p>
+      <p class="pb-credits" data-copy="footerCredits">对照阅读与重排 PDF 截图来自 0.5.0；批注、助手和检索示例保留 0.4.0 界面。文档来源：NASA、IRS、Rougier 等 2014（CC0）、Sandve 等 2013（CC BY）。译文与助手回答为机器生成。</p>
     </div>
     <nav aria-label="页脚导航" data-copy-label="footerNavLabel">
       <a href="#reading" data-copy="navReading">对照阅读</a>
@@ -416,7 +455,7 @@
     </nav>
   </footer>
 
-  <script src="./app.js?v=20261026.1" defer></script>
+  <script src="./app.js?v=__ASSET_VERSION__" defer></script>
 </body>
 
 </html>
