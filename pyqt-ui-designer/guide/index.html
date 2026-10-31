@@ -4,8 +4,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="PyQt UI Designer 使用说明与协议说明：设计界面、绑定串口数据、预览运行、导出打包，以及键值、JSON、HEX 与 Modbus RTU 的收发格式和示例帧。" />
-  <meta name="keywords" content="PyQt UI Designer,使用说明,协议说明,上位机,串口协议,KEY=VALUE,JSON,HEX,Modbus RTU,CRC16" />
+  <meta name="description" content="PyQt UI Designer 使用说明与协议说明：设计界面，绑定串口、TCP 或 MQTT 数据，预览运行、导出打包，以及键值、JSON、HEX、Modbus RTU 与 Modbus TCP 的收发格式和示例帧。" />
+  <meta name="keywords" content="PyQt UI Designer,使用说明,协议说明,上位机,串口协议,TCP,MQTT,KEY=VALUE,JSON,HEX,Modbus RTU,Modbus TCP,MBAP,CRC16" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#f7fbfc" />
   <meta name="color-scheme" content="light dark" />
@@ -28,18 +28,18 @@
   <meta property="og:title" content="PyQt UI Designer 使用说明与协议说明" />
   <meta property="og:description" content="从设计界面到导出打包的完整流程，以及下位机需要遵循的接收与发送格式。" />
   <meta property="og:url" content="https://modusignal.cn/pyqt-ui-designer/guide/" />
-  <meta property="og:image" content="https://modusignal.cn/pyqt-ui-designer/assets/designer.png" />
+  <meta property="og:image" content="https://modusignal.cn/pyqt-ui-designer/assets/designer.jpg" />
   <title>PyQt UI Designer 使用说明与协议说明</title>
   <link rel="icon" href="../../logo.ico" type="image/x-icon" />
-  <link rel="stylesheet" href="../styles.css?v=20261020.2" />
+  <link rel="stylesheet" href="../styles.css?v=20261031.1" />
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "TechArticle",
       "headline": "PyQt UI Designer 使用说明与协议说明",
-      "description": "PyQt UI Designer 的使用流程，以及键值、JSON、HEX 与 Modbus RTU 的收发格式。",
+      "description": "PyQt UI Designer 的使用流程，串口、TCP 与 MQTT 链路，以及键值、JSON、HEX、Modbus RTU 与 Modbus TCP 的收发格式。",
       "inLanguage": "zh-CN",
-      "dateModified": "2026-10-20",
+      "dateModified": "2026-10-31",
       "about": { "@type": "SoftwareApplication", "name": "PyQt UI Designer" },
       "mainEntityOfPage": "https://modusignal.cn/pyqt-ui-designer/guide/"
     }
@@ -74,24 +74,26 @@
     <section id="top" class="guide-hero section-shell">
       <p class="eyebrow" data-copy="heroEyebrow">使用说明 · 协议说明</p>
       <h1 data-copy="heroTitle">PyQt UI Designer 使用说明</h1>
-      <p class="hero-lede" data-copy="heroDescription">从设计界面、绑定串口数据、预览运行到导出打包的完整流程，以及下位机需要遵循的接收与发送格式。文中的示例帧和 CRC 都可以直接用于联调。</p>
+      <p class="hero-lede" data-copy="heroDescription">从设计界面，绑定串口、TCP 或 MQTT 数据，预览运行到导出打包的完整流程，以及下位机需要遵循的接收与发送格式。文中的示例帧和 CRC 都可以直接用于联调。</p>
       <div class="hero-meta" aria-label="适用范围">
-        <span data-copy="metaVersion">适用于 0.1.3</span>
-        <span data-copy="metaSerial">串口通信</span>
-        <span>KEY=VALUE · JSON · HEX · Modbus RTU</span>
+        <span data-copy="metaVersion">适用于 0.1.6</span>
+        <span data-copy="metaSerial">串口 · TCP · MQTT</span>
+        <span>KEY=VALUE · JSON · HEX · Modbus RTU / TCP</span>
       </div>
+      <p class="guide-note guide-hero-note" data-copy="fluentHmiNote"><strong>用的是 FluentHMI Studio？</strong>两者工程格式相同，第 02–06 节的链路、解析、绑定、命令编码和 Modbus 规则同样适用；下载、运行和导出方式见 <a href="../../fluenthmi-studio/">FluentHMI Studio 介绍</a>。</p>
     </section>
 
     <div class="section-shell guide-layout">
       <nav class="guide-toc" aria-label="目录" data-guide-toc>
         <p data-copy="tocTitle">目录</p>
         <a href="#quickstart"><span>01</span><b data-copy="tocQuickstart">快速上手</b></a>
-        <a href="#serial"><span>02</span><b data-copy="tocSerial">串口与解析模式</b></a>
-        <a href="#receive"><span>03</span><b data-copy="tocReceive">接收：数据绑定</b></a>
-        <a href="#send"><span>04</span><b data-copy="tocSend">发送：命令配置</b></a>
-        <a href="#modbus"><span>05</span><b data-copy="tocModbus">Modbus RTU 参考</b></a>
-        <a href="#export"><span>06</span><b data-copy="tocExport">导出与打包</b></a>
-        <a href="#faq"><span>07</span><b data-copy="tocFaq">常见问题</b></a>
+        <a href="#serial"><span>02</span><b data-copy="tocSerial">链路与解析模式</b></a>
+        <a href="#network"><span>03</span><b data-copy="tocNetwork">TCP 与 MQTT</b></a>
+        <a href="#receive"><span>04</span><b data-copy="tocReceive">接收：数据绑定</b></a>
+        <a href="#send"><span>05</span><b data-copy="tocSend">发送：命令配置</b></a>
+        <a href="#modbus"><span>06</span><b data-copy="tocModbus">Modbus 参考</b></a>
+        <a href="#export"><span>07</span><b data-copy="tocExport">导出与打包</b></a>
+        <a href="#faq"><span>08</span><b data-copy="tocFaq">常见问题</b></a>
       </nav>
 
       <div class="guide-content">
@@ -102,10 +104,10 @@
             <ol class="guide-steps">
               <li><strong>运行设计器</strong>从<a href="../#downloads">下载区</a>获取对应平台的 zip，解压后 Windows 运行 <code>main.exe</code>，Mac 打开 <code>PyQt UI Designer.app</code>。也可以从源码运行：安装依赖后执行 <code>python main.py</code>（需 Python 3.10+）。</li>
               <li><strong>设计界面</strong>从左侧控件面板把控件拖到画布，在右侧属性编辑器修改位置、尺寸和属性。工具栏提供对齐、分布和缩放；右上角设置上位机名称和画布宽高。工程保存为 <code>.uidp</code> 文件。</li>
-              <li><strong>绑定接收数据</strong>选中数值显示、LED、进度条、仪表盘等显示类控件，在属性编辑器的“数据绑定”中选择解析模式并填写绑定字段，见<a href="#receive">第 03 节</a>。实时曲线在属性中为每条曲线单独设置。</li>
-              <li><strong>配置发送命令</strong>选中按钮、开关、滑块、数值框或输入框，设置“发送模式”“发送内容”和“发送模板”，见<a href="#send">第 04 节</a>。</li>
-              <li><strong>预览运行</strong>切换到“预览运行”页，点击“运行预览”，在串口配置卡片中选择端口和波特率并连接，直接用真实设备测试。修改设计、打开或新建工程会自动停止预览并断开串口，再次点击“运行预览”即使用当前设计。</li>
-              <li><strong>导出与打包</strong>按 <code>Ctrl+Shift+E</code>（Mac 为 <code>⌘⇧E</code>）或点击导航栏“导出代码”得到 Python 项目；在预览页点击“一键打包”可直接生成 exe / .app，见<a href="#export">第 06 节</a>。</li>
+              <li><strong>绑定接收数据</strong>选中数值显示、LED、进度条、仪表盘等显示类控件，在属性编辑器的“数据绑定”中选择解析模式并填写绑定字段，见<a href="#receive">第 04 节</a>。实时曲线在属性中为每条曲线单独设置。</li>
+              <li><strong>配置发送命令</strong>选中按钮、开关、滑块、数值框或输入框，设置“发送模式”“发送内容”和“发送模板”，见<a href="#send">第 05 节</a>。</li>
+              <li><strong>预览运行</strong>切换到“预览运行”页，点击“运行预览”，在画布上放置的串口、TCP 或 MQTT 配置卡片中填写连接参数并连接，直接用真实设备测试。修改设计、打开或新建工程会自动停止预览并断开连接，再次点击“运行预览”即使用当前设计。</li>
+              <li><strong>导出与打包</strong>按 <code>Ctrl+Shift+E</code>（Mac 为 <code>⌘⇧E</code>）或点击导航栏“导出代码”得到 Python 项目；在预览页点击“一键打包”可直接生成 exe / .app，见<a href="#export">第 07 节</a>。</li>
             </ol>
             <div class="guide-note">
               <p><strong>没有硬件？</strong>从源码运行时，在仓库根目录执行 <code>python demo/simulate.py</code>，端口选择 <code>DEMO</code> 并连接，即可体验温度/压力采集、实时曲线和命令收发。</p>
@@ -117,10 +119,10 @@
             <ol class="guide-steps">
               <li><strong>Run the designer</strong>Get the zip for your platform from the <a href="../#downloads">downloads</a>. On Windows run <code>main.exe</code>; on a Mac open <code>PyQt UI Designer.app</code>. To run from source, install the requirements and run <code>python main.py</code> (Python 3.10+).</li>
               <li><strong>Design the UI</strong>Drag widgets from the palette on the left onto the canvas and edit position, size and properties in the property editor on the right. The toolbar aligns, distributes and zooms; the top right sets the app name and canvas size. Projects are saved as <code>.uidp</code> files.</li>
-              <li><strong>Bind incoming data</strong>Select a display widget such as a value display, LED, progress bar or gauge, choose a parse mode under “数据绑定” (Data binding) and enter the binding field. See <a href="#receive">section 03</a>. Live plots are configured per curve in their properties.</li>
-              <li><strong>Configure commands</strong>Select a button, switch, slider, spin box or line edit and set the send mode, content and template. See <a href="#send">section 04</a>.</li>
-              <li><strong>Run the preview</strong>Switch to the “预览运行” (Preview) page, click “运行预览” (Run preview), pick a port and baud rate in the serial setup card and connect to test with the real device. Editing the design or opening or creating a project stops the preview and closes the port; click “运行预览” again to run the current design.</li>
-              <li><strong>Export and package</strong>Press <code>Ctrl+Shift+E</code> (<code>⌘⇧E</code> on a Mac) or use “导出代码” (Export code) in the sidebar to get a Python project, or click “一键打包” (Package) on the preview page to build an exe / .app. See <a href="#export">section 06</a>.</li>
+              <li><strong>Bind incoming data</strong>Select a display widget such as a value display, LED, progress bar or gauge, choose a parse mode under “数据绑定” (Data binding) and enter the binding field. See <a href="#receive">section 04</a>. Live plots are configured per curve in their properties.</li>
+              <li><strong>Configure commands</strong>Select a button, switch, slider, spin box or line edit and set the send mode, content and template. See <a href="#send">section 05</a>.</li>
+              <li><strong>Run the preview</strong>Switch to the “预览运行” (Preview) page, click “运行预览” (Run preview), fill in the connection in the serial, TCP or MQTT setup card you placed on the canvas and connect to test with the real device. Editing the design or opening or creating a project stops the preview and disconnects; click “运行预览” again to run the current design.</li>
+              <li><strong>Export and package</strong>Press <code>Ctrl+Shift+E</code> (<code>⌘⇧E</code> on a Mac) or use “导出代码” (Export code) in the sidebar to get a Python project, or click “一键打包” (Package) on the preview page to build an exe / .app. See <a href="#export">section 07</a>.</li>
             </ol>
             <div class="guide-note">
               <p><strong>No hardware?</strong> When running from source, run <code>python demo/simulate.py</code> in the repository root, pick the <code>DEMO</code> port and connect to try temperature/pressure acquisition, live plots and commands.</p>
@@ -130,20 +132,22 @@
 
         <section id="serial" class="guide-section">
           <div data-lang="zh">
-            <h2><small>02</small>串口与解析模式</h2>
-            <p>串口配置卡片设置端口、波特率、数据位、校验位、停止位和流控。卡片的“默认解析模式”决定如何把字节流拆成一条条消息，预览和导出程序使用同一套实现。</p>
+            <h2><small>02</small>链路与解析模式</h2>
+            <p>设备通过画布上的串口、TCP 或 MQTT 配置卡片连接，三种链路可以同时连接，收到的数据进入同一套绑定、曲线、表格和日志。串口配置卡片设置端口、波特率、数据位、校验位、停止位和流控；TCP 和 MQTT 卡片见<a href="#network">第 03 节</a>。</p>
+            <p>每张卡片的“默认解析模式”决定如何把收到的数据拆成一条条消息，三种链路的选项相同，预览和导出程序使用同一套实现。</p>
             <div class="guide-table-wrap">
               <table class="guide-table">
                 <thead><tr><th>解析模式</th><th>适用数据</th><th>说明</th></tr></thead>
                 <tbody>
-                  <tr><td><code>line</code></td><td>文本行</td><td>每行以 LF（<code>\n</code>，兼容 CRLF）结束，自动识别 JSON、KEY=VALUE 和 CSV。未设置时默认使用。</td></tr>
-                  <tr><td><code>modbus</code></td><td>Modbus RTU 响应</td><td>按功能码计算帧长，CRC 校验通过后输出 <code>reg0</code>、<code>coil0</code> 等字段，见<a href="#modbus">第 05 节</a>。</td></tr>
+                  <tr><td><code>line</code></td><td>文本行</td><td>每行以 LF（<code>\n</code>，兼容 CRLF）结束，自动识别 JSON、KEY=VALUE 和 CSV。未设置时默认使用。MQTT 的每条消息直接作为一行，不需要换行结尾。</td></tr>
+                  <tr><td><code>modbus</code></td><td>Modbus RTU 响应</td><td>按功能码计算帧长，CRC 校验通过后输出 <code>reg0</code>、<code>coil0</code> 等字段，见<a href="#modbus">第 06 节</a>。</td></tr>
+                  <tr><td><code>modbus_tcp</code></td><td>Modbus TCP 响应</td><td>按 MBAP 头里的长度切帧，没有 CRC，输出与 <code>modbus</code> 相同的字段，见<a href="#modbus">第 06 节</a>。</td></tr>
                   <tr><td><code>hex</code></td><td>定长二进制帧</td><td>按工程 <code>parserConfig</code> 中的帧头、帧尾和字段拆帧；工程本身不是 hex 模式时，使用默认帧头 <code>AA 55</code>、帧尾 <code>55 AA</code>。</td></tr>
-                  <tr><td>项目设置</td><td>—</td><td>使用 <code>.uidp</code> 中的 <code>serial.parser</code> / <code>parserConfig</code>。</td></tr>
+                  <tr><td>项目设置</td><td>—</td><td>使用 <code>.uidp</code> 中的 <code>serial.parser</code> / <code>parserConfig</code>，三种链路共用这一份配置。</td></tr>
                 </tbody>
               </table>
             </div>
-            <p>卡片上选择与工程不同的解析模式时，使用该模式的默认配置；选回“项目设置”即恢复工程配置。“HEX 字节提取”绑定直接读取原始串口字节，不受这里的解析模式影响。</p>
+            <p>卡片上选择与工程不同的解析模式时，使用该模式的默认配置；选回“项目设置”即恢复工程配置。“HEX 字节提取”绑定直接读取收到的原始字节，不受这里的解析模式影响。</p>
             <h3>行文本自动识别（line）</h3>
             <pre class="guide-code">收到一行文本
 ├─ 以 { 开头   → JSON 对象      {"temperature": 25.3}
@@ -157,20 +161,22 @@
             </ul>
           </div>
           <div data-lang="en" hidden>
-            <h2><small>02</small>Serial port and parse modes</h2>
-            <p>The serial setup card sets the port, baud rate, data bits, parity, stop bits and flow control. Its “默认解析模式” (default parse mode) decides how the byte stream is split into messages. The preview and exported programs share the same implementation.</p>
+            <h2><small>02</small>Links and parse modes</h2>
+            <p>Devices connect through a serial, TCP or MQTT setup card on the canvas. The three links can be connected at the same time, and their data feeds the same bindings, plots, tables and logs. The serial setup card sets the port, baud rate, data bits, parity, stop bits and flow control; the TCP and MQTT cards are covered in <a href="#network">section 03</a>.</p>
+            <p>Each card's “默认解析模式” (default parse mode) decides how incoming data is split into messages. All three links offer the same choices, and the preview and exported programs share the same implementation.</p>
             <div class="guide-table-wrap">
               <table class="guide-table">
                 <thead><tr><th>Parse mode</th><th>Data</th><th>Notes</th></tr></thead>
                 <tbody>
-                  <tr><td><code>line</code></td><td>Text lines</td><td>Each line ends with LF (<code>\n</code>; CRLF works). JSON, KEY=VALUE and CSV are detected automatically. This is the default.</td></tr>
-                  <tr><td><code>modbus</code></td><td>Modbus RTU responses</td><td>Frame length comes from the function code. Frames that pass the CRC check produce fields such as <code>reg0</code> and <code>coil0</code>. See <a href="#modbus">section 05</a>.</td></tr>
+                  <tr><td><code>line</code></td><td>Text lines</td><td>Each line ends with LF (<code>\n</code>; CRLF works). JSON, KEY=VALUE and CSV are detected automatically. This is the default. Each MQTT message counts as a line and needs no line ending.</td></tr>
+                  <tr><td><code>modbus</code></td><td>Modbus RTU responses</td><td>Frame length comes from the function code. Frames that pass the CRC check produce fields such as <code>reg0</code> and <code>coil0</code>. See <a href="#modbus">section 06</a>.</td></tr>
+                  <tr><td><code>modbus_tcp</code></td><td>Modbus TCP responses</td><td>Frames are cut by the length in the MBAP header, with no CRC, and produce the same fields as <code>modbus</code>. See <a href="#modbus">section 06</a>.</td></tr>
                   <tr><td><code>hex</code></td><td>Fixed binary frames</td><td>Splits frames by the header, footer and fields in the project's <code>parserConfig</code>. If the project itself isn't in hex mode, the default header <code>AA 55</code> and footer <code>55 AA</code> are used.</td></tr>
-                  <tr><td>项目设置 (project)</td><td>—</td><td>Uses <code>serial.parser</code> / <code>parserConfig</code> from the <code>.uidp</code> file.</td></tr>
+                  <tr><td>项目设置 (project)</td><td>—</td><td>Uses <code>serial.parser</code> / <code>parserConfig</code> from the <code>.uidp</code> file, one configuration for all three links.</td></tr>
                 </tbody>
               </table>
             </div>
-            <p>Choosing a parse mode on the card that differs from the project's uses that mode's defaults; choosing “项目设置” again restores the project configuration. “HEX 字节提取” (HEX byte extraction) bindings read raw serial bytes and are not affected by the parse mode.</p>
+            <p>Choosing a parse mode on the card that differs from the project's uses that mode's defaults; choosing “项目设置” again restores the project configuration. “HEX 字节提取” (HEX byte extraction) bindings read the raw bytes received and are not affected by the parse mode.</p>
             <h3>Line detection (line)</h3>
             <pre class="guide-code">A line arrives
 ├─ starts with {   → JSON object    {"temperature": 25.3}
@@ -185,13 +191,110 @@
           </div>
         </section>
 
+        <section id="network" class="guide-section">
+          <div data-lang="zh">
+            <h2><small>03</small>TCP 与 MQTT</h2>
+            <h3>TCP 配置卡片</h3>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>参数</th><th>说明</th></tr></thead>
+                <tbody>
+                  <tr><td>模式</td><td>客户端：上位机主动连接设备的 IP 和端口；服务端：上位机监听端口，等待设备连入。</td></tr>
+                  <tr><td>地址</td><td>客户端模式填设备 IP 或主机名；服务端模式填本机监听地址，<code>0.0.0.0</code> 表示所有网卡。</td></tr>
+                  <tr><td>端口</td><td>1 ~ 65535</td></tr>
+                  <tr><td>默认解析模式</td><td>同串口；接 Modbus TCP 设备时选 <code>modbus_tcp</code>。</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <ul>
+              <li>TCP 是字节流，半包、粘包的处理和串口相同。</li>
+              <li>客户端点击“连接”后显示“连接中”，失败时卡片状态显示原因，如连接被拒绝；对方关闭连接后回到未连接状态。</li>
+              <li>服务端可以同时接多个设备，状态显示当前客户端数量。每个连接单独切帧，设备之间的半包互不干扰；命令写给所有已连接的设备。“HEX 字节提取”绑定读取的是原始字节，多台设备同时发送时建议只接一台，或改用带键名的行文本 / JSON。</li>
+              <li><code>modbus_tcp</code> 对应标准 Modbus TCP（MBAP 头，无 CRC），控件和 Modbus 卡片发出的请求自动按 MBAP 组帧；<code>modbus</code> 对应 Modbus RTU over TCP，带 CRC 的 RTU 帧直接走 TCP。</li>
+            </ul>
+
+            <h3>MQTT 配置卡片</h3>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>参数</th><th>说明</th></tr></thead>
+                <tbody>
+                  <tr><td>服务器 / 端口</td><td>broker 地址和端口，默认 1883（TLS 常用 8883）。</td></tr>
+                  <tr><td>客户端ID</td><td>留空自动生成。</td></tr>
+                  <tr><td>用户名 / 密码</td><td>可选。</td></tr>
+                  <tr><td>订阅主题</td><td>一个或多个主题过滤器，用逗号、分号或换行分隔，支持 <code>+</code> 和 <code>#</code> 通配符。</td></tr>
+                  <tr><td>发布主题</td><td>所有命令都发布到这一个主题。</td></tr>
+                  <tr><td>QoS</td><td>0 / 1 / 2，订阅和发布共用。</td></tr>
+                  <tr><td>TLS</td><td>用操作系统的证书库（macOS 钥匙串、Windows 证书存储）校验 broker；自签证书需先把 CA 加入系统信任。</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>MQTT 传的是一条条消息而不是字节流，解析有三点不同：</p>
+            <ul>
+              <li><strong>每条消息视为一帧。</strong>行文本模式下载荷不需要换行结尾，<code>{"temp":25.3}</code>、<code>temp=25.3</code> 都可以直接发；HEX 帧模式按主题分别缓存半包。</li>
+              <li><strong>纯数值载荷可以用主题名绑定。</strong>主题 <code>home/temp</code> 收到 <code>25.3</code> 时，解析结果为 <code>{"ch0": 25.3, "home/temp": 25.3}</code>，绑定字段填 <code>home/temp</code> 即可。带键名的行文本和 JSON 保持原样，不附加主题。</li>
+              <li><strong>命令原样发布。</strong>文本模式的换行符也会附在命令后面，发 MQTT 时一般把换行符设为“无”。</li>
+            </ul>
+            <p>连接成功后才订阅主题。连接意外断开时卡片显示“重连中...”，重连成功后自动恢复订阅；首次连接失败（地址错误、认证失败、TLS 证书不受信任）不会重试，修正后再点“连接”。TCP 和 MQTT 卡片在“连接中”和“重连中”时都可以点“断开”取消。</p>
+
+            <h3>多条链路同时连接</h3>
+            <p>串口、TCP、MQTT 可以同时连接。各链路的数据按到达顺序分别解析后进入同一套绑定，一条链路断开不影响其他链路。命令发往每一条已连接的链路，任一链路完整写出即算发送成功，写入失败的链路会单独提示。</p>
+          </div>
+          <div data-lang="en" hidden>
+            <h2><small>03</small>TCP and MQTT</h2>
+            <h3>TCP setup card</h3>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>Setting</th><th>Notes</th></tr></thead>
+                <tbody>
+                  <tr><td>模式 (mode)</td><td>客户端 (client): connect to the device's IP and port. 服务端 (server): listen on a port and wait for devices to connect.</td></tr>
+                  <tr><td>地址 (address)</td><td>In client mode, the device's IP or host name; in server mode, the local address to listen on, where <code>0.0.0.0</code> means every interface.</td></tr>
+                  <tr><td>端口 (port)</td><td>1 to 65535</td></tr>
+                  <tr><td>默认解析模式 (parse mode)</td><td>Same as serial; choose <code>modbus_tcp</code> for Modbus TCP devices.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <ul>
+              <li>TCP is a byte stream, so partial and merged packets are handled exactly as on a serial port.</li>
+              <li>After you click “连接” (Connect), a client shows “连接中” (connecting); a failure shows the reason on the card, such as a refused connection. When the other side closes the connection, the card returns to disconnected.</li>
+              <li>A server accepts several devices at once and shows how many are connected. Each connection is framed on its own, so partial frames from different devices never mix, and commands are written to every connected device. “HEX 字节提取” (HEX byte extraction) bindings read the raw bytes, so when several devices send at once, connect only one or switch to keyed line text / JSON.</li>
+              <li><code>modbus_tcp</code> is standard Modbus TCP (MBAP header, no CRC), and requests from widgets and the Modbus card are framed with an MBAP header. <code>modbus</code> is Modbus RTU over TCP: RTU frames with a CRC sent straight over TCP.</li>
+            </ul>
+
+            <h3>MQTT setup card</h3>
+            <div class="guide-table-wrap">
+              <table class="guide-table">
+                <thead><tr><th>Setting</th><th>Notes</th></tr></thead>
+                <tbody>
+                  <tr><td>服务器 / 端口 (server / port)</td><td>The broker's address and port; 1883 by default (8883 is usual for TLS).</td></tr>
+                  <tr><td>客户端ID (client ID)</td><td>Generated automatically when left empty.</td></tr>
+                  <tr><td>用户名 / 密码 (username / password)</td><td>Optional.</td></tr>
+                  <tr><td>订阅主题 (subscribe)</td><td>One or more topic filters separated by commas, semicolons or new lines; <code>+</code> and <code>#</code> wildcards work.</td></tr>
+                  <tr><td>发布主题 (publish)</td><td>Every command is published to this one topic.</td></tr>
+                  <tr><td>QoS</td><td>0 / 1 / 2, shared by subscribing and publishing.</td></tr>
+                  <tr><td>TLS</td><td>The broker is verified through the operating system's certificate store (the macOS keychain, the Windows certificate store); add a self-signed CA to the system trust first.</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p>MQTT carries messages rather than a byte stream, so parsing differs in three ways:</p>
+            <ul>
+              <li><strong>Each message is one frame.</strong> In line mode the payload needs no line ending, so <code>{"temp":25.3}</code> and <code>temp=25.3</code> can be sent as they are. In HEX frame mode, partial frames are buffered per topic.</li>
+              <li><strong>A bare number can be bound by topic.</strong> When topic <code>home/temp</code> receives <code>25.3</code>, the result is <code>{"ch0": 25.3, "home/temp": 25.3}</code>, so a binding field of <code>home/temp</code> works. Keyed line text and JSON are left as they are, without the topic.</li>
+              <li><strong>Commands are published as they are.</strong> The text-mode line ending is appended too, so set the line ending to “无” (none) for MQTT.</li>
+            </ul>
+            <p>Topics are subscribed once the connection succeeds. If the connection drops, the card shows “重连中...” (reconnecting) and the subscriptions come back when it reconnects. A first connection that fails (wrong address, rejected login, untrusted TLS certificate) is not retried; fix the setting and click “连接” again. While connecting or reconnecting, “断开” (Disconnect) on the TCP and MQTT cards cancels the attempt.</p>
+
+            <h3>Several links at once</h3>
+            <p>Serial, TCP and MQTT can be connected together. Each link's data is parsed in arrival order and feeds the same bindings, and a link that disconnects doesn't affect the others. Commands go out on every connected link; a send succeeds once any link has written the whole command, and a link that fails to write is reported on its own.</p>
+          </div>
+        </section>
+
         <section id="receive" class="guide-section">
           <div data-lang="zh">
-            <h2><small>03</small>接收：数据绑定</h2>
+            <h2><small>04</small>接收：数据绑定</h2>
             <p>显示类控件和曲线通道都通过“解析模式”从数据中取值，共四种模式。可选的“转换表达式”用变量 <code>value</code> 换算原始值，例如 <code>value * 0.1</code>。</p>
 
             <h3>键值匹配</h3>
-            <p>按字段名从行文本解析结果中取值，适用于 KEY=VALUE、JSON 顶层字段和 CSV。</p>
+            <p>按字段名从行文本解析结果中取值，适用于 KEY=VALUE、JSON 顶层字段和 CSV。MQTT 消息只有一个数值时，也可以直接填主题名，见<a href="#network">第 03 节</a>。</p>
             <pre class="guide-code">temperature=25.3,humidity=68.5
 {"temperature": 25.3, "humidity": 68.5}
 25.3,68.5,1013.2                <span class="muted">→ 字段名为 ch0 / ch1 / ch2</span></pre>
@@ -245,7 +348,7 @@
             </div>
 
             <h3>Modbus</h3>
-            <p>需把串口配置卡片的默认解析模式设为 <code>modbus</code>。解析器把响应帧转换为 <code>reg0</code>、<code>reg1</code>…（寄存器）或 <code>coil0</code>、<code>coil1</code>…（线圈），并附带 <code>slave</code> 和 <code>fc</code>。</p>
+            <p>需把链路的默认解析模式设为 <code>modbus</code>（RTU）或 <code>modbus_tcp</code>（Modbus TCP）。解析器把响应帧转换为 <code>reg0</code>、<code>reg1</code>…（寄存器）或 <code>coil0</code>、<code>coil1</code>…（线圈），并附带 <code>slave</code> 和 <code>fc</code>。两种模式输出相同的字段，Modbus TCP 的单元标识符同样放在 <code>slave</code>，同一套绑定既能接串口 RTU 设备，也能接 Modbus TCP 设备。</p>
             <pre class="guide-code">01 03 06 03 E8 09 C4 00 64 02 DB
 <span class="muted">→</span> {"slave": 1, "fc": 3, "reg0": 1000, "reg1": 2500, "reg2": 100}</pre>
             <ul class="guide-settings">
@@ -266,11 +369,11 @@
             </ul>
           </div>
           <div data-lang="en" hidden>
-            <h2><small>03</small>Receiving: data binding</h2>
+            <h2><small>04</small>Receiving: data binding</h2>
             <p>Display widgets and plot curves read values through a parse mode. There are four. The optional “转换表达式” (expression) converts the raw value with the variable <code>value</code>, for example <code>value * 0.1</code>.</p>
 
             <h3>Key/value (键值匹配)</h3>
-            <p>Reads a field by name from a parsed line. Works with KEY=VALUE, top-level JSON fields and CSV.</p>
+            <p>Reads a field by name from a parsed line. Works with KEY=VALUE, top-level JSON fields and CSV. When an MQTT message is a bare number, the topic name works as the field too; see <a href="#network">section 03</a>.</p>
             <pre class="guide-code">temperature=25.3,humidity=68.5
 {"temperature": 25.3, "humidity": 68.5}
 25.3,68.5,1013.2                <span class="muted">→ fields are ch0 / ch1 / ch2</span></pre>
@@ -324,7 +427,7 @@
             </div>
 
             <h3>Modbus</h3>
-            <p>Set the serial card's default parse mode to <code>modbus</code>. The parser turns responses into <code>reg0</code>, <code>reg1</code>… (registers) or <code>coil0</code>, <code>coil1</code>… (coils), plus <code>slave</code> and <code>fc</code>.</p>
+            <p>Set the link's default parse mode to <code>modbus</code> (RTU) or <code>modbus_tcp</code> (Modbus TCP). The parser turns responses into <code>reg0</code>, <code>reg1</code>… (registers) or <code>coil0</code>, <code>coil1</code>… (coils), plus <code>slave</code> and <code>fc</code>. Both modes produce the same fields, with the Modbus TCP unit identifier in <code>slave</code>, so one set of bindings works with serial RTU devices and Modbus TCP devices alike.</p>
             <pre class="guide-code">01 03 06 03 E8 09 C4 00 64 02 DB
 <span class="muted">→</span> {"slave": 1, "fc": 3, "reg0": 1000, "reg1": 2500, "reg2": 100}</pre>
             <ul class="guide-settings">
@@ -348,13 +451,13 @@
 
         <section id="send" class="guide-section">
           <div data-lang="zh">
-            <h2><small>04</small>发送：命令配置</h2>
-            <p>交互类控件用“发送模式”决定下发格式，可选文本、HEX 和 Modbus。文本与 HEX 模式下，“发送模板”中的 <code>{value}</code> 会替换为控件当前值。滑块和数值框可勾选“变化发送”，输入框可勾选“回车发送”。</p>
+            <h2><small>05</small>发送：命令配置</h2>
+            <p>交互类控件用“发送模式”决定下发格式，可选文本、HEX 和 Modbus。文本与 HEX 模式下，“发送模板”中的 <code>{value}</code> 会替换为控件当前值。滑块和数值框可勾选“变化发送”，输入框可勾选“回车发送”。命令发往每一条已连接的链路，MQTT 发布到卡片设置的发布主题。</p>
 
             <h3>文本模式</h3>
             <div class="guide-table-wrap">
               <table class="guide-table">
-                <thead><tr><th>控件</th><th>配置</th><th>串口发送</th></tr></thead>
+                <thead><tr><th>控件</th><th>配置</th><th>实际发送</th></tr></thead>
                 <tbody>
                   <tr><td>按钮</td><td>发送内容 <code>LED_ON</code>，换行符 <code>\r\n</code></td><td><code>LED_ON\r\n</code></td></tr>
                   <tr><td>滑块（值 75）</td><td>发送模板 <code>SET_SPEED={value}</code>，换行符 <code>\n</code>，变化发送</td><td><code>SET_SPEED=75\n</code></td></tr>
@@ -367,7 +470,7 @@
             <h3>HEX 模式</h3>
             <div class="guide-table-wrap">
               <table class="guide-table">
-                <thead><tr><th>控件</th><th>配置</th><th>串口发送</th></tr></thead>
+                <thead><tr><th>控件</th><th>配置</th><th>实际发送</th></tr></thead>
                 <tbody>
                   <tr><td>按钮</td><td>发送内容 <code>01 02 03 04</code>，帧头 <code>AA 55</code>，帧尾 <code>0D 0A</code></td><td><code>AA 55 01 02 03 04 0D 0A</code></td></tr>
                   <tr><td>滑块（值 1000）</td><td>发送模板 <code>01 06 00 01 {value}</code>，数据类型 uint16，字节序 大端(BE)</td><td><code>01 06 00 01 03 E8</code></td></tr>
@@ -377,7 +480,7 @@
             <p>数据类型为“HEX字符串”时，内容按十六进制原样发送，空格可省略；选择 uint8 到 float32 时，<code>{value}</code> 按所选类型和字节序编码。数值超出类型范围或 HEX 格式错误时不会发送。</p>
 
             <h3>Modbus 模式</h3>
-            <p>自动组成 Modbus RTU 请求帧并附加 CRC16。读功能码时“值/数量”是读取数量，写功能码时是写入值。</p>
+            <p>自动组成 Modbus 请求帧，并按链路选择格式：解析模式为 <code>modbus_tcp</code> 的链路收到 Modbus TCP 请求（MBAP 头，无 CRC），其余链路收到附加 CRC16 的 RTU 请求。控件只需配置从站、功能码、地址和值。读功能码时“值/数量”是读取数量，写功能码时是写入值。</p>
             <div class="guide-table-wrap">
               <table class="guide-table">
                 <thead><tr><th>功能码</th><th>用途</th><th>值/数量范围</th></tr></thead>
@@ -391,25 +494,26 @@
             </div>
             <div class="guide-table-wrap">
               <table class="guide-table">
-                <thead><tr><th>控件</th><th>配置</th><th>串口发送</th></tr></thead>
+                <thead><tr><th>控件</th><th>配置</th><th>实际发送</th></tr></thead>
                 <tbody>
                   <tr><td>按钮</td><td>从站 1，03 读保持寄存器，地址 0，数量 3</td><td><code>01 03 00 00 00 03 05 CB</code></td></tr>
                   <tr><td>开关</td><td>从站 1，05 写单线圈，地址 0</td><td>ON <code>01 05 00 00 FF 00 8C 3A</code><br />OFF <code>01 05 00 00 00 00 CD CA</code></td></tr>
                   <tr><td>滑块（值 500）</td><td>从站 1，06 写单寄存器，地址 10，变化发送</td><td><code>01 06 00 0A 01 F4 A9 DF</code></td></tr>
+                  <tr><td>按钮（<code>modbus_tcp</code> 链路）</td><td>从站 1，03 读保持寄存器，地址 0，数量 3</td><td><code>00 01 00 00 00 06 01 03 00 00 00 03</code><br />前两个字节是事务标识符，每帧加 1</td></tr>
                 </tbody>
               </table>
             </div>
             <p>从站地址须在 1 ~ 247，地址 0 ~ 65535，超出范围的命令不会发送。需要周期读取时，使用“Modbus 配置卡片”：填写“轮询ms”（0 为不轮询）后点击“轮询”。</p>
-            <p>只有整条命令都写入串口后才算发送成功；写入失败或只写入部分字节时会提示失败，Modbus 卡片同时停止轮询。“已发送”表示串口已写出，不代表设备已确认执行。</p>
+            <p>只有整条命令都写出后才算发送成功，连着多条链路时任一链路写出即可；写入失败或只写入部分字节时会提示失败，Modbus 卡片同时停止轮询。“已发送”表示数据已写出，不代表设备已确认执行。</p>
           </div>
           <div data-lang="en" hidden>
-            <h2><small>04</small>Sending: commands</h2>
-            <p>Interactive widgets pick an output format with their send mode: text, HEX or Modbus. In text and HEX modes, <code>{value}</code> in the send template is replaced by the widget's current value. Sliders and spin boxes can send on change (“变化发送”); line edits can send on Enter (“回车发送”).</p>
+            <h2><small>05</small>Sending: commands</h2>
+            <p>Interactive widgets pick an output format with their send mode: text, HEX or Modbus. In text and HEX modes, <code>{value}</code> in the send template is replaced by the widget's current value. Sliders and spin boxes can send on change (“变化发送”); line edits can send on Enter (“回车发送”). Commands go out on every connected link; MQTT publishes them to the card's publish topic.</p>
 
             <h3>Text mode</h3>
             <div class="guide-table-wrap">
               <table class="guide-table">
-                <thead><tr><th>Widget</th><th>Settings</th><th>Sent on the port</th></tr></thead>
+                <thead><tr><th>Widget</th><th>Settings</th><th>Bytes sent</th></tr></thead>
                 <tbody>
                   <tr><td>Button</td><td>Content <code>LED_ON</code>, line ending <code>\r\n</code></td><td><code>LED_ON\r\n</code></td></tr>
                   <tr><td>Slider (value 75)</td><td>Template <code>SET_SPEED={value}</code>, line ending <code>\n</code>, send on change</td><td><code>SET_SPEED=75\n</code></td></tr>
@@ -422,7 +526,7 @@
             <h3>HEX mode</h3>
             <div class="guide-table-wrap">
               <table class="guide-table">
-                <thead><tr><th>Widget</th><th>Settings</th><th>Sent on the port</th></tr></thead>
+                <thead><tr><th>Widget</th><th>Settings</th><th>Bytes sent</th></tr></thead>
                 <tbody>
                   <tr><td>Button</td><td>Content <code>01 02 03 04</code>, header <code>AA 55</code>, footer <code>0D 0A</code></td><td><code>AA 55 01 02 03 04 0D 0A</code></td></tr>
                   <tr><td>Slider (value 1000)</td><td>Template <code>01 06 00 01 {value}</code>, data type uint16, byte order big-endian</td><td><code>01 06 00 01 03 E8</code></td></tr>
@@ -432,7 +536,7 @@
             <p>With the data type “HEX字符串” (HEX string), the content is sent as hex as-is and spaces are optional. With uint8 through float32, <code>{value}</code> is encoded with that type and byte order. Out-of-range values and malformed hex are not sent.</p>
 
             <h3>Modbus mode</h3>
-            <p>Builds a Modbus RTU request and appends the CRC16. For read functions, “值/数量” (value/count) is the count; for write functions it is the value.</p>
+            <p>Builds a Modbus request in the format each link needs: a link parsing <code>modbus_tcp</code> gets a Modbus TCP request (MBAP header, no CRC), and every other link gets an RTU request with a CRC16. The widget only needs the slave, function, address and value. For read functions, “值/数量” (value/count) is the count; for write functions it is the value.</p>
             <div class="guide-table-wrap">
               <table class="guide-table">
                 <thead><tr><th>Function</th><th>Purpose</th><th>Value/count range</th></tr></thead>
@@ -446,22 +550,23 @@
             </div>
             <div class="guide-table-wrap">
               <table class="guide-table">
-                <thead><tr><th>Widget</th><th>Settings</th><th>Sent on the port</th></tr></thead>
+                <thead><tr><th>Widget</th><th>Settings</th><th>Bytes sent</th></tr></thead>
                 <tbody>
                   <tr><td>Button</td><td>Slave 1, 03 read holding registers, address 0, count 3</td><td><code>01 03 00 00 00 03 05 CB</code></td></tr>
                   <tr><td>Switch</td><td>Slave 1, 05 write single coil, address 0</td><td>ON <code>01 05 00 00 FF 00 8C 3A</code><br />OFF <code>01 05 00 00 00 00 CD CA</code></td></tr>
                   <tr><td>Slider (value 500)</td><td>Slave 1, 06 write single register, address 10, send on change</td><td><code>01 06 00 0A 01 F4 A9 DF</code></td></tr>
+                  <tr><td>Button (<code>modbus_tcp</code> link)</td><td>Slave 1, 03 read holding registers, address 0, count 3</td><td><code>00 01 00 00 00 06 01 03 00 00 00 03</code><br />The first two bytes are the transaction identifier, one higher for each frame</td></tr>
                 </tbody>
               </table>
             </div>
             <p>The slave address must be 1 to 247 and the address 0 to 65535; commands outside these ranges are not sent. For periodic reads, use the Modbus setup card: enter “轮询ms” (poll interval, 0 = off) and click “轮询” (Poll).</p>
-            <p>A send only counts as successful once the whole command has been written to the port. A failed or partial write is reported as a failure, and the Modbus card stops polling. “已发送” (sent) means the bytes left the port, not that the device acted on them.</p>
+            <p>A send only counts as successful once the whole command has been written; with several links connected, one link is enough. A failed or partial write is reported as a failure, and the Modbus card stops polling. “已发送” (sent) means the bytes went out, not that the device acted on them.</p>
           </div>
         </section>
 
         <section id="modbus" class="guide-section">
           <div data-lang="zh">
-            <h2><small>05</small>Modbus RTU 参考</h2>
+            <h2><small>06</small>Modbus RTU / TCP 参考</h2>
             <p>多字节字段按大端（高字节在前）传输，只有 CRC 是低字节在前。</p>
             <h3>读请求（01 ~ 04）</h3>
             <div class="guide-frame">
@@ -495,9 +600,18 @@
     return crc.to_bytes(2, "little")
 
 modbus_crc(bytes.fromhex("010300000003"))  <span class="muted"># → 05 CB</span></pre>
+            <h3>Modbus TCP（MBAP）</h3>
+            <p>Modbus TCP 把同样的 PDU（功能码及其后的数据）放在 7 字节 MBAP 头之后，不再附加 CRC。长度字段等于单元标识符与 PDU 的字节数之和。</p>
+            <div class="guide-frame">
+              <span>事务标识符<small>2 字节 · 大端</small></span><span>协议标识符<small>2 字节 · 固定 0</small></span><span>长度<small>2 字节 · 大端</small></span><span>单元标识符<small>1 字节</small></span><span>PDU<small>功能码 + 数据</small></span>
+            </div>
+            <pre class="guide-code">请求  00 01 00 00 00 06 01 03 00 00 00 03
+响应  00 01 00 00 00 09 01 03 06 03 E8 09 C4 00 64
+<span class="muted">→</span> {"slave": 1, "fc": 3, "reg0": 1000, "reg1": 2500, "reg2": 100}</pre>
+            <p>上位机发出的请求，事务标识符从 1 开始逐帧递增，65535 之后回到 0；响应里的事务标识符不参与解析。</p>
           </div>
           <div data-lang="en" hidden>
-            <h2><small>05</small>Modbus RTU reference</h2>
+            <h2><small>06</small>Modbus RTU / TCP reference</h2>
             <p>Multi-byte fields are big-endian (high byte first); only the CRC is sent low byte first.</p>
             <h3>Read request (01 to 04)</h3>
             <div class="guide-frame">
@@ -531,12 +645,21 @@ modbus_crc(bytes.fromhex("010300000003"))  <span class="muted"># → 05 CB</span
     return crc.to_bytes(2, "little")
 
 modbus_crc(bytes.fromhex("010300000003"))  <span class="muted"># → 05 CB</span></pre>
+            <h3>Modbus TCP (MBAP)</h3>
+            <p>Modbus TCP carries the same PDU (the function code and its data) after a 7-byte MBAP header, without a CRC. The length field is the byte count of the unit identifier plus the PDU.</p>
+            <div class="guide-frame">
+              <span>Transaction ID<small>2 bytes · BE</small></span><span>Protocol ID<small>2 bytes · always 0</small></span><span>Length<small>2 bytes · BE</small></span><span>Unit ID<small>1 byte</small></span><span>PDU<small>Function + data</small></span>
+            </div>
+            <pre class="guide-code">Request   00 01 00 00 00 06 01 03 00 00 00 03
+Response  00 01 00 00 00 09 01 03 06 03 E8 09 C4 00 64
+<span class="muted">→</span> {"slave": 1, "fc": 3, "reg0": 1000, "reg1": 2500, "reg2": 100}</pre>
+            <p>Requests from the host count transaction identifiers up from 1, one per frame, wrapping to 0 after 65535. The transaction identifier in a response is not used for parsing.</p>
           </div>
         </section>
 
         <section id="export" class="guide-section">
           <div data-lang="zh">
-            <h2><small>06</small>导出与打包</h2>
+            <h2><small>07</small>导出与打包</h2>
             <p>“导出代码”生成一个不依赖设计器的 Python 项目。代码生成和语法检查完成后才写入目标目录，配置有误时不会覆盖已有文件。</p>
             <div class="guide-table-wrap">
               <table class="guide-table">
@@ -544,10 +667,13 @@ modbus_crc(bytes.fromhex("010300000003"))  <span class="muted"># → 05 CB</span
                 <tbody>
                   <tr><td><code>main.py</code></td><td>程序入口</td></tr>
                   <tr><td><code>ui.py</code></td><td>界面、图表和控件</td></tr>
-                  <tr><td><code>serial_handler.py</code></td><td>串口线程与协议解析器</td></tr>
+                  <tr><td><code>comm_hub.py</code></td><td>汇总串口、TCP、MQTT 链路，命令发往每一条已连接的链路</td></tr>
+                  <tr><td><code>serial_handler.py</code></td><td>串口线程与各链路共用的协议解析器</td></tr>
+                  <tr><td><code>tcp_handler.py</code></td><td>TCP 客户端 / 服务端</td></tr>
+                  <tr><td><code>mqtt_handler.py</code></td><td>MQTT 客户端</td></tr>
                   <tr><td><code>data_binding.py</code></td><td>数据绑定</td></tr>
                   <tr><td><code>theme_support.py</code></td><td>浅色、深色与跟随系统主题</td></tr>
-                  <tr><td><code>requirements.txt</code></td><td>运行依赖</td></tr>
+                  <tr><td><code>requirements.txt</code></td><td>运行依赖，含 <code>pyserial</code>、<code>paho-mqtt</code> 和 <code>truststore</code></td></tr>
                   <tr><td><code>assets/</code></td><td>图片控件用到的本地图片</td></tr>
                 </tbody>
               </table>
@@ -567,7 +693,7 @@ modbus_crc(bytes.fromhex("010300000003"))  <span class="muted"># → 05 CB</span
             </ul>
           </div>
           <div data-lang="en" hidden>
-            <h2><small>06</small>Export and packaging</h2>
+            <h2><small>07</small>Export and packaging</h2>
             <p>“导出代码” (Export code) produces a Python project that does not depend on the designer. Files are written only after code generation and a syntax check succeed, so a bad configuration never overwrites an existing export.</p>
             <div class="guide-table-wrap">
               <table class="guide-table">
@@ -575,10 +701,13 @@ modbus_crc(bytes.fromhex("010300000003"))  <span class="muted"># → 05 CB</span
                 <tbody>
                   <tr><td><code>main.py</code></td><td>Program entry point</td></tr>
                   <tr><td><code>ui.py</code></td><td>Layout, plots and widgets</td></tr>
-                  <tr><td><code>serial_handler.py</code></td><td>Serial thread and protocol parsers</td></tr>
+                  <tr><td><code>comm_hub.py</code></td><td>Gathers the serial, TCP and MQTT links and sends commands on every connected one</td></tr>
+                  <tr><td><code>serial_handler.py</code></td><td>Serial thread and the protocol parsers every link uses</td></tr>
+                  <tr><td><code>tcp_handler.py</code></td><td>TCP client / server</td></tr>
+                  <tr><td><code>mqtt_handler.py</code></td><td>MQTT client</td></tr>
                   <tr><td><code>data_binding.py</code></td><td>Data bindings</td></tr>
                   <tr><td><code>theme_support.py</code></td><td>Light, dark and follow-system themes</td></tr>
-                  <tr><td><code>requirements.txt</code></td><td>Runtime dependencies</td></tr>
+                  <tr><td><code>requirements.txt</code></td><td>Runtime dependencies, including <code>pyserial</code>, <code>paho-mqtt</code> and <code>truststore</code></td></tr>
                   <tr><td><code>assets/</code></td><td>Local images used by image widgets</td></tr>
                 </tbody>
               </table>
@@ -601,7 +730,7 @@ modbus_crc(bytes.fromhex("010300000003"))  <span class="muted"># → 05 CB</span
 
         <section id="faq" class="guide-section">
           <div data-lang="zh">
-            <h2><small>07</small>常见问题</h2>
+            <h2><small>08</small>常见问题</h2>
             <div class="guide-faq">
               <details>
                 <summary>Windows 提示“Windows 已保护你的电脑”</summary>
@@ -619,8 +748,9 @@ modbus_crc(bytes.fromhex("010300000003"))  <span class="muted"># → 05 CB</span
                 <summary>连接成功但控件不更新</summary>
                 <div>
                   <ul>
-                    <li>行文本是否以 <code>\n</code> 结尾？没有换行时数据会一直留在缓冲区。</li>
-                    <li>默认解析模式是否和数据格式一致？Modbus 数据要选 <code>modbus</code>。</li>
+                    <li>行文本是否以 <code>\n</code> 结尾？没有换行时数据会一直留在缓冲区（MQTT 消息不需要换行）。</li>
+                    <li>默认解析模式是否和数据格式一致？Modbus RTU 选 <code>modbus</code>，Modbus TCP 选 <code>modbus_tcp</code>。</li>
+                    <li>MQTT 的订阅主题是否覆盖设备发布的主题？只有一个数值的消息要用主题名绑定。</li>
                     <li>绑定字段或 JSON 路径是否和设备发送的字段名一致？字段名区分大小写。</li>
                     <li>是否写成了 <code>key:value</code>？请改为 <code>key=value</code> 或 JSON。</li>
                     <li>Modbus 是否设置了从站或功能码过滤？CRC 错误的帧会被丢弃。</li>
@@ -628,14 +758,18 @@ modbus_crc(bytes.fromhex("010300000003"))  <span class="muted"># → 05 CB</span
                 </div>
               </details>
               <details>
+                <summary>TCP 或 MQTT 连不上</summary>
+                <div><p>卡片状态会显示失败原因，例如连接被拒绝、用户名或密码错误。TCP 客户端请核对设备的 IP 和端口；服务端模式下，设备要连本机的 IP 和监听端口，系统防火墙也要允许连入。MQTT 启用 TLS 时请确认端口（常用 8883），broker 使用自签证书时需先把 CA 加入系统信任。“连接中”和“重连中”时可以点“断开”取消。</p></div>
+              </details>
+              <details>
                 <summary>曲线数据会保存多少</summary>
-                <div><p>显示缓存每条曲线最多 10,000 点，完整采样另存在临时文件中，“保存”会导出全部历史 CSV / JSON。清空曲线、停止预览或关闭控件后临时记录会释放，需要的数据请先保存。</p></div>
+                <div><p>显示缓存每条曲线最多 10,000 点，完整采样另存在临时文件中，“保存”会导出全部历史 CSV / JSON。清空曲线、停止预览或关闭控件后临时记录会释放，需要的数据请先保存。“加载”保存过的记录会以虚线叠加在实时曲线上，方便对比两次运行，“清除对比”移除叠加；“保存”只保存实时数据。</p></div>
               </details>
             </div>
             <p class="guide-footnote">更完整的字段说明见 GitHub 上的 <a href="https://github.com/txp666/PyQt-UI-Designer/blob/main/docs/protocol.md" target="_blank" rel="noreferrer">协议文档</a>，问题可提交到 <a href="https://github.com/txp666/PyQt-UI-Designer/issues" target="_blank" rel="noreferrer">Issues</a>。</p>
           </div>
           <div data-lang="en" hidden>
-            <h2><small>07</small>FAQ</h2>
+            <h2><small>08</small>FAQ</h2>
             <div class="guide-faq">
               <details>
                 <summary>Windows says “Windows protected your PC”</summary>
@@ -653,8 +787,9 @@ modbus_crc(bytes.fromhex("010300000003"))  <span class="muted"># → 05 CB</span
                 <summary>Connected, but widgets don't update</summary>
                 <div>
                   <ul>
-                    <li>Do text lines end with <code>\n</code>? Without it, data stays in the buffer.</li>
-                    <li>Does the default parse mode match the data? Modbus needs <code>modbus</code>.</li>
+                    <li>Do text lines end with <code>\n</code>? Without it, data stays in the buffer (MQTT messages don't need one).</li>
+                    <li>Does the default parse mode match the data? Modbus RTU needs <code>modbus</code>, Modbus TCP needs <code>modbus_tcp</code>.</li>
+                    <li>Do the MQTT subscriptions cover the topics the device publishes to? A message that is a bare number is bound by topic name.</li>
                     <li>Do the binding field or JSON path match the device's field names exactly? Names are case-sensitive.</li>
                     <li>Is the device sending <code>key:value</code>? Switch to <code>key=value</code> or JSON.</li>
                     <li>Are slave or function filters set for Modbus? Frames with bad CRCs are dropped.</li>
@@ -662,8 +797,12 @@ modbus_crc(bytes.fromhex("010300000003"))  <span class="muted"># → 05 CB</span
                 </div>
               </details>
               <details>
+                <summary>TCP or MQTT won't connect</summary>
+                <div><p>The card shows why, for example a refused connection or a wrong username or password. For a TCP client, check the device's IP and port. In server mode, the device must connect to this computer's IP and listening port, and the system firewall must allow it in. With MQTT over TLS, check the port (usually 8883), and if the broker uses a self-signed certificate, add its CA to the system trust first. While “连接中” (connecting) or “重连中” (reconnecting), “断开” (Disconnect) cancels the attempt.</p></div>
+              </details>
+              <details>
                 <summary>How much plot data is kept?</summary>
-                <div><p>Each curve keeps up to 10,000 points on screen; the full history goes to a temporary file, and “保存” (Save) exports all of it as CSV / JSON. The temporary record is released when you clear the plot, stop the preview or close the widget, so save what you need first.</p></div>
+                <div><p>Each curve keeps up to 10,000 points on screen; the full history goes to a temporary file, and “保存” (Save) exports all of it as CSV / JSON. The temporary record is released when you clear the plot, stop the preview or close the widget, so save what you need first. “加载” (Load) draws a saved recording over the live curves as dashed lines so you can compare two runs, and “清除对比” (clear comparison) removes it; “保存” saves only the live data.</p></div>
               </details>
             </div>
             <p class="guide-footnote">Field-by-field details are in the <a href="https://github.com/txp666/PyQt-UI-Designer/blob/main/docs/protocol.md" target="_blank" rel="noreferrer">protocol document</a> on GitHub (Chinese). Report problems in <a href="https://github.com/txp666/PyQt-UI-Designer/issues" target="_blank" rel="noreferrer">Issues</a>.</p>

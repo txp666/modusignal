@@ -486,6 +486,45 @@ html[lang="zh-CN"] .hero-title-line { white-space: nowrap; }
 
 .workspace-figure figcaption { padding: 0.7rem 1rem; border-top: 1px solid var(--soft-line); background: white; color: var(--muted); font-size: 0.72rem; }
 
+.workspace-copy li code { color: #8df2f5; font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 0.8rem; }
+
+/* Spaced like the editorial sections around it. */
+.preview-section { padding-block: 48px; border-bottom: 1px solid var(--line); background: var(--surface); }
+
+.preview-grid { display: grid; grid-template-columns: minmax(32rem, 1.3fr) minmax(16rem, 0.7fr); gap: clamp(2.5rem, 6vw, 5rem); align-items: center; }
+
+.preview-figure { overflow: hidden; margin: 0; border: 1px solid var(--line); border-radius: 0.8rem; background: var(--surface); }
+
+.preview-figure img { display: block; width: 100%; height: auto; }
+
+.preview-figure figcaption { padding: 0.7rem 1rem; border-top: 1px solid var(--soft-line); color: var(--muted); font-size: 0.72rem; }
+
+.preview-copy h2, .sibling-copy h2 { text-wrap: balance; }
+
+.link-list { display: grid; gap: 0.75rem; margin: 0; padding: 0; list-style: none; }
+
+.link-list li { display: grid; grid-template-columns: 3.6rem 1fr; gap: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--soft-line); font-size: 0.84rem; }
+
+.link-list strong { color: var(--accent-strong); font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 0.76rem; line-height: 1.9; }
+
+.link-list span { color: var(--muted); }
+
+.link-list code { color: var(--ink); font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 0.8rem; }
+
+.sibling-section { padding-block: 48px 0; }
+
+.sibling-card { display: flex; gap: 2rem; justify-content: space-between; align-items: flex-end; padding: clamp(1.6rem, 3.5vw, 2.6rem); border: 1px solid var(--line); border-radius: 0.8rem; background: var(--surface); }
+
+.sibling-copy { max-width: 46rem; }
+
+.sibling-copy h2 { margin-bottom: 0.8rem; font-size: clamp(1.5rem, 2.4vw, 2.1rem); line-height: 1.25; letter-spacing: -0.03em; }
+
+.sibling-copy > p:not(.eyebrow) { margin-bottom: 0.6rem; color: var(--muted); }
+
+.sibling-copy .sibling-note { margin: 0; font-size: 0.78rem; }
+
+.sibling-actions { display: flex; flex: none; flex-wrap: wrap; gap: 0.7rem; }
+
 .download-heading { display: flex; justify-content: space-between; align-items: flex-end; max-width: none; }
 
 .download-heading > div { max-width: 44rem; }
@@ -562,7 +601,8 @@ html[lang="zh-CN"] .hero-title-line { white-space: nowrap; }
   :root { --shell: min(100% - 2rem, 760px); }
   .site-header { grid-template-columns: 1fr auto; padding-inline: 1rem; }
   .site-nav { display: none; }
-  .hero, .workspace-grid, .workflow-grid { grid-template-columns: 1fr; min-height: auto; }
+  .hero, .workspace-grid, .workflow-grid, .preview-grid { grid-template-columns: 1fr; min-height: auto; }
+  .sibling-card { align-items: flex-start; flex-direction: column; }
   .hero { padding-block: 4rem 5.5rem; }
   .hero-copy { max-width: 42rem; }
   .feature-grid { grid-template-columns: repeat(2, 1fr); }
@@ -572,6 +612,11 @@ html[lang="zh-CN"] .hero-title-line { white-space: nowrap; }
   .download-card dl { margin-top: 1.5rem; }
   .control-flow { grid-template-columns: 1fr; }
   .flow-arrow { transform: rotate(90deg); text-align: center; }
+}
+
+@media (max-width: 700px) {
+  .preview-section { padding-block: 32px; }
+  .sibling-section { padding-top: 32px; }
 }
 
 @media (max-width: 640px) {
@@ -593,6 +638,8 @@ html[lang="zh-CN"] .hero-title-line { white-space: nowrap; }
   .download-note-links { justify-content: flex-start; }
   .workspace-grid { gap: 2rem; }
   .open-source-actions, .open-source-actions .button { width: 100%; }
+  .sibling-actions, .sibling-actions .button { width: 100%; }
+  .link-list li { grid-template-columns: 1fr; gap: 0.15rem; }
   .site-footer nav { flex-wrap: wrap; }
 }
 
@@ -803,6 +850,10 @@ html[lang="zh-CN"] .hero-title-line { white-space: nowrap; }
 .guide-section .guide-note p { margin: 0; color: var(--ink); font-size: 0.86rem; }
 
 .guide-note strong { color: var(--accent-strong); }
+
+.guide-hero-note { max-width: 46rem; margin: 1.25rem 0 0; font-size: 0.86rem; }
+
+.guide-hero-note a { color: var(--accent-strong); font-weight: 700; }
 
 .guide-frame { display: flex; flex-wrap: wrap; margin: 0 0 0.6rem; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
 

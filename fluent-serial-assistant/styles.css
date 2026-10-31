@@ -547,6 +547,16 @@ html[lang="zh-CN"] .hero-title-line { white-space: nowrap; }
 
 .site-footer nav { display: flex; gap: 1rem; }
 
+.screens-section { padding-block: clamp(5rem, 9vw, 8rem); }
+
+.screens-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; align-items: start; }
+
+.screens-grid figure { overflow: hidden; margin: 0; border: 1px solid var(--line); border-radius: 0.8rem; background: var(--surface); }
+
+.screens-grid img { display: block; width: 100%; height: auto; }
+
+.screens-grid figcaption { padding: 0.7rem 1rem; border-top: 1px solid var(--soft-line); color: var(--muted); font-size: 0.72rem; }
+
 @media (max-width: 960px) {
   :root { --shell: min(100% - 2rem, 760px); }
   .site-header { grid-template-columns: 1fr auto; padding-inline: 1rem; }
@@ -564,6 +574,7 @@ html[lang="zh-CN"] .hero-title-line { white-space: nowrap; }
 }
 
 @media (max-width: 640px) {
+  .screens-grid { grid-template-columns: 1fr; }
   .back-link { display: none; }
   .hero { padding-top: 3rem; }
   h1 { font-size: 2.7rem; }

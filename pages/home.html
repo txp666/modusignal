@@ -286,7 +286,7 @@
   <section class="panel aomaster-product-card" aria-labelledby="fluentSerialCardTitle">
     <div class="aomaster-product-media fluent-serial-card-media">
       <img
-        src="./fluent-serial-assistant/assets/show.gif"
+        src="./fluent-serial-assistant/assets/demo.gif"
         alt="Fluent 串口助手串口连接、终端日志与数据发送操作演示"
         width="1120"
         height="900"
@@ -294,7 +294,7 @@
       />
     </div>
     <div class="aomaster-product-content">
-      <span class="aomaster-product-kicker" data-i18n="home.fluentSerialKicker">桌面软件 · v0.1.11</span>
+      <span class="aomaster-product-kicker" data-i18n="home.fluentSerialKicker">桌面软件 · v0.1.21</span>
       <h2 id="fluentSerialCardTitle" data-i18n="home.fluentSerialTitle">Fluent 串口助手 · GUI、CLI 与 MCP</h2>
       <p data-i18n="home.fluentSerialDesc">支持文本/HEX 收发、协议解析、实时曲线和日志记录。CLI 与 MCP 复用 GUI 中的串口会话，可通过脚本或 AI 客户端控制连接、收发和绘图。</p>
       <div class="aomaster-product-highlights" aria-label="Fluent Serial Assistant highlights">
@@ -311,24 +311,52 @@
     </div>
   </section>
 
+  <section class="panel aomaster-product-card" aria-labelledby="fluentHmiCardTitle">
+    <div class="aomaster-product-media fluenthmi-card-media">
+      <img
+        src="./fluenthmi-studio/assets/designer.jpg"
+        alt="FluentHMI Studio 设计器界面：控件面板、画布与属性编辑器"
+        width="1389"
+        height="868"
+        loading="lazy"
+      />
+    </div>
+    <div class="aomaster-product-content">
+      <span class="aomaster-product-kicker" data-i18n="home.fluentHmiKicker">桌面软件 · v0.1.0</span>
+      <h2 id="fluentHmiCardTitle" data-i18n="home.fluentHmiTitle">FluentHMI Studio · C++ 上位机设计器</h2>
+      <p data-i18n="home.fluentHmiDesc">PyQt UI Designer 的 C++/Qt 6 重写版，直接打开同一种 .uidp 工程。拖拽控件，绑定串口、TCP 或 MQTT 数据，导出应用约 0.3 秒，不需要 Python 和编译器。</p>
+      <div class="aomaster-product-highlights" aria-label="FluentHMI Studio highlights">
+        <span>Windows · macOS</span>
+        <span data-i18n="home.fluentHmiWidgets">29 种控件 · 兼容 .uidp</span>
+        <span data-i18n="home.fluentHmiLinks">串口 · TCP · MQTT</span>
+        <span data-i18n="home.fluentHmiExport">秒级导出 · 在线更新</span>
+      </div>
+      <div class="panel-actions">
+        <a class="action-link" href="./fluenthmi-studio/" data-i18n="home.fluentHmiMore">查看软件介绍</a>
+        <a class="action-link" href="https://github.com/txp666/FluentHMI-Studio" target="_blank" rel="noopener noreferrer" data-i18n="home.fluentHmiSource">GitHub 开源</a>
+        <a class="ghost-button action-link" href="./fluenthmi-studio/#downloads" data-i18n="home.fluentHmiDownload">下载最新版</a>
+      </div>
+    </div>
+  </section>
+
   <section class="panel aomaster-product-card" aria-labelledby="pyqtDesignerCardTitle">
     <div class="aomaster-product-media pyqt-designer-card-media">
       <img
-        src="./pyqt-ui-designer/assets/designer.png"
+        src="./pyqt-ui-designer/assets/designer.jpg"
         alt="PyQt UI Designer 设计器界面：控件面板、画布与属性编辑器"
-        width="1500"
+        width="1440"
         height="900"
         loading="lazy"
       />
     </div>
     <div class="aomaster-product-content">
-      <span class="aomaster-product-kicker" data-i18n="home.pyqtDesignerKicker">桌面软件 · v0.1.3</span>
+      <span class="aomaster-product-kicker" data-i18n="home.pyqtDesignerKicker">桌面软件 · v0.1.6</span>
       <h2 id="pyqtDesignerCardTitle" data-i18n="home.pyqtDesignerTitle">PyQt UI Designer · 可视化上位机设计器</h2>
-      <p data-i18n="home.pyqtDesignerDesc">拖拽控件、配置属性并绑定串口数据，在设计器里直接预览运行。调通后导出可独立运行的 PyQt5 项目，或用 Nuitka 打包为 exe / .app。</p>
+      <p data-i18n="home.pyqtDesignerDesc">拖拽控件、配置属性，绑定串口、TCP 或 MQTT 数据，在设计器里直接预览运行。调通后导出可独立运行的 PyQt5 项目，或用 Nuitka 打包为 exe / .app。</p>
       <div class="aomaster-product-highlights" aria-label="PyQt UI Designer highlights">
         <span>Windows · macOS</span>
-        <span data-i18n="home.pyqtDesignerWidgets">27 种控件 · 拖拽设计</span>
-        <span data-i18n="home.pyqtDesignerBinding">键值 / JSON / HEX / Modbus 绑定</span>
+        <span data-i18n="home.pyqtDesignerWidgets">29 种控件 · 拖拽设计</span>
+        <span data-i18n="home.pyqtDesignerBinding">串口 · TCP · MQTT</span>
         <span data-i18n="home.pyqtDesignerExport">导出 Python · 一键打包</span>
       </div>
       <div class="panel-actions">

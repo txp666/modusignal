@@ -75,6 +75,7 @@ function injectStaticAssetVersion(version) {
     join(siteRoot, "hart-wiki"),
     join(siteRoot, "fluent-serial-assistant"),
     join(siteRoot, "pyqt-ui-designer"),
+    join(siteRoot, "fluenthmi-studio"),
     join(siteRoot, "pagebridge"),
   ];
 
@@ -98,6 +99,7 @@ function copyStaticAssets() {
     ["hartlink-studio", "hartlink-studio"],
     ["fluent-serial-assistant", "fluent-serial-assistant"],
     ["pyqt-ui-designer", "pyqt-ui-designer"],
+    ["fluenthmi-studio", "fluenthmi-studio"],
     ["pagebridge", "pagebridge"],
     [
       "images",
@@ -170,6 +172,7 @@ function injectContentSecurityPolicyHashes() {
     join(siteRoot, "fluent-serial-assistant", "index.html"),
     join(siteRoot, "pyqt-ui-designer", "index.html"),
     join(siteRoot, "pyqt-ui-designer", "guide", "index.html"),
+    join(siteRoot, "fluenthmi-studio", "index.html"),
     join(siteRoot, "pagebridge", "index.html"),
     join(siteRoot, "pagebridge", "tests", "index.html"),
   ];

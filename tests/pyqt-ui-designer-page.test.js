@@ -14,19 +14,23 @@ test("PyQt UI Designer page exposes GitHub Release downloads", async () => {
   const [html, script] = await Promise.all([readFile(pageUrl, "utf8"), readFile(scriptUrl, "utf8")]);
 
   assert.match(html, /PyQt UI Designer/);
-  assert.match(html, /"softwareVersion": "0\.1\.3"/);
-  assert.match(html, /PyQt-UI-Designer-v0\.1\.3-windows-x64\.zip/);
-  assert.match(html, /PyQt-UI-Designer-v0\.1\.3-macos-arm64\.zip/);
-  assert.match(html, /PyQt-UI-Designer-v0\.1\.3-macos-x64\.zip/);
+  assert.match(html, /"softwareVersion": "0\.1\.6"/);
+  assert.match(html, /PyQt-UI-Designer-v0\.1\.6-windows-x64\.zip/);
+  assert.match(html, /PyQt-UI-Designer-v0\.1\.6-macos-arm64\.zip/);
+  assert.match(html, /PyQt-UI-Designer-v0\.1\.6-macos-x64\.zip/);
   assert.match(html, /github\.com\/txp666\/PyQt-UI-Designer\/releases/);
   assert.match(html, /href="\.\/guide\/"/);
   assert.doesNotMatch(html, /temp<\/span>:/);
+  assert.match(html, /TCP 或 MQTT/);
+  assert.doesNotMatch(html, /正在开发中/);
+  assert.match(html, /href="\.\.\/fluenthmi-studio\/"/);
   assert.equal((html.match(/data-asset="/g) || []).length, 3);
   assert.equal((html.match(/<article class="download-card(?: recommended)?" data-platform=/g) || []).length, 3);
-  assert.match(html, /styles\.css\?v=20261020\.2/);
-  assert.match(html, /app\.js\?v=20261020\.3/);
+  assert.match(html, /styles\.css\?v=20261031\.1/);
+  assert.match(html, /app\.js\?v=20261031\.1/);
   assert.match(html, /id="workflow"/);
-  assert.match(html, /src="\.\/assets\/designer\.png"/);
+  assert.match(html, /src="\.\/assets\/designer\.jpg"/);
+  assert.match(html, /src="\.\/assets\/preview\.jpg"/);
   assert.match(html, /src="\.\/assets\/demo\.jpg"/);
 
   const copyKeys = new Set([...script.matchAll(/^\s{2}(\w+): \{ zh: /gm)].map((match) => match[1]));
@@ -55,7 +59,7 @@ test("modusignal home and production build include PyQt UI Designer", async () =
   assert.match(home, /href="\.\/pyqt-ui-designer\/"/);
   assert.match(home, /href="\.\/pyqt-ui-designer\/#downloads"/);
   assert.match(home, /href="https:\/\/github\.com\/txp666\/PyQt-UI-Designer"/);
-  assert.match(home, /src="\.\/pyqt-ui-designer\/assets\/designer\.png"/);
+  assert.match(home, /src="\.\/pyqt-ui-designer\/assets\/designer\.jpg"/);
   assert.ok(home.lastIndexOf("fluentSerialCardTitle") < home.lastIndexOf("pyqtDesignerCardTitle"));
   assert.ok(home.lastIndexOf("pyqtDesignerCardTitle") < home.lastIndexOf("architecture-card"));
   for (const [, key] of home.matchAll(/data-i18n="(home\.pyqtDesigner\w+)"/g)) {
@@ -77,7 +81,7 @@ test("PyQt UI Designer guide documents usage and protocols in both languages", a
     readFile(sitemapUrl, "utf8"),
   ]);
 
-  const sectionIds = ["quickstart", "serial", "receive", "send", "modbus", "export", "faq"];
+  const sectionIds = ["quickstart", "serial", "network", "receive", "send", "modbus", "export", "faq"];
   for (const id of sectionIds) {
     assert.match(html, new RegExp(`<section id="${id}" class="guide-section">`));
     assert.match(html, new RegExp(`<a href="#${id}">`));
@@ -92,8 +96,11 @@ test("PyQt UI Designer guide documents usage and protocols in both languages", a
   assert.match(html, /01 06 00 0A 01 F4 A9 DF/);
   assert.match(html, /01 03 06 03 E8 09 C4 00 64 02 DB/);
   assert.doesNotMatch(html, /A8 1B/);
+  // Modbus TCP request and response for the same read, as the MBAP encoder builds them.
+  assert.match(html, /00 01 00 00 00 06 01 03 00 00 00 03/);
+  assert.match(html, /00 01 00 00 00 09 01 03 06 03 E8 09 C4 00 64/);
 
-  assert.match(html, /href="\.\.\/styles\.css\?v=20261020\.2"/);
+  assert.match(html, /href="\.\.\/styles\.css\?v=20261031\.1"/);
   assert.match(html, /src="\.\/guide\.js\?v=20261020\.1"/);
   assert.match(html, /href="\.\.\/\.\.\/pages\/shared\/editorial\.css\?v=__ASSET_VERSION__"/);
 
@@ -102,6 +109,8 @@ test("PyQt UI Designer guide documents usage and protocols in both languages", a
     assert.ok(copyKeys.has(key), `missing copy for ${key}`);
   }
   assert.match(script, /pyqt-ui-designer-language/);
+  assert.match(html, /data-copy="fluentHmiNote"/);
+  assert.match(html, /href="\.\.\/\.\.\/fluenthmi-studio\/"/);
 
   assert.match(build, /join\(siteRoot, "pyqt-ui-designer", "guide", "index\.html"\)/);
   assert.match(sitemap, /https:\/\/modusignal\.cn\/pyqt-ui-designer\/guide\//);

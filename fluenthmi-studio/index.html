@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="FluentHMI Studio：面向硬件工程师的 C++/Qt 6 可视化上位机设计器。拖拽控件，绑定串口、TCP 或 MQTT 数据，预览运行，不到一秒导出独立应用，无需 Python 和编译器；兼容 PyQt UI Designer 的 .uidp 工程。" />
+  <meta name="keywords" content="FluentHMI Studio,上位机,上位机设计器,HMI,C++,Qt 6,FluentQtWidgets,串口,TCP,MQTT,Modbus RTU,Modbus TCP,可视化设计,低代码,PyQt UI Designer" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#f7fbfc" />
+  <meta name="color-scheme" content="light dark" />
+  <script>
+    (() => {
+      try {
+        const saved = localStorage.getItem("modusignal-theme");
+        const theme = saved === "light" || saved === "dark"
+          ? saved
+          : (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.style.colorScheme = theme;
+      } catch {}
+    })();
+  </script>
+  <link rel="canonical" href="https://modusignal.cn/fluenthmi-studio/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:locale" content="zh_CN" />
+  <meta property="og:site_name" content="modusignal" />
+  <meta property="og:title" content="FluentHMI Studio · C++ 可视化上位机设计器" />
+  <meta property="og:description" content="拖拽控件，绑定串口、TCP 或 MQTT 数据，不到一秒导出独立应用，无需 Python 和编译器。" />
+  <meta property="og:url" content="https://modusignal.cn/fluenthmi-studio/" />
+  <meta property="og:image" content="https://modusignal.cn/fluenthmi-studio/assets/designer.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <title>FluentHMI Studio · C++ 可视化上位机设计器</title>
+  <link rel="icon" href="../logo.ico" type="image/x-icon" />
+  <link rel="stylesheet" href="./styles.css?v=20261031.1" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "FluentHMI Studio",
+      "softwareVersion": "0.1.0",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Windows, macOS",
+      "license": "https://www.gnu.org/licenses/gpl-3.0.html",
+      "description": "面向硬件工程师的 C++/Qt 6 可视化上位机设计器，不需要编译器即可导出独立应用。",
+      "url": "https://modusignal.cn/fluenthmi-studio/",
+      "downloadUrl": "https://github.com/txp666/FluentHMI-Studio/releases/latest"
+    }
+  </script>
+  <link rel="stylesheet" href="../pages/shared/editorial.css?v=__ASSET_VERSION__" />
+</head>
+
+<body class="design-page">
+  <a class="skip-link" href="#mainContent" data-copy="skipLink">跳到主要内容</a>
+
+  <header class="site-header">
+    <a class="brand" href="#top" aria-label="FluentHMI Studio 首页">
+      <img src="./assets/logo.png" alt="" width="512" height="512" />
+      <span>
+        <strong>FluentHMI Studio</strong>
+        <small data-copy="brandTagline">C++ 可视化上位机设计器</small>
+      </span>
+    </a>
+    <nav class="site-nav" aria-label="产品页面导航">
+      <a href="#workflow" data-copy="navWorkflow">工作流程</a>
+      <a href="#capabilities" data-copy="navCapabilities">功能介绍</a>
+      <a href="#compare" data-copy="navCompare">与 Python 版相比</a>
+      <a href="../pyqt-ui-designer/guide/" data-copy="navGuide">使用说明</a>
+      <a href="#downloads" data-copy="navDownloads">下载</a>
+    </nav>
+    <div class="header-actions">
+      <button class="theme-button" type="button" data-theme-toggle aria-label="切换到深色主题" title="切换到深色主题">☾</button>
+      <button class="language-button" type="button" data-language-toggle aria-label="Switch to English">EN</button>
+      <a class="back-link" href="../" data-copy="backToModusignal">返回 modusignal</a>
+    </div>
+  </header>
+
+  <main id="mainContent">
+    <section id="top" class="hero section-shell">
+      <div class="hero-copy">
+        <div class="release-pill">
+          <span class="release-dot" aria-hidden="true"></span>
+          <span data-copy="stableRelease">最新稳定版</span>
+          <strong data-release-version>0.1.0</strong>
+          <span data-release-date>2026-10-27 发布</span>
+        </div>
+        <p class="eyebrow" data-copy="heroEyebrow">C++ / Qt 6 · 拖拽设计 · 秒级导出</p>
+        <h1 data-copy="heroTitle"><span class="hero-title-line">拖拽搭建上位机界面</span><span class="hero-title-line">不到一秒导出应用</span></h1>
+        <p class="hero-lede" data-copy="heroDescription">PyQt UI Designer 的 C++/Qt 6 重写版，界面基于 FluentQtWidgets。拖拽控件、配置属性，绑定串口、TCP 或 MQTT 数据，预览运行后直接导出独立应用，不需要 Python 和编译器。</p>
+        <div class="hero-actions">
+          <a
+            class="button button-primary"
+            data-primary-download
+            href="https://github.com/txp666/FluentHMI-Studio/releases/download/v0.1.0/FluentHMI-Studio-v0.1.0-windows-x64.zip"
+          >
+            <span data-copy="downloadNow">立即下载</span>
+            <small data-primary-download-label>Windows x64 · ZIP · 15.9 MB</small>
+          </a>
+          <a class="button button-secondary" href="#compare" data-copy="exploreCompare">与 Python 版相比</a>
+        </div>
+        <div class="hero-meta" aria-label="支持的平台与技术">
+          <span>C++17 · Qt 6</span>
+          <span>Serial · TCP · MQTT</span>
+          <span>Modbus RTU / TCP</span>
+          <span>Windows · macOS</span>
+        </div>
+        <p class="release-source" data-copy="releaseSource">下载信息来自 GitHub Releases，页面会自动检查最新稳定版。</p>
+      </div>
+
+      <div class="hero-visual">
+        <div class="app-window">
+          <div class="window-bar" aria-hidden="true">
+            <span></span><span></span><span></span>
+            <strong>FluentHMI Studio <span data-release-version>0.1.0</span></strong>
+          </div>
+          <img
+            src="./assets/designer.jpg"
+            alt="FluentHMI Studio 设计器界面：左侧控件面板，中间画布上是 MQTT 环境监测工程，右侧编辑选中仪表盘的属性和数据绑定"
+            width="1389"
+            height="868"
+            fetchpriority="high"
+          />
+        </div>
+        <div class="visual-caption">
+          <span data-copy="visualCaptionLead">29 种控件 · 兼容 .uidp 工程</span>
+          <strong data-copy="visualCaptionTitle">预览和导出的应用是同一个运行器</strong>
+        </div>
+      </div>
+    </section>
+
+    <section class="trust-strip" aria-label="产品亮点">
+      <div class="section-shell trust-grid">
+        <p><strong data-copy="trustOneTitle">直接打开 .uidp 工程</strong><span data-copy="trustOneDesc">PyQt UI Designer 做好的工程可以直接打开、预览和导出</span></p>
+        <p><strong data-copy="trustTwoTitle">导出不需要编译器</strong><span data-copy="trustTwoDesc">复制预编译的运行器，再放入工程和图片</span></p>
+        <p><strong data-copy="trustThreeTitle">安装包更小，启动更快</strong><span data-copy="trustThreeDesc">Windows 安装包约为 Python 版的三分之一，启动约快一倍</span></p>
+      </div>
+    </section>
+
+    <section id="workflow" class="workflow-section">
+      <div class="section-shell">
+        <header class="section-heading workflow-heading">
+          <p class="eyebrow" data-copy="workflowEyebrow">工作流程</p>
+          <h2 data-copy="workflowTitle">从画布到可以拷走的应用</h2>
+          <p data-copy="workflowDescription">设计画布上显示的就是真实的运行时控件。预览和导出的应用把同一批控件挂到同一个运行时上，由它接收链路数据、执行绑定、发送命令，所以预览里看到的就是导出后的效果。</p>
+        </header>
+
+        <div class="workflow-grid">
+          <div class="workflow-copy">
+            <div class="control-mode-list">
+              <article>
+                <span class="mode-mark" aria-hidden="true">RX</span>
+                <div>
+                  <p class="mode-label">data binding</p>
+                  <h3 data-copy="bindTitle">接收：数据绑定</h3>
+                  <p data-copy="bindDescription">行文本（键值 / JSON / CSV）、HEX 帧、Modbus RTU、Modbus TCP 四种解析；键值匹配、JSON 路径、HEX 字节提取、Modbus 四种绑定，支持 <code>value * 0.1</code> 这类转换表达式。</p>
+                </div>
+              </article>
+              <article>
+                <span class="mode-mark mode-mark-accent" aria-hidden="true">TX</span>
+                <div>
+                  <p class="mode-label">commands</p>
+                  <h3 data-copy="sendTitle">发送：命令配置</h3>
+                  <p data-copy="sendDescription">文本、HEX、Modbus 三种模式和 <code>{value}</code> 模板；Modbus 命令按每条链路的解析模式自动组 RTU 帧或 MBAP 帧。</p>
+                </div>
+              </article>
+            </div>
+            <a class="inline-link" href="../pyqt-ui-designer/guide/">
+              <span data-copy="viewGuide">查看使用说明与协议说明</span>
+              <span aria-hidden="true">→</span>
+            </a>
+          </div>
+
+          <div class="control-console" aria-label="Command-line examples">
+            <div class="console-bar">
+              <span></span><span></span><span></span>
+              <strong data-copy="consoleTitle">命令行</strong>
+            </div>
+            <div class="console-group">
+              <p><span>EXPORT</span><small data-copy="consoleExportLabel">不打开界面，直接导出应用</small></p>
+              <pre><code><span class="prompt">$</span> FluentHMIStudio --export out/ demo.uidp</code></pre>
+            </div>
+            <div class="console-group">
+              <p><span>CHECK</span><small data-copy="consoleCheckLabel">检查工程，例如 AI 写的工程</small></p>
+              <pre><code><span class="prompt">$</span> FluentHMIRuntime demo.uidp --check</code></pre>
+            </div>
+            <div class="console-group">
+              <p><span>SCREENSHOT</span><small data-copy="consoleShotLabel">把工程画面渲染成图片</small></p>
+              <pre><code><span class="prompt">$</span> FluentHMIRuntime demo.uidp --theme dark \
+    --screenshot widgets-dark.png</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="control-flow" aria-label="设计到导出的流程">
+          <div class="flow-node"><strong data-copy="flowDesign">设计界面</strong><span data-copy="flowDesignDetail">拖拽 · 对齐 · 容器嵌套</span></div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="flow-node"><strong data-copy="flowBind">绑定数据</strong><span data-copy="flowBindDetail">绑定键 · 解析模式 · 命令</span></div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="flow-node flow-node-accent"><strong data-copy="flowPreview">预览运行</strong><span data-copy="flowPreviewDetail">串口 · TCP · MQTT 实时测试</span></div>
+          <span class="flow-arrow" aria-hidden="true">→</span>
+          <div class="flow-node"><strong data-copy="flowExport">导出应用</strong><span data-copy="flowExportDetail">复制运行器 · 约 0.3 秒</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="preview" class="preview-section">
+      <div class="section-shell preview-grid">
+        <figure class="preview-figure">
+          <img
+            src="./assets/preview.jpg"
+            alt="FluentHMI Studio 预览运行：MQTT 环境监测工程已连接模拟设备，显示温湿度读数、仪表盘、运行指示灯、温湿度曲线和原始数据"
+            width="1389"
+            height="868"
+            loading="lazy"
+          />
+          <figcaption data-copy="previewCaption">同一份工程连上 MQTT 模拟设备后的预览运行</figcaption>
+        </figure>
+        <div class="preview-copy">
+          <header class="section-heading">
+            <p class="eyebrow" data-copy="previewEyebrow">预览运行</p>
+            <h2 data-copy="previewTitle">预览看到的就是导出后的效果</h2>
+            <p data-copy="previewDescription">串口、TCP、MQTT 三种链路可以同时连接，收到的数据进入同一套绑定、曲线、表格和日志。预览和导出的应用用的是同一个运行器。</p>
+          </header>
+          <ul class="link-list">
+            <li><strong>Serial</strong><span data-copy="linkSerial">扫描端口，可设波特率、数据位、校验位、停止位和流控。</span></li>
+            <li><strong>TCP</strong><span data-copy="linkTcp">客户端连接设备，或作为服务端等待设备连入；支持 Modbus TCP。</span></li>
+            <li><strong>MQTT</strong><span data-copy="linkMqtt">自带 MQTT 3.1.1 客户端：用户名密码、QoS 0/1/2、<code>+</code> / <code>#</code> 通配符订阅，TLS 使用系统证书库，连接成功后断开会自动重连。</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="capabilities" class="content-section section-shell">
+      <header class="section-heading">
+        <p class="eyebrow" data-copy="capabilitiesEyebrow">功能介绍</p>
+        <h2 data-copy="capabilitiesTitle">设计、通信、导出与更新</h2>
+        <p data-copy="capabilitiesDescription">控件、属性、解析模式、数据绑定和命令编码与 PyQt UI Designer 一一对应，换成原生编译的 C++ 实现，导出也不再需要编译。</p>
+      </header>
+      <div class="feature-grid">
+        <article>
+          <span class="feature-index">01</span>
+          <h3 data-copy="featureDesignerTitle">可视化设计</h3>
+          <p data-copy="featureDesignerDesc">29 种控件，网格吸附、缩放、适应窗口、对齐与等距分布；容器支持水平 / 垂直 / 弹性布局、分组框、卡片和选项卡嵌套。浅色、深色和跟随系统主题。</p>
+        </article>
+        <article>
+          <span class="feature-index">02</span>
+          <h3 data-copy="featureFormatTitle">工程格式兼容</h3>
+          <p data-copy="featureFormatDesc">直接读写 .uidp（版本 1.0），控件类型、属性名、默认值和枚举选项与 PyQt UI Designer 一一对应；解析与命令编码规则逐条移植，并有单元测试覆盖。</p>
+        </article>
+        <article>
+          <span class="feature-index">03</span>
+          <h3 data-copy="featureLinksTitle">串口、TCP 与 MQTT</h3>
+          <p data-copy="featureLinksDesc">三种链路可以同时连接。MQTT 每条消息视为一帧，只有一个数值的消息可以直接用主题名绑定；TCP 服务端可接入多个设备。</p>
+        </article>
+        <article>
+          <span class="feature-index">04</span>
+          <h3 data-copy="featureExportTitle">秒级导出</h3>
+          <p data-copy="featureExportDesc">导出时复制运行器、写入工程和用到的图片，并以应用名命名。导出的应用带着运行器和 Qt，可以直接拷到别的电脑上运行；macOS 导出的应用同样是 universal。</p>
+        </article>
+        <article>
+          <span class="feature-index">05</span>
+          <h3 data-copy="featureUpdateTitle">在线更新</h3>
+          <p data-copy="featureUpdateDesc">设置页检查更新，也可在启动时检查。下载本平台的安装包并校验 SHA-256，重启或退出时换上新版本；换不上时保留原来的版本。</p>
+        </article>
+        <article>
+          <span class="feature-index">06</span>
+          <h3 data-copy="featureAiTitle">让 AI 写工程</h3>
+          <p data-copy="featureAiDesc">.uidp 是 JSON 文件。把需求和仓库里的格式说明一起交给 AI，它就能直接写出工程，写完用 <code>FluentHMIRuntime 工程.uidp --check</code> 检查。</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="widgets" class="widgets-section">
+      <div class="section-shell">
+        <header class="section-heading">
+          <p class="eyebrow" data-copy="widgetsEyebrow">全部控件</p>
+          <h2 data-copy="widgetsTitle">29 种控件一览</h2>
+          <p data-copy="widgetsDescription">基础控件、布局容器、显示控件、图表和通信卡片，由运行器直接把工程画面渲染成图片。下图随页面的浅色 / 深色主题切换。</p>
+        </header>
+        <figure class="widgets-figure">
+          <img
+            class="widgets-light"
+            src="./assets/widgets-light.jpg"
+            alt="FluentHMI Studio 控件一览（浅色主题）：基础控件、布局容器、显示控件、实时曲线、数据收发，以及串口、TCP、MQTT、Modbus 配置卡片"
+            width="1800"
+            height="707"
+            loading="lazy"
+          />
+          <img
+            class="widgets-dark"
+            src="./assets/widgets-dark.jpg"
+            alt="FluentHMI Studio 控件一览（深色主题）：基础控件、布局容器、显示控件、实时曲线、数据收发，以及串口、TCP、MQTT、Modbus 配置卡片"
+            width="1800"
+            height="707"
+            loading="lazy"
+          />
+        </figure>
+      </div>
+    </section>
+
+    <section id="compare" class="compare-section section-shell">
+      <header class="section-heading">
+        <p class="eyebrow" data-copy="compareEyebrow">版本对比</p>
+        <h2 data-copy="compareTitle">同一种工程，不同的实现与导出</h2>
+        <p data-copy="compareDescription">两者使用同一种 .uidp 工程格式，控件、解析模式、数据绑定和命令编码规则一致；不同之处在实现和导出方式。</p>
+      </header>
+      <div class="compare-wrap">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th scope="col"><span class="visually-hidden" data-copy="compareItem">项目</span></th>
+              <th scope="col">FluentHMI Studio 0.1.0</th>
+              <th scope="col">PyQt UI Designer 0.1.6</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row" data-copy="compareImpl">实现</th><td data-copy="compareImplHmi">C++17 / Qt 6，原生编译</td><td data-copy="compareImplPy">Python / PyQt5（Qt 5），用 Nuitka 打包</td></tr>
+            <tr><th scope="row" data-copy="compareExport">导出应用</th><td data-copy="compareExportHmi">复制预编译的运行器，再放入工程和图片，约 0.3 秒，不需要 Python 和编译器</td><td data-copy="compareExportPy">生成 Python 源码，再用 Nuitka 编译；下载的设计器要打包时需另装 Python 与编译工具</td></tr>
+            <tr><th scope="row" data-copy="comparePreview">预览与导出</th><td data-copy="comparePreviewHmi">预览和导出的应用是同一个运行器</td><td data-copy="comparePreviewPy">预览在设计器内运行，导出的是另外生成的代码</td></tr>
+            <tr><th scope="row" data-copy="compareWindows">Windows 安装包</th><td>15.9 MB</td><td>51.7 MB</td></tr>
+            <tr><th scope="row" data-copy="compareMac">macOS 安装包</th><td data-copy="compareMacHmi">一个 universal 包，31.1 MB，Apple Silicon 与 Intel 通用；导出的应用同样是 universal</td><td data-copy="compareMacPy">arm64、x64 各一个包，51.3 / 59.9 MB；打包只生成本机架构的程序</td></tr>
+            <tr><th scope="row" data-copy="compareLaunch">启动到出现窗口</th><td data-copy="compareLaunchHmi">0.7–1.1 秒</td><td data-copy="compareLaunchPy">1.5–2.2 秒</td></tr>
+            <tr><th scope="row" data-copy="compareMemory">启动后内存</th><td>71–85 MB</td><td>126–137 MB</td></tr>
+            <tr><th scope="row" data-copy="compareUpdate">更新</th><td data-copy="compareUpdateHmi">应用内检查、下载、校验并替换，可设为启动时检查</td><td data-copy="compareUpdatePy">设置页手动检查，有新版本时打开下载页</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="compare-note" data-copy="compareNote">安装包大小取自两者的 GitHub Release。启动时间和内存在同一台 Mac（Apple M5 Pro）上用两个版本的 Apple Silicon 程序测得：空工程，各启动 4 次取后 3 次，内存为窗口出现 5 秒后的常驻内存。导出时间是导出示例工程三次的耗时（0.26–0.41 秒）。</p>
+      <div class="sibling-card">
+        <div class="sibling-copy">
+          <p class="eyebrow" data-copy="pythonEyebrow">暂未移植的功能</p>
+          <h2 data-copy="pythonTitle">这些功能暂时还在 PyQt UI Designer</h2>
+          <p data-copy="pythonDescription">导出可以继续修改的源码工程，以及实时曲线的游标和数据保存 / 加载，目前只有 Python 版提供。需要这些功能时，请继续使用 PyQt UI Designer。</p>
+        </div>
+        <div class="sibling-actions">
+          <a class="button button-secondary" href="../pyqt-ui-designer/" data-copy="pythonMore">了解 PyQt UI Designer</a>
+        </div>
+      </div>
+    </section>
+
+    <section id="downloads" class="download-section section-shell">
+      <header class="section-heading download-heading">
+        <div>
+          <p class="eyebrow"><span data-copy="downloadEyebrow">最新稳定版</span> <span data-release-version>0.1.0</span></p>
+          <h2 data-copy="downloadTitle">下载运行包</h2>
+          <p class="download-lede" data-copy="downloadDescription">解压即可运行，无需另装 Qt。包里只有一份 Qt，Studio 和运行器共用；导出的应用会复制运行器及其 Qt。</p>
+        </div>
+        <a class="release-link" data-release-page href="https://github.com/txp666/FluentHMI-Studio/releases/latest" target="_blank" rel="noreferrer">
+          <span data-copy="viewRelease">在 GitHub 查看 Release</span>
+          <span aria-hidden="true">↗</span>
+        </a>
+      </header>
+
+      <div class="download-grid download-grid-two">
+        <article class="download-card recommended" data-platform="windows">
+          <header><span>Windows</span><strong data-copy="recommended">推荐</strong></header>
+          <h3>Windows x64</h3>
+          <p data-copy="windowsDescription">解压后运行 FluentHMIStudio.exe。Studio 与运行器 FluentHMIRuntime.exe 在同一目录，共用 Qt DLL。</p>
+          <dl><div><dt data-copy="format">格式</dt><dd>ZIP</dd></div><div><dt data-copy="size">大小</dt><dd data-asset-size="windows">15.9 MB</dd></div></dl>
+          <span class="package-includes" data-copy="packageIncludes">内置 Qt</span>
+          <a class="button button-download" data-asset="windows" href="https://github.com/txp666/FluentHMI-Studio/releases/download/v0.1.0/FluentHMI-Studio-v0.1.0-windows-x64.zip" data-copy="downloadWindows">下载 Windows 版</a>
+        </article>
+
+        <article class="download-card" data-platform="macos">
+          <header><span>macOS</span><strong>Apple Silicon · Intel</strong></header>
+          <h3>macOS universal</h3>
+          <p data-copy="macDescription">一个包同时支持 Apple Silicon 与 Intel。解压后先把 FluentHMI Studio.app 移到“应用程序”文件夹再打开，在线更新才能直接替换。</p>
+          <dl><div><dt data-copy="format">格式</dt><dd>ZIP</dd></div><div><dt data-copy="size">大小</dt><dd data-asset-size="macos">31.1 MB</dd></div></dl>
+          <span class="package-includes" data-copy="packageIncludes">内置 Qt</span>
+          <a class="button button-download" data-asset="macos" href="https://github.com/txp666/FluentHMI-Studio/releases/download/v0.1.0/FluentHMI-Studio-v0.1.0-macos-universal.zip" data-copy="downloadMac">下载 macOS 版</a>
+        </article>
+      </div>
+      <p class="download-note">
+        <span data-copy="downloadNote">下载按钮直接连接 GitHub Release 附件，每个包都提供 .zip.sha256 校验文件。Mac 版只做了 ad hoc 签名，未做 Developer ID 签名与公证，第一次打开需要在“系统设置 → 隐私与安全性”中点“仍要打开”；Windows 版未做 Authenticode 签名，SmartScreen 提示时点“更多信息 → 仍要运行”。</span>
+        <span class="download-note-links">
+          <a href="../pyqt-ui-designer/guide/" data-copy="guideLink">使用说明</a>
+          <a href="https://github.com/txp666/FluentHMI-Studio#构建" target="_blank" rel="noreferrer" data-copy="buildFromSource">从源码构建</a>
+          <a href="https://github.com/txp666/FluentHMI-Studio/blob/main/README_EN.md" target="_blank" rel="noreferrer" data-copy="englishReadme">English README</a>
+          <a href="https://github.com/txp666/FluentHMI-Studio" target="_blank" rel="noreferrer" data-copy="sourceCode">查看源代码</a>
+        </span>
+      </p>
+    </section>
+
+    <section class="open-source-section">
+      <div class="section-shell open-source-card">
+        <div>
+          <p class="eyebrow" data-copy="openEyebrow">开放源码</p>
+          <h2 data-copy="openTitle">源码、许可证与路线图</h2>
+          <p data-copy="openDescription">FluentHMI Studio 基于 C++17、Qt 6 与 FluentQtWidgets 构建，采用 GPL-3.0 许可证。路线图包括撤销 / 重做、复制 / 粘贴，实时曲线的完整历史记录与游标，导出 C++/CMake 源码工程，以及 UDP、蓝牙和英文界面。</p>
+        </div>
+        <div class="open-source-actions">
+          <a class="button button-primary" href="https://github.com/txp666/FluentHMI-Studio" target="_blank" rel="noreferrer" data-copy="githubRepository">GitHub 仓库</a>
+          <a class="button button-secondary" href="https://github.com/txp666/FluentHMI-Studio/issues" target="_blank" rel="noreferrer" data-copy="reportIssue">反馈问题</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer section-shell">
+    <p><strong>FluentHMI Studio</strong><span data-copy="footerTagline">面向硬件工程师的 C++ 可视化上位机设计工具。</span></p>
+    <nav aria-label="页脚导航">
+      <a href="#workflow" data-copy="navWorkflow">工作流程</a>
+      <a href="#capabilities" data-copy="navCapabilities">功能介绍</a>
+      <a href="#compare" data-copy="navCompare">与 Python 版相比</a>
+      <a href="../pyqt-ui-designer/guide/" data-copy="navGuide">使用说明</a>
+      <a href="#downloads" data-copy="navDownloads">下载</a>
+      <a href="../" data-copy="backToModusignal">返回 modusignal</a>
+    </nav>
+  </footer>
+
+  <script src="./app.js?v=20261031.1" defer></script>
+</body>
+
+</html>

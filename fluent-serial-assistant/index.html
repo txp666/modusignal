@@ -5,7 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Fluent 串口助手：支持文本/HEX 收发、协议解析、日志与实时曲线，提供 GUI、CLI 和 stdio MCP 接口。" />
-  <meta name="keywords" content="Fluent串口助手,串口助手,串口调试,Serial Port,CLI,MCP,AI,HEX,Modbus RTU,实时曲线,协议模板" />
+  <meta name="keywords" content="Fluent串口助手,串口助手,串口调试,Serial Port,CLI,MCP,AI,HEX,Modbus RTU,实时曲线,协议模板,帧协议编辑器,虚拟串口" />
   <meta name="robots" content="index, follow" />
   <meta name="theme-color" content="#f7fbfc" />
   <meta name="color-scheme" content="light dark" />
@@ -32,14 +32,14 @@
   <meta name="twitter:card" content="summary_large_image" />
   <title>Fluent 串口助手 · GUI、CLI 与 MCP 串口工作台</title>
   <link rel="icon" href="../logo.ico" type="image/x-icon" />
-  <link rel="stylesheet" href="./styles.css?v=20260729.1" />
+  <link rel="stylesheet" href="./styles.css?v=20261031.1" />
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "Fluent Serial Assistant",
       "alternateName": "Fluent 串口助手",
-      "softwareVersion": "0.1.11",
+      "softwareVersion": "0.1.21",
       "applicationCategory": "DeveloperApplication",
       "operatingSystem": "Windows, macOS, Linux",
       "license": "https://www.gnu.org/licenses/gpl-3.0.html",
@@ -81,8 +81,8 @@
         <div class="release-pill">
           <span class="release-dot" aria-hidden="true"></span>
           <span data-copy="stableRelease">最新稳定版</span>
-          <strong data-release-version>0.1.11</strong>
-          <span data-release-date>2026-07-29 发布</span>
+          <strong data-release-version>0.1.21</strong>
+          <span data-release-date>2026-10-30 发布</span>
         </div>
         <p class="eyebrow" data-copy="heroEyebrow">GUI · CLI · MCP · 跨平台</p>
         <h1 data-copy="heroTitle"><span class="hero-title-line">串口收发与协议调试</span><span class="hero-title-line">支持 CLI / MCP 控制</span></h1>
@@ -91,10 +91,10 @@
           <a
             class="button button-primary"
             data-primary-download
-            href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.11/FluentSerialAssistant-0.1.11-windows-x64-setup.exe"
+            href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.21/FluentSerialAssistant-0.1.21-windows-x64-setup.exe"
           >
             <span data-copy="downloadNow">立即下载</span>
-            <small data-primary-download-label>Windows x64 · EXE · 16.8 MB</small>
+            <small data-primary-download-label>Windows x64 · EXE · 17.0 MB</small>
           </a>
           <a class="button button-secondary" href="#ai-control" data-copy="exploreAiControl">了解 CLI / MCP</a>
         </div>
@@ -111,11 +111,11 @@
         <div class="app-window">
           <div class="window-bar" aria-hidden="true">
             <span></span><span></span><span></span>
-            <strong>Fluent 串口助手 <span data-release-version>0.1.11</span></strong>
+            <strong>Fluent 串口助手 <span data-release-version>0.1.21</span></strong>
           </div>
           <img
-            src="./assets/show.gif"
-            alt="Fluent 串口助手终端工作台，左侧配置串口参数，右侧查看收发日志"
+            src="./assets/demo.gif"
+            alt="Fluent 串口助手操作演示：两个会话通过内置虚拟串口对互相收发，左侧配置串口参数，右侧查看收发日志"
             width="1120"
             height="900"
             fetchpriority="high"
@@ -211,18 +211,18 @@
       <header class="section-heading">
         <p class="eyebrow" data-copy="capabilitiesEyebrow">功能介绍</p>
         <h2 data-copy="capabilitiesTitle">收发、解析、记录与绘图</h2>
-        <p data-copy="capabilitiesDescription">支持多标签串口会话、协议模板、宏命令和 JavaScript 自动化，可按调试任务配置日志与曲线。</p>
+        <p data-copy="capabilitiesDescription">支持多标签串口会话、帧协议模板、宏命令和 JavaScript 自动化，可按调试任务配置日志与曲线窗口。</p>
       </header>
       <div class="feature-grid">
         <article>
           <span class="feature-index">01</span>
           <h3 data-copy="featureTerminalTitle">串口终端</h3>
-          <p data-copy="featureTerminalDesc">独立配置收发编码，支持文本、HEX、混合显示、搜索过滤、时间戳、自动断帧与多标签会话。</p>
+          <p data-copy="featureTerminalDesc">独立配置收发编码，支持文本、HEX、混合显示、搜索过滤、内容着色、时间戳、自动断帧与多标签会话。</p>
         </article>
         <article>
           <span class="feature-index">02</span>
           <h3 data-copy="featureProtocolTitle">协议与校验工具</h3>
-          <p data-copy="featureProtocolDesc">用协议模板拆解帧结构，内置 Modbus RTU 与常见 CRC、LRC、XOR、SUM8 计算及发送追加。</p>
+          <p data-copy="featureProtocolDesc">在可视化编辑器中定义帧头、长度、命令、载荷、校验和帧尾；内置 Modbus RTU 与 CRC、LRC、XOR、SUM8，发送时可自动追加校验并跳过帧头帧尾。</p>
         </article>
         <article>
           <span class="feature-index">03</span>
@@ -232,17 +232,17 @@
         <article>
           <span class="feature-index">04</span>
           <h3 data-copy="featureVisualTitle">实时曲线与导出</h3>
-          <p data-copy="featureVisualDesc">从分隔值、键值对或 JSON 中提取多通道数值，绘制实时曲线并导出 CSV；CLI/MCP 也可打开和配置曲线。</p>
+          <p data-copy="featureVisualDesc">同时打开多个独立曲线窗口，从全部数字、分隔值、键值对、JSON 或二进制字段中提取数值，实时绘图并导出 CSV；CLI/MCP 也可打开和配置曲线。</p>
         </article>
         <article>
           <span class="feature-index">05</span>
           <h3 data-copy="featureSendTitle">发送工具</h3>
-          <p data-copy="featureSendDesc">支持保存常用数据包、查看发送历史、循环发送、自动应答和分块文件发送。</p>
+          <p data-copy="featureSendDesc">支持保存常用数据包、查看发送历史、循环发送、自动应答和分块文件发送；内置虚拟串口对，没有硬件也能测试双向通信。</p>
         </article>
         <article>
           <span class="feature-index">06</span>
-          <h3 data-copy="featureRecordTitle">日志与会话恢复</h3>
-          <p data-copy="featureRecordDesc">自动日志支持 TXT、CSV、BIN 与滚动存储；会话参数、规则和测试配置可在下次启动时恢复。</p>
+          <h3 data-copy="featureRecordTitle">日志、恢复与更新</h3>
+          <p data-copy="featureRecordDesc">自动日志支持 TXT、CSV、BIN 与滚动存储；会话参数、规则和测试配置可在下次启动时恢复。应用内检查更新，确认后自动下载、校验并安装。</p>
         </article>
       </div>
     </section>
@@ -251,23 +251,54 @@
       <div class="section-shell workspace-grid">
         <div class="workspace-copy">
           <p class="eyebrow" data-copy="workspaceEyebrow">界面截图</p>
-          <h2 data-copy="workspaceTitle">串口连接、终端与发送区</h2>
-          <p data-copy="workspaceDescription">左侧设置串口和接收选项，主区域显示终端记录、搜索和统计，底部输入发送内容。支持浅色、深色和系统主题。</p>
+          <h2 data-copy="workspaceTitle">多标签会话、终端与发送区</h2>
+          <p data-copy="workspaceDescription">左侧可折叠的卡片设置连接、接收、协议模板、发送、Modbus 和常用包，主区域显示终端记录，顶部实时统计收发速率和累计流量，底部输入发送内容。支持浅色、深色和系统主题。</p>
           <ul>
             <li data-copy="workspacePointOne">扫描端口并显示描述、厂商、VID / PID 与序列号</li>
-            <li data-copy="workspacePointTwo">RX / TX 统一记录，实时显示流量、速率和连接时长</li>
-            <li data-copy="workspacePointThree">简体中文与 English 可即时切换，无需重启</li>
+            <li data-copy="workspacePointTwo">内容着色：内置 ESP-IDF 日志、日志等级、AT 指令响应等预设，也可按关键词或正则自定义</li>
+            <li data-copy="workspacePointThree">内置虚拟串口对：两个会话分别连接 VIRTUAL-A 和 VIRTUAL-B 即可互相收发</li>
+            <li data-copy="workspacePointFour">简体中文与 English 可即时切换，无需重启</li>
           </ul>
         </div>
         <figure class="workspace-figure">
           <img
-            src="./assets/show.png"
-            alt="Fluent 串口助手主界面"
-            width="1116"
-            height="900"
+            src="./assets/main-window.jpg"
+            alt="Fluent 串口助手终端工作台：左侧折叠卡片配置连接，终端按日志等级着色，顶部显示收发速率和累计流量"
+            width="1400"
+            height="901"
             loading="lazy"
           />
-          <figcaption data-copy="workspaceCaption">Fluent 串口助手终端工作台</figcaption>
+          <figcaption data-copy="workspaceCaption">终端工作台：多标签会话、日志着色和流量统计</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="screens" class="screens-section section-shell">
+      <header class="section-heading">
+        <p class="eyebrow" data-copy="screensEyebrow">曲线与协议</p>
+        <h2 data-copy="screensTitle">曲线窗口与帧协议编辑器</h2>
+        <p data-copy="screensDescription">曲线窗口按协议提取字段并实时绘图，同一会话可以同时打开多个；帧协议编辑器用彩色字节标出帧结构，编辑字段或样例即可看到解析值和校验结果。</p>
+      </header>
+      <div class="screens-grid">
+        <figure>
+          <img
+            src="./assets/plot-window.jpg"
+            alt="曲线窗口：按键值对协议提取 temperature、humidity、fan 三个字段并实时绘图"
+            width="1120"
+            height="667"
+            loading="lazy"
+          />
+          <figcaption data-copy="plotCaption">曲线窗口：按协议提取字段并实时绘图</figcaption>
+        </figure>
+        <figure>
+          <img
+            src="./assets/protocol-editor.jpg"
+            alt="帧协议编辑器：左侧配置帧头、长度、命令和载荷字段，右侧用彩色字节显示样例帧并列出各字段的解析值和校验结果"
+            width="1120"
+            height="739"
+            loading="lazy"
+          />
+          <figcaption data-copy="editorCaption">帧协议编辑器：字节结构、字段和校验一目了然</figcaption>
         </figure>
       </div>
     </section>
@@ -275,9 +306,9 @@
     <section id="downloads" class="download-section section-shell">
       <header class="section-heading download-heading">
         <div>
-          <p class="eyebrow"><span data-copy="downloadEyebrow">最新稳定版</span> <span data-release-version>0.1.11</span></p>
+          <p class="eyebrow"><span data-copy="downloadEyebrow">最新稳定版</span> <span data-release-version>0.1.21</span></p>
           <h2 data-copy="downloadTitle">下载安装包</h2>
-          <p class="download-lede" data-copy="downloadDescription">Windows、macOS 与 Linux 安装包均已包含命令行和 MCP 服务程序。</p>
+          <p class="download-lede" data-copy="downloadDescription">Windows、macOS 与 Linux 安装包均已包含命令行和 MCP 服务程序。v0.1.14 及更新版本可在应用内检查更新。</p>
         </div>
         <a class="release-link" data-release-page href="https://github.com/txp666/FluentSerialAssistant/releases/latest" target="_blank" rel="noreferrer">
           <span data-copy="viewRelease">在 GitHub 查看 Release</span>
@@ -290,18 +321,18 @@
           <header><span>Windows</span><strong data-copy="recommended">推荐</strong></header>
           <h3>Windows x64</h3>
           <p data-copy="windowsDescription">Inno Setup 安装包会请求管理员权限，并默认安装到 Windows 的 Program Files 目录。</p>
-          <dl><div><dt data-copy="format">格式</dt><dd>EXE</dd></div><div><dt data-copy="size">大小</dt><dd data-asset-size="windows">16.8 MB</dd></div></dl>
+          <dl><div><dt data-copy="format">格式</dt><dd>EXE</dd></div><div><dt data-copy="size">大小</dt><dd data-asset-size="windows">17.0 MB</dd></div></dl>
           <span class="package-includes" data-copy="packageIncludes">GUI + CLI + MCP</span>
-          <a class="button button-download" data-asset="windows" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.11/FluentSerialAssistant-0.1.11-windows-x64-setup.exe" data-copy="downloadWindows">下载 Windows 版</a>
+          <a class="button button-download" data-asset="windows" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.21/FluentSerialAssistant-0.1.21-windows-x64-setup.exe" data-copy="downloadWindows">下载 Windows 版</a>
         </article>
 
         <article class="download-card" data-platform="macos">
           <header><span>macOS</span><strong>Apple Silicon</strong></header>
           <h3>macOS arm64</h3>
           <p data-copy="macDescription">打开 DMG，将 Fluent Serial Assistant 拖入“应用程序”文件夹。</p>
-          <dl><div><dt data-copy="format">格式</dt><dd>DMG</dd></div><div><dt data-copy="size">大小</dt><dd data-asset-size="macos">29.2 MB</dd></div></dl>
+          <dl><div><dt data-copy="format">格式</dt><dd>DMG</dd></div><div><dt data-copy="size">大小</dt><dd data-asset-size="macos">29.4 MB</dd></div></dl>
           <span class="package-includes" data-copy="packageIncludes">GUI + CLI + MCP</span>
-          <a class="button button-download" data-asset="macos" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.11/FluentSerialAssistant-0.1.11-macos-arm64.dmg" data-copy="downloadMac">下载 macOS 版</a>
+          <a class="button button-download" data-asset="macos" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.21/FluentSerialAssistant-0.1.21-macos-arm64.dmg" data-copy="downloadMac">下载 macOS 版</a>
         </article>
 
         <article class="download-card" data-platform="linux">
@@ -310,13 +341,13 @@
           <p data-copy="linuxDescription">适用于 x64 或 64 位 ARM 的 Debian、Ubuntu 及其衍生发行版，可使用 APT 安装。</p>
           <dl>
             <div><dt data-copy="format">格式</dt><dd>DEB</dd></div>
-            <div><dt>x64</dt><dd data-asset-size="linux-x64">28.9 MB</dd></div>
-            <div><dt>arm64</dt><dd data-asset-size="linux-arm64">28.7 MB</dd></div>
+            <div><dt>x64</dt><dd data-asset-size="linux-x64">29.1 MB</dd></div>
+            <div><dt>arm64</dt><dd data-asset-size="linux-arm64">28.9 MB</dd></div>
           </dl>
           <div class="download-card-actions">
             <span class="package-includes" data-copy="packageIncludes">GUI + CLI + MCP</span>
-            <a class="button button-download" data-asset="linux-x64" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.11/FluentSerialAssistant-0.1.11-linux-x64.deb" data-copy="downloadLinuxX64">下载 Linux x64 版</a>
-            <a class="button button-download" data-asset="linux-arm64" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.11/FluentSerialAssistant-0.1.11-linux-arm64.deb" data-copy="downloadLinuxArm64">下载 Linux arm64 版</a>
+            <a class="button button-download" data-asset="linux-x64" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.21/FluentSerialAssistant-0.1.21-linux-x64.deb" data-copy="downloadLinuxX64">下载 Linux x64 版</a>
+            <a class="button button-download" data-asset="linux-arm64" href="https://github.com/txp666/FluentSerialAssistant/releases/download/v0.1.21/FluentSerialAssistant-0.1.21-linux-arm64.deb" data-copy="downloadLinuxArm64">下载 Linux arm64 版</a>
           </div>
         </article>
       </div>
@@ -355,7 +386,7 @@
     </nav>
   </footer>
 
-  <script src="./app.js?v=20260729.1" defer></script>
+  <script src="./app.js?v=20261031.1" defer></script>
 </body>
 
 </html>
