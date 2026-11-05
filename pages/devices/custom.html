@@ -1,0 +1,169 @@
+<section id="customPage" class="device-page" data-page-id="custom" data-compact-tabs="custom">
+  <section class="panel custom-command-panel">
+    <div class="panel-heading split">
+      <div>
+        <h2 data-i18n="customTools.title">常用指令</h2>
+        <p id="customQuickConnection">连接设备后可发送</p>
+      </div>
+      <div class="panel-actions">
+        <button id="customQuickImport" class="ghost-button" type="button" data-i18n="customTools.import">导入</button>
+        <button id="customQuickExport" class="ghost-button" type="button" data-i18n="customTools.export">导出</button>
+        <input id="customQuickFile" type="file" accept=".json,application/json" hidden />
+      </div>
+    </div>
+    <div class="custom-command-library">
+      <div class="custom-command-list-heading">
+        <h3 data-i18n="customTools.library">已存指令</h3>
+        <span id="customQuickCount">0 / 50</span>
+      </div>
+      <ul id="customQuickLibrary" class="custom-command-list" data-i18n-aria-label="customTools.library" aria-label="已存指令"></ul>
+      <p id="customQuickEmpty" class="custom-command-empty" data-i18n="customTools.empty">还没有保存的指令。在下方填写后点“保存指令”，之后可在这里一键发送。</p>
+    </div>
+    <div class="custom-command-save">
+      <h3 id="customQuickEditorTitle">新指令</h3>
+      <button id="customQuickNew" class="ghost-button" type="button" data-i18n="customTools.new">新建</button>
+      <button id="customQuickDelete" class="ghost-button" type="button" data-i18n="customTools.remove">移除</button>
+      <button id="customQuickSave" class="ghost-button" type="button" data-i18n="customTools.save">保存指令</button>
+    </div>
+    <label class="custom-command-name"><span data-i18n="customTools.name">指令名称</span><input id="customQuickName" type="text" maxlength="60" data-i18n-placeholder="customTools.namePlaceholder" placeholder="例如：读取版本" /></label>
+    <div class="custom-command-options">
+      <label><span data-i18n="custom.format">格式</span><select id="customQuickFormat"><option value="ascii" data-i18n="customTools.text">文本 UTF-8</option><option value="hex">HEX</option></select></label>
+      <label><span data-i18n="custom.lineEnding">行尾</span><select id="customQuickEnding"><option value="" data-i18n="common.none">无</option><option value="\n">LF</option><option value="\r">CR</option><option value="\r\n" selected>CRLF</option></select></label>
+      <label><span data-i18n="customTools.checksum">追加校验</span><select id="customQuickChecksum"><option value="none" data-i18n="common.none">无</option><option value="modbus">Modbus CRC16</option><option value="sum8">SUM8</option><option value="xor8">XOR8</option></select></label>
+    </div>
+    <label class="custom-command-escapes"><input id="customQuickEscapes" type="checkbox" /><span data-i18n="customTools.escapes">解析转义字符</span><code>\r \n \t \xHH \\</code></label>
+    <div class="custom-command-editor">
+      <div class="custom-command-send">
+        <label for="customQuickPayload" data-i18n="customTools.payload">发送内容</label>
+        <button id="customQuickSend" type="button" disabled data-i18n="customTools.send" data-i18n-title="customTools.shortcut" title="⌘ / Ctrl + Enter 发送">发送一次</button>
+      </div>
+      <textarea id="customQuickPayload" rows="3" maxlength="8192" spellcheck="false" data-i18n-placeholder="customTools.payloadPlaceholder" placeholder="文本：READ?　HEX：01 03 00 00 00 02"></textarea>
+    </div>
+    <div class="custom-byte-preview">
+      <div><strong data-i18n="customTools.preview">发送字节预览</strong><span id="customQuickBytes">0 B</span></div>
+      <code id="customQuickPreview"></code>
+      <small data-i18n="customTools.checksumHelp">校验覆盖全部发送内容（含文本行尾）；CRC16 低字节在前。HEX 不追加行尾。</small>
+    </div>
+    <div class="custom-repeat-section">
+      <div class="custom-repeat-heading"><h3 data-i18n="customTools.repeat">定时发送</h3><span id="customQuickRunStatus" class="state-pill" role="status"></span></div>
+      <div class="custom-repeat-controls">
+        <label><span data-i18n="customTools.interval">间隔 / ms</span><input id="customQuickInterval" type="number" min="50" max="60000" step="1" value="1000" /></label>
+        <label><span data-i18n="customTools.limit">次数 / 0 为不限</span><input id="customQuickLimit" type="number" min="0" max="100000" step="1" value="10" /></label>
+        <button id="customQuickStart" class="ghost-button" type="button" disabled data-i18n="customTools.start">开始</button>
+        <button id="customQuickStop" class="ghost-button" type="button" disabled data-i18n="customTools.stop">停止</button>
+      </div>
+      <small data-i18n="customTools.repeatHelp">每次写入完成后计时；离开本页、断开或出错即停止。</small>
+    </div>
+    <p id="customQuickStatus" class="custom-command-status" role="status"></p>
+  </section>
+  <section class="panel control-panel">
+    <div class="panel-heading split">
+      <div>
+        <h2 data-i18n="custom.setpointOutput">设定输出</h2>
+        <p data-field="deviceSummary" data-i18n="custom.customProfile.desc">自定义串口设备模板可发送。</p>
+      </div>
+      <span data-field="driverState" class="state-pill" data-i18n="custom.templateSendable">模板可发送</span>
+    </div>
+
+    <div class="setpoint-row" data-field="setpointRow">
+      <label class="range-label">
+        <span data-field="setpointLabel" data-i18n="custom.setpointValue">设定值</span>
+        <strong data-field="setpointReadout">50</strong>
+      </label>
+      <input data-field="setpointSlider" type="range" min="0" max="100" step="0.1" value="50" />
+      <div class="numeric-entry">
+        <input data-field="setpointInput" type="number" min="0" max="100" step="0.1" value="50" />
+        <span data-field="setpointUnit">value</span>
+      </div>
+    </div>
+
+    <div class="preset-row" data-field="presetRow" aria-label="快速设定">
+      <button type="button" data-preset="min" data-i18n="aomaster.preset.min">最小</button>
+      <button type="button" data-preset="mid" data-i18n="aomaster.preset.mid">中点</button>
+      <button type="button" data-preset="max" data-i18n="aomaster.preset.max">最大</button>
+    </div>
+
+    <div class="command-preview">
+      <div>
+        <span data-i18n="aomaster.driverCmdPreview">驱动命令预览</span>
+        <code data-field="protocolPreview">SET 50</code>
+      </div>
+      <button data-field="sendDriverCommand" type="button" disabled data-i18n="common.sendSetting">发送设定</button>
+    </div>
+  </section>
+
+  <section class="panel custom-panel">
+    <div class="panel-heading split">
+      <div>
+        <h2 data-i18n="custom.deviceConfig">设备配置</h2>
+        <p data-i18n="custom.deviceConfigDesc">设定范围与发送模板；曲线解析、帧界与 CRC 在监测面板配置。</p>
+      </div>
+      <div class="panel-actions">
+        <button id="resetCustomConfig" class="ghost-button" type="button" data-i18n="common.resetDefault">恢复默认</button>
+        <button id="saveCustomConfig" type="button" data-i18n="common.save">保存</button>
+      </div>
+    </div>
+    <div class="config-grid">
+      <label>
+        <span data-i18n="custom.deviceName">设备名称</span>
+        <input id="customDeviceName" type="text" />
+      </label>
+      <label>
+        <span data-i18n="custom.deviceType">设备类型</span>
+        <input id="customDeviceType" type="text" />
+      </label>
+      <label>
+        <span data-i18n="custom.channelName">通道名称</span>
+        <input id="customChannelLabel" type="text" value="设定值" />
+      </label>
+      <label>
+        <span data-i18n="custom.unit">单位</span>
+        <input id="customUnit" type="text" data-i18n-placeholder="custom.unitPlaceholder" placeholder="例如：mA、V、℃" />
+      </label>
+    </div>
+    <div class="config-grid compact">
+      <label>
+        <span data-i18n="custom.min">最小值</span>
+        <input id="customMin" type="number" step="0.001" value="0" />
+      </label>
+      <label>
+        <span data-i18n="custom.max">最大值</span>
+        <input id="customMax" type="number" step="0.001" value="100" />
+      </label>
+      <label>
+        <span data-i18n="custom.step">步进</span>
+        <input id="customStep" type="number" step="0.001" min="0.000001" value="0.1" />
+      </label>
+      <label>
+        <span data-i18n="custom.defaultValue">默认值</span>
+        <input id="customDefaultValue" type="number" step="0.001" value="50" />
+      </label>
+    </div>
+    <div class="subsection-heading">
+      <h3 data-i18n="custom.sendTemplate">发送模板</h3>
+      <span data-i18n="custom.templatePlaceholder">支持 {value}、{value:2}、{unit}、{mode}</span>
+    </div>
+    <div class="template-grid">
+      <label>
+        <span data-i18n="custom.format">格式</span>
+        <select id="customCommandFormat">
+          <option value="ascii" selected>ASCII</option>
+          <option value="hex">HEX</option>
+        </select>
+      </label>
+      <label>
+        <span data-i18n="custom.lineEnding">行尾</span>
+        <select id="customCommandLineEnding">
+          <option value="" data-i18n="common.none">无</option>
+          <option value="\n">LF</option>
+          <option value="\r">CR</option>
+          <option value="\r\n" selected>CRLF</option>
+        </select>
+      </label>
+      <label class="template-input">
+        <span data-i18n="custom.template">模板</span>
+        <input id="customCommandTemplate" type="text" value="SET {value}" />
+      </label>
+    </div>
+  </section>
+</section>

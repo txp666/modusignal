@@ -1,0 +1,1660 @@
+const SUPPORTED_LANGS = ["zh", "en"];
+
+const TRANSLATIONS = {
+  "nav.breadcrumb": { zh: "当前位置", en: "Breadcrumb" },
+  "workspace.category": { zh: "调试工作台", en: "Device workbench" },
+  "request.prepareTitle": { zh: "准备设备资料", en: "Prepare device details" },
+  "request.copyInstruction": { zh: "复制模板，填写后提交到 GitHub Issues。", en: "Copy the template, fill it in, and submit a GitHub issue." },
+  "request.protocolTitle": { zh: "协议与连接", en: "Protocol and connection" },
+  "request.protocolDesc": { zh: "设备型号、协议文档及默认连接参数。", en: "Device model, protocol documentation, and connection settings." },
+  "request.sampleTitle": { zh: "命令与回包", en: "Commands and responses" },
+  "request.sampleDesc": { zh: "提供一组真实的发送命令和对应响应。", en: "Include a real command and its corresponding response." },
+  "request.uiTitle": { zh: "期望的操作", en: "Intended workflow" },
+  "request.uiDesc": { zh: "要读取的数值、控制项及操作限制。", en: "Values to read, controls to expose, and operating limits." },
+  // ===== 通用 / index.html =====
+  "app.subtitle": { zh: "浏览器里的设备调试台", en: "Your browser-based device workbench" },
+  "app.title": { zh: "modusignal 在线设备调试", en: "modusignal Online Device Debug" },
+  "app.ogTitle": { zh: "modusignal 在线设备调试", en: "modusignal Online Device Debug" },
+  "app.ogDesc": { zh: "浏览器端在线设备/信号调试：串口·WebSocket·HART·Modbus·自定义协议，实时曲线与收发调试。", en: "Browser-based device/signal debugging: Serial, WebSocket, HART, Modbus, custom protocols with real-time charts." },
+  "app.metaDesc": { zh: "modusignal 在线设备调试平台：Web Serial 串口与 WebSocket，支持 AOMaster Modbus RTU、HART、Modbus RTU、WebSocket 调试与自定义协议，实时曲线、收发日志与监测轮询。", en: "modusignal online device debug platform: Web Serial, WebSocket, supports AOMaster, Modbus RTU, HART, custom protocols, real-time charts, transceiver logs and monitoring polling." },
+  "app.metaKeywords": { zh: "modusignal,设备调试,串口调试,Web Serial,WebSocket,HART,Modbus RTU,4-20mA,信号发生器,在线调试,工业协议", en: "modusignal,device debug,serial debug,Web Serial,WebSocket,HART,Modbus RTU,4-20mA,signal generator,online debug,industrial protocols" },
+  "app.schemaDesc": { zh: "在线设备与信号调试平台，支持 Web Serial 串口、WebSocket、HART、Modbus RTU 与自定义协议驱动。", en: "Online device and signal debug platform supporting Web Serial, WebSocket, HART, Modbus RTU and custom protocol drivers." },
+
+  // Header / 导航
+  "nav.backHome": { zh: "返回主页", en: "Back to home" },
+  "nav.switchLanguage": { zh: "切换语言", en: "Switch language" },
+  "nav.deviceNavigation": { zh: "设备导航", en: "Device navigation" },
+  "nav.checkingEnv": { zh: "检测环境", en: "Checking..." },
+  "nav.connect": { zh: "连接", en: "Connect" },
+  "nav.disconnect": { zh: "断开连接", en: "Disconnect" },
+  "nav.project": { zh: "项目", en: "Project" },
+  "nav.collapseProject": { zh: "折叠项目", en: "Collapse Project" },
+  "nav.home": { zh: "主页", en: "Home" },
+  "nav.homeDesc": { zh: "项目概览 / GitHub / 请求设备", en: "Overview / GitHub / Request Device" },
+  "nav.requestDevice": { zh: "请求新设备", en: "Request New Device" },
+  "nav.requestDeviceDesc": { zh: "提交协议和 UI 需求", en: "Submit protocol & UI requirements" },
+  "nav.hartWiki": { zh: "HART 知识库", en: "HART Wiki" },
+  "nav.hartWikiDesc": { zh: "原理 / 接线 / 命令 / 排障", en: "Basics / Wiring / Commands / Troubleshooting" },
+  "nav.deviceLibrary": { zh: "设备库", en: "Device Library" },
+  "nav.notConnected": { zh: "未连接", en: "Not Connected" },
+  "nav.connected": { zh: "已连接", en: "Connected" },
+  "nav.collapseLibrary": { zh: "折叠设备库", en: "Collapse Device Library" },
+  "nav.search": { zh: "搜索", en: "Search" },
+  "nav.searchPlaceholder": { zh: "名称 / 协议 / ID", en: "Name / Protocol / ID" },
+  "nav.connectionParams": { zh: "连接参数", en: "Connection Params" },
+  "nav.collapseParams": { zh: "折叠连接参数", en: "Collapse Connection Params" },
+  "nav.transportMode": { zh: "传输方式", en: "Transport" },
+
+  // 环境状态
+  "env.needHttps": { zh: "需要 HTTPS 或 localhost", en: "HTTPS or localhost required" },
+  "env.notSupported": { zh: "当前环境不支持", en: "Not supported: " },
+  "env.available": { zh: " 可用", en: " available" },
+
+  // Footer
+  "footer.license": { zh: "开源协议", en: "License" },
+  "footer.version": { zh: "版本", en: "Version" },
+
+  // 连接日志
+  "log.disconnected": { zh: "已断开", en: "Disconnected" },
+  "log.connect": { zh: "连接", en: "Connect" },
+  "log.error": { zh: "错误", en: "Error" },
+  "log.send": { zh: "发送", en: "Send" },
+  "log.system": { zh: "系统", en: "System" },
+  "log.device": { zh: "设备", en: "Device" },
+  "log.chart": { zh: "曲线", en: "Chart" },
+  "log.logCleared": { zh: "日志已清空", en: "Log cleared" },
+  "log.chartCleared": { zh: "曲线已清空", en: "Chart cleared" },
+  "log.switchedTo": { zh: "已切换到", en: "Switched to" },
+  "log.switchedTransport": { zh: "已切换", en: "Switched" },
+
+  // 面板
+  "panel.expand": { zh: "展开", en: "Expand" },
+  "panel.collapse": { zh: "折叠", en: "Collapse" },
+
+  // ===== 首页 =====
+  "nav.skipContent": { zh: "跳到主要内容", en: "Skip to main content" },
+  "home.eyebrow": { zh: "ModuSignal / 浏览器里的设备调试台", en: "ModuSignal / The browser workbench" },
+  "home.chooseTool": { zh: "选择调试工具", en: "Explore the tools" },
+  "home.openTool": { zh: "打开工作台", en: "Open workbench" },
+  "home.quickstart": { zh: "使用步骤", en: "Getting started" },
+  "home.stepSelect": { zh: "选择工具", en: "Choose a tool" },
+  "home.stepSelectDesc": { zh: "按设备或协议，打开对应工作台。", en: "Find the workspace for your device or protocol." },
+  "home.stepConnect": { zh: "连接设备", en: "Connect your device" },
+  "home.stepConnectDesc": { zh: "确认通讯参数，授权浏览器连接。", en: "Check your settings and allow the connection." },
+  "home.stepInspect": { zh: "查看信号", en: "Inspect the signal" },
+  "home.stepInspectDesc": { zh: "收发报文，观察曲线与设备响应。", en: "Exchange frames and watch your device respond." },
+  "home.toolsTitle": { zh: "在线调试工具", en: "Browser tools" },
+  "home.toolsDesc": { zh: "选择设备或协议，打开对应调试页面。", en: "Select a device or protocol to open its tools." },
+  "home.browserNote": { zh: "串口 / WebUSB 请使用桌面 Chrome 或 Edge，并通过 HTTPS 或 localhost 打开；WebSocket / MQTT 可使用现代浏览器。", en: "For Serial / WebUSB, use desktop Chrome or Edge over HTTPS or localhost. WebSocket / MQTT work in modern browsers." },
+  "home.hardwareTitle": { zh: "配套硬件", en: "Hardware" },
+  "home.hardwareDesc": { zh: "用于信号输出、HART 通信和电流测量。", en: "For signal generation, HART communication and current measurement." },
+  "home.softwareTitle": { zh: "桌面软件", en: "Desktop software" },
+  "home.softwareDesc": { zh: "HART 调试、串口收发、上位机设计和 PDF 翻译，每款都有自己的官网。", en: "HART commissioning, serial I/O, HMI design and PDF translation — each with its own site." },
+  "home.swLive": { zh: "实拍演示", en: "Real demo" },
+  "home.swShot": { zh: "实拍截图", en: "Real screenshot" },
+  "home.swVisit": { zh: "访问官网", en: "Visit the site" },
+  "home.swDownload": { zh: "下载", en: "Download" },
+  "home.swHartKicker": { zh: "桌面软件 · HART 主站", en: "Desktop app · HART master" },
+  "home.swHartDesc": { zh: "扫描识别 HART 设备，读 PV / SV / TV / QV、实时曲线与逐帧 Trace；有 DD 的设备按 IEC 61804 打开菜单、参数与方法，没有 DD 也能校验与校准。", en: "Scan and identify HART devices, read PV / SV / TV / QV, live curves and a frame-by-frame Trace; devices with a DD open with their own menus, parameters and methods per IEC 61804, and devices without one can still be verified and calibrated." },
+  "home.swHartTag1": { zh: "DD 设备页", en: "DD device pages" },
+  "home.swHartTag2": { zh: "HART 知识库", en: "HART wiki" },
+  "home.swHartWiki": { zh: "HART 知识库", en: "HART wiki" },
+  "home.swSerialKicker": { zh: "桌面软件 · 免费开源", en: "Desktop app · free & open source" },
+  "home.swSerialName": { zh: "Fluent 串口助手", en: "Fluent Serial Assistant" },
+  "home.swSerialDesc": { zh: "文本/HEX 收发、帧协议解析与校验、实时曲线、宏命令和自动应答。命令行和 MCP 复用 GUI 当前会话，AI 也能直接操作串口。", en: "Text/HEX send and receive, frame protocol parsing and checksums, live plots, macros and auto-reply. The CLI and MCP server reuse the GUI's current session, so AI can work the port directly." },
+  "home.swSerialTag1": { zh: "协议解析", en: "Protocol parsing" },
+  "home.swHmiKicker": { zh: "桌面软件 · 上位机设计", en: "Desktop app · HMI designer" },
+  "home.swHmiDesc": { zh: "拖拽 30 种控件，绑定串口、TCP、MQTT、UDP 或 Modbus 数据，连上设备就能预览，不到一秒导出独立运行的应用。附使用说明和 10 篇图文教程。", en: "Drag 30 widgets, bind serial, TCP, MQTT, UDP or Modbus data, preview against the real device and export a standalone app in under a second. With a user guide and 10 illustrated tutorials." },
+  "home.swHmiTag1": { zh: "零代码", en: "No code" },
+  "home.swHmiPy": { zh: "Python 版 PyQt UI Designer", en: "Python edition: PyQt UI Designer" },
+  "home.swHmiTutorials": { zh: "图文教程", en: "Tutorials" },
+  "home.swPbKicker": { zh: "桌面软件 · 免费开源", en: "Desktop app · free & open source" },
+  "home.swPbDesc": { zh: "Mac 与 Windows 上的 PDF 阅读与翻译工作区：MinerU 在本机解析版面，译文回到原段落的位置，原文与译文并排同步滚动。", en: "A PDF reading and translation workspace for Mac and Windows: MinerU parses the layout on your computer, the translation goes back where each paragraph was, and both sides scroll together." },
+  "home.swPbTag1": { zh: "保留原版式", en: "Original layout kept" },
+
+  "home.pageTitle": { zh: "在浏览器中调试设备", en: "Debug devices in your browser" },
+  "home.pageDesc": { zh: "通过串口、USB 或网络连接设备，收发报文、记录日志并查看实时曲线。支持 HART、Modbus RTU、MQTT、WebSocket 和自定义协议。", en: "Connect devices over serial, USB or a network to exchange data, record logs and view live plots. Supports HART, Modbus RTU, MQTT, WebSocket and custom protocols." },
+  "home.github": { zh: "GitHub 源码", en: "Source on GitHub" },
+  "home.requestDevice": { zh: "请求新设备", en: "Request New Device" },
+  "home.buyProduct": { zh: "购买产品", en: "Buy Product" },
+  "home.microscopePowerKicker": { zh: "MicroScope Power 产品", en: "MicroScope Power Product" },
+  "home.microscopePowerProductTitle": { zh: "MicroScope Power 便携式可调电源与微电流波形分析仪", en: "MicroScope Power Portable Power Supply & Current Analyzer" },
+  "home.microscopePowerProductDesc": { zh: "基于 RP2040 与 16 位 ADS8866，集成可调供电和双量程电流采集，通过 WebUSB 观察单片机休眠、唤醒与活动电流，支持低通滤波、游标测量及功率与能量估算。", en: "Built around RP2040 and a 16-bit ADS8866, with adjustable power and dual-range current capture. Observe MCU sleep, wake-up and active current over WebUSB, with low-pass filtering, cursors, and power and energy estimates." },
+  "home.microscopePowerMaxSampleRate": { zh: "100 kSPS 最高配置", en: "100 kSPS max setting" },
+  "home.microscopePowerNominalSupply": { zh: "约 0.8–5 V 标称供电", en: "Approx. 0.8–5 V nominal output" },
+  "home.microscopePowerDualRange": { zh: "1 Ω / 10 Ω 双量程", en: "1 Ω / 10 Ω dual range" },
+  "home.microscopePowerMore": { zh: "查看产品介绍", en: "Product Intro" },
+  "home.microscopePowerHardware": { zh: "立创开源硬件", en: "OSHWHub Hardware" },
+  "home.microscopePowerDebug": { zh: "打开上位机", en: "Open WebUSB Host" },
+  "home.aomasterKicker": { zh: "AOMaster 产品", en: "AOMaster Product" },
+  "home.aomasterProductTitle": { zh: "AOMaster 便携式模拟量输出控制器", en: "AOMaster Portable Analog Output Controller" },
+  "home.aomasterProductDesc": { zh: "基于 CH32V003F4U6 和 GP8630，支持 0-10 V / 4-20 mA 输出。可通过 OLED 和旋钮本地调节，也可用 USART1 Modbus RTU 接口设置输出值和波形。", en: "Built around CH32V003F4U6 and GP8630, with 0-10 V / 4-20 mA output. Adjust it locally using the OLED and knob, or set values and waveforms through USART1 Modbus RTU." },
+  "home.aomasterLocalControl": { zh: "OLED 本地调节", en: "OLED Local Control" },
+  "home.aomasterMore": { zh: "查看产品介绍", en: "Product Intro" },
+  "home.aomasterDebug": { zh: "打开调试页", en: "Open Debug Page" },
+  "home.aomasterClose": { zh: "关闭产品介绍", en: "Close Product Intro" },
+  "home.aomasterIntro": { zh: "AOMaster 用于传感器、仪表和采集模块调试。旋钮可直接设定输出；modusignal 可设置恒定、阶跃、斜坡、方波、三角波和正弦波输出。网页曲线回读的是固件输出指令值，并非模拟量实测值。", en: "AOMaster is used to test sensors, instruments and acquisition modules. Set output with the knob or use modusignal for constant, step, ramp, square, triangle and sine outputs. Web plots show firmware output command values, not measured analog output." },
+  "home.aomasterFeatureOutput": { zh: "模拟量输出", en: "Analog Output" },
+  "home.aomasterFeatureOutputDesc": { zh: "提供 0-10 V 电压和 4-20 mA 电流输出，用于 PLC、采集卡和变送器输入端调试。", en: "Provides 0-10 V and 4-20 mA outputs for testing PLC, DAQ and transmitter inputs." },
+  "home.aomasterFeatureWave": { zh: "波形发生", en: "Waveform Generation" },
+  "home.aomasterFeatureWaveDesc": { zh: "支持恒定、阶跃、斜坡、方波、三角波、正弦波；阶跃序列最多 16 点。", en: "Supports constant, step, ramp, square, triangle and sine outputs; step sequences support up to 16 points." },
+  "home.aomasterFeatureLocal": { zh: "本地操作", en: "Local Operation" },
+  "home.aomasterFeatureLocalDesc": { zh: "OLED 显示当前模式和输出值，编码器可切换步进、调整输出并进入菜单。", en: "OLED shows current mode and output value; the encoder switches step size, adjusts output and opens the menu." },
+  "home.aomasterFeatureHost": { zh: "网页上位机", en: "Web Host" },
+  "home.aomasterFeatureHostDesc": { zh: "USB-C 接入后以 115200 8N1 使用 Modbus RTU，支持设定写入与 50 ms 轮询回读。", en: "After USB-C connection, Modbus RTU runs at 115200 8N1 with setpoint writes and 50 ms polling readback." },
+  "home.aomasterUsageTitle": { zh: "典型用法", en: "Typical Use" },
+  "home.aomasterUsageDesc": { zh: "给设备供电后，将输出端接入被测设备或仪表输入端；网页中选择 AOMaster 与 Serial，保持默认串口参数即可开始控制与监测。", en: "Power the device, wire the output to the target device or instrument input, then select AOMaster and Serial in the web app with default serial parameters to start control and monitoring." },
+  "home.aomasterHardware": { zh: "立创开源硬件", en: "OSHWHub Hardware" },
+  "home.hartlinkKicker": { zh: "HARTLink M1 产品", en: "HARTLink M1 Product" },
+  "home.hartlinkProductTitle": { zh: "HARTLink M1 便携式 HART 手操器", en: "HARTLink M1 Portable HART Communicator" },
+  "home.hartlinkProductDesc": { zh: "基于 CH32L103F8U6 的便携式 HART 基础读取手操器与 USB 透传桥，支持 OLED 本机菜单、设备扫描、USB CDC 原始帧透传与 USB HID IAP 升级。", en: "A portable CH32L103F8U6-based HART read-only communicator and USB bridge with an OLED menu, device scanning, raw USB CDC forwarding and USB HID IAP updates." },
+  "home.hartlinkReadOnly": { zh: "本机只读", en: "Local read-only mode" },
+  "home.hartlinkLocalMenu": { zh: "OLED 本机菜单", en: "OLED Local Menu" },
+  "home.hartlinkMore": { zh: "查看产品介绍", en: "Product Intro" },
+  "home.hartlinkDebug": { zh: "打开调试页", en: "Open Debug Page" },
+  "home.hartlinkClose": { zh: "关闭产品介绍", en: "Close Product Intro" },
+  "home.hartlinkIntro": { zh: "HARTLink M1 可独立扫描 HART 设备，并在 OLED 上显示过程变量和诊断状态。连接电脑后，通过 USB 转发原始 HART 帧，由 modusignal 等上位机发送命令并解析响应。", en: "HARTLink M1 scans HART devices and shows process variables and diagnostics on its OLED without a computer. When connected over USB, it forwards raw HART frames for host software such as modusignal to send commands and parse responses." },
+  "home.hartlinkFeatureRead": { zh: "本机读取", en: "Local readings" },
+  "home.hartlinkFeatureReadDesc": { zh: "提供 Cmd0/1/2/3/7/12/13/14/15/20 等基础读命令，本机菜单不向现场设备发送写参数命令。", en: "Provides core read commands including Cmd0/1/2/3/7/12/13/14/15/20; the local menu does not send parameter-write commands to field devices." },
+  "home.hartlinkFeatureScan": { zh: "设备发现与轮询", en: "Discovery and Polling" },
+  "home.hartlinkFeatureScanDesc": { zh: "扫描轮询地址 0-15，缓存设备身份与长地址，并在 OLED 上查看过程变量、状态和诊断信息。", en: "Scans polling addresses 0-15, caches device identity and long address, and shows process variables, status and diagnostics on the OLED." },
+  "home.hartlinkFeatureBridge": { zh: "USB HART 透传", en: "USB HART Bridge" },
+  "home.hartlinkFeatureBridgeDesc": { zh: "USB CDC 双向转发原始 HART 字节流；上位机活跃时本机不会抢占总线。", en: "USB CDC forwards raw HART byte streams in both directions; local commands do not seize the bus while the host is active." },
+  "home.hartlinkFeatureUpdate": { zh: "在线固件升级", en: "Firmware Updates" },
+  "home.hartlinkFeatureUpdateDesc": { zh: "内置 Bootloader 支持 USB HID IAP，可使用应用固件完成日常升级。", en: "The resident bootloader supports USB HID IAP for routine application-firmware updates." },
+  "home.hartlinkUsageTitle": { zh: "接线提示", en: "Wiring Note" },
+  "home.hartlinkUsageDesc": { zh: "USB 仅为 HARTLink 本机供电，不给 4-20 mA/HART 回路供电。请将测试线并联在约 250 Ω 负载两端或现场仪表端子，并在接线前确认回路极性、外部供电、负载与现场安全条件。", en: "USB powers HARTLink only; it does not power the 4-20 mA/HART loop. Connect the probes across an approximately 250 Ω load or the field-device terminals, and verify polarity, external loop power, load and field safety conditions first." },
+  "home.hartlinkHardware": { zh: "立创开源硬件", en: "OSHWHub Hardware" },
+  "home.architecture": { zh: "开发者：了解项目架构", en: "For developers: explore the architecture" },
+  "home.archAriaLabel": { zh: "modusignal 架构框图：页面 UI 经 app.js 调度，分为正交的设备层与传输层，数据汇入曲线与日志", en: "modusignal architecture: page UI orchestrated by app.js, orthogonal device layer and transport layer, data flows into charts and logs" },
+  "home.archUi": { zh: "页面 UI", en: "Page UI" },
+  "home.archUiSub": { zh: "index.html + pages/", en: "index.html + pages/" },
+  "home.archCore": { zh: "app.js 调度", en: "app.js Orchestrator" },
+  "home.archCoreSub": { zh: "状态 · 路由 · 事件 · 日志/曲线联动", en: "State · Routing · Events · Log/Chart" },
+  "home.archDevice": { zh: "设备", en: "Device" },
+  "home.archTransport": { zh: "传输", en: "Transport" },
+  "home.archDeviceLayer": { zh: "设备层", en: "Device Layer" },
+  "home.archDeviceRegistry": { zh: "设备注册表", en: "Device Registry" },
+  "home.archDeviceDriver": { zh: "设备驱动", en: "Device Driver" },
+  "home.archTransportLayer": { zh: "传输层", en: "Transport Layer" },
+  "home.archTransportRegistry": { zh: "传输注册表", en: "Transport Registry" },
+  "home.archSerialWsMqtt": { zh: "串口 · WebSocket · MQTT", en: "Serial · WebSocket · MQTT" },
+  "home.archParseSend": { zh: "解析 / 收发", en: "Parse / Send/Recv" },
+  "home.archChartLog": { zh: "曲线 / 日志", en: "Chart / Log" },
+  "home.archChartLogSub": { zh: "ECharts · 日志面板", en: "ECharts · Log Panel" },
+  "home.archDesc": { zh: "设备层与传输层正交：设备只产出/解析字节，通过统一的 profile、命令构造和遥测解析接口接入；各设备可声明默认通讯方式，亦可在连接参数中手动切换。", en: "Device layer and transport layer are orthogonal: devices only produce/parse bytes through unified profile, command construction and telemetry parsing interfaces; each device declares default transport and can be manually switched in connection params." },
+
+  // 设备库卡片
+  "device.noMatch": { zh: "没有匹配的设备，请换个关键词试试。", en: "No matching devices. Try a different keyword." },
+  "device.libraryEmpty": { zh: "设备库为空。", en: "Device library is empty." },
+
+  // 传输默认描述
+  "transport.defaults.mqtt": { zh: "默认 MQTT Broker 与主题", en: "Default MQTT Broker and topics" },
+  "transport.defaults.modbusWs": { zh: "Modbus 默认 WebSocket 地址", en: "Modbus default WebSocket address" },
+  "transport.defaults.wsDebug": { zh: "WebSocket 调试默认连接地址", en: "WebSocket debug default address" },
+  "transport.defaults.mqttDebug": { zh: "MQTT 调试默认 Broker 与主题", en: "MQTT debug default Broker and topics" },
+  "transport.defaults.ws": { zh: "默认 WebSocket 地址", en: "Default WebSocket address" },
+  "transport.defaults.hart": { zh: "HART 默认串口参数（1200 8O1）", en: "HART default serial params (1200 8O1)" },
+  "transport.defaults.aomaster": { zh: "AOMaster 默认串口参数（115200 8N1）", en: "AOMaster default serial params (115200 8N1)" },
+  "transport.defaults.modbus": { zh: "Modbus 默认串口参数（9600 8N1）", en: "Modbus default serial params (9600 8N1)" },
+  "transport.defaults.custom": { zh: "自定义串口设备默认串口参数（115200 8N1）", en: "Custom serial device default serial params (115200 8N1)" },
+  "transport.defaults.generic": { zh: "设备默认连接参数", en: "Device default connection params" },
+  "transport.switched": { zh: "已切换", en: "Switched" },
+
+  // ===== 请求新设备页面 =====
+  "request.title": { zh: "新增设备请求", en: "New Device Request" },
+  "request.desc": { zh: "提交新设备前，请尽量准备协议、连接/串口参数、典型命令、回包样例和期望页面 UI。", en: "Before submitting, please prepare the protocol, connection/serial params, typical commands, response samples and desired page UI." },
+  "request.toGithub": { zh: "去 GitHub 提交", en: "Submit on GitHub" },
+  "request.template": { zh: "请求模板", en: "Request Template" },
+  "request.templateContent": {
+    zh: "设备名称：\n设备类型：\n传输方式（串口/WebSocket/MQTT 等）：\n默认连接参数：\n需要的页面控件：\n发送命令示例：\n回包示例：\n解析字段：\n安全注意事项：\n参考资料链接：",
+    en: "Device Name:\nDevice Type:\nTransport (Serial/WebSocket/MQTT etc.):\nDefault Connection Params:\nRequired Page Controls:\nSend Command Examples:\nResponse Examples:\nParse Fields:\nSafety Notes:\nReference Links:"
+  },
+  "request.copyTemplate": { zh: "复制模板", en: "Copy Template" },
+
+  // ===== 工作台 =====
+  "workbench.monitorPanel": { zh: "监测面板", en: "Monitor Panel" },
+  "workbench.chartSummary": { zh: "自动尝试从接收数据中提取数值并绘制最近 120 个采样点。", en: "Automatically extracts values from received data and plots the latest 120 sample points." },
+  "workbench.pollStopped": { zh: "轮询已停止", en: "Polling stopped" },
+  "workbench.polling": { zh: "轮询中", en: "Polling" },
+  "workbench.startPolling": { zh: "开始轮询", en: "Start Polling" },
+  "workbench.stopPolling": { zh: "停止轮询", en: "Stop Polling" },
+  "workbench.clearChart": { zh: "清空曲线", en: "Clear Chart" },
+  "workbench.chartAria": { zh: "实时曲线", en: "Real-time Chart" },
+  "workbench.noData": { zh: "暂无数据", en: "No data" },
+  "workbench.noSetpoint": { zh: "暂无设定", en: "No setpoint" },
+  "workbench.setpointPreview": { zh: "设定预览", en: "Setpoint Preview" },
+  "workbench.setpointPreviewAria": { zh: "设定预览曲线", en: "Setpoint Preview Chart" },
+  "workbench.realtimeOutput": { zh: "输出指令回读", en: "Output Command Readback" },
+  "workbench.realtimeOutputAria": { zh: "输出指令回读曲线", en: "Output Command Readback Chart" },
+  "workbench.pollReadback": { zh: "轮询固件输出指令值，非模拟量实测", en: "Polled firmware output command, not analog measurement" },
+  "workbench.chartConfig": { zh: "曲线设置", en: "Curve settings" },
+  "workbench.samplingDisplay": { zh: "采样与显示", en: "History and display" },
+  "workbench.samplingHint": { zh: "设置保留的历史长度和当前窗口显示的点数。", en: "Choose how many samples to retain and show in the visible window." },
+  "workbench.saveDisplaySettings": { zh: "保存显示设置", en: "Save display settings" },
+  "workbench.chartSummaryDefault": { zh: "—", en: "—" },
+  "workbench.protocolHelp": { zh: "协议说明", en: "Protocol Help" },
+  "workbench.aomasterDualMode": { zh: "双曲线模式：理想设定预览与固件输出指令回读。默认 50 ms 轮询不能还原 50 Hz 波形；输出频率、抖动和幅值需用示波器或采集设备测量。", en: "Dual charts: ideal setpoint preview and firmware output command readback. Default 50 ms polling cannot reconstruct a 50 Hz waveform; measure frequency, jitter and amplitude with a scope or acquisition device." },
+  "workbench.showCurves": { zh: "显示曲线", en: "Show Curves" },
+  "workbench.totalPoints": { zh: "曲线总点数", en: "Total Points" },
+  "workbench.totalPointsTitle": { zh: "手动设置曲线总采样点数，点数越高历史越长", en: "Manually set total sample points; higher count means longer history" },
+  "workbench.displayPoints": { zh: "显示点数", en: "Display Points" },
+  "workbench.displayPointsTitle": { zh: "当前窗口显示点数，曲线可左右滑动查看总点数历史", en: "Displayed point count in the current window; scroll left/right to view full history" },
+  "workbench.exportCsv": { zh: "导出 CSV", en: "Export CSV" },
+  "workbench.loadCsv": { zh: "加载 CSV", en: "Load CSV" },
+  "workbench.resetDefault": { zh: "恢复默认", en: "Reset Default" },
+  "workbench.save": { zh: "保存", en: "Save" },
+  "workbench.protocolHelpTitle": { zh: "协议说明", en: "Protocol Help" },
+  "workbench.closeDialog": { zh: "关闭", en: "Close" },
+  "workbench.transceiverDebug": { zh: "收发调试", en: "Transceiver Debug" },
+  "workbench.transceiverDesc": { zh: "发送文本、HEX 或 JSON，可加行尾与校验；日志可切换 HEX/文本并保存。", en: "Send text, HEX or JSON with an optional line ending and checksum. View the log as HEX or text and save it." },
+  "workbench.clearLog": { zh: "清空日志", en: "Clear Log" },
+  "workbench.format": { zh: "格式", en: "Format" },
+  "workbench.lineEnding": { zh: "行尾", en: "Line Ending" },
+  "workbench.command": { zh: "命令", en: "Command" },
+  "workbench.commandPlaceholder": { zh: "例如：READ?、01 03 00 00 或 {\"cmd\":\"ping\"}", en: "e.g.: READ?, 01 03 00 00 or {\"cmd\":\"ping\"}" },
+  "workbench.send": { zh: "发送", en: "Send" },
+
+  // 曲线配置面板
+  "curve.config": { zh: "曲线配置", en: "Chart Config" },
+  "curve.protocolHelp": { zh: "协议说明", en: "Protocol Help" },
+  "curve.curveOne": { zh: "曲线一", en: "Curve 1" },
+  "curve.curveTwo": { zh: "曲线二", en: "Curve 2" },
+  "curve.curveThree": { zh: "曲线三", en: "Curve 3" },
+  "curve.curveFour": { zh: "曲线四", en: "Curve 4" },
+  "curve.enableCurve": { zh: "启用曲线", en: "Enable Curve" },
+  "curve.delete": { zh: "删除", en: "Delete" },
+  "curve.deleteCurve": { zh: "删除曲线", en: "Delete Curve" },
+  "curve.name": { zh: "曲线", en: "Curve" },
+  "curve.nameField": { zh: "名称", en: "Name" },
+  "curve.unit": { zh: "单位", en: "Unit" },
+  "curve.unitPlaceholder": { zh: "可选", en: "Optional" },
+  "curve.dataOffset": { zh: "数据偏移", en: "Data Offset" },
+  "curve.byteOffset": { zh: "字节偏移", en: "Byte Offset" },
+  "curve.dataType": { zh: "数据类型", en: "Data Type" },
+  "curve.byteOrder": { zh: "字节序", en: "Byte Order" },
+  "curve.scale": { zh: "比例", en: "Scale" },
+  "curve.offset": { zh: "偏移", en: "Offset" },
+  "curve.pathPlaceholder": { zh: "例如 value 或 data.temp", en: "e.g. value or data.temp" },
+  "curve.addCurve": { zh: "+ 添加曲线", en: "+ Add Curve" },
+  "curve.frameMode": { zh: "帧界模式", en: "Frame Mode" },
+  "curve.frameModeNone": { zh: "无（整包）", en: "None (Full)" },
+  "curve.frameModeLine": { zh: "行界（CR/LF）", en: "Line Delimited (CR/LF)" },
+  "curve.frameModeStxEtx": { zh: "帧头帧尾（HEX）", en: "Delimiters (HEX)" },
+  "curve.rxLineEnding": { zh: "行结束符", en: "Line Ending" },
+  "curve.framePrefix": { zh: "帧头 HEX", en: "Frame Prefix (HEX)" },
+  "curve.frameSuffix": { zh: "帧尾 HEX", en: "Frame Suffix (HEX)" },
+  "curve.framePrefixPlaceholder": { zh: "例如 02（STX）", en: "e.g. 02 (STX)" },
+  "curve.frameSuffixPlaceholder": { zh: "例如 03（ETX）", en: "e.g. 03 (ETX)" },
+  "curve.crcCheck": { zh: "CRC 校验", en: "CRC Check" },
+  "curve.crcNone": { zh: "无", en: "None" },
+  "curve.crcModbus": { zh: "Modbus CRC16", en: "Modbus CRC16" },
+  "curve.slaveId": { zh: "从站地址", en: "Slave ID" },
+  "curve.functionCode": { zh: "功能码", en: "Function Code" },
+  "curve.curveParser": { zh: "曲线解析", en: "Curve Parser" },
+  "curve.parserJson": { zh: "JSON / 文本", en: "JSON / Text" },
+  "curve.parserHex": { zh: "HEX 原始字节", en: "HEX Raw Bytes" },
+  "curve.parserModbus": { zh: "Modbus RTU", en: "Modbus RTU" },
+  "curve.parserSample": { zh: "解析样例", en: "Parser Sample" },
+  "curve.testButton": { zh: "测试", en: "Test" },
+  "curve.waitingTest": { zh: "等待测试", en: "Waiting for test" },
+  "curve.singleChart": { zh: "单曲线", en: "Single Curve" },
+  "curve.autoNumeric": { zh: "自动数字", en: "Auto Numeric" },
+  "curve.multiCurve": { zh: "多曲线", en: "Multi Curve" },
+  "curve.dataOffsetTitle": { zh: "相对读响应数据区首字节的偏移", en: "Byte offset relative to start of read response data area" },
+  "curve.pathLabel": { zh: "路径", en: "Path" },
+
+  // 曲线帮助
+  "curve.help.title.aomaster": { zh: "AOMaster 曲线说明", en: "AOMaster Chart Guide" },
+  "curve.help.title.modbus": { zh: "Modbus RTU 曲线说明", en: "Modbus RTU Chart Guide" },
+  "curve.help.title.hart": { zh: "HART 曲线说明", en: "HART Chart Guide" },
+  "curve.help.title.custom": { zh: "自定义串口设备曲线说明", en: "Custom Serial Device Chart Guide" },
+  "curve.help.title.websocket": { zh: "WebSocket 曲线说明", en: "WebSocket Chart Guide" },
+  "curve.help.title.mqtt": { zh: "MQTT 曲线说明", en: "MQTT Chart Guide" },
+  "curve.help.title.default": { zh: "曲线说明", en: "Chart Guide" },
+  "curve.help.defaultContent": { zh: "<p>当前设备会自动从接收数据中提取数值并绘制曲线。</p>", en: "<p>The current device automatically extracts values from received data and plots charts.</p>" },
+
+  // ===== AOMaster =====
+  "aomaster.signalOutput": { zh: "信号输出", en: "Signal Output" },
+  "aomaster.signalType": { zh: "信号类型", en: "Signal Type" },
+  "aomaster.outputWaveform": { zh: "输出波形", en: "Output Waveform" },
+  "aomaster.waveform.constant": { zh: "恒定输出", en: "Constant" },
+  "aomaster.waveform.step": { zh: "阶跃", en: "Step" },
+  "aomaster.waveform.ramp": { zh: "斜坡", en: "Ramp" },
+  "aomaster.waveform.square": { zh: "方波", en: "Square" },
+  "aomaster.waveform.triangle": { zh: "三角波", en: "Triangle" },
+  "aomaster.waveform.sine": { zh: "正弦波", en: "Sine" },
+  "aomaster.value.display": { zh: "数值显示", en: "Display as" },
+  "aomaster.value.unit": { zh: "单位", en: "Unit" },
+  "aomaster.currentSetpoint": { zh: "电流设定", en: "Current Setpoint" },
+  "aomaster.voltageSetpoint": { zh: "电压设定", en: "Voltage Setpoint" },
+  "aomaster.preset.min": { zh: "最小", en: "Min" },
+  "aomaster.preset.mid": { zh: "中点", en: "Mid" },
+  "aomaster.preset.max": { zh: "最大", en: "Max" },
+  "aomaster.waveLow": { zh: "低值", en: "Low" },
+  "aomaster.waveHigh": { zh: "高值", en: "High" },
+  "aomaster.wavePeriod": { zh: "周期/时长 (ms)", en: "Period (ms)" },
+  "aomaster.wavePeriodHint": { zh: "周期范围 20–65535 ms，步进 1 ms；设定频率 = 1000 ÷ 周期，最高 50 Hz。", en: "Period: 20–65535 ms in 1 ms steps; configured frequency = 1000 / period, up to 50 Hz." },
+  "aomaster.waveDuty": { zh: "占空比 (%)", en: "Duty (%)" },
+  "aomaster.wavePreset.full": { zh: "全量程", en: "Full Range" },
+  "aomaster.wavePreset.mid": { zh: "中间段", en: "Mid Range" },
+  "aomaster.wavePreset.narrow": { zh: "窄脉冲", en: "Narrow Pulse" },
+  "aomaster.stepSequence": { zh: "阶跃序列", en: "Step Sequence" },
+  "aomaster.stepSequenceDesc": { zh: "按顺序逐级跳变，每步保持相同时间", en: "Jump through levels in order, each step held for the same duration" },
+  "aomaster.addStep": { zh: "添加阶跃点", en: "Add Step" },
+  "aomaster.stepPreset.five": { zh: "五点均分", en: "5 Equal Points" },
+  "aomaster.stepPreset.upDown": { zh: "上→下", en: "Up→Down" },
+  "aomaster.stepPreset.pulse": { zh: "脉冲序列", en: "Pulse Sequence" },
+  "aomaster.stepDwell": { zh: "单步保持 (ms)", en: "Step Dwell (ms)" },
+  "aomaster.stepLoops": { zh: "循环次数", en: "Loop Count" },
+  "aomaster.stepLoopsHint": { zh: "循环次数填 0 表示无限循环。", en: "Set loop count to 0 for infinite loop." },
+  "aomaster.driverCmdPreview": { zh: "驱动命令预览", en: "Driver Command Preview" },
+  "aomaster.sendSetting": { zh: "发送设定", en: "Send Setting" },
+  "aomaster.commParams": { zh: "通讯参数", en: "Communication Params" },
+  "aomaster.commDesc": { zh: "寄存器：0x0000 类型（0=电流，1=电压），0x0001 波形，0x0006 只读 ACTUAL（固件输出指令值，非模拟量实测）；轮询读取 0x0000~0x0006 共 7 个寄存器，根据类型判断单位。阶跃时 0x0002 点数、0x0003 保持(ms)、0x0004 循环、0x0007+ 序列值。", en: "Registers: 0x0000 type (0=current, 1=voltage), 0x0001 waveform, 0x0006 read-only ACTUAL (firmware output command, not analog measurement); polling reads 0x0000~0x0006 (7 registers) and uses type to select units. Step: 0x0002 count, 0x0003 dwell(ms), 0x0004 loops, 0x0007+ sequence." },
+  "aomaster.slaveId": { zh: "从站地址", en: "Slave ID" },
+  "aomaster.pollInterval": { zh: "回读轮询 (ms)", en: "Readback Poll (ms)" },
+  "aomaster.pollIntervalTitle": { zh: "大于 0 时可在监测面板手动开始轮询，默认 50", en: "When > 0, polling can be manually started in the monitor panel; default 50" },
+  "aomaster.profile.type": { zh: "模拟量信号发生器", en: "Analog Signal Generator" },
+  "aomaster.mode.current": { zh: "电流", en: "Current" },
+  "aomaster.mode.voltage": { zh: "电压", en: "Voltage" },
+
+  // AOMaster 自定义仪表
+  "aomaster.actualOutput": { zh: "输出指令回读", en: "Output Command Readback" },
+  "aomaster.infiniteLoop": { zh: "无限循环", en: "Infinite Loop" },
+  "aomaster.defaultNoPoll": { zh: "默认不轮询", en: "Default, no polling" },
+  "aomaster.pollSummaryLabel": { zh: "轮询间隔", en: "Poll Interval" },
+
+  // ===== Modbus =====
+  "modbus.registerOps": { zh: "寄存器操作", en: "Register Operations" },
+  "modbus.readHolding": { zh: "读保持寄存器", en: "Read Holding Registers" },
+  "modbus.readInput": { zh: "读输入寄存器", en: "Read Input Registers" },
+  "modbus.writeSingle": { zh: "写单寄存器", en: "Write Single Register" },
+  "modbus.writeMultiple": { zh: "写多寄存器", en: "Write Multiple Registers" },
+  "modbus.writeValue": { zh: "写入值", en: "Write Value" },
+  "modbus.readRegister": { zh: "读取寄存器", en: "Read Register" },
+  "modbus.writeRegister": { zh: "写入寄存器", en: "Write Register" },
+  "modbus.commParams": { zh: "通讯参数", en: "Communication Params" },
+  "modbus.commDesc": { zh: "配置从站、功能码、地址与轮询；曲线解码在监测面板配置。", en: "Configure slave, function code, address and polling; curve decoding configured in monitor panel." },
+  "modbus.slaveId": { zh: "从站地址", en: "Slave ID" },
+  "modbus.functionCode": { zh: "功能码", en: "Function Code" },
+  "modbus.fc03": { zh: "03 读保持寄存器", en: "03 Read Holding Registers" },
+  "modbus.fc04": { zh: "04 读输入寄存器", en: "04 Read Input Registers" },
+  "modbus.fc06": { zh: "06 写单寄存器", en: "06 Write Single Register" },
+  "modbus.fc16": { zh: "16 写多寄存器", en: "16 Write Multiple Registers" },
+  "modbus.startAddr": { zh: "起始地址", en: "Start Address" },
+  "modbus.quantity": { zh: "寄存器数量", en: "Register Count" },
+  "modbus.quantityTitle": { zh: "读模式下若小于曲线所需范围，会自动扩大", en: "In read mode, auto-expands if less than required range for curves" },
+  "modbus.pollInterval": { zh: "轮询间隔 (ms)", en: "Poll Interval (ms)" },
+  "modbus.pollIntervalTitle": { zh: "两次请求的起始间隔；每次都等到响应或超时后才发下一次，默认 500", en: "Time between request starts; each request waits for its response or timeout before the next one. Default 500" },
+  "modbus.profile.type": { zh: "RTU 寄存器读写", en: "RTU Register Read/Write" },
+  "modbus.unsupportedFunction": { zh: "不支持的 Modbus 功能码", en: "Unsupported Modbus function code" },
+  "modbus.operation": { zh: "操作", en: "Operation" },
+  "modbus.responseTimeout": { zh: "响应超时 (ms)", en: "Response Timeout (ms)" },
+  "modbus.responseTimeoutTitle": { zh: "发送后等待响应的最长时间，超时会记录原因并继续下一次", en: "How long to wait for a response; a timeout is logged with its likely cause and polling continues" },
+  "modbus.wordOrder": { zh: "字序", en: "Word Order" },
+  "modbus.slaveShort": { zh: "从站", en: "Slave" },
+  "modbus.addrShort": { zh: "地址", en: "addr" },
+  "modbus.write.values": { zh: "写入值", en: "Values" },
+  "modbus.write.placeholder": { zh: "例如：100, -5, 0x1F", en: "e.g. 100, -5, 0x1F" },
+  "modbus.write.format": { zh: "数据类型", en: "Data Type" },
+  "modbus.write.int16": { zh: "16 位整数", en: "16-bit integer" },
+  "modbus.write.int32": { zh: "32 位整数", en: "32-bit integer" },
+  "modbus.write.help": { zh: "多个值用逗号或空格分隔，负数按补码写入；功能码 16 按值的个数写寄存器，不会补零。", en: "Separate values with commas or spaces; negatives are written as two's complement. FC16 writes exactly the registers the values need — nothing is zero-padded." },
+  "modbus.write.empty": { zh: "请输入写入值", en: "Enter a value to write" },
+  "modbus.write.invalidValue": { zh: "无效的写入值", en: "Invalid value" },
+  "modbus.write.singleOnly": { zh: "功能码 06 只能写 1 个 16 位值；多个值或 32 位数据请用功能码 16", en: "FC06 writes one 16-bit value; use FC16 for several values or 32-bit data" },
+  "modbus.write.tooMany": { zh: "一次最多写 123 个寄存器", en: "At most 123 registers per write" },
+  "modbus.stats.label": { zh: "通讯统计", en: "Exchange statistics" },
+  "modbus.stats.requests": { zh: "请求", en: "Requests" },
+  "modbus.stats.responses": { zh: "成功", en: "OK" },
+  "modbus.stats.exceptions": { zh: "异常", en: "Exceptions" },
+  "modbus.stats.timeouts": { zh: "超时", en: "Timeouts" },
+  "modbus.stats.latency": { zh: "响应", en: "Response" },
+  "modbus.stats.reset": { zh: "清零", en: "Reset" },
+  "modbus.stats.idle": { zh: "尚未通讯。读取或写入后在此显示结果、异常码与超时原因。", en: "No exchange yet. Results, exception codes and timeout causes appear here." },
+  "modbus.master.invalidRequest": { zh: "不是有效的 Modbus RTU 请求帧", en: "Not a valid Modbus RTU request frame" },
+  "modbus.exceptionLabel": { zh: "异常", en: "Exception" },
+  "modbus.exception.illegalFunction": { zh: "非法功能：从站不支持该功能码", en: "Illegal function: the slave does not support this function code" },
+  "modbus.exception.illegalDataAddress": { zh: "非法数据地址：起始地址或数量超出从站范围（手册地址若从 1 或 40001 起，需减 1 或减 40001）", en: "Illegal data address: start or count is outside the slave's range (subtract 1 or 40001 from 1-based manual addresses)" },
+  "modbus.exception.illegalDataValue": { zh: "非法数据值：写入值或寄存器数量不被从站接受", en: "Illegal data value: the value or register count was rejected" },
+  "modbus.exception.slaveDeviceFailure": { zh: "从站设备故障：执行请求时发生不可恢复的错误", en: "Slave device failure while processing the request" },
+  "modbus.exception.acknowledge": { zh: "已确认：从站正在处理耗时请求", en: "Acknowledge: the slave accepted a long-running request" },
+  "modbus.exception.slaveDeviceBusy": { zh: "从站忙：稍后重试或加大轮询间隔", en: "Slave busy: retry later or increase the poll interval" },
+  "modbus.exception.memoryParityError": { zh: "存储奇偶校验错误", en: "Memory parity error" },
+  "modbus.exception.gatewayPathUnavailable": { zh: "网关路径不可用", en: "Gateway path unavailable" },
+  "modbus.exception.gatewayTargetFailed": { zh: "网关目标设备无响应", en: "Gateway target device failed to respond" },
+  "modbus.exception.unknown": { zh: "未定义的异常码", en: "Undefined exception code" },
+  "modbus.timeoutLabel": { zh: "超时", en: "Timeout" },
+  "modbus.timeout.silent": { zh: "未收到任何数据：检查接线与 A/B 线序、从站地址和波特率", en: "No data received: check wiring and A/B polarity, slave ID and baud rate" },
+  "modbus.timeout.receivedPrefix": { zh: "收到", en: "Received" },
+  "modbus.timeout.garbledSuffix": { zh: "字节但没有有效帧：检查波特率、校验位和停止位", en: "bytes but no valid frame: check baud rate, parity and stop bits" },
+  "modbus.timeout.foreign": { zh: "收到的响应与请求不匹配：从站地址、功能码或长度不同", en: "Responses did not match the request: different slave ID, function code or length" },
+  "modbus.table.title": { zh: "寄存器表", en: "Register Table" },
+  "modbus.table.desc": { zh: "每次读取成功后刷新，变化的值会高亮。", en: "Refreshed after each successful read; changed values are highlighted." },
+  "modbus.table.empty": { zh: "读取成功后在此显示寄存器值", en: "Register values appear here after a successful read" },
+  "modbus.table.format": { zh: "显示", en: "Display" },
+  "modbus.table.binary": { zh: "二进制", en: "Binary" },
+  "modbus.table.address": { zh: "地址", en: "Address" },
+  "modbus.table.hexAddress": { zh: "HEX 地址", en: "HEX Addr" },
+  "modbus.table.raw": { zh: "原始值", en: "Raw" },
+  "modbus.table.value": { zh: "值", en: "Value" },
+
+  // HART
+  "hart.variableRead": { zh: "HART 主站", en: "HART Master" },
+  "hart.deviceNotFound": { zh: "尚未搜索到设备", en: "Device not found" },
+  "hart.deviceNotSearched": { zh: "设备：尚未搜索", en: "Device: Not searched" },
+  "hart.hartlinkWaiting": { zh: "HARTLink：连接串口后自动探测版本", en: "HARTLink: Version is detected after serial connection" },
+  "hart.hartlinkDetecting": { zh: "HARTLink：正在探测版本…", en: "HARTLink: Detecting version…" },
+  "hart.hartlinkDetected": { zh: "HARTLink：{model} · 固件 {version}", en: "HARTLink: {model} · Firmware {version}" },
+  "hart.hartlinkNotDetected": { zh: "HARTLink：未检测到版本响应（普通 HART 接口仍可使用）", en: "HARTLink: No version response (generic HART interfaces remain available)" },
+  "hart.hartlinkProbeFailed": { zh: "HARTLink：版本探测发送失败", en: "HARTLink: Version probe could not be sent" },
+  "hart.hartlinkDetectedLog": { zh: "检测到 {model}，固件 {version}", en: "Detected {model}, firmware {version}" },
+  "hart.hartlinkNotDetectedLog": { zh: "未收到版本响应，可继续使用普通 HART 接口", en: "No version response; generic HART interfaces remain available" },
+  "hart.primaryVariable": { zh: "Primary Variable", en: "Primary Variable" },
+  "hart.secondaryVariable": { zh: "Secondary Variable", en: "Secondary Variable" },
+  "hart.tertiaryVariable": { zh: "Tertiary Variable", en: "Tertiary Variable" },
+  "hart.quaternaryVariable": { zh: "Quaternary Variable", en: "Quaternary Variable" },
+  "hart.cmdResponse": { zh: "通用命令应答", en: "Command Response" },
+  "hart.noResponse": { zh: "尚未收到应答", en: "No response yet" },
+  "hart.searchDevice": { zh: "搜索设备", en: "Search Device" },
+  "hart.scanAddresses": { zh: "扫描 0-15", en: "Scan 0-15" },
+  "hart.scanStarted": { zh: "开始扫描轮询地址 0-15", en: "Scanning poll addresses 0-15" },
+  "hart.scanFound": { zh: "地址 {address} 发现设备", en: "Device found at address {address}" },
+  "hart.scanNotFound": { zh: "地址 0-15 未发现设备", en: "No device found at addresses 0-15" },
+  "hart.scanStop": { zh: "停止扫描（地址 {address}）", en: "Stop scan (address {address})" },
+  "hart.scanStopped": { zh: "已停止扫描", en: "Scan stopped" },
+  "hart.variableCards": { zh: "HART 动态变量", en: "HART dynamic variables" },
+  "hart.responseTimeout": { zh: "应答超时 (ms)", en: "Response Timeout (ms)" },
+  "hart.responseTimeoutTitle": { zh: "等待设备开始应答的最长时间；应答正在接收时会等它收完。超时会记录原因并继续下一次", en: "How long to wait for the device to start answering; a reply already arriving is received in full. A timeout is logged with its likely cause and polling continues" },
+  "hart.stats.label": { zh: "通讯统计", en: "Exchange statistics" },
+  "hart.stats.requests": { zh: "请求", en: "Requests" },
+  "hart.stats.responses": { zh: "成功", en: "OK" },
+  "hart.stats.errors": { zh: "错误", en: "Errors" },
+  "hart.stats.timeouts": { zh: "超时", en: "Timeouts" },
+  "hart.stats.latency": { zh: "响应", en: "Response" },
+  "hart.stats.reset": { zh: "清零", en: "Reset" },
+  "hart.stats.idle": { zh: "尚未通讯。搜索、轮询或发送命令后在此显示结果、响应码与超时原因。", en: "No exchange yet. Results, response codes and timeout causes appear here after a search, poll or command." },
+  "hart.master.invalidRequest": { zh: "不是有效的 HART 请求帧", en: "Not a valid HART request frame" },
+  "hart.addrShort": { zh: "地址", en: "Address" },
+  "hart.cancelled": { zh: "已取消", en: "Cancelled" },
+  "hart.timeoutLabel": { zh: "超时", en: "Timeout" },
+  "hart.timeout.silent": { zh: "未收到任何数据：检查 HART 调制解调器接线、回路负载电阻（≥ 250 Ω）、回路供电和轮询地址", en: "No data received: check the HART modem wiring, loop resistor (≥ 250 Ω), loop power and poll address" },
+  "hart.timeout.silentLong": { zh: "未收到任何数据：检查接线与回路供电；换过设备时请重新搜索（长地址来自上次搜索）", en: "No data received: check wiring and loop power; if the device was changed, search again (the long address comes from the last search)" },
+  "hart.timeout.garbled": { zh: "收到 {bytes} 字节但没有有效应答帧：检查 1200 波特率、奇校验 8O1 和调制解调器", en: "Received {bytes} bytes but no valid response frame: check 1200 baud, odd parity (8O1) and the modem" },
+  "hart.timeout.foreign": { zh: "收到的帧不是本次请求的应答：地址或命令不同，或设备处于 Burst 模式", en: "Frames received did not answer this request: different address or command, or the device is in burst mode" },
+  "hart.payload.exact": { zh: "{command}：请求数据必须为 {expected} 字节（当前 {length} 字节）", en: "{command}: request data must be {expected} bytes (got {length})" },
+  "hart.payload.either": { zh: "{command}：请求数据必须为 {first} 或 {second} 字节（当前 {length} 字节）", en: "{command}: request data must be {first} or {second} bytes (got {length})" },
+  "hart.payload.variableCodes": { zh: "{command}：请求数据必须包含 1–{max} 个设备变量码（当前 {length} 字节）", en: "{command}: request data must hold 1–{max} device variable codes (got {length} bytes)" },
+  "hart.payload.statusMirror": { zh: "{command}：请求数据必须为空或为 9–25 字节状态镜像（当前 {length} 字节）", en: "{command}: request data must be empty or a 9–25 byte status mirror (got {length} bytes)" },
+  "hart.payload.tooLong": { zh: "{command}：请求数据不能超过 255 字节（当前 {length} 字节）", en: "{command}: request data cannot exceed 255 bytes (got {length})" },
+  "hart.sendCommand": { zh: "发送命令", en: "Send Command" },
+  "hart.commandPreview": { zh: "命令预览", en: "Command Preview" },
+  "hart.advancedSettings": { zh: "高级设置", en: "Advanced Settings" },
+  "hart.advancedSettingsDesc": { zh: "主站/前导码、应答超时和 PV 显示缩放", en: "Master/preamble, response timeout and PV display scaling" },
+  "hart.commParams": { zh: "通讯参数", en: "Communication Params" },
+  "hart.commDesc": { zh: "标准命令直接填写工程值并自动编码；自定义命令支持原始 HEX，帧 XOR 校验自动计算。", en: "Standard commands accept engineering values and encode them automatically; custom commands support raw HEX with automatic XOR checksum." },
+  "hart.pollAddress": { zh: "轮询地址", en: "Poll Address" },
+  "hart.masterType": { zh: "主站类型", en: "Master Type" },
+  "hart.preambleLen": { zh: "前导码", en: "Preamble" },
+  "hart.pollInterval": { zh: "轮询间隔 (ms)", en: "Poll Interval (ms)" },
+  "hart.pollIntervalTitle": { zh: "大于 0 时可在监测面板手动开始轮询，默认 1000", en: "When > 0, polling can be manually started in the monitor panel; default 1000" },
+  "hart.commandMode": { zh: "命令方式", en: "Command Mode" },
+  "hart.cmdPreset": { zh: "预设标准命令", en: "Preset Standard Commands" },
+  "hart.cmdCustom": { zh: "自定义命令", en: "Custom Command" },
+  "hart.universalCmd": { zh: "标准命令", en: "Standard Command" },
+  "hart.cmdNumber": { zh: "命令号", en: "Command Number" },
+  "hart.cmdNumberTitle": { zh: "0–65535；扩展命令自动用 Cmd 31 组帧并计算 XOR 校验", en: "0-65535; extended commands use Cmd 31 framing with automatic XOR checksum" },
+  "hart.cmdData": { zh: "命令数据 (HEX)", en: "Command Data (HEX)" },
+  "hart.cmdDataPlaceholder": { zh: "仅用于自定义命令；例如 AA 01 02", en: "Custom commands only; for example AA 01 02" },
+  "hart.standardValues": { zh: "命令参数", en: "Command Parameters" },
+  "hart.noRequestValues": { zh: "此命令无需填写请求参数", en: "This command requires no request parameters" },
+  "hart.valuesEncodedHint": { zh: "填写实际值，程序会按 HART 规范自动编码；无需输入 HEX。", en: "Enter actual values; they are encoded per the HART specification. No HEX input is needed." },
+  "hart.input.pollAddress": { zh: "新轮询地址", en: "New Poll Address" },
+  "hart.input.loopCurrentMode": { zh: "回路电流模式", en: "Loop Current Mode" },
+  "hart.input.deviceVariables": { zh: "设备变量码（十进制列表）", en: "Device Variable Codes (decimal list)" },
+  "hart.input.shortTag": { zh: "短 Tag", en: "Short Tag" },
+  "hart.input.message": { zh: "Message", en: "Message" },
+  "hart.input.descriptor": { zh: "描述符", en: "Descriptor" },
+  "hart.input.date": { zh: "日期", en: "Date" },
+  "hart.input.finalAssemblyNumber": { zh: "最终装配号", en: "Final Assembly Number" },
+  "hart.input.longTag": { zh: "Long Tag", en: "Long Tag" },
+  "hart.input.dampingSeconds": { zh: "PV 阻尼（秒）", en: "PV Damping (seconds)" },
+  "hart.input.unitCode": { zh: "工程单位", en: "Engineering Unit" },
+  "hart.selectUnit": { zh: "请选择工程单位", en: "Select an engineering unit" },
+  "hart.unitExpansionOption": { zh: "扩展单位（需结合变量分类）", en: "Expanded unit (requires variable classification)" },
+  "hart.manufacturerUnitOption": { zh: "厂商定义单位", en: "Manufacturer-defined unit" },
+  "hart.input.upperRange": { zh: "量程上限 URV", en: "Upper Range Value (URV)" },
+  "hart.input.lowerRange": { zh: "量程下限 LRV", en: "Lower Range Value (LRV)" },
+  "hart.input.configCounter": { zh: "组态变更计数器（可留空）", en: "Configuration Change Counter (optional)" },
+  "hart.input.fixedCurrent": { zh: "固定回路电流（mA）", en: "Fixed Loop Current (mA)" },
+  "hart.input.measuredCurrent": { zh: "外部实测电流（mA）", en: "Externally Measured Current (mA)" },
+  "hart.input.transferFunction": { zh: "PV 传递函数", en: "PV Transfer Function" },
+  "hart.input.deviceVariable": { zh: "设备变量码（十进制）", en: "Device Variable Code (decimal)" },
+  "hart.input.trimPoint": { zh: "校正点", en: "Trim Point" },
+  "hart.input.trimValue": { zh: "当前施加工程值", en: "Applied Engineering Value" },
+  "hart.input.burstMessage": { zh: "Burst 消息号", en: "Burst Message Number" },
+  "hart.input.burstCommand": { zh: "Burst 命令号", en: "Burst Command Number" },
+  "hart.input.burstControl": { zh: "Burst 控制", en: "Burst Control" },
+  "hart.input.mustBeDecimal": { zh: "必须是十进制整数", en: " must be a decimal integer" },
+  "hart.input.mustBeNumber": { zh: "必须是有效数值", en: " must be a valid number" },
+  "hart.input.range": { zh: "必须在 {min}–{max} 范围内", en: " must be in the range {min}–{max}" },
+  "hart.input.tooLong": { zh: "最多允许 {max} 个字符", en: " allows at most {max} characters" },
+  "hart.input.invalidPackedAscii": { zh: "包含 HART Packed ASCII 不支持的字符", en: " contains characters unsupported by HART Packed ASCII" },
+  "hart.input.invalidLatin1": { zh: "包含 ISO Latin-1 不支持的字符", en: " contains characters unsupported by ISO Latin-1" },
+  "hart.input.listCount": { zh: "必须包含 1–{max} 个十进制码", en: " must contain 1–{max} decimal codes" },
+  "hart.input.invalidDate": { zh: "日期必须是 1900-01-01 至 2155-12-31 范围内的 YYYY-MM-DD", en: "Date must be YYYY-MM-DD in the range 1900-01-01 to 2155-12-31" },
+  "hart.option.disabled": { zh: "0 · 禁用", en: "0 · Disabled" },
+  "hart.option.enabled": { zh: "1 · 启用", en: "1 · Enabled" },
+  "hart.option.lowPoint": { zh: "1 · 低点", en: "1 · Low Point" },
+  "hart.option.highPoint": { zh: "2 · 高点", en: "2 · High Point" },
+  "hart.option.burstOff": { zh: "0 · 关闭", en: "0 · Off" },
+  "hart.option.burstToken": { zh: "1 · Token-Passing", en: "1 · Token-Passing" },
+  "hart.option.burstTdma": { zh: "2 · TDMA", en: "2 · TDMA" },
+  "hart.option.burstBoth": { zh: "3 · TDMA + Token-Passing", en: "3 · TDMA + Token-Passing" },
+  "hart.option.burstIp": { zh: "4 · HART-IP", en: "4 · HART-IP" },
+  "hart.transfer.linear": { zh: "0 · 线性", en: "0 · Linear" },
+  "hart.transfer.sqrt": { zh: "1 · 平方根", en: "1 · Square Root" },
+  "hart.transfer.sqrt3": { zh: "2 · 平方根三次方", en: "2 · Square Root 3rd Power" },
+  "hart.transfer.sqrt5": { zh: "3 · 平方根五次方", en: "3 · Square Root 5th Power" },
+  "hart.transfer.special": { zh: "4 · 特殊曲线（兼容，不用于新设备）", en: "4 · Special Curve (Legacy; Not for New Devices)" },
+  "hart.transfer.square": { zh: "5 · 平方", en: "5 · Square" },
+  "hart.transfer.sqrtCutoff": { zh: "6 · 带截止的平方根", en: "6 · Square Root with Cut-off" },
+  "hart.transfer.equal25": { zh: "10 · 等百分比 1:25", en: "10 · Equal Percentage 1:25" },
+  "hart.transfer.equal33": { zh: "11 · 等百分比 1:33", en: "11 · Equal Percentage 1:33" },
+  "hart.transfer.equal50": { zh: "12 · 等百分比 1:50", en: "12 · Equal Percentage 1:50" },
+  "hart.transfer.quick25": { zh: "15 · 快开 1:25", en: "15 · Quick Open 1:25" },
+  "hart.transfer.quick33": { zh: "16 · 快开 1:33", en: "16 · Quick Open 1:33" },
+  "hart.transfer.quick50": { zh: "17 · 快开 1:50", en: "17 · Quick Open 1:50" },
+  "hart.transfer.hyperbolic010": { zh: "30 · 双曲线（形状因子 0.10）", en: "30 · Hyperbolic (Shape Factor 0.10)" },
+  "hart.transfer.hyperbolic020": { zh: "31 · 双曲线（形状因子 0.20）", en: "31 · Hyperbolic (Shape Factor 0.20)" },
+  "hart.transfer.hyperbolic030": { zh: "32 · 双曲线（形状因子 0.30）", en: "32 · Hyperbolic (Shape Factor 0.30)" },
+  "hart.transfer.hyperbolic050": { zh: "34 · 双曲线（形状因子 0.50）", en: "34 · Hyperbolic (Shape Factor 0.50)" },
+  "hart.transfer.hyperbolic070": { zh: "37 · 双曲线（形状因子 0.70）", en: "37 · Hyperbolic (Shape Factor 0.70)" },
+  "hart.transfer.hyperbolic100": { zh: "40 · 双曲线（形状因子 1.00）", en: "40 · Hyperbolic (Shape Factor 1.00)" },
+  "hart.transfer.hyperbolic150": { zh: "41 · 双曲线（形状因子 1.50）", en: "41 · Hyperbolic (Shape Factor 1.50)" },
+  "hart.transfer.hyperbolic200": { zh: "42 · 双曲线（形状因子 2.00）", en: "42 · Hyperbolic (Shape Factor 2.00)" },
+  "hart.transfer.hyperbolic300": { zh: "43 · 双曲线（形状因子 3.00）", en: "43 · Hyperbolic (Shape Factor 3.00)" },
+  "hart.transfer.hyperbolic400": { zh: "44 · 双曲线（形状因子 4.00）", en: "44 · Hyperbolic (Shape Factor 4.00)" },
+  "hart.transfer.hyperbolic500": { zh: "45 · 双曲线（形状因子 5.00）", en: "45 · Hyperbolic (Shape Factor 5.00)" },
+  "hart.transfer.flatBottomTank": { zh: "100 · 平底罐", en: "100 · Flat Bottom Tank" },
+  "hart.transfer.conicalBottomTank": { zh: "101 · 锥形/棱锥底罐", en: "101 · Conical/Pyramidal Bottom Tank" },
+  "hart.transfer.parabolicBottomTank": { zh: "102 · 抛物线底罐", en: "102 · Parabolic Bottom Tank" },
+  "hart.transfer.sphericalBottomTank": { zh: "103 · 球形底罐", en: "103 · Spherical Bottom Tank" },
+  "hart.transfer.angledBottomTank": { zh: "104 · 斜底罐", en: "104 · Angled Bottom Tank" },
+  "hart.transfer.flatEndCylinder": { zh: "105 · 平端圆柱罐", en: "105 · Flat End Cylinder Tank" },
+  "hart.transfer.parabolicEndCylinder": { zh: "106 · 抛物线端圆柱罐", en: "106 · Parabolic End Cylinder Tank" },
+  "hart.transfer.sphericalTank": { zh: "107 · 球形罐", en: "107 · Spherical Tank" },
+  "hart.transfer.discrete": { zh: "230 · 离散开关", en: "230 · Discrete Switch" },
+  "hart.transfer.sqrtSpecial": { zh: "231 · 平方根 + 特殊曲线（兼容）", en: "231 · Square Root + Special Curve (Legacy)" },
+  "hart.transfer.sqrt3Special": { zh: "232 · 平方根三次方 + 特殊曲线（兼容）", en: "232 · Square Root 3rd Power + Special Curve (Legacy)" },
+  "hart.transfer.sqrt5Special": { zh: "233 · 平方根五次方 + 特殊曲线（兼容）", en: "233 · Square Root 5th Power + Special Curve (Legacy)" },
+  "hart.dataHelper": { zh: "命令数据助手", en: "Command Data Helper" },
+  "hart.dataHelperDesc": { zh: "按现场常用场景生成请求数据，仍可在 HEX 输入框中手工修改。", en: "Generate request data for common field tasks; you can still edit the HEX field manually." },
+  "hart.helperTemplate": { zh: "模板", en: "Template" },
+  "hart.helperText": { zh: "文本 / Tag", en: "Text / Tag" },
+  "hart.helperDescriptor": { zh: "描述符", en: "Descriptor" },
+  "hart.helperDate": { zh: "日期", en: "Date" },
+  "hart.helperLoopMode": { zh: "Loop Mode Byte", en: "Loop Mode Byte" },
+  "hart.applyTemplate": { zh: "生成命令数据", en: "Generate Data" },
+  "hart.clearCommandData": { zh: "清空数据", en: "Clear Data" },
+  "hart.templatePreview": { zh: "模板预览", en: "Template Preview" },
+  "hart.template.cmd9": { zh: "Cmd 9 读 PV/SV/TV/QV + 状态", en: "Cmd 9 Read PV/SV/TV/QV + Status" },
+  "hart.template.cmd33": { zh: "Cmd 33 读 PV/SV/TV/QV", en: "Cmd 33 Read PV/SV/TV/QV" },
+  "hart.template.cmd6": { zh: "Cmd 6 写当前轮询地址", en: "Cmd 6 Write Current Poll Address" },
+  "hart.template.cmd11": { zh: "Cmd 11 按短 Tag 查设备", en: "Cmd 11 Find Device by Short Tag" },
+  "hart.template.cmd17": { zh: "Cmd 17 写设备消息", en: "Cmd 17 Write Message" },
+  "hart.template.cmd18": { zh: "Cmd 18 写 Tag / 描述符 / 日期", en: "Cmd 18 Write Tag / Descriptor / Date" },
+  "hart.template.cmd21": { zh: "Cmd 21 按长标签查设备", en: "Cmd 21 Find by Long Tag" },
+  "hart.template.cmd22": { zh: "Cmd 22 写长标签", en: "Cmd 22 Write Long Tag" },
+  "hart.template.cmd38": { zh: "Cmd 38 复位配置变更标志", en: "Cmd 38 Reset Config Changed Flag" },
+  "hart.frameChecksum": { zh: "帧校验 (XOR)", en: "Frame Checksum (XOR)" },
+  "hart.pollMode": { zh: "轮询方式", en: "Poll Mode" },
+  "hart.pollPv": { zh: "轮询 PV (Cmd 1)", en: "Poll PV (Cmd 1)" },
+  "hart.pollDynamic": { zh: "轮询 PV/SV/TV/QV (Cmd 3)", en: "Poll PV/SV/TV/QV (Cmd 3)" },
+  "hart.pvDisplayName": { zh: "PV 显示名", en: "PV Display Name" },
+  "hart.pvUnitOverride": { zh: "PV 单位覆盖", en: "PV Unit Override" },
+  "hart.pvUnitPlaceholder": { zh: "留空则使用 HART 单位码", en: "Leave empty to use HART unit code" },
+  "hart.pvScale": { zh: "PV 比例", en: "PV Scale" },
+  "hart.pvOffset": { zh: "PV 偏移", en: "PV Offset" },
+  "hart.profile.name": { zh: "HART 通用设备", en: "HART Universal Device" },
+  "hart.profile.type": { zh: "HART 现场总线", en: "HART Fieldbus" },
+  "hart.mode.deviceId": { zh: "设备标识", en: "Device ID" },
+  "hart.searchFirst": { zh: "请先搜索设备（Cmd 0），再发送 Cmd 1+ 长地址帧", en: "Please search device first (Cmd 0), then send Cmd 1+ with long address frame" },
+  "hart.neverSearched": { zh: "未搜索", en: "Not searched" },
+  "hart.hartRev": { zh: "HART 修订", en: "HART Rev" },
+  "hart.preambleCount": { zh: "前导码", en: "Preamble" },
+  "hart.loopMode": { zh: "环路电流模式", en: "Loop Current Mode" },
+  "hart.requestPreamble": { zh: "请求前导码", en: "Request Preamble" },
+  "hart.classification": { zh: "分类", en: "Classification" },
+  "hart.bytes": { zh: "字节", en: "bytes" },
+  "hart.noData": { zh: "无数据", en: "No data" },
+  "hart.command": { zh: "命令", en: "Command" },
+  "hart.responseCode": { zh: "响应码", en: "Response Code" },
+  "hart.deviceStatus": { zh: "设备状态", en: "Device Status" },
+  "hart.configChangeCounter": { zh: "配置变更计数", en: "Config Change Counter" },
+  "hart.extendedStatus": { zh: "扩展状态", en: "Extended Status" },
+  "hart.lastDeviceVariable": { zh: "最后设备变量码", en: "Last Device Variable Code" },
+  "hart.deviceVariable": { zh: "设备变量", en: "Device Variable" },
+  "hart.variableStatus": { zh: "变量状态", en: "Variable Status" },
+  "hart.timestamp": { zh: "时间戳", en: "Timestamp" },
+  "hart.operatingMode": { zh: "运行模式", en: "Operating Mode" },
+  "hart.standardizedStatus0": { zh: "标准状态 0", en: "Standardized Status 0" },
+  "hart.standardizedStatus1": { zh: "标准状态 1", en: "Standardized Status 1" },
+  "hart.standardizedStatus2": { zh: "标准状态 2", en: "Standardized Status 2" },
+  "hart.standardizedStatus3": { zh: "标准状态 3", en: "Standardized Status 3" },
+  "hart.analogChannelSaturated": { zh: "模拟通道饱和", en: "Analog Channel Saturated" },
+  "hart.analogChannelFixed": { zh: "模拟通道固定", en: "Analog Channel Fixed" },
+  "hart.unitCode": { zh: "单位码", en: "Unit" },
+  "hart.manufacturerUnit": { zh: "厂商单位码", en: "Mfr Unit" },
+
+  // HART 命令标签
+  "hart.cmd.0": { zh: "0 读设备标识", en: "0 Read Device ID" },
+  "hart.cmd.1": { zh: "1 读主变量 (PV)", en: "1 Read Primary Variable (PV)" },
+  "hart.cmd.2": { zh: "2 读环路电流 / 百分比", en: "2 Read Loop Current / Percent" },
+  "hart.cmd.3": { zh: "3 读动态变量 (PV/SV/TV/QV)", en: "3 Read Dynamic Variables (PV/SV/TV/QV)" },
+  "hart.cmd.6": { zh: "6 写轮询地址", en: "6 Write Polling Address" },
+  "hart.cmd.7": { zh: "7 读环路配置", en: "7 Read Loop Config" },
+  "hart.cmd.8": { zh: "8 读动态变量分类", en: "8 Read Dynamic Variable Classification" },
+  "hart.cmd.9": { zh: "9 读带状态的设备变量", en: "9 Read Device Variables with Status" },
+  "hart.cmd.11": { zh: "11 按短标签读设备标识", en: "11 Read Device ID by Tag" },
+  "hart.cmd.12": { zh: "12 读设备消息", en: "12 Read Device Message" },
+  "hart.cmd.13": { zh: "13 读标签 / 描述符 / 日期", en: "13 Read Tag / Descriptor / Date" },
+  "hart.cmd.14": { zh: "14 读传感器信息", en: "14 Read Sensor Info" },
+  "hart.cmd.15": { zh: "15 读输出信息", en: "15 Read Output Info" },
+  "hart.cmd.16": { zh: "16 读最终装配号", en: "16 Read Final Assembly Number" },
+  "hart.cmd.17": { zh: "17 写设备消息", en: "17 Write Device Message" },
+  "hart.cmd.18": { zh: "18 写标签 / 描述符 / 日期", en: "18 Write Tag / Descriptor / Date" },
+  "hart.cmd.19": { zh: "19 写最终装配号", en: "19 Write Final Assembly Number" },
+  "hart.cmd.20": { zh: "20 读长标签", en: "20 Read Long Tag" },
+  "hart.cmd.21": { zh: "21 读长标签关联的设备标识", en: "21 Read Long Tag Device ID" },
+  "hart.cmd.22": { zh: "22 写长标签", en: "22 Write Long Tag" },
+  "hart.cmd.33": { zh: "33 读变送器变量", en: "33 Read Transmitter Variables" },
+  "hart.cmd.34": { zh: "34 写阻尼值", en: "34 Write Damping Value" },
+  "hart.cmd.35": { zh: "35 写主变量量程", en: "35 Write PV Range" },
+  "hart.cmd.38": { zh: "38 复位配置变更标志", en: "38 Reset Config Change Flag" },
+  "hart.cmd.40": { zh: "40 进入 / 退出固定电流模式", en: "40 Enter / Exit Fixed Current Mode" },
+  "hart.cmd.43": { zh: "43 设置 PV 零点", en: "43 Set PV Zero" },
+  "hart.cmd.44": { zh: "44 写 PV 单位", en: "44 Write PV Unit" },
+  "hart.cmd.45": { zh: "45 校正环路电流零点", en: "45 Trim Loop Current Zero" },
+  "hart.cmd.46": { zh: "46 校正环路电流增益", en: "46 Trim Loop Current Gain" },
+  "hart.cmd.47": { zh: "47 写 PV 传递函数", en: "47 Write PV Transfer Function" },
+  "hart.cmd.48": { zh: "48 读附加设备状态", en: "48 Read Additional Device Status" },
+  "hart.cmd.50": { zh: "50 读动态变量分配", en: "50 Read Dynamic Variable Assignments" },
+  "hart.cmd.81": { zh: "81 读设备变量校正规则", en: "81 Read Device Variable Trim Guidelines" },
+  "hart.cmd.82": { zh: "82 写设备变量校正点", en: "82 Write Device Variable Trim Point" },
+  "hart.cmd.105": { zh: "105 读 Burst 配置", en: "105 Read Burst Configuration" },
+  "hart.cmd.108": { zh: "108 写 Burst 命令号", en: "108 Write Burst Command Number" },
+  "hart.cmd.109": { zh: "109 控制 Burst 模式", en: "109 Control Burst Mode" },
+
+  // HART 解析中文
+  "hart.loopCurrent": { zh: "环路电流", en: "Loop Current" },
+  "hart.percentRange": { zh: "量程百分比", en: "Percent Range" },
+  "hart.emptyMsg": { zh: "(空消息)", en: "(Empty message)" },
+  "hart.emptyLongTag": { zh: "(空长标签)", en: "(Empty long tag)" },
+  "hart.manufacturer": { zh: "制造商", en: "Manufacturer" },
+  "hart.deviceType": { zh: "设备类型", en: "Device Type" },
+  "hart.deviceId": { zh: "设备 ID", en: "Device ID" },
+  "hart.hartRevision": { zh: "HART 修订", en: "HART Revision" },
+  "hart.tag": { zh: "标签", en: "Tag" },
+  "hart.descriptor": { zh: "描述符", en: "Descriptor" },
+  "hart.date": { zh: "日期", en: "Date" },
+  "hart.upperRange": { zh: "上限", en: "Upper" },
+  "hart.lowerRange": { zh: "下限", en: "Lower" },
+  "hart.minSpan": { zh: "最小量程", en: "Min Span" },
+  "hart.alarm": { zh: "报警", en: "Alarm" },
+  "hart.transferFunc": { zh: "传递函数", en: "Transfer Function" },
+  "hart.upperRangeLimit": { zh: "上限量程", en: "Upper Range" },
+  "hart.lowerRangeLimit": { zh: "下限量程", en: "Lower Range" },
+  "hart.damping": { zh: "阻尼", en: "Damping" },
+  "hart.assemblyNumber": { zh: "装配号", en: "Assembly No." },
+  "hart.transducerSerial": { zh: "传感器序列号", en: "Transducer Serial" },
+  "hart.trimPoints": { zh: "支持的校正点", en: "Supported Trim Points" },
+  "hart.lowPointRange": { zh: "低点范围", en: "Low-point Range" },
+  "hart.highPointRange": { zh: "高点范围", en: "High-point Range" },
+  "hart.minimumDifferential": { zh: "最小校正点间隔", en: "Minimum Differential" },
+  "hart.trimPoint": { zh: "校正点", en: "Trim Point" },
+  "hart.additionalStatus": { zh: "附加状态", en: "Additional Status" },
+  "hart.status.deviceMalfunction": { zh: "设备故障", en: "Device Malfunction" },
+  "hart.status.configChanged": { zh: "配置已变更", en: "Configuration Changed" },
+  "hart.status.coldStart": { zh: "冷启动", en: "Cold Start" },
+  "hart.status.moreStatus": { zh: "有更多状态(Cmd 48)", en: "More Status Available (Cmd 48)" },
+  "hart.status.loopFixed": { zh: "环路电流固定", en: "Loop Current Fixed" },
+  "hart.status.loopSaturated": { zh: "环路电流饱和", en: "Loop Current Saturated" },
+  "hart.status.nonPvOutOfLimits": { zh: "非主变量越限", en: "Non-PV Out of Limits" },
+  "hart.status.pvOutOfLimits": { zh: "主变量越限", en: "PV Out of Limits" },
+  "hart.commStatus.verticalParity": { zh: "垂直奇偶校验错误", en: "Vertical Parity Error" },
+  "hart.commStatus.overrun": { zh: "串口溢出", en: "Overrun Error" },
+  "hart.commStatus.framing": { zh: "帧错误", en: "Framing Error" },
+  "hart.commStatus.checksum": { zh: "纵向校验错误", en: "Longitudinal Parity Error" },
+  "hart.commStatus.communicationFailure": { zh: "通信失败", en: "Communication Failure" },
+  "hart.commStatus.bufferOverflow": { zh: "缓冲区溢出", en: "Buffer Overflow" },
+  "hart.response.success": { zh: "成功", en: "Success" },
+  "hart.response.communicationError": { zh: "通信错误", en: "Communication Error" },
+  "hart.response.undefined": { zh: "未定义/命令特定响应", en: "Undefined / Command-specific Response" },
+  "hart.response.tooFewBytes": { zh: "数据字节不足", en: "Too Few Data Bytes" },
+  "hart.response.deviceSpecificError": { zh: "设备特定命令错误", en: "Device-specific Command Error" },
+  "hart.response.writeProtect": { zh: "写保护", en: "In Write Protect Mode" },
+  "hart.response.warning": { zh: "警告", en: "Warning" },
+  "hart.response.accessRestricted": { zh: "访问受限", en: "Access Restricted" },
+  "hart.response.busy": { zh: "设备忙", en: "Busy" },
+  "hart.response.invalidPollAddress": { zh: "轮询地址无效", en: "Invalid Poll Address" },
+  "hart.response.invalidSelection": { zh: "选择无效", en: "Invalid Selection" },
+  "hart.response.invalidDate": { zh: "日期码无效", en: "Invalid Date Code" },
+  "hart.response.tagMismatch": { zh: "标签不匹配", en: "Tag Mismatch" },
+  "hart.response.configCounterMismatch": { zh: "配置变更计数不匹配", en: "Config Counter Mismatch" },
+  "hart.response.updateInProgress": { zh: "状态更新中", en: "Update in Progress" },
+  "hart.response.statusBytesMismatch": { zh: "状态字节不匹配", en: "Status Bytes Mismatch" },
+
+  // HART 仪表设置与校正工作区
+  "hart.workspace.general": { zh: "通用命令", en: "Universal Commands" },
+  "hart.workspace.settings": { zh: "仪表设置", en: "Instrument Settings" },
+  "hart.workspace.calibration": { zh: "输入输出校正", en: "I/O Calibration" },
+  "hart.workspace.ready": { zh: "就绪", en: "Ready" },
+  "hart.workspace.connectFirst": { zh: "请先连接 HART 接口", en: "Connect the HART interface first" },
+  "hart.workspace.sending": { zh: "正在发送 Cmd {command}…", en: "Sending Cmd {command}…" },
+  "hart.workspace.notSent": { zh: "未能发送：请检查连接", en: "Not sent: check the connection" },
+  "hart.settings.title": { zh: "仪表设置", en: "Instrument Settings" },
+  "hart.settings.desc": { zh: "读取并修改测量、设备标识与 Burst 模式参数。写入操作会在发送前再次确认。", en: "Read and update measurement, identity, and burst-mode parameters. Writes require confirmation before sending." },
+  "hart.settings.readIdentity": { zh: "读取设备标识", en: "Read Device Identity" },
+  "hart.settings.measurement": { zh: "测量参数", en: "Measurement Parameters" },
+  "hart.settings.measurementDesc": { zh: "读取传感器与输出配置，设置 PV 单位、量程、阻尼和传递函数。", en: "Read sensor and output configuration, then set the PV unit, range, damping, and transfer function." },
+  "hart.settings.writeUnit": { zh: "写入单位", en: "Write Unit" },
+  "hart.settings.writeRange": { zh: "写入量程", en: "Write Range" },
+  "hart.settings.writeDamping": { zh: "写入阻尼", en: "Write Damping" },
+  "hart.settings.writeTransfer": { zh: "写入传递函数", en: "Write Transfer Function" },
+  "hart.settings.identity": { zh: "设备标识参数", en: "Device Identity Parameters" },
+  "hart.settings.identityDesc": { zh: "读取或写入消息、短标签、描述符、日期、装配号和轮询地址。", en: "Read or write the message, short tag, descriptor, date, assembly number, and polling address." },
+  "hart.settings.readMessage": { zh: "读取消息", en: "Read Message" },
+  "hart.settings.writeMessage": { zh: "写入消息", en: "Write Message" },
+  "hart.settings.readTag": { zh: "读取标签参数", en: "Read Tag Data" },
+  "hart.settings.writeTag": { zh: "写入标签参数", en: "Write Tag Data" },
+  "hart.settings.readAssembly": { zh: "读取装配号", en: "Read Assembly No." },
+  "hart.settings.writeAssembly": { zh: "写入装配号", en: "Write Assembly No." },
+  "hart.settings.writeAddress": { zh: "写入轮询地址", en: "Write Polling Address" },
+  "hart.settings.burst": { zh: "Burst 模式", en: "Burst Mode" },
+  "hart.settings.burstDesc": { zh: "按 Burst 消息索引读取配置，并设置命令号或启停 Burst 模式。", en: "Read configuration by burst-message index, set its command number, or enable and disable burst mode." },
+  "hart.settings.readBurst": { zh: "读取 Burst 配置", en: "Read Burst Config" },
+  "hart.settings.writeBurst": { zh: "写入 Burst 命令", en: "Write Burst Command" },
+  "hart.settings.enableBurst": { zh: "启用 Burst", en: "Enable Burst" },
+  "hart.settings.disableBurst": { zh: "禁用 Burst", en: "Disable Burst" },
+  "hart.burstControl": { zh: "Burst 控制码", en: "Burst Control Code" },
+  "hart.burstCommand": { zh: "Burst 命令", en: "Burst Command" },
+  "hart.burstMessage": { zh: "Burst 消息号", en: "Burst Message" },
+  "hart.burstDeviceVariables": { zh: "Burst 设备变量", en: "Burst Device Variables" },
+  "hart.burstUpdateTime": { zh: "更新周期", en: "Update Time" },
+  "hart.burstMaximumUpdateTime": { zh: "最大更新周期", en: "Maximum Update Time" },
+  "hart.burstTrigger": { zh: "触发模式", en: "Trigger Mode" },
+  "hart.calibration.title": { zh: "输入输出校正", en: "Input / Output Calibration" },
+  "hart.calibration.desc": { zh: "提供固定电流、环路电流校正以及 PV 设备变量校正流程。", en: "Fixed-current output, loop-current trim, and PV device-variable trim workflows." },
+  "hart.calibration.safety": { zh: "校正命令会直接影响模拟输出或设备测量值。操作前请将控制回路置于安全状态，并使用可溯源标准表。", en: "Calibration commands directly affect the analog output or measured value. Put the loop in a safe state and use a traceable reference instrument." },
+  "hart.calibration.fixedCurrent": { zh: "固定环路电流", en: "Fixed Loop Current" },
+  "hart.calibration.fixedCurrentDesc": { zh: "Cmd 40：输出指定电流；写入 0 mA 退出固定电流模式。", en: "Cmd 40: force the specified current; write 0 mA to exit fixed-current mode." },
+  "hart.calibration.presetCurrent": { zh: "预设电流", en: "Preset Current" },
+  "hart.calibration.customCurrent": { zh: "自定义电流 (mA)", en: "Custom Current (mA)" },
+  "hart.calibration.setPreset": { zh: "输出预设值", en: "Apply Preset" },
+  "hart.calibration.setCustom": { zh: "输出自定义值", en: "Apply Custom Value" },
+  "hart.calibration.exitFixed": { zh: "退出固定电流", en: "Exit Fixed Current" },
+  "hart.calibration.loopTrim": { zh: "环路电流校正", en: "Loop-current Trim" },
+  "hart.calibration.loopTrimDesc": { zh: "先输出 4 mA 或 20 mA，输入标准表实测值，再执行零点或增益校正。", en: "First force 4 mA or 20 mA, enter the reference meter reading, then trim zero or gain." },
+  "hart.calibration.measuredLow": { zh: "4 mA 点实测值", en: "Measured at 4 mA" },
+  "hart.calibration.measuredHigh": { zh: "20 mA 点实测值", en: "Measured at 20 mA" },
+  "hart.calibration.outputLow": { zh: "输出 4 mA", en: "Output 4 mA" },
+  "hart.calibration.outputHigh": { zh: "输出 20 mA", en: "Output 20 mA" },
+  "hart.calibration.trimLow": { zh: "校正零点", en: "Trim Zero" },
+  "hart.calibration.trimHigh": { zh: "校正增益", en: "Trim Gain" },
+  "hart.calibration.pvTrim": { zh: "PV 设备变量校正", en: "PV Device-variable Trim" },
+  "hart.calibration.pvTrimDesc": { zh: "先读取 PV 映射与设备校正规则，再按设备允许的校正点写入标准输入值。", en: "Read the PV mapping and device trim guidelines first, then write a reference input at a supported trim point." },
+  "hart.calibration.pvZero": { zh: "设置 PV 零点", en: "Set PV Zero" },
+  "hart.calibration.readGuidelines": { zh: "读取校正规则", en: "Read Trim Guidelines" },
+  "hart.calibration.guidelinesHint": { zh: "尚未读取 Cmd 50 / Cmd 81", en: "Cmd 50 / Cmd 81 not read yet" },
+  "hart.calibration.appliedLow": { zh: "低点标准输入值", en: "Applied Low-point Value" },
+  "hart.calibration.appliedHigh": { zh: "高点标准输入值", en: "Applied High-point Value" },
+  "hart.calibration.trimPvLow": { zh: "写入低点校正", en: "Write Low-point Trim" },
+  "hart.calibration.trimPvHigh": { zh: "写入高点校正", en: "Write High-point Trim" },
+  "hart.calibration.readingMapping": { zh: "正在读取 PV 设备变量映射 (Cmd 50)…", en: "Reading the PV device-variable mapping (Cmd 50)…" },
+  "hart.calibration.readGuidelinesFirst": { zh: "请先读取校正规则", en: "Read the trim guidelines first" },
+  "hart.calibration.invalidPvMapping": { zh: "PV 映射码 {code} 不能用于 Cmd 81 校正", en: "PV mapping code {code} cannot be trimmed with Cmd 81" },
+  "hart.calibration.readingGuidelines": { zh: "PV 映射为设备变量 {code}，正在读取 Cmd 81…", en: "PV maps to device variable {code}; reading Cmd 81…" },
+  "hart.calibration.trimOutsideRange": { zh: "{point}必须在 {min}–{max} {unit} 范围内", en: "{point} must be within {min}–{max} {unit}" },
+  "hart.calibration.trimDifferential": { zh: "高低校正点差值必须不小于 {min} {unit}", en: "The trim-point differential must be at least {min} {unit}" },
+
+  // ===== MQTT =====
+  "mqtt.title": { zh: "MQTT 调试", en: "MQTT Debug" },
+  "mqtt.desc": { zh: "连接 MQTT Broker，发布/订阅主题并解析 JSON 回包。", en: "Connect to MQTT Broker, publish/subscribe topics and parse JSON responses." },
+  "mqtt.quickPublish": { zh: "快捷发布", en: "Quick Publish" },
+  "mqtt.quickPublishDesc": { zh: "可直接发布，也可填入下方收发调试区后再编辑", en: "Can publish directly or fill into the transceiver debug area below for editing" },
+  "mqtt.rxCount": { zh: "已接收", en: "Received" },
+  "mqtt.txCount": { zh: "已发送", en: "Sent" },
+  "mqtt.subscribeTopic": { zh: "订阅主题", en: "Subscribe Topic" },
+  "mqtt.publishTopic": { zh: "发布主题", en: "Publish Topic" },
+  "mqtt.publishOptions": { zh: "发布选项", en: "Publish Options" },
+  "mqtt.publishConfig": { zh: "发布配置", en: "Publish Config" },
+  "mqtt.publishConfigDesc": { zh: "覆盖侧栏默认发布主题，设置 QoS 与保留标志。", en: "Override sidebar default publish topic; set QoS and retain flag." },
+  "mqtt.publishTopicField": { zh: "发布主题", en: "Publish Topic" },
+  "mqtt.publishTopicPlaceholder": { zh: "留空使用侧栏「发布主题」", en: "Leave empty to use sidebar publish topic" },
+  "mqtt.qos0": { zh: "0 - 最多一次", en: "0 - At most once" },
+  "mqtt.qos1": { zh: "1 - 至少一次", en: "1 - At least once" },
+  "mqtt.qos2": { zh: "2 - 仅一次", en: "2 - Exactly once" },
+  "mqtt.retain": { zh: "保留消息", en: "Retain" },
+  "mqtt.publishTarget": { zh: "发布目标", en: "Publish Target" },
+  "mqtt.debugConfig": { zh: "调试配置", en: "Debug Config" },
+  "mqtt.debugConfigDesc": { zh: "轮询消息与发布选项；曲线解析在监测面板配置。", en: "Polling message and publish options; curve parsing configured in monitor panel." },
+  "mqtt.pollInterval": { zh: "轮询间隔 (ms)", en: "Poll Interval (ms)" },
+  "mqtt.pollFormat": { zh: "轮询格式", en: "Poll Format" },
+  "mqtt.pollMessage": { zh: "轮询消息", en: "Poll Message" },
+  "mqtt.pollPreview": { zh: "轮询预览", en: "Poll Preview" },
+  "mqtt.fillSend": { zh: "填入发送框", en: "Fill to Send" },
+  "mqtt.profile.name": { zh: "MQTT 调试", en: "MQTT Debug" },
+  "mqtt.profile.type": { zh: "MQTT 消息调试", en: "MQTT Message Debug" },
+  "mqtt.noPollMsg": { zh: "未配置轮询消息", en: "No polling message configured" },
+
+  // ===== WebSocket =====
+  "ws.title": { zh: "WebSocket 调试", en: "WebSocket Debug" },
+  "ws.desc": { zh: "连接 WebSocket 服务，快捷发送 JSON/文本并解析回包。", en: "Connect to WebSocket service, quick-send JSON/text and parse responses." },
+  "ws.quickSend": { zh: "快捷发送", en: "Quick Send" },
+  "ws.quickSendDesc": { zh: "可直接发送，也可填入下方收发调试区后再编辑", en: "Can send directly or fill into the transceiver debug area below for editing" },
+  "ws.rxCount": { zh: "已接收", en: "Received" },
+  "ws.txCount": { zh: "已发送", en: "Sent" },
+  "ws.endpoint": { zh: "连接地址", en: "Endpoint" },
+  "ws.debugConfig": { zh: "调试配置", en: "Debug Config" },
+  "ws.debugConfigDesc": { zh: "轮询消息；曲线解析在监测面板配置。", en: "Polling message; curve parsing configured in monitor panel." },
+  "ws.pollInterval": { zh: "轮询间隔 (ms)", en: "Poll Interval (ms)" },
+  "ws.pollFormat": { zh: "轮询格式", en: "Poll Format" },
+  "ws.pollMessage": { zh: "轮询消息", en: "Poll Message" },
+  "ws.pollPreview": { zh: "轮询预览", en: "Poll Preview" },
+  "ws.fillSend": { zh: "填入发送框", en: "Fill to Send" },
+  "ws.profile.name": { zh: "WebSocket 调试", en: "WebSocket Debug" },
+  "ws.profile.type": { zh: "WebSocket 消息调试", en: "WebSocket Message Debug" },
+  "ws.noPollMsg": { zh: "未配置轮询消息", en: "No polling message configured" },
+
+  // ===== 自定义设备 =====
+  "custom.setpointOutput": { zh: "设定输出", en: "Setpoint Output" },
+  "custom.setpointValue": { zh: "设定值", en: "Setpoint Value" },
+  "custom.profile.type": { zh: "自定义串口设备", en: "Custom Serial Device" },
+  "custom.customProfile.name": { zh: "自定义串口设备", en: "Custom Serial Device" },
+  "custom.customProfile.desc": { zh: "自定义串口设备模板可发送", en: "Custom serial device template ready to send" },
+  "custom.templateSendable": { zh: "模板可发送", en: "Template Ready" },
+  "custom.deviceConfig": { zh: "设备配置", en: "Device Config" },
+  "custom.deviceConfigDesc": { zh: "设定范围与发送模板；曲线解析、帧界与 CRC 在监测面板配置。", en: "Setpoint range and send template; curve parsing, framing and CRC configured in monitor panel." },
+  "custom.deviceName": { zh: "设备名称", en: "Device Name" },
+  "custom.deviceType": { zh: "设备类型", en: "Device Type" },
+  "custom.channelName": { zh: "通道名称", en: "Channel Name" },
+  "custom.unit": { zh: "单位", en: "Unit" },
+  "custom.unitPlaceholder": { zh: "例如：mA、V、℃", en: "e.g.: mA, V, ℃" },
+  "custom.min": { zh: "最小值", en: "Min" },
+  "custom.max": { zh: "最大值", en: "Max" },
+  "custom.step": { zh: "步进", en: "Step" },
+  "custom.defaultValue": { zh: "默认值", en: "Default Value" },
+  "custom.sendTemplate": { zh: "发送模板", en: "Send Template" },
+  "custom.templatePlaceholder": { zh: "支持 {value}、{value:2}、{unit}、{mode}", en: "Supports {value}, {value:2}, {unit}, {mode}" },
+  "custom.format": { zh: "格式", en: "Format" },
+  "custom.lineEnding": { zh: "行尾", en: "Line Ending" },
+  "custom.template": { zh: "模板", en: "Template" },
+
+  // ===== 传输层 =====
+  "transport.serial.label": { zh: "串口 (Web Serial)", en: "Serial (Web Serial)" },
+  "transport.serial.baudRate": { zh: "波特率", en: "Baud Rate" },
+  "transport.serial.dataBits": { zh: "数据位", en: "Data Bits" },
+  "transport.serial.stopBits": { zh: "停止位", en: "Stop Bits" },
+  "transport.serial.parity": { zh: "校验", en: "Parity" },
+  "transport.serial.flowControl": { zh: "流控", en: "Flow Control" },
+  "transport.serial.notSupported": { zh: "当前浏览器不支持 Web Serial，请使用 Chrome 或 Edge 的 HTTPS 页面。", en: "Web Serial is not supported by your browser. Please use Chrome or Edge with HTTPS." },
+  "transport.serial.notConnected": { zh: "连接未建立", en: "Connection not established" },
+
+  "transport.mqtt.label": { zh: "MQTT (WebSocket)", en: "MQTT (WebSocket)" },
+  "transport.mqtt.brokerUrl": { zh: "Broker 地址", en: "Broker URL" },
+  "transport.mqtt.clientId": { zh: "Client ID", en: "Client ID" },
+  "transport.mqtt.subscribeTopic": { zh: "订阅主题", en: "Subscribe Topic" },
+  "transport.mqtt.publishTopic": { zh: "发布主题", en: "Publish Topic" },
+  "transport.mqtt.username": { zh: "用户名", en: "Username" },
+  "transport.mqtt.password": { zh: "密码", en: "Password" },
+  "transport.mqtt.noBroker": { zh: "请填写 MQTT Broker 地址", en: "Please enter MQTT Broker URL" },
+  "transport.mqtt.invalidBroker": { zh: "MQTT Broker 地址格式无效", en: "Invalid MQTT Broker URL format" },
+  "transport.mqtt.mustUseWs": { zh: "浏览器端 MQTT 须使用 ws:// 或 wss:// Broker 地址", en: "Browser MQTT must use ws:// or wss:// Broker URL" },
+  "transport.mqtt.notSupported": { zh: "当前浏览器不支持 WebSocket，无法使用 MQTT。", en: "WebSocket not supported; MQTT unavailable." },
+  "transport.mqtt.subscribeFailed": { zh: "MQTT 订阅失败", en: "MQTT subscription failed" },
+  "transport.mqtt.publishFailed": { zh: "MQTT 发布失败", en: "MQTT publish failed" },
+  "transport.mqtt.cannotConnect": { zh: "无法连接 MQTT Broker", en: "Cannot connect to MQTT Broker" },
+  "transport.mqtt.wsWarning": { zh: "HTTPS 下远程 ws:// Broker 可能被浏览器拦截，可改用 wss://", en: "Remote ws:// Broker may be blocked on HTTPS; switch to wss://" },
+  "transport.mqtt.pleaseProvide": { zh: "请填写{label}", en: "Please provide {label}" },
+
+  "transport.ws.label": { zh: "WebSocket", en: "WebSocket" },
+  "transport.ws.url": { zh: "地址", en: "URL" },
+  "transport.ws.noUrl": { zh: "请填写 WebSocket 地址", en: "Please enter WebSocket URL" },
+  "transport.ws.invalidUrl": { zh: "WebSocket 地址格式无效", en: "Invalid WebSocket URL format" },
+  "transport.ws.mustStartWith": { zh: "WebSocket 地址必须以 ws:// 或 wss:// 开头", en: "WebSocket URL must start with ws:// or wss://" },
+  "transport.ws.notSupported": { zh: "当前浏览器不支持 WebSocket。", en: "WebSocket not supported by your browser." },
+  "transport.ws.cannotConnect": { zh: "无法连接 WebSocket", en: "Cannot connect WebSocket" },
+  "transport.ws.connectFailed": { zh: "WebSocket 连接失败", en: "WebSocket connection failed" },
+  "transport.ws.commError": { zh: "WebSocket 通信错误", en: "WebSocket communication error" },
+  "transport.ws.wsWarning": { zh: "HTTPS 下远程 ws:// 可能被浏览器拦截，可改用 wss://", en: "Remote ws:// may be blocked on HTTPS; switch to wss://" },
+
+  // ===== 协议 / 命令 =====
+  "protocol.noDeviceDriver": { zh: "未选择可发送的设备驱动", en: "No sendable device driver selected" },
+  "protocol.jsonNotEmpty": { zh: "JSON 命令不能为空", en: "JSON command cannot be empty" },
+  "protocol.jsonInvalid": { zh: "JSON 格式无效", en: "Invalid JSON format" },
+  "protocol.hexNotEmpty": { zh: "HEX 命令不能为空", en: "HEX command cannot be empty" },
+  "protocol.hexByteInvalid": { zh: "HEX 字节无效", en: "Invalid HEX byte" },
+  "protocol.jsonMsgNotEmpty": { zh: "JSON 消息不能为空", en: "JSON message cannot be empty" },
+
+  // ===== 页面加载 =====
+  "pageLoader.cannotLoad": { zh: "无法加载页面片段", en: "Cannot load page fragment" },
+  "pageLoader.noMount": { zh: "页面挂载点不存在", en: "Page mount point does not exist" },
+  "pageLoader.bootError": { zh: "页面加载失败", en: "Page load failed" },
+
+  // ===== 应用启动 =====
+  "app.bootFailed": { zh: "应用启动失败", en: "Application startup failed" },
+  "app.bootError": { zh: "页面加载失败", en: "Page load failed" },
+  "app.ready": { zh: " 已就绪，当前设备：", en: " ready, current device: " },
+
+  // 语言切换
+  "lang.switch": { zh: "EN", en: "中文" },
+  "lang.switchTarget": { zh: "EN", en: "中" },
+
+  // ===== 图表相关 (app.js) =====
+  "chart.realTimeChart": { zh: "实时曲线", en: "Real-time Chart" },
+  "chart.setpointPreview": { zh: "设定预览", en: "Setpoint Preview" },
+  "chart.realTimeOutput": { zh: "输出指令回读", en: "Output Command Readback" },
+  "chart.hartVariableChart": { zh: "HART 变量曲线", en: "HART Variable Chart" },
+  "chart.emptyText": { zh: "连接设备并开启轮询后显示实时曲线", en: "Connect device and start polling to see real-time chart" },
+  "chart.emptySetpoint": { zh: "调整设定值以预览曲线", en: "Adjust setpoint to preview chart" },
+  "chart.emptyActual": { zh: "连接设备并开始轮询\n查看输出指令回读", en: "Connect and start polling\nto view command readback" },
+  "chart.emptyWs": { zh: "连接设备并接收 WebSocket 消息后显示多曲线", en: "Connect device and receive WebSocket messages to see multi-curve" },
+  "chart.emptySerial": { zh: "连接设备并接收串口数据后显示多曲线", en: "Connect device and receive serial data to see multi-curve" },
+  "chart.emptyModbus": { zh: "连接设备并开始轮询后显示多曲线", en: "Connect device and start polling to see multi-curve" },
+  "chart.emptyMqtt": { zh: "连接设备并接收 MQTT 消息后显示多曲线", en: "Connect device and receive MQTT messages to see multi-curve" },
+  "chart.aomasterDual": { zh: "AOMaster 双曲线", en: "AOMaster Dual Chart" },
+  "chart.hartVar": { zh: "HART 变量曲线", en: "HART Variable Chart" },
+  "chart.modbusChart": { zh: "Modbus 多曲线", en: "Modbus Multi-Curve" },
+  "chart.wsChart": { zh: "WebSocket 多曲线", en: "WebSocket Multi-Curve" },
+  "chart.serialChart": { zh: "串口多曲线", en: "Serial Multi-Curve" },
+  "chart.mqttChart": { zh: "MQTT 多曲线", en: "MQTT Multi-Curve" },
+  "chart.hartMultiChart": { zh: "HART 变量曲线", en: "HART Variable Chart" },
+  "chart.moduleLoadFailed": { zh: "图表模块加载失败：", en: "Chart module load failed: " },
+  "chart.noData": { zh: "暂无数据", en: "No data" },
+  "chart.notSelected": { zh: "未选择变量", en: "No variable selected" },
+  "chart.csvExport": { zh: "CSV 已导出", en: "CSV exported" },
+  "chart.csvNeedCols": { zh: "CSV 至少需要一列索引和一列数据", en: "CSV needs at least an index column and a data column" },
+  "chart.csvLoaded": { zh: "已加载", en: "Loaded" },
+  "chart.csvLoadedMsg": { zh: " 已加载", en: " loaded" },
+  "chart.singleCurve": { zh: "单曲线", en: "Single Curve" },
+  "chart.dualCurve": { zh: "AOMaster · 设定预览与输出指令回读", en: "AOMaster · Setpoint preview and command readback" },
+  "chart.registryValue": { zh: "寄存器值", en: "Register Value" },
+  "chart.hexRaw": { zh: "单曲线 · HEX 原始字节", en: "Single Curve · HEX Raw Bytes" },
+  "chart.modbusPayload": { zh: "单曲线 · Modbus RTU 载荷", en: "Single Curve · Modbus RTU Payload" },
+  "chart.multiCurveCount": { zh: "{count} 条 {mode} 曲线", en: "{count} {mode} curves" },
+  "chart.modbusCurveCount": { zh: "{count} 条 Modbus 曲线", en: "{count} Modbus curves" },
+  "chart.aomasterDesc": { zh: "设定波形与固件指令回读 · 非模拟量实测", en: "Setpoint preview and firmware readback · not analog measurements" },
+  "chart.hartDesc": { zh: "HART PV/SV/TV/QV 卡片与多曲线同步显示；保留 {total} 个采样点，当前显示 {visible} 个。", en: "HART PV/SV/TV/QV cards and multi-curve sync; {total} sample points retained, {visible} displayed." },
+  "chart.modbusMultiDesc": { zh: "Modbus 多曲线；保留 {total} 个采样点，当前显示 {visible} 个。", en: "Modbus multi-curve; {total} sample points retained, {visible} displayed." },
+  "chart.modbusSingleDesc": { zh: "Modbus 读回包自动解析寄存器数值；保留 {total} 个采样点，当前显示 {visible} 个。", en: "Modbus auto-parses register values from response; {total} sample points retained, {visible} displayed." },
+  "chart.wsMultiDesc": { zh: "WebSocket 多曲线（JSON / HEX / Modbus）；保留 {total} 个采样点，当前显示 {visible} 个。", en: "WebSocket multi-curve (JSON / HEX / Modbus); {total} sample points retained, {visible} displayed." },
+  "chart.wsSingleDesc": { zh: "WebSocket 回包自动解析 JSON、HEX 或 Modbus 数值；保留 {total} 个采样点，当前显示 {visible} 个。", en: "WebSocket auto-parses JSON, HEX or Modbus values from response; {total} sample points retained, {visible} displayed." },
+  "chart.mqttMultiDesc": { zh: "MQTT 多曲线（JSON / HEX / Modbus）；保留 {total} 个采样点，当前显示 {visible} 个。", en: "MQTT multi-curve (JSON / HEX / Modbus); {total} sample points retained, {visible} displayed." },
+  "chart.mqttSingleDesc": { zh: "MQTT 订阅消息自动解析数值；保留 {total} 个采样点，当前显示 {visible} 个。", en: "MQTT subscription messages auto-parse values; {total} sample points retained, {visible} displayed." },
+  "chart.customMultiDesc": { zh: "自定义串口多曲线（JSON / HEX / Modbus）；保留 {total} 个采样点，当前显示 {visible} 个。", en: "Custom serial multi-curve (JSON / HEX / Modbus); {total} sample points retained, {visible} displayed." },
+  "chart.customSingleDesc": { zh: "自定义串口回包自动解析数值；保留 {total} 个采样点，当前显示 {visible} 个。", en: "Custom serial auto-parses values from response; {total} sample points retained, {visible} displayed." },
+  "chart.defaultDesc": { zh: "ECharts 曲线自动解析设备回读数值；保留 {total} 个采样点，当前显示 {visible} 个。", en: "ECharts chart auto-parses device readback values; {total} sample points retained, {visible} displayed." },
+
+  // 首页设备卡片描述
+  "home.card.aomaster": { zh: "阶跃/斜坡/方波等波形输出，双曲线预览，监测面板可手动轮询回读。", en: "Step, ramp, square and other waveform outputs; dual chart preview; manual polling readback in monitor panel." },
+  "home.card.modbus": { zh: "RTU 寄存器读写，支持轮询读取与曲线显示。", en: "RTU register read/write with polling read and curve display." },
+  "home.card.hart": { zh: "通用命令读写、PV/SV/TV/QV 轮询和多变量曲线。", en: "Read and write universal commands, poll PV/SV/TV/QV and plot multiple variables." },
+  "home.card.websocket": { zh: "WebSocket 连接调试，快捷 JSON/文本发送与回包解析。", en: "WebSocket connection debug, quick JSON/text send and response parsing." },
+  "home.card.mqtt": { zh: "MQTT Broker 连接调试，发布/订阅消息与 JSON 回包解析。", en: "MQTT Broker connection debug, publish/subscribe messages and JSON response parsing." },
+  "home.card.custom": { zh: "模板发送 / JSON·HEX·Modbus 解析", en: "Template send / JSON·HEX·Modbus parsing" },
+  "home.microscopePowerCardDesc": { zh: "通过 WebUSB 采集电流波形，支持游标测量、校准和 CSV/PNG 导出。", en: "Capture current waveforms over WebUSB, with cursors, calibration and CSV/PNG export." },
+
+  // MicroScope Power
+  "microscopePower.title": { zh: "MicroScope Power 上位机", en: "MicroScope Power Host" },
+  "microscopePower.desc": { zh: "RP2040 WebUSB 电流波形采集、曲线查看、游标测量、校准与导出。", en: "RP2040 WebUSB current waveform acquisition, chart view, cursor measurement, calibration and export." },
+  "microscopePower.openStandalone": { zh: "独立打开", en: "Open Standalone" },
+  "microscopePower.productOverview": { zh: "产品介绍", en: "Product Overview" },
+  "microscopePower.openHardware": { zh: "立创开源", en: "Open Hardware" },
+  "microscopePower.profile.type": { zh: "WebUSB 电流波形采集", en: "WebUSB Current Waveform Capture" },
+
+  // 日志曲线格式
+  "log.curveLoaded": { zh: "{name} 已加载：{series} 条曲线，共 {points} 点", en: "{name} loaded: {series} curves, {points} points total" },
+  "log.curveValueRange": { zh: "{name} {value} · 共 {points} 点", en: "{name} {value} · {points} points total" },
+  "log.curvePointCount": { zh: "已加载 {points} 点", en: "{points} points loaded" },
+
+  // ===== 调试曲线 =====
+  "debugCurve.modbusNote": { zh: "读模式下从 RTU 回包数据区按字节偏移解码；从站、功能码、起始地址与寄存器数量在设备页配置。启用多条曲线时，会自动扩大读取寄存器数量以覆盖最远偏移。", en: "In read mode, decode by byte offset from RTU response data area; slave ID, function code, start address and register count configured on device page. Multiple curves auto-expand read count to cover farthest offset." },
+  "debugCurve.modbusTitle": { zh: "Modbus 曲线", en: "Modbus Curve" },
+  "debugCurve.modbusHint": { zh: "同一读响应内最多 4 条曲线，偏移 0 为数据区首字节", en: "Up to 4 curves per read response; offset 0 = first byte of data area" },
+  "debugCurve.jsonTitle": { zh: "JSON 曲线", en: "JSON Curve" },
+  "debugCurve.jsonHint": { zh: "支持 data.temp、metrics.0.value 这类路径", en: "Supports paths like data.temp, metrics.0.value" },
+  "debugCurve.rtuSampleHint": { zh: "完整 RTU 帧 HEX", en: "Full RTU Frame HEX" },
+
+  // 通用按钮
+  "common.save": { zh: "保存", en: "Save" },
+  "common.resetDefault": { zh: "恢复默认", en: "Reset Default" },
+  "common.sendSetting": { zh: "发送设定", en: "Send Setting" },
+  "common.close": { zh: "关闭", en: "Close" },
+  "common.none": { zh: "无", en: "None" },
+
+  // 模版消息
+  "msg.helloJson": { zh: "Hello JSON", en: "Hello JSON" },
+  "msg.ping": { zh: "Ping", en: "Ping" },
+  "msg.sensor": { zh: "传感器", en: "Sensor" },
+  "msg.testText": { zh: "测试文本", en: "Test Text" },
+  "msg.pingJson": { zh: "Ping JSON", en: "Ping JSON" },
+  "msg.hello": { zh: "Hello", en: "Hello" },
+  "msg.timestamp": { zh: "时间戳", en: "Timestamp" },
+
+  // 连接摘要
+  "conn.manualMode": { zh: "手动收发", en: "Manual" },
+  "conn.sidebarTopic": { zh: "侧栏发布主题", en: "Sidebar Publish Topic" },
+
+  // 数字格式
+  "num.times": { zh: "次", en: " times" },
+  "num.points": { zh: "点", en: " points" },
+  "num.msStep": { zh: " ms/步", en: " ms/step" },
+  "num.pointCount": { zh: "点", en: " points" },
+  "num.curves": { zh: "条", en: " " },
+
+  // ===== 连接摘要 =====
+  "conn.mqttConnected": { zh: "MQTT 已连接", en: "MQTT Connected" },
+  "conn.wsConnected": { zh: "WebSocket 已连接", en: "WebSocket Connected" },
+  "conn.serialConnected": { zh: "串口已连接", en: "Serial Connected" },
+  "conn.connected": { zh: " 已连接", en: " Connected" },
+  "conn.subscribed": { zh: " 订阅 ", en: " subscribed " },
+
+  // ===== 通用 配置保存/恢复 =====
+  "common.configSaved": { zh: " 配置已保存", en: " config saved" },
+  "common.configReset": { zh: " 配置已恢复默认", en: " config reset to default" },
+  "common.configSavedShort": { zh: "配置已保存", en: "Config saved" },
+  "common.configResetShort": { zh: "配置已恢复默认", en: "Config reset to default" },
+  "common.copied": { zh: "已复制", en: "Copied" },
+  "common.copyFailed": { zh: "复制失败，请手动选择模板文本", en: "Copy failed, please manually select template text" },
+  "common.noDriverCmd": { zh: "当前设备没有可发送的驱动命令", en: "No sendable driver command for current device" },
+  "common.cmdNotEmpty": { zh: "命令不能为空", en: "Command cannot be empty" },
+  "common.sendPollMsg": { zh: "发送轮询消息", en: "Send Poll Message" },
+  "common.noConfig": { zh: "请配置轮询消息", en: "Please configure poll message" },
+  "common.connectFirst.ws": { zh: "请先连接 WebSocket", en: "Please connect WebSocket first" },
+  "common.connectFirst.mqtt": { zh: "请先连接 MQTT", en: "Please connect MQTT first" },
+  "common.notConfigured": { zh: "未配置发布主题", en: "Publish topic not configured" },
+  "common.fill": { zh: "填入", en: "Fill" },
+
+  // ===== 轮询 =====
+  "poll.notConnected": { zh: "未连接", en: "Not Connected" },
+  "poll.notSupported": { zh: "当前设备不支持轮询", en: "Current device does not support polling" },
+  "poll.needReadMode": { zh: "读模式方可轮询", en: "Read mode required for polling" },
+  "poll.needSearchFirst": { zh: "请先搜索设备", en: "Please search device first" },
+  "poll.needIntervalMsg": { zh: "请配置轮询间隔与消息", en: "Please configure poll interval and message" },
+  "poll.needInterval": { zh: "请设置轮询间隔", en: "Please set poll interval" },
+  "poll.category": { zh: "轮询", en: "Poll" },
+  "poll.started": { zh: "轮询", en: "Poll" },
+  "poll.startedMsg": { zh: "已开始，间隔 {interval} ms", en: "Started, interval {interval} ms" },
+  "poll.startedPrefix": { zh: "已开始，间隔", en: "Started, interval " },
+  "poll.stopped": { zh: "已停止", en: "Stopped" },
+
+  // ===== 图表扩展 =====
+  "chart.latest": { zh: "最新 {value} · 共 {points} 点", en: "Latest {value} · {points} points total" },
+  "chart.notParsed": { zh: "未解析到数值", en: "No value parsed" },
+  "chart.scaleConfigSaved": { zh: "曲线缩放配置已保存", en: "Chart scale config saved" },
+  "chart.scaleConfigReset": { zh: "曲线缩放配置已恢复默认", en: "Chart scale config reset to default" },
+  "chart.setpointPrefix": { zh: "设定", en: "Setpoint" },
+  "chart.setpointValue": { zh: "设定 {value}", en: "Setpoint {value}" },
+  "chart.stepLabel": { zh: "阶跃", en: "Step" },
+  "chart.stepPreview": { zh: "阶跃 {seq} {unit} · {dwell} ms/步 · {loop}", en: "Step {seq} {unit} · {dwell} ms/step · {loop}" },
+
+  // ===== HART 扩展 =====
+  "hart.identified": { zh: "HART 已识别", en: "HART Identified" },
+  "hart.notSearched": { zh: "HART 未搜索", en: "HART Not Searched" },
+  "hart.xorAuto": { zh: "（XOR 自动计算）", en: " (XOR auto-calculated)" },
+  "hart.devicePrefix": { zh: "设备：", en: "Device: " },
+  "hart.cmdGroup.write": { zh: "写命令", en: "Write Command" },
+  "hart.cmdGroup.read": { zh: "读命令", en: "Read Command" },
+  "hart.cmdGroup.universal": { zh: "通用命令", en: "Universal" },
+  "hart.cmdGroup.common": { zh: "常用命令", en: "Common Practice" },
+  "hart.writeConfirm": { zh: "这是会修改现场设备的 HART 操作。请确认设备身份、回路状态及以下发送帧：", en: "This HART operation can modify the field device. Confirm the device identity, loop state, and frame:" },
+  "hart.writeCancelled": { zh: "已取消 HART 写操作", en: "HART write cancelled" },
+  "hart.checksumXorAuto": { zh: "（XOR 自动计算）", en: " (XOR auto-calc)" },
+
+  // ===== 自定义设备扩展 =====
+  "custom.protocolPending": { zh: "协议待配置", en: "Protocol Pending" },
+
+  // ===== 首页扩展 =====
+  "home.card.unsupported": { zh: "为串口设备配置发送模板和数据解析规则。", en: "Configure send templates and data parsing rules for serial devices." },
+
+  // ===== 请求页面扩展 =====
+  "request.prepareDesc": { zh: "整理设备资料、协议、截图和期望 UI，方便贡献设备驱动。", en: "Prepare device docs, protocol, screenshots and desired UI to help contribute device drivers." },
+
+  // ===== 阶跃 =====
+  "step.maxPoints": { zh: "最多支持 {max} 个阶跃点", en: "Maximum {max} step points supported" },
+  "step.category": { zh: "阶跃", en: "Step" },
+
+  // ===== 设备名称 =====
+  "device.ws": { zh: "WebSocket 调试", en: "WebSocket Debug" },
+  "device.mqtt": { zh: "MQTT 调试", en: "MQTT Debug" },
+  "device.modbus": { zh: "Modbus", en: "Modbus" },
+  "device.hart": { zh: "HART", en: "HART" },
+  "device.aomaster": { zh: "AOMaster", en: "AOMaster" },
+
+  // ===== 曲线帮助 HTML =====
+  "curve.help.html.aomaster": {
+    zh: `<p>AOMaster 监测面板显示<strong>双曲线</strong>：上方为设定预览，下方为固件输出指令回读，非模拟量实测。</p>
+      <div class="protocol-example-grid">
+        <article class="protocol-example-card">
+          <h3>设定预览</h3>
+          <p>根据当前波形参数（恒定、阶跃、方波、锯齿等）在本地生成预览曲线，不依赖设备回包。</p>
+        </article>
+        <article class="protocol-example-card">
+          <h3>输出指令回读</h3>
+          <p>轮询读取寄存器 <code>0x0000~0x0006</code> 共 7 个寄存器，用 <code>0x0000</code> 的类型判断电流/电压，再取 <code>0x0006</code> 的固件输出指令值，而非模拟量实测值；原始值按 1000 缩放，指令回读曲线的 Y 轴按回包类型切换为 4~20 mA 或 0~10 V。</p>
+        </article>
+      </div>
+      <div class="protocol-note">
+        <strong>采样：</strong>
+        <span>曲线总点数与显示点数在监测面板底部设置；点数越高历史越长，显示点数决定当前窗口宽度。</span>
+      </div>`,
+    en: `<p>The AOMaster monitor panel displays <strong>dual charts</strong>: the upper chart shows the setpoint preview, and the lower chart shows firmware output command readback, not analog measurements.</p>
+      <div class="protocol-example-grid">
+        <article class="protocol-example-card">
+          <h3>Setpoint Preview</h3>
+          <p>Generates a local preview curve based on current waveform parameters (constant, step, square, sawtooth, etc.), independent of device response.</p>
+        </article>
+        <article class="protocol-example-card">
+          <h3>Output Command Readback</h3>
+          <p>Polls registers <code>0x0000~0x0006</code> (7 registers), uses <code>0x0000</code> to select current/voltage units, then plots the firmware output command from <code>0x0006</code>, not an analog measurement. Raw values are scaled by 1000. The command-readback Y axis follows the response type: 4~20 mA or 0~10 V.</p>
+        </article>
+      </div>
+      <div class="protocol-note">
+        <strong>Sampling:</strong>
+        <span>Total points and display points are configured at the bottom of the monitor panel; higher point count means longer history, display points determine the current window width.</span>
+      </div>`
+  },
+  "curve.help.html.modbus": {
+    zh: `<p>读模式（功能码 <code>03/04</code>）下，监测面板从 RTU 回包的<strong>数据区</strong>按字节偏移解码数值；写模式仅发送命令，不绘制曲线。</p>
+      <div class="protocol-example-grid">
+        <article class="protocol-example-card">
+          <h3>1. 单曲线（UInt16）</h3>
+          <p>曲线一数据偏移 <code>0</code>，类型 UInt16，字节序 AB。读 1 个寄存器即可。</p>
+          <pre><code>请求：01 03 00 00 00 01 84 0A
+响应：01 03 02 00 64 B9 AF
+数据区：00 64 → 100</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>2. 双曲线（同帧多寄存器）</h3>
+          <p>曲线一偏移 <code>0</code>，曲线二偏移 <code>2</code>；读 2 个寄存器。偏移相对<strong>数据区首字节</strong>，不含从站/功能码/CRC。</p>
+          <pre><code>响应：01 03 04 00 64 00 C8 BA 7A
+偏移 0 → 100，偏移 2 → 200</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>3. Float32</h3>
+          <p>类型选 Float32 占 4 字节；32 位浮点需选 ABCD / DCBA 等字序。下一条曲线偏移至少 +4。</p>
+          <pre><code>01 03 04 42 48 00 00 …
+→ 50.0（取决于字序）</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>4. 比例与偏移</h3>
+          <p>显示值 = 原始值 × 比例 + 偏移。例如原始 100、比例 0.1 → 显示 10.0。</p>
+        </article>
+      </div>
+      <div class="protocol-note">
+        <strong>配置分工：</strong>
+        <span>设备页设置从站、功能码、起始地址、寄存器数量与轮询；监测面板设置每条曲线的名称、偏移、类型、字序与换算。启用多曲线时，若寄存器数量不足，会自动扩大读取范围。</span>
+      </div>
+      <div class="protocol-note">
+        <strong>测试：</strong>
+        <span>在曲线配置底部粘贴完整 RTU 帧 HEX（含 CRC），点「测试」验证解码，无需连接设备。</span>
+      </div>`,
+    en: `<p>In read mode (function code <code>03/04</code>), the monitor panel decodes values from the RTU response data area by byte offset; write mode only sends commands without plotting.</p>
+      <div class="protocol-example-grid">
+        <article class="protocol-example-card">
+          <h3>1. Single Curve (UInt16)</h3>
+          <p>Curve 1 data offset <code>0</code>, type UInt16, byte order AB. Read 1 register.</p>
+          <pre><code>Request: 01 03 00 00 00 01 84 0A
+Response: 01 03 02 00 64 B9 AF
+Data area: 00 64 → 100</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>2. Dual Curve (multi-register in one frame)</h3>
+          <p>Curve 1 offset <code>0</code>, Curve 2 offset <code>2</code>; read 2 registers. Offset is relative to <strong>data area first byte</strong>, excluding slave/function code/CRC.</p>
+          <pre><code>Response: 01 03 04 00 64 00 C8 BA 7A
+Offset 0 → 100, Offset 2 → 200</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>3. Float32</h3>
+          <p>Type Float32 occupies 4 bytes; 32-bit float requires ABCD / DCBA word order. Next curve offset at least +4.</p>
+          <pre><code>01 03 04 42 48 00 00 …
+→ 50.0 (depends on word order)</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>4. Scale & Offset</h3>
+          <p>Display value = raw value × scale + offset. e.g. raw 100, scale 0.1 → display 10.0.</p>
+        </article>
+      </div>
+      <div class="protocol-note">
+        <strong>Configuration split:</strong>
+        <span>Device page sets slave, function code, start address, register count & polling; monitor panel sets curve name, offset, type, byte order & scaling. Multi-curve mode auto-expands read range if register count is insufficient.</span>
+      </div>
+      <div class="protocol-note">
+        <strong>Test:</strong>
+        <span>Paste a complete RTU frame HEX (with CRC) at the bottom of curve config, click "Test" to verify decoding without connecting a device.</span>
+      </div>`
+  },
+  "curve.help.html.hart": {
+    zh: `<p>HART 设备搜索成功后，可轮询 PV / SV / TV / QV 四个主变量；卡片与曲线同步更新。</p>
+      <div class="protocol-example-grid">
+        <article class="protocol-example-card">
+          <h3>变量含义</h3>
+          <p>PV 主变量、SV 次变量、TV 第三变量、QV 第四变量；单位随设备 DD 变化。</p>
+        </article>
+        <article class="protocol-example-card">
+          <h3>显示开关</h3>
+          <p>在曲线配置中勾选要绘制的变量；未勾选的不进入图表，但仍可在卡片查看。</p>
+        </article>
+      </div>`,
+    en: `<p>After a successful HART device search, you can poll the four primary variables: PV / SV / TV / QV; cards and charts update synchronously.</p>
+      <div class="protocol-example-grid">
+        <article class="protocol-example-card">
+          <h3>Variable Meanings</h3>
+          <p>PV = Primary Variable, SV = Secondary Variable, TV = Tertiary Variable, QV = Quaternary Variable; units vary with device DD.</p>
+        </article>
+        <article class="protocol-example-card">
+          <h3>Display Toggle</h3>
+          <p>Check the variables to plot in curve config; unchecked ones won't appear on the chart but remain visible on cards.</p>
+        </article>
+      </div>`
+  },
+  "curve.help.html.custom": {
+    zh: `<p>自定义串口设备通过发送模板下发设定，从回包中解析 JSON / HEX / Modbus 数值并绘图。</p>
+      <div class="protocol-example-grid">
+        <article class="protocol-example-card">
+          <h3>1. JSON 单/多曲线</h3>
+          <p>解析模式 <code>JSON / 文本</code>；路径如 <code>value</code>、<code>data.temp</code>、<code>metrics.0.value</code>。</p>
+          <pre><code>{"telemetry":{"temp":25.6,"pressure":1.23}}</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>2. HEX 多曲线</h3>
+          <p>模式 <code>HEX 原始字节</code>；曲线一偏移 0、曲线二偏移 2，按 UInt16/Int16/Float32 解码。</p>
+          <pre><code>00 64 00 C8</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>3. 帧界与 CRC</h3>
+          <p><code>行界</code> 按 CRLF/LF 切分；<code>帧头帧尾</code> 填 HEX（如 STX <code>02</code>、ETX <code>03</code>）；可选 Modbus CRC16 校验。</p>
+        </article>
+        <article class="protocol-example-card">
+          <h3>4. Modbus 载荷</h3>
+          <p>模式 <code>Modbus RTU</code>，配置从站与功能码，在同一 RTU 帧数据区内按偏移解多条曲线。</p>
+          <pre><code>01 03 04 00 64 00 C8 BA 7A</code></pre>
+        </article>
+      </div>
+      <div class="protocol-note">
+        <strong>分工：</strong>
+        <span>设备页：名称、范围、发送模板；监测面板：解析模式、帧界、CRC、曲线字段。分片数据在连接期间缓冲至完整帧。</span>
+      </div>`,
+    en: `<p>Custom serial devices send setpoints via templates and parse JSON / HEX / Modbus values from responses for plotting.</p>
+      <div class="protocol-example-grid">
+        <article class="protocol-example-card">
+          <h3>1. JSON Single/Multi Curve</h3>
+          <p>Parser mode <code>JSON / Text</code>; paths like <code>value</code>, <code>data.temp</code>, <code>metrics.0.value</code>.</p>
+          <pre><code>{"telemetry":{"temp":25.6,"pressure":1.23}}</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>2. HEX Multi Curve</h3>
+          <p>Mode <code>HEX Raw Bytes</code>; Curve 1 offset 0, Curve 2 offset 2, decoded as UInt16/Int16/Float32.</p>
+          <pre><code>00 64 00 C8</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>3. Framing & CRC</h3>
+          <p><code>Line Delimited</code> splits by CRLF/LF; <code>Delimiters</code> with HEX values (e.g. STX <code>02</code>, ETX <code>03</code>); optional Modbus CRC16.</p>
+        </article>
+        <article class="protocol-example-card">
+          <h3>4. Modbus Payload</h3>
+          <p>Mode <code>Modbus RTU</code>, configure slave & function code, decode multiple curves by offset within the data area of one RTU frame.</p>
+          <pre><code>01 03 04 00 64 00 C8 BA 7A</code></pre>
+        </article>
+      </div>
+      <div class="protocol-note">
+        <strong>Split:</strong>
+        <span>Device page: name, range, send template; Monitor panel: parser mode, framing, CRC, curve fields. Fragmented data is buffered to complete frames during the connection.</span>
+      </div>`
+  },
+  "curve.help.html.websocket": {
+    zh: `<div class="protocol-example-grid">
+        <article class="protocol-example-card">
+          <h3>1. JSON 单曲线</h3>
+          <p>解析模式 <code>JSON / 文本</code>，曲线一路径 <code>value</code>；留空路径时自动取第一个数字。</p>
+          <pre><code>{"value":12.34}</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>2. JSON 多曲线</h3>
+          <p>最多 4 条；路径互不相同即可，如 <code>telemetry.temp</code> 与 <code>telemetry.pressure</code>。</p>
+          <pre><code>{"telemetry":{"temp":25.6,"pressure":1.23,"flow":18.4}}</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>3. HEX 多曲线</h3>
+          <p>模式 <code>HEX 原始字节</code>；偏移为载荷内字节位置，非 Modbus 帧头。可配合行界/帧头帧尾切帧。</p>
+          <pre><code>00 64 00 C8</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>4. Modbus RTU 载荷</h3>
+          <p>模式 <code>Modbus RTU</code>；从站、功能码 03/04，在数据区按偏移解寄存器。Modbus 模式自带 CRC 校验。</p>
+          <pre><code>01 03 04 00 64 00 C8 BA 7A</code></pre>
+        </article>
+      </div>
+      <div class="protocol-note">
+        <strong>帧界：</strong>
+        <span>整包、行界、帧头帧尾（HEX）三选一；HEX/JSON 可选 Modbus CRC16。JSON/HEX/Modbus 均支持最多 4 条曲线。</span>
+      </div>
+      <div class="protocol-note">
+        <strong>测试：</strong>
+        <span>曲线配置底部「解析样例」可离线验证；JSON 填文本，HEX/Modbus 填空格分隔十六进制。</span>
+      </div>`,
+    en: `<div class="protocol-example-grid">
+        <article class="protocol-example-card">
+          <h3>1. JSON Single Curve</h3>
+          <p>Parser mode <code>JSON / Text</code>, Curve 1 path <code>value</code>; leave path empty to auto-grab the first number.</p>
+          <pre><code>{"value":12.34}</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>2. JSON Multi Curve</h3>
+          <p>Up to 4 curves; paths must differ, e.g. <code>telemetry.temp</code> and <code>telemetry.pressure</code>.</p>
+          <pre><code>{"telemetry":{"temp":25.6,"pressure":1.23,"flow":18.4}}</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>3. HEX Multi Curve</h3>
+          <p>Mode <code>HEX Raw Bytes</code>; offset is byte position within payload, not Modbus frame header. Can combine with line/delimiter framing.</p>
+          <pre><code>00 64 00 C8</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>4. Modbus RTU Payload</h3>
+          <p>Mode <code>Modbus RTU</code>; slave, function code 03/04, decode registers by offset within data area. Modbus mode includes CRC check.</p>
+          <pre><code>01 03 04 00 64 00 C8 BA 7A</code></pre>
+        </article>
+      </div>
+      <div class="protocol-note">
+        <strong>Framing:</strong>
+        <span>Choose from Full, Line Delimited, or Delimiters (HEX); HEX/JSON can optionally enable Modbus CRC16. JSON/HEX/Modbus all support up to 4 curves.</span>
+      </div>
+      <div class="protocol-note">
+        <strong>Test:</strong>
+        <span>The "Parser Sample" at the bottom of curve config allows offline verification; paste text for JSON, space-separated hex for HEX/Modbus.</span>
+      </div>`
+  },
+  "curve.help.html.mqtt": {
+    zh: `<div class="protocol-example-grid">
+        <article class="protocol-example-card">
+          <h3>1. JSON 单曲线</h3>
+          <p>订阅主题收到的 payload 按 JSON 路径提取；常见物联网格式 <code>{"value":25.6}</code>。</p>
+          <pre><code>{"value":25.6}</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>2. JSON 多曲线</h3>
+          <p>同一 JSON 内多条路径；嵌套与数组下标均支持，如 <code>sensors.0.temp</code>。</p>
+          <pre><code>{"telemetry":{"temp":25.6,"pressure":1.23,"flow":18.4}}</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>3. HEX 多曲线</h3>
+          <p>payload 为原始字节（或 HEX 字符串）；按字节偏移解码，适用于二进制遥测。</p>
+          <pre><code>00 64 00 C8</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>4. Modbus RTU 载荷</h3>
+          <p>MQTT 消息体为完整或连续 Modbus RTU 字节流；自动切帧、校验 CRC、按数据区偏移解多条曲线。</p>
+          <pre><code>01 03 04 00 64 00 C8 BA 7A</code></pre>
+        </article>
+      </div>
+      <div class="protocol-note">
+        <strong>帧界与 CRC：</strong>
+        <span>非 Modbus 模式可选行界/帧头帧尾/CRC；Modbus 模式强制 RTU CRC。多曲线时曲线名显示在图例与实时读数区。</span>
+      </div>
+      <div class="protocol-note">
+        <strong>发布：</strong>
+        <span>设备页配置发布主题、QoS、retain；监测面板只负责订阅解析与曲线，两者独立保存。</span>
+      </div>`,
+    en: `<div class="protocol-example-grid">
+        <article class="protocol-example-card">
+          <h3>1. JSON Single Curve</h3>
+          <p>Subscribed topic payload is extracted by JSON path; common IoT format <code>{"value":25.6}</code>.</p>
+          <pre><code>{"value":25.6}</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>2. JSON Multi Curve</h3>
+          <p>Multiple paths within one JSON; nesting and array indices supported, e.g. <code>sensors.0.temp</code>.</p>
+          <pre><code>{"telemetry":{"temp":25.6,"pressure":1.23,"flow":18.4}}</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>3. HEX Multi Curve</h3>
+          <p>Payload as raw bytes (or HEX string); decoded by byte offset, suitable for binary telemetry.</p>
+          <pre><code>00 64 00 C8</code></pre>
+        </article>
+        <article class="protocol-example-card">
+          <h3>4. Modbus RTU Payload</h3>
+          <p>MQTT message body as complete or continuous Modbus RTU byte stream; auto-framing, CRC check, multi-curve decode by data area offset.</p>
+          <pre><code>01 03 04 00 64 00 C8 BA 7A</code></pre>
+        </article>
+      </div>
+      <div class="protocol-note">
+        <strong>Framing & CRC:</strong>
+        <span>Non-Modbus modes can optionally use line/delimiter framing or CRC; Modbus mode enforces RTU CRC. Curve names appear in legend and real-time readout area when multi-curve is enabled.</span>
+      </div>
+      <div class="protocol-note">
+        <strong>Publish:</strong>
+        <span>Device page configures publish topic, QoS, retain; monitor panel is only responsible for subscription parsing and curves — both are saved independently.</span>
+      </div>`
+  },
+
+  // ===== app.js 专用别名 (driver / workbench.poll / settings 等) =====
+  "chart.wsEmpty": { zh: "连接设备并接收 WebSocket 消息后显示多曲线", en: "Connect device and receive WebSocket messages to show multi-curves" },
+  "chart.serialEmpty": { zh: "连接设备并接收串口数据后显示多曲线", en: "Connect device and receive serial data to show multi-curves" },
+  "chart.modbusEmpty": { zh: "连接设备并开始轮询后显示多曲线", en: "Connect device and start polling to show multi-curves" },
+  "chart.mqttEmpty": { zh: "连接设备并接收 MQTT 消息后显示多曲线", en: "Connect device and receive MQTT messages to show multi-curves" },
+  "home.aomasterCardDesc": { zh: "阶跃/斜坡/方波等波形输出，双曲线预览，监测面板可手动轮询回读。", en: "Step, ramp, square and other waveform outputs; dual chart preview; manual polling readback in monitor panel." },
+  "home.modbusCardDesc": { zh: "RTU 寄存器读写，支持轮询读取与曲线显示。", en: "RTU register read/write with polling read and curve display." },
+  "home.hartCardDesc": { zh: "通用命令读写、PV/SV/TV/QV 轮询和多变量曲线。", en: "Read and write universal commands, poll PV/SV/TV/QV and plot multiple variables." },
+  "home.mqttCardDesc": { zh: "MQTT over WebSocket 调试，主题发布/订阅、QoS 与 JSON 解析。", en: "MQTT over WebSocket debug, topic publish/subscribe, QoS and JSON parsing." },
+  "home.customCardDesc": { zh: "保存常用指令，定时发送，按协议解析回包与绘制曲线。", en: "Save commands, send on a timer, parse replies and plot data." },
+  "home.requestCardDesc": { zh: "整理设备资料、协议、截图和期望 UI，方便贡献设备驱动。", en: "Prepare device docs, protocol, screenshots and desired UI to help contribute device drivers." },
+  "custom.deviceConfigDescSummary": { zh: "；设定范围与发送模板在本页配置，曲线解析在监测面板。", en: "; Setpoint range and send template configured on this page, curve parsing in monitor panel." },
+  "custom.cardDesc": { zh: "常用指令 / 定时发送 / 模板与曲线解析", en: "Saved commands / timed sends / templates and plotting" },
+  "customTools.title": { zh: "常用指令", en: "Commands" },
+  "customTools.library": { zh: "已存指令", en: "Saved commands" },
+  "customTools.new": { zh: "新建", en: "New" },
+  "customTools.remove": { zh: "移除", en: "Remove" },
+  "customTools.name": { zh: "指令名称", en: "Command name" },
+  "customTools.namePlaceholder": { zh: "例如：读取版本", en: "e.g. Read version" },
+  "customTools.save": { zh: "保存指令", en: "Save command" },
+  "customTools.import": { zh: "导入", en: "Import" },
+  "customTools.export": { zh: "导出", en: "Export" },
+  "customTools.text": { zh: "文本 UTF-8", en: "Text UTF-8" },
+  "customTools.checksum": { zh: "追加校验", en: "Checksum" },
+  "customTools.payload": { zh: "发送内容", en: "Payload" },
+  "customTools.payloadPlaceholder": { zh: "文本：READ?　HEX：01 03 00 00 00 02", en: "Text: READ?  HEX: 01 03 00 00 00 02" },
+  "customTools.preview": { zh: "发送字节预览", en: "Bytes to send" },
+  "customTools.previewEmpty": { zh: "输入内容后显示实际发送字节", en: "Enter a payload to preview the bytes" },
+  "customTools.checksumHelp": { zh: "校验覆盖全部发送内容（含文本行尾）；CRC16 低字节在前。HEX 不追加行尾。", en: "Checksum covers the entire payload, including text endings. CRC16 is low byte first. HEX ignores line endings." },
+  "customTools.shortcut": { zh: "⌘ / Ctrl + Enter 发送", en: "⌘ / Ctrl + Enter to send" },
+  "customTools.send": { zh: "发送一次", en: "Send once" },
+  "customTools.repeat": { zh: "定时发送", en: "Timed sending" },
+  "customTools.interval": { zh: "间隔 / ms", en: "Interval / ms" },
+  "customTools.limit": { zh: "次数 / 0 为不限", en: "Count / 0 = unlimited" },
+  "customTools.start": { zh: "开始", en: "Start" },
+  "customTools.stop": { zh: "停止", en: "Stop" },
+  "customTools.repeatHelp": { zh: "每次写入后计时；切换页签、离开页面、断开或出错即停止。", en: "Waits after each write. Stops on tab/page change, disconnect or error." },
+  "customTools.ready": { zh: "待发送", en: "Ready" },
+  "customTools.running": { zh: "发送中", en: "Sending" },
+  "customTools.complete": { zh: "已完成", en: "Completed" },
+  "customTools.stopped": { zh: "已停止", en: "Stopped" },
+  "customTools.disconnected": { zh: "连接已结束", en: "Connection ended" },
+  "customTools.failed": { zh: "发送失败", en: "Send failed" },
+  "customTools.connected": { zh: "连接就绪，可发送指令", en: "Connected and ready to send" },
+  "customTools.connectFirst": { zh: "连接设备后可发送", en: "Connect a device to send" },
+  "customTools.localOnly": { zh: "指令保存在当前浏览器，最多 50 条；可导出备份。", en: "Up to 50 commands stored in this browser. Export to back them up." },
+  "customTools.saved": { zh: "指令已保存到当前浏览器。", en: "Command saved in this browser." },
+  "customTools.removed": { zh: "已从指令库移除，编辑内容保留，可再次保存。", en: "Removed from library. The editor contents can be saved again." },
+  "customTools.imported": { zh: "已合并导入，跳过完全相同的指令；未发送任何内容。", en: "Commands merged; identical entries skipped. Nothing was sent." },
+  "customTools.invalidCommand": { zh: "指令的格式、行尾或校验类型无效。", en: "Invalid command format, line ending or checksum." },
+  "customTools.payloadLimit": { zh: "请输入发送内容，最多 8192 个字符。", en: "Enter a payload of up to 8192 characters." },
+  "customTools.nameRequired": { zh: "请填写指令名称，最多 60 个字符。", en: "Enter a command name of up to 60 characters." },
+  "customTools.libraryLimit": { zh: "指令库最多保存 50 条，请先移除不需要的指令。", en: "The library holds 50 commands. Remove unused entries first." },
+  "customTools.fileLimit": { zh: "指令库文件不能超过 512 KB。", en: "Command library files must not exceed 512 KB." },
+  "customTools.invalidFile": { zh: "请选择本工具导出的指令库 JSON 文件（版本 1）。", en: "Select a command library JSON file exported by this tool (version 1)." },
+  "customTools.storageFailed": { zh: "浏览器无法保存指令，请检查存储权限或可用空间。", en: "Could not save commands. Check browser storage permissions and space." },
+  "customTools.loadFailed": { zh: "无法读取已存指令，原数据未改动。请检查浏览器存储或导入备份。", en: "Could not load saved commands. Original data is unchanged. Check browser storage or import a backup." },
+  "customTools.busy": { zh: "请先停止定时发送，并等待当前写入完成。", en: "Stop timed sending and wait for the current write to finish." },
+  "customTools.invalidSchedule": { zh: "间隔须为 50–60000 ms 的整数，次数须为 0–100000 的整数。", en: "Use an integer interval of 50–60000 ms and a count of 0–100000." },
+  "customTools.empty": { zh: "还没有保存的指令。在下方填写后点“保存指令”，之后可在这里一键发送。", en: "No saved commands yet. Fill in the editor below and choose Save command to send it from here in one click." },
+  "customTools.newCommand": { zh: "新指令", en: "New command" },
+  "customTools.editing": { zh: "编辑：", en: "Editing: " },
+  "customTools.loadTitle": { zh: "载入到编辑器", en: "Load into the editor" },
+  "customTools.textShort": { zh: "文本", en: "Text" },
+  "customTools.sendRow": { zh: "发送", en: "Send" },
+  "customTools.escapes": { zh: "解析转义字符", en: "Parse escapes" },
+  "customTools.escapeInvalid": { zh: "转义无效（支持 \\r \\n \\t \\xHH \\\\）：", en: "Invalid escape (use \\r \\n \\t \\xHH \\\\): " },
+  "workbench.byteCountersTitle": { zh: "收发字节数，清空日志时归零", en: "Bytes received and sent; reset when the log is cleared" },
+  "workbench.logDisplay": { zh: "显示", en: "View" },
+  "workbench.logDisplayTitle": { zh: "自动：Modbus、HART、AOMaster 显示 HEX，其余设备可打印文本显示为文本、否则 HEX。HEX/文本作用于全部收发日志。", en: "Auto: HEX for Modbus, HART and AOMaster; elsewhere printable text as text, other data as HEX. HEX/Text apply to every RX and TX line." },
+  "workbench.logDisplayAuto": { zh: "自动", en: "Auto" },
+  "workbench.logDisplayText": { zh: "文本", en: "Text" },
+  "workbench.pauseScroll": { zh: "暂停滚动", en: "Pause scroll" },
+  "workbench.resumeScroll": { zh: "继续滚动", en: "Resume scroll" },
+  "workbench.saveLog": { zh: "保存日志", en: "Save log" },
+  "workbench.saveLogTitle": { zh: "将当前日志（最多 1000 行）保存为 .txt 文件", en: "Save the current log (up to 1000 lines) as a .txt file" },
+  "panel.default": { zh: "面板", en: "Panel" },
+  "conn.subscribe": { zh: "订阅", en: "Subscribe" },
+  "conn.connectedSuffix": { zh: " 已连接", en: " Connected" },
+  "conn.reconnectHint": { zh: "，断开后重新连接生效", en: ", reconnect to take effect" },
+  "settings.saved.custom": { zh: "自定义串口设备配置已保存", en: "Custom serial device config saved" },
+  "settings.reset.custom": { zh: "自定义串口设备配置已恢复默认", en: "Custom serial device config reset to default" },
+  "common.val": { zh: "值", en: "val" },
+  "driver.readRegister": { zh: "读取寄存器", en: "Read Register" },
+  "driver.writeRegister": { zh: "写入寄存器", en: "Write Register" },
+  "driver.modbusRtu": { zh: "Modbus RTU", en: "Modbus RTU" },
+  "driver.sendCommand": { zh: "发送命令", en: "Send Command" },
+  "driver.hartIdentified": { zh: "HART 已识别", en: "HART Identified" },
+  "driver.hartNotSearched": { zh: "HART 未搜索", en: "HART Not Searched" },
+  "driver.sendSetting": { zh: "发送设定", en: "Send Setting" },
+  "driver.templateReady": { zh: "模板可发送", en: "Template Ready" },
+  "driver.protocolPending": { zh: "协议待配置", en: "Protocol Pending" },
+  "driver.sendPollMsg": { zh: "发送轮询消息", en: "Send Poll Message" },
+  "driver.mqttDebug": { zh: "MQTT 调试", en: "MQTT Debug" },
+  "driver.wsDebug": { zh: "WebSocket 调试", en: "WebSocket Debug" },
+  "driver.configPollMsg": { zh: "请配置轮询消息", en: "Please configure poll message" },
+  "workbench.pollNotSupported": { zh: "当前设备不支持轮询", en: "Current device does not support polling" },
+  "workbench.pollNeedRead": { zh: "读模式方可轮询", en: "Read mode required for polling" },
+  "workbench.pollNeedSearch": { zh: "请先搜索设备", en: "Please search device first" },
+  "workbench.pollNeedConfig": { zh: "请配置轮询间隔与消息", en: "Please configure poll interval and message" },
+  "workbench.pollNeedInterval": { zh: "请设置轮询间隔", en: "Please set poll interval" },
+  "chart.latestPrefix": { zh: "最新", en: "Latest" },
+  "chart.totalPrefix": { zh: "共", en: "total" },
+  "num.totalPointsPrefix": { zh: "共", en: "total" },
+  "request.copyFailed": { zh: "复制失败，请手动选择模板文本", en: "Copy failed, please manually select template text" },
+  "theme.switchTo.dark": { zh: "切换到深色主题", en: "Switch to dark theme" },
+  "theme.switchTo.light": { zh: "切换到浅色主题", en: "Switch to light theme" },
+};
+
+let currentLang = null;
+
+export function i18n(key, fallback) {
+  const entry = TRANSLATIONS[key];
+  if (!entry) {
+    return fallback ?? key;
+  }
+  const lang = i18n.current();
+  return entry[lang] ?? entry.zh ?? key;
+}
+
+i18n.current = function () {
+  if (currentLang) return currentLang;
+
+  try {
+    const stored = localStorage.getItem("modusignal-lang");
+    if (stored && SUPPORTED_LANGS.includes(stored)) {
+      currentLang = stored;
+      return currentLang;
+    }
+  } catch {}
+
+  currentLang = "zh";
+  return currentLang;
+};
+
+i18n.setLanguage = function (lang, callback) {
+  if (!SUPPORTED_LANGS.includes(lang)) {
+    return;
+  }
+  currentLang = lang;
+  try {
+    localStorage.setItem("modusignal-lang", lang);
+  } catch {}
+  document.documentElement.lang = lang === "zh" ? "zh-CN" : "en-US";
+
+  i18n.apply(document.body);
+
+  if (typeof callback === "function") {
+    callback(lang);
+  }
+};
+
+i18n.getLanguage = function () {
+  return i18n.current();
+};
+
+i18n.apply = function (root) {
+  if (!root) return;
+
+  walkNodes(root, (node) => {
+    if (node.getAttribute?.("data-i18n")) {
+      const key = node.getAttribute("data-i18n");
+      const text = i18n(key);
+      if (text) {
+        node.textContent = text;
+      }
+    }
+    if (node.getAttribute?.("data-i18n-title")) {
+      const key = node.getAttribute("data-i18n-title");
+      const text = i18n(key);
+      if (text) {
+        node.title = text;
+      }
+    }
+    if (node.getAttribute?.("data-i18n-placeholder")) {
+      const key = node.getAttribute("data-i18n-placeholder");
+      const text = i18n(key);
+      if (text) {
+        node.placeholder = text;
+      }
+    }
+    if (node.getAttribute?.("data-i18n-aria-label")) {
+      const key = node.getAttribute("data-i18n-aria-label");
+      const text = i18n(key);
+      if (text) {
+        node.setAttribute("aria-label", text);
+      }
+    }
+    if (node.getAttribute?.("data-i18n-value")) {
+      const key = node.getAttribute("data-i18n-value");
+      const text = i18n(key);
+      if (text) {
+        node.value = text;
+      }
+    }
+    if (node.getAttribute?.("data-i18n-content")) {
+      const key = node.getAttribute("data-i18n-content");
+      const text = i18n(key);
+      if (text) {
+        node.setAttribute("content", text);
+      }
+    }
+  });
+};
+
+function walkNodes(root, callback) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT, null, false);
+  let node;
+  while ((node = walker.nextNode())) {
+    callback(node);
+  }
+}
+
+export function initI18n() {
+  document.documentElement.lang = i18n.current() === "zh" ? "zh-CN" : "en-US";
+  i18n.apply(document.body);
+}
+
+export default i18n;

@@ -1,0 +1,13 @@
+{
+  "name": "modusignal",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "build": "node scripts/build.mjs",
+    "preview": "python3 -m http.server 4173 --directory _site"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}
