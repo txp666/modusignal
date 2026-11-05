@@ -59,7 +59,7 @@ A static web app for debugging devices from a browser. No installer, no backend.
 - Plug a HART modem into a laptop on site and you have a HART debugger
 - Bring up a WebSocket or MQTT device and watch its traffic on a live chart
 - Hand a colleague a URL instead of a `setup.exe`
-- Build a quick UI for an in-house protocol on the *Custom device* page, no code required
+- Build a control panel for an in-house protocol by dragging widgets onto the *Custom device* canvas, no code required
 
 Not for long-running data acquisition, plant monitoring or SCADA; it is a debugging tool.
 
@@ -73,7 +73,7 @@ Not for long-running data acquisition, plant monitoring or SCADA; it is a debugg
 | MQTT | MQTT over WS | — | Pub / sub, QoS, retain, message stats |
 | AOMaster | Serial | 115200 8N1 | 4-20 mA / 0-10 V signal source |
 | MicroScope Power | WebUSB | — | Low-current waveform capture ([hardware](https://oshwhub.com/txp666/project_iupheygc) · [firmware](https://github.com/txp666/MicroScope-Power)) |
-| Custom | any | — | Send template + parser, no code |
+| Custom | Serial / WebSocket / MQTT (link cards on the canvas) | — | Drag-and-drop canvas; widgets bind to the protocol and send commands; `.uidp` projects |
 
 Switching devices also switches the transport and its defaults.
 
@@ -82,7 +82,7 @@ Switching devices also switches the transport and its defaults.
 - **Transceiver log**: millisecond timestamps, HEX / text view, pause scroll, RX / TX byte counts, save as .txt.
 - **Modbus RTU**: request/response exchanges with timeout and exception diagnostics; a register table in 16 / 32-bit integer, Float32 and other formats.
 - **HART**: address scan, universal commands, PV/SV/TV/QV polling, instrument settings and I/O calibration; response timeout and response-code diagnostics, with confirmation before writes.
-- **Custom device**: a saved command library (import / export, timed sending), text escapes, CRC16 / SUM8 / XOR8; send templates with `{value}` placeholders and parsers for regex, JSON path, HEX offset and Modbus payloads.
+- **Custom device**: a drag-and-drop canvas like [FluentHMI Studio](https://github.com/txp666/FluentHMI-Studio). Buttons, switches, sliders, numeric displays, gauges, LEDs, live charts and more take their values by key, JSON path, HEX bytes or Modbus register (with an optional expression) and send text, HEX, JSON or Modbus commands. Serial, TCP (through WebSocket) and MQTT link cards are configured and connected on the canvas, several at once, and Modbus bindings are polled automatically; receiving, sending and the log are cards too. Projects are `.uidp` files that open in FluentHMI Studio / PyQt UI Designer, and their projects import.
 - **Live chart**: multiple series, CSV import and export.
 - **Also**: Chinese and English UI, light and dark themes.
 

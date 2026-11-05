@@ -10,7 +10,7 @@ modusignal 是一个静态在线设备/信号调试平台。它通过浏览器�
 - 设备专属页面 UI
 - 设备命令构造
 - 回包解析和曲线查看
-- 自定义设备模板，支持无内置驱动时快速调试
+- 自定义设备：拖拽画布（`.uidp` 工程，与 FluentHMI Studio / PyQt UI Designer 通用），无内置驱动时快速搭上位机
 - Cloudflare Workers 静态资源部署（仓库提交后由 Cloudflare 自动构建发布）
 
 当前内置设备：
@@ -21,7 +21,7 @@ modusignal 是一个静态在线设备/信号调试平台。它通过浏览器�
 - `websocket`：WebSocket 消息调试，快捷发送与 JSON 解析，默认 WebSocket，图标 `images/websocket.png`
 - `mqtt`：MQTT 消息调试，主题发布/订阅、QoS/retain 与 JSON 解析，默认 MQTT，图标 `images/mqtt.png`
 - `microscope-power`：MicroScope Power / RP2040 小电流波形采集上位机，独立 WebUSB 页面，`VID 0xCAFE`、`PID 0x4012`
-- `custom`：自定义设备，使用本地保存的模板和解析配置，默认串口
+- `custom`：自定义设备，拖拽画布（`.uidp`），registry 中 `standalone: true`；链路卡片自己连接串口 / WebSocket / MQTT
 
 各设备 profile 可声明：
 
@@ -107,7 +107,7 @@ src/debug-curve-form.js
   监测面板 MQTT/WebSocket/Modbus 二进制曲线表单读写与模式切换
 
 src/debug-curve-section.js
-  监测面板曲线配置区 HTML 模板（Modbus / Custom / WebSocket / MQTT），启动时 mount
+  监测面板曲线配置区 HTML 模板（Modbus / WebSocket / MQTT），启动时 mount
 
 src/devices/message-parser.js
   MQTT / WebSocket 共享解析入口：JSON·HEX·Modbus 多曲线
@@ -131,7 +131,20 @@ src/devices/mqtt-device.js
   MQTT 调试 profile、快捷发布、QoS/retain 配置、JSON/HEX/Modbus 遥测解析
 
 src/devices/custom-device.js
-  自定义设备配置、模板发送、行界/帧头帧尾/正则/HEX 解析
+  自定义设备 profile 与默认串口参数（画布在 features/canvas/）
+
+src/features/canvas/
+  自定义设备画布：canvas-page（设计/运行、控件栏、选择拖拽缩放、复制粘贴、撤销重做、左右栏隐藏、打开/另存 .uidp、localStorage）、
+  property-panel（工程/控件属性、数据绑定、发送命令、曲线、帧格式表单；按设置显示/隐藏行，规则同 PyQt property_editor.py）、
+  widget-views / card-views（控件、链路卡片、调试卡片，外观按 FluentHMI Studio 运行时）、
+  hmi-chart（RealtimeChart：自绘 canvas，同 Studio RealtimePlotWidget；表头读数、游标、保存 CSV/JSON、加载对比曲线）、
+  canvas-runtime（每张链路卡片一个 transport session 和解析器，绑定与曲线、命令发到所有已连接链路、Modbus 自动轮询）
+
+src/hmi/
+  .uidp 协议核心（无 DOM）：parsers（line / hex / modbus / modbus_tcp / modbus_ascii 切帧解析）、binding（取值、显示格式、控件转换、曲线）、
+  expression（绑定表达式，Python 语义，手写求值）、py-values、commands（文本 / HEX / JSON / Modbus 命令）、modbus-poll（读块合并、请求队列、轮询）、layout（容器布局与选项卡页，照 Studio 设计器）、
+  uidp（--check 校验、控件树、默认值、id、卡片链路设置）、widget-registry（由 FluentHMI Studio 的 uidp-widgets.md 生成）。
+  行为照 PyQt UI Designer 的 app/core；tests/data/ 下的黄金用例与两个 HMI 仓库同一份
 
 images/
   设备图标：AOMaster.png · hart.png · websocket.png · mqtt.png · modusignal-logo.svg
@@ -151,10 +164,10 @@ src/config.js
 - `websocket`：WebSocket 调试专属页面
 - `mqtt`：MQTT 调试专属页面
 - `microscope-power`：独立 MicroScope Power WebUSB 上位机页面，内嵌 `pages/devices/microscope-power/index.html`
-- `custom`：自定义设备专属页面
+- `custom`：自定义设备画布页面（独立页面：不用共享工作台和顶栏连接，进入时左侧栏收起）
 - `request`：新增设备请求页面
 
-新增设备时，应新增页面入口和页面 UI，而不是把所有控件塞进一个通用面板。普通设备应复用共享 workbench；只有像 MicroScope Power 这种需要专用 WebUSB 权限、独立高频曲线和导出链路的页面，才使用 `standalone`。
+新增设备时，应新增页面入口和页面 UI，而不是把所有控件塞进一个通用面板。普通设备应复用共享 workbench；只有像 MicroScope Power（专用 WebUSB、独立高频曲线和导出）或自定义设备画布（链路卡片各自连接）这种自己管理连接的页面，才使用 `standalone`。
 
 ## 设备驱动接口
 
@@ -198,9 +211,9 @@ export const MY_DEVICE_PROFILE = {
 
 在 `DEVICE_REGISTRY` 数组追加一条 entry（`id`、`pagePath`、`getProfile`、`createCommand`、`parseTelemetry`；有静态 profile 时一并填写 `profile` 供设备库列表使用）。`protocols.js` 会通过 lookup 自动分发，无需再改 switch。
 
-内置设备若 profile 不依赖运行时配置，可直接引用 `*_PROFILE`；自定义设备用 `getProfile: (ctx) => createCustomProfile(ctx.customConfig)`。
+内置设备若 profile 不依赖运行时配置，可直接引用 `*_PROFILE`。
 
-独立上位机 entry 可设置 `standalone: true`，只提供 `id`、`pagePath`、`getProfile`。`src/app.js` 会通过 `isStandaloneDevice()` 跳过共享传输默认值、共享 workbench 曲线和轮询 UI，并在切换到该页时断开已有共享 session。MicroScope Power 就是这个模式。
+独立上位机 entry 可设置 `standalone: true`，只提供 `id`、`pagePath`、`getProfile`。`src/app.js` 会通过 `isStandaloneDevice()` 跳过共享传输默认值、共享 workbench 曲线和轮询 UI，并在切换到该页时断开已有共享 session。MicroScope Power 与自定义设备画布就是这个模式。
 
 ### 在 `src/protocols.js` 导出
 
@@ -247,7 +260,7 @@ export const MY_DEVICE_MQTT_TRANSPORT_DEFAULTS = {
 | 设备 | 默认通讯 | 连接参数 | 轮询 (ms) |
 | --- | --- | --- | --- |
 | AOMaster | serial | 115200 8N1 | 50 |
-| 自定义 | serial | 115200 8N1 | 500（暂不支持轮询） |
+| 自定义 | 画布上的链路卡片 | 卡片的 default* 属性 | 卡片 modbusPeriod（默认 500） |
 | Modbus | serial | 9600 8N1 | 500 |
 | HART | serial | 1200 8O1 | 1000 |
 | WebSocket 调试 | websocket | ws://127.0.0.1:8080 | 0（可配置心跳轮询） |
@@ -299,14 +312,14 @@ export const MY_DEVICE_MQTT_TRANSPORT_DEFAULTS = {
 | 协议 | `src/devices/message-parser.js` | MQTT/WS 共享 JSON·HEX·Modbus 解析 |
 | 设备 | 各 `*-device.js` | 设备专属 normalize、命令、summary |
 
-Modbus RTU 与自定义帧头帧尾在连接期间维护 rx buffer；连接/断开时 `reset*RxBuffer()` 清空。
+Modbus RTU 在连接期间维护 rx buffer；连接/断开时 `reset*RxBuffer()` 清空。自定义设备画布的每张链路卡片有自己的解析器，连接时新建。
 
 ## 注意事项
 
 - Web Serial 只能在 HTTPS 或 localhost 安全上下文使用。
 - 不要在协议未确认时写死会影响设备输出的命令。
 - 需要写设备输出时，要校验范围并在 UI 中展示命令预览。
-- 自定义设备、WebSocket 与 MQTT 调试配置保存在浏览器 `localStorage`，不是云端配置。
+- 自定义设备的当前工程、WebSocket 与 MQTT 调试配置保存在浏览器 `localStorage`，不是云端配置；画布工程可另存为 `.uidp`。
 - 站点链接（GitHub、新增设备请求等）在 `src/config.js` 维护。
 
 ## 已知技术债与演进方向
@@ -320,4 +333,4 @@ Modbus RTU 与自定义帧头帧尾在连接期间维护 rx buffer；连接/断�
 | `page-loader.js` | 已按 `DEVICE_REGISTRY` 动态加载设备 HTML | 新设备只需在 registry 填 `pagePath` |
 | `workbench.html` | 曲线区由 `debug-curve-section.js` 运行时生成 | 新 prefix 加入 `MESSAGE_DEBUG_CURVE_SECTIONS` |
 | 自动化测试 | 无 unit test | 优先覆盖 `modbus.js`、曲线 config、message-parser |
-| 遗留代码 | 已移除未使用的 Canvas `chart.js` | 曲线统一走 `echarts-charts.js` |
+| 遗留代码 | 已移除未使用的 Canvas `chart.js` | 工作台曲线走 `echarts-charts.js`；自定义设备画布的 RealtimeChart 由 `features/canvas/hmi-chart.js` 自绘 |

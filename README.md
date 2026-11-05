@@ -59,7 +59,7 @@
 - 进车间带个 HART 调制解调器，笔记本插上就是 HART 调试工具
 - 新设备走 WebSocket 或 MQTT，想边看流量边看曲线
 - 把链接发给同事，比发 `setup.exe` 省事
-- 内部协议没有现成工具，用 *自定义设备* 页面拼一个，不用写代码
+- 内部协议没有现成工具，在 *自定义设备* 页面拖控件搭一个上位机，不用写代码
 
 不适合长时间数据采集、生产监控或 SCADA，这是个调试工具。
 
@@ -73,7 +73,7 @@
 | MQTT | MQTT over WS | — | 发布订阅、QoS、保留消息、统计 |
 | AOMaster | 串口 | 115200 8N1 | 4-20 mA / 0-10 V 信号源 |
 | MicroScope Power | WebUSB | — | 小电流波形采集（[硬件](https://oshwhub.com/txp666/project_iupheygc) · [固件](https://github.com/txp666/MicroScope-Power)） |
-| 自定义设备 | 任意 | — | 发送模板 + 解析规则，无需写代码 |
+| 自定义设备 | 串口 / WebSocket / MQTT（画布上的链路卡片） | — | 拖拽画布，控件绑定协议、发送命令；`.uidp` 工程 |
 
 切换设备时，通讯方式和默认参数会跟着切换。
 
@@ -82,7 +82,7 @@
 - **收发调试**：毫秒时间戳，HEX / 文本显示切换，暂停滚动，收发字节统计，日志保存为 .txt。
 - **Modbus RTU**：一问一答收发，超时与异常码诊断；寄存器表支持 16 / 32 位整数和 Float32 等多种格式。
 - **HART**：地址扫描、通用命令、PV/SV/TV/QV 轮询，仪表参数设置与输入输出校正；应答超时和响应码诊断，写操作发送前确认。
-- **自定义设备**：常用指令库（导入导出、定时发送），文本转义，CRC16 / SUM8 / XOR8 校验；发送模板支持 `{value}` 等占位符，解析支持正则、JSON 路径、HEX 偏移和 Modbus 载荷。
+- **自定义设备**：和 [FluentHMI Studio](https://github.com/txp666/FluentHMI-Studio) 一样的拖拽画布。按钮、开关、滑块、数值显示、仪表盘、指示灯、实时曲线等控件按键值、JSON 路径、HEX 字节或 Modbus 寄存器取值（可加换算表达式），按文本、HEX、JSON 或 Modbus 发命令；串口、TCP（经 WebSocket）、MQTT 链路卡片在画布上配置和连接，可放多张，Modbus 绑定自动轮询；数据接收、数据发送、日志也是卡片。工程存成 `.uidp`，能在 FluentHMI Studio / PyQt UI Designer 中打开，也能导入它们的工程。
 - **实时曲线**：多曲线显示，CSV 导入导出。
 - **其它**：中英文界面、深浅色主题。
 
