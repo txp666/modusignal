@@ -6,6 +6,7 @@ import {
   DEVICE_PAGE_IDS,
   getDeviceProfile,
   HART_DEVICE_ID,
+  MICROSCOPE_POWER_DEVICE_ID,
   MODBUS_DEVICE_ID,
   MQTT_DEVICE_ID,
   WEBSOCKET_DEVICE_ID,
@@ -13,7 +14,7 @@ import {
   listDeviceLibrary,
 } from "../protocols.js";
 
-export function createDeviceNavigationUi({ elements, state, getCustomConfig, getModbusConfig }) {
+export function createDeviceNavigationUi({ elements, state, getModbusConfig }) {
   let searchQuery = "";
 
   function isDevicePageActive() {
@@ -29,7 +30,7 @@ export function createDeviceNavigationUi({ elements, state, getCustomConfig, get
     const heading = document.getElementById("workspaceHeading");
     if (heading) {
       heading.hidden = state.pageId === "home";
-      const profile = getDeviceProfile(state.deviceId, getCustomConfig(), getModbusConfig());
+      const profile = getDeviceProfile(state.deviceId, getModbusConfig());
       const title = isDevice ? profile.name : i18n("request.title");
       document.getElementById("workspaceTitle").textContent = title;
       document.getElementById("workspaceDescription").textContent = isDevice
@@ -75,7 +76,7 @@ export function createDeviceNavigationUi({ elements, state, getCustomConfig, get
   }
 
   function getEntries() {
-    return listDeviceLibrary(getCustomConfig(), getModbusConfig());
+    return listDeviceLibrary(getModbusConfig());
   }
 
   function matchesSearch(entry) {
@@ -111,10 +112,6 @@ export function createDeviceNavigationUi({ elements, state, getCustomConfig, get
       const text = document.createElement("span");
       const title = document.createElement("strong");
       title.textContent = entry.profile.name;
-      if (entry.deviceId === CUSTOM_DEVICE_ID) {
-        title.id = "customDeviceNavName";
-        elements.customDeviceNavName = title;
-      }
       const subtitle = document.createElement("small");
       subtitle.textContent = entry.deviceId === CUSTOM_DEVICE_ID ? i18n("custom.cardDesc") : entry.profile.type;
       text.append(title, subtitle);
@@ -129,7 +126,7 @@ export function createDeviceNavigationUi({ elements, state, getCustomConfig, get
     if (deviceId === HART_DEVICE_ID) return "home.hartCardDesc";
     if (deviceId === WEBSOCKET_DEVICE_ID) return "home.card.websocket";
     if (deviceId === MQTT_DEVICE_ID) return "home.mqttCardDesc";
-    if (isStandaloneDevice(deviceId)) return "home.microscopePowerCardDesc";
+    if (deviceId === MICROSCOPE_POWER_DEVICE_ID) return "home.microscopePowerCardDesc";
     return "home.customCardDesc";
   }
 
@@ -182,7 +179,8 @@ export function createDeviceNavigationUi({ elements, state, getCustomConfig, get
   }
 
   function getTransportLabel(deviceId) {
-    return isStandaloneDevice(deviceId) ? "WebUSB"
+    return deviceId === MICROSCOPE_POWER_DEVICE_ID ? "WebUSB"
+      : deviceId === CUSTOM_DEVICE_ID ? "Serial / WS / MQTT"
       : deviceId === MQTT_DEVICE_ID ? "MQTT / WS"
         : deviceId === WEBSOCKET_DEVICE_ID ? "WebSocket" : "Serial";
   }

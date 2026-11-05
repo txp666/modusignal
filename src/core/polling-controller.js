@@ -64,7 +64,6 @@ export function createPollingController(options) {
       return createDeviceSetOutputCommand(
         state.deviceId,
         state,
-        configs.customConfig,
         configs.modbusConfig,
         configs.aomasterConfig,
         configs.hartConfig,

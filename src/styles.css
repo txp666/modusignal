@@ -1,5 +1,6 @@
 @import "./home.css";
 @import "./workbench.css";
+@import "./canvas.css";
 
 :root {
   color-scheme: light;
@@ -452,8 +453,7 @@ label {
   background: var(--bg);
 }
 
-.device-shell.active .control-panel,
-.device-shell.active .custom-panel {
+.device-shell.active .control-panel {
   flex: 0 0 auto;
   width: 100%;
   min-width: 0;

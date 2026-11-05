@@ -16,9 +16,6 @@ import {
   normalizeHartConfig,
 } from "../devices/hart-device.js";
 import {
-  listCustomChartSeries,
-} from "../devices/custom-device.js";
-import {
   listModbusDeviceChartSeries,
 } from "../devices/modbus-device.js";
 import {
@@ -28,8 +25,6 @@ import {
   listWebSocketChartSeries,
 } from "../devices/websocket-device.js";
 import {
-  CUSTOM_DEVICE_ID,
-  DEFAULT_CUSTOM_CONFIG,
   DEFAULT_DEVICE_ID,
   DEFAULT_MQTT_CONFIG,
   DEFAULT_WEBSOCKET_CONFIG,
@@ -37,7 +32,6 @@ import {
   MODBUS_DEVICE_ID,
   MQTT_DEVICE_ID,
   WEBSOCKET_DEVICE_ID,
-  normalizeCustomConfig,
   normalizeModbusConfig,
   normalizeMqttConfig,
   normalizeWebSocketConfig,
@@ -159,18 +153,15 @@ export function createChartController(options) {
 
   const buildMqttSeries = (value = getConfigs().mqttConfig) => buildMultiSeries(value, listMqttChartSeries);
   const buildWebsocketSeries = (value = getConfigs().websocketConfig) => buildMultiSeries(value, listWebSocketChartSeries);
-  const buildCustomSeries = (value = getConfigs().customConfig) => buildMultiSeries(value, listCustomChartSeries);
   const buildModbusSeries = (value = getConfigs().modbusConfig) => buildMultiSeries(value, listModbusDeviceChartSeries);
 
   const shouldUseMqttMultiChart = (value = getConfigs().mqttConfig) => buildMqttSeries(value).length > 1;
   const shouldUseWebsocketMultiChart = (value = getConfigs().websocketConfig) => buildWebsocketSeries(value).length > 1;
-  const shouldUseCustomMultiChart = (value = getConfigs().customConfig) => buildCustomSeries(value).length > 1;
   const shouldUseModbusMultiChart = (value = getConfigs().modbusConfig) => buildModbusSeries(value).length > 1;
 
   function shouldUseJsonMultiChart() {
     if (state.deviceId === MQTT_DEVICE_ID) return shouldUseMqttMultiChart();
     if (state.deviceId === WEBSOCKET_DEVICE_ID) return shouldUseWebsocketMultiChart();
-    if (state.deviceId === CUSTOM_DEVICE_ID) return shouldUseCustomMultiChart();
     if (state.deviceId === MODBUS_DEVICE_ID) return shouldUseModbusMultiChart();
     return false;
   }
@@ -178,9 +169,6 @@ export function createChartController(options) {
   function getJsonMultiChartMeta() {
     if (state.deviceId === WEBSOCKET_DEVICE_ID) {
       return { title: i18n("chart.wsChart"), emptyText: i18n("chart.wsEmpty"), seriesDefs: buildWebsocketSeries() };
-    }
-    if (state.deviceId === CUSTOM_DEVICE_ID) {
-      return { title: i18n("chart.serialChart"), emptyText: i18n("chart.serialEmpty"), seriesDefs: buildCustomSeries() };
     }
     if (state.deviceId === MODBUS_DEVICE_ID) {
       return { title: i18n("chart.modbusChart"), emptyText: i18n("chart.modbusEmpty"), seriesDefs: buildModbusSeries() };
@@ -281,7 +269,6 @@ export function createChartController(options) {
     if (state.deviceId === MODBUS_DEVICE_ID) return replaceCounts(shouldUseModbusMultiChart() ? "chart.modbusMultiDesc" : "chart.modbusSingleDesc");
     if (state.deviceId === WEBSOCKET_DEVICE_ID) return replaceCounts(shouldUseWebsocketMultiChart() ? "chart.wsMultiDesc" : "chart.wsSingleDesc");
     if (state.deviceId === MQTT_DEVICE_ID) return replaceCounts(shouldUseMqttMultiChart() ? "chart.mqttMultiDesc" : "chart.mqttSingleDesc");
-    if (state.deviceId === CUSTOM_DEVICE_ID) return replaceCounts(shouldUseCustomMultiChart() ? "chart.customMultiDesc" : "chart.customSingleDesc");
     return replaceCounts("chart.defaultDesc");
   }
 
@@ -296,7 +283,7 @@ export function createChartController(options) {
   }
 
   function describeCurveConfigSummary() {
-    const { customConfig, modbusConfig, hartConfig, websocketConfig, mqttConfig } = getConfigs();
+    const { modbusConfig, hartConfig, websocketConfig, mqttConfig } = getConfigs();
     if (state.deviceId === DEFAULT_DEVICE_ID) return i18n("chart.dualCurve");
     if (state.deviceId === MODBUS_DEVICE_ID) {
       const series = listModbusDeviceChartSeries(modbusConfig);
@@ -308,9 +295,6 @@ export function createChartController(options) {
       const normalized = normalizeHartConfig(hartConfig);
       const labels = HART_VARIABLE_CARDS.filter((card) => normalized.chartSeries[card.key]).map((card) => card.label);
       return labels.length ? labels.join(" / ") : i18n("chart.notSelected");
-    }
-    if (state.deviceId === CUSTOM_DEVICE_ID) {
-      return describeParserCurve(normalizeCustomConfig(customConfig), listCustomChartSeries(customConfig), DEFAULT_CUSTOM_CONFIG);
     }
     if (state.deviceId === WEBSOCKET_DEVICE_ID) {
       return describeParserCurve(normalizeWebSocketConfig(websocketConfig), listWebSocketChartSeries(websocketConfig), DEFAULT_WEBSOCKET_CONFIG);

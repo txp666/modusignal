@@ -1,12 +1,10 @@
 import i18n from "../i18n.js";
 import { resetAomasterRxBuffer } from "../devices/aomaster.js";
-import { resetCustomRxBuffer } from "../devices/custom-device.js";
 import { resetHartRxBuffer } from "../devices/hart-device.js";
 import { resetModbusRxBuffer } from "../devices/modbus-device.js";
 import { resetMqttRxBuffer } from "../devices/mqtt-device.js";
 import { resetWebSocketRxBuffer } from "../devices/websocket-device.js";
 import {
-  CUSTOM_DEVICE_ID,
   DEFAULT_DEVICE_ID,
   HART_DEVICE_ID,
   MODBUS_DEVICE_ID,
@@ -30,10 +28,9 @@ export function createSessionEventController(options) {
     appendLog,
   } = options;
 
-  function resetMessageBuffers(customConfig) {
+  function resetMessageBuffers() {
     resetMqttRxBuffer();
     resetWebSocketRxBuffer();
-    resetCustomRxBuffer(customConfig);
   }
 
   function bind(target) {
@@ -42,14 +39,13 @@ export function createSessionEventController(options) {
       messageDebugController.resetStats();
       modbusController.reset();
       hartMasterController.reset();
-      resetMessageBuffers(getConfigs().customConfig);
+      resetMessageBuffers();
       transportController.updateConnectionUi(true);
       pollingController.updateActive();
       appendLog("info", i18n("log.connect"), transportController.describeConnectionSummary());
     });
 
     target.addEventListener("disconnected", () => {
-      getControllers().customCommandUi?.stop("disconnected");
       const {
         pollingController, hartSessionController, hartMasterController, transportController, messageDebugController, modbusController,
       } = getControllers();
@@ -61,7 +57,7 @@ export function createSessionEventController(options) {
       resetHartRxBuffer();
       hartSessionController.resetLinkProbe();
       resetAomasterRxBuffer();
-      resetMessageBuffers(getConfigs().customConfig);
+      resetMessageBuffers();
       finalizeRxLogCoalesce();
       transportController.updateConnectionUi(false);
       messageDebugController.resetStats();
@@ -71,7 +67,6 @@ export function createSessionEventController(options) {
     target.addEventListener("rx", (event) => handleRx(event.detail));
     target.addEventListener("tx", (event) => handleTx(event.detail));
     target.addEventListener("error", (event) => {
-      getControllers().customCommandUi?.stop("failed");
       appendLog("error", i18n("log.error"), event.detail.error?.message ?? String(event.detail.error));
     });
   }
@@ -103,7 +98,6 @@ export function createSessionEventController(options) {
     const telemetry = parseDeviceTelemetry(
       state.deviceId,
       text,
-      configs.customConfig,
       configs.modbusConfig,
       bytes,
       state,
@@ -116,7 +110,7 @@ export function createSessionEventController(options) {
 
     if (state.deviceId === DEFAULT_DEVICE_ID) {
       aomasterController.handleTelemetry(telemetry);
-    } else if ([MQTT_DEVICE_ID, WEBSOCKET_DEVICE_ID, CUSTOM_DEVICE_ID, MODBUS_DEVICE_ID].includes(state.deviceId)) {
+    } else if ([MQTT_DEVICE_ID, WEBSOCKET_DEVICE_ID, MODBUS_DEVICE_ID].includes(state.deviceId)) {
       chartController.handleJsonMultiTelemetry(telemetry);
     } else {
       chartController.getCharts().chart?.add(telemetry.value);

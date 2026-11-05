@@ -1,6 +1,6 @@
 import { registerDebugCurveFormElements } from "../debug-curve-form.js";
 
-const DEBUG_CURVE_PREFIXES = ["mqtt", "websocket", "custom", "modbus"];
+const DEBUG_CURVE_PREFIXES = ["mqtt", "websocket", "modbus"];
 
 /**
  * Builds the shared DOM registry after all page fragments have been mounted.

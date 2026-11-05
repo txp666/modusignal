@@ -13,10 +13,6 @@ const HELP_CONTENT = {
     title: () => i18n("curve.help.title.hart"),
     html: () => i18n("curve.help.html.hart"),
   },
-  custom: {
-    title: () => i18n("curve.help.title.custom"),
-    html: () => i18n("curve.help.html.custom"),
-  },
   websocket: {
     title: () => i18n("curve.help.title.websocket"),
     html: () => i18n("curve.help.html.websocket"),

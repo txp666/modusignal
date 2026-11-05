@@ -5,7 +5,7 @@ import { initChartCurvePanel } from "../chart-curve-panel.js";
 import { buildDefaultStepSequence } from "../devices/aomaster.js";
 import { WEBSOCKET_QUICK_MESSAGES } from "../devices/websocket-device.js";
 import { MQTT_QUICK_MESSAGES } from "../devices/mqtt-device.js";
-import { CUSTOM_DEVICE_ID, MODBUS_DEVICE_ID, MQTT_DEVICE_ID, WEBSOCKET_DEVICE_ID, getModeConfig } from "../protocols.js";
+import { MODBUS_DEVICE_ID, MQTT_DEVICE_ID, WEBSOCKET_DEVICE_ID, getModeConfig } from "../protocols.js";
 
 const on = (element, eventName, handler) => element?.addEventListener(eventName, handler);
 
@@ -29,7 +29,6 @@ export function bindAppEvents(options) {
     pollingController,
     deviceNavigationUi,
     aomasterWaveformUi,
-    customConfigUi,
     modbusConfigUi,
     websocketConfigUi,
     mqttConfigUi,
@@ -132,8 +131,8 @@ export function bindAppEvents(options) {
     }
     const preset = event.target.closest("[data-preset]");
     if (preset) {
-      const { customConfig, modbusConfig } = getConfigs();
-      updateSetpoint(getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig).presets[preset.dataset.preset]);
+      const { modbusConfig } = getConfigs();
+      updateSetpoint(getModeConfig(state.mode, state.deviceId, modbusConfig).presets[preset.dataset.preset]);
     }
   });
 
@@ -180,13 +179,6 @@ export function bindAppEvents(options) {
   on(elements.addStepButton, "click", aomasterWaveformUi.addStepPoint);
   document.querySelectorAll("[data-step-preset]").forEach((button) => on(button, "click", () => aomasterWaveformUi.applyStepPreset(button.dataset.stepPreset)));
 
-  customConfigUi.getControls().filter(Boolean).forEach((control) => {
-    on(control, "input", customConfigUi.updateDraft);
-    on(control, "change", customConfigUi.updateDraft);
-  });
-  on(elements.saveCustomConfig, "click", customConfigUi.save);
-  on(elements.resetCustomConfig, "click", customConfigUi.reset);
-  on(elements.testCustomParser, "click", () => testDeviceParser(CUSTOM_DEVICE_ID));
   modbusConfigUi.getConfigControls().filter(Boolean).forEach((control) => {
     on(control, "input", updateModbusDraftConfig);
     on(control, "change", updateModbusDraftConfig);
@@ -221,8 +213,6 @@ export function bindAppEvents(options) {
   };
   bindMessageConfig("Websocket", websocketConfigUi, readWebsocketHeartbeatPreset, WEBSOCKET_DEVICE_ID);
   bindMessageConfig("Mqtt", mqttConfigUi, readMqttHeartbeatPreset, MQTT_DEVICE_ID);
-  debugCurveController.bind("custom");
-  on(elements.customAddCurve, "click", () => debugCurveController.add("custom"));
 
   on(elements.hartSearchDevice, "click", () => hartSessionController.sendSearchCommand().catch((error) => appendLog("error", "HART", error.message)));
   on(elements.hartScanAddresses, "click", () => hartSessionController.scanAddresses().catch((error) => appendLog("error", "HART", error.message)));

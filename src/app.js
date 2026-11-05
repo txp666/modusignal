@@ -27,14 +27,10 @@ import { createTransportController } from "./core/transport-controller.js";
 import { createPollingController } from "./core/polling-controller.js";
 import { createSessionEventController } from "./core/session-event-controller.js";
 import { createDebugCurveController } from "./ui/debug-curve-controller.js";
-import {
-  createCustomConfigUi,
-  loadCustomConfig as loadCustomConfigSnapshot,
-} from "./features/custom/custom-config-ui.js";
 import { bindAppEvents } from "./ui/app-event-bindings.js";
 import { createMessageDebugController } from "./features/message-debug/message-debug-controller.js";
-import { createCustomCommandUi } from "./features/custom/custom-command-ui.js";
-import { buildManualSendPayload } from "./features/custom/command-library.js";
+import { createCanvasPage } from "./features/canvas/canvas-page.js";
+import { buildManualSendPayload } from "./ui/manual-send-payload.js";
 import { syncManualSendOptions } from "./ui/manual-send-options.js";
 import { DEFAULT_TRANSPORT_ID } from "./transports/registry.js";
 import {
@@ -42,7 +38,6 @@ import {
   describeAomasterSummary,
   resetAomasterRxBuffer,
 } from "./devices/aomaster.js";
-import { resetCustomRxBuffer } from "./devices/custom-device.js";
 import {
   describeModbusSummary,
   getModbusMode,
@@ -77,7 +72,6 @@ import {
   bytesToHex,
   createDeviceSetOutputCommand,
   CUSTOM_DEVICE_ID,
-  DEFAULT_CUSTOM_CONFIG,
   DEFAULT_DEVICE_ID,
   DEFAULT_MODBUS_CONFIG,
   DEFAULT_MQTT_CONFIG,
@@ -88,7 +82,6 @@ import {
   getModeConfig,
   MODBUS_DEVICE_ID,
   MODUSIGNAL_APP,
-  normalizeCustomConfig,
   normalizeModbusConfig,
   normalizeMqttConfig,
   normalizeWebSocketConfig,
@@ -98,7 +91,6 @@ import {
   WEBSOCKET_DEVICE_ID,
 } from "./protocols.js";
 
-const CUSTOM_CONFIG_STORAGE_KEY = "modusignal.customDevice.v1";
 const HART_CONFIG_STORAGE_KEY = "modusignal.hartDevice.v1";
 const WEBSOCKET_CONFIG_STORAGE_KEY = "modusignal.websocketDevice.v1";
 const MQTT_CONFIG_STORAGE_KEY = "modusignal.mqttDevice.v1";
@@ -107,7 +99,6 @@ const AOMASTER_INTERFRAME_DELAY_MS = 20;
 /** @type {Record<string, HTMLElement | HTMLElement[] | null>} */
 const elements = {};
 
-let customConfig = loadCustomConfigSnapshot(CUSTOM_CONFIG_STORAGE_KEY);
 let modbusConfig = loadModbusConfigSnapshot();
 let hartConfig = loadHartConfig();
 let websocketConfig = loadMessageConfig(
@@ -138,8 +129,7 @@ let aomasterController = null;
 let transportController = null;
 let pollingController = null;
 let debugCurveController = null;
-let customConfigUi = null;
-let customCommandUi = null;
+let canvasPage = null;
 let messageDebugController = null;
 let sessionEventController = null;
 let themeController = null;
@@ -206,7 +196,6 @@ async function initialize() {
   if (elements.footerVersion) {
     elements.footerVersion.textContent = MODUSIGNAL_APP.assetVersion;
   }
-  customConfigUi.populate(customConfig);
   modbusConfigUi.populateConfigForm(modbusConfig);
   hartConfigUi.populateConfigForm(hartConfig);
   websocketConfigUi.populate(websocketConfig);
@@ -221,13 +210,12 @@ async function initialize() {
   bindAppEvents({
     elements,
     state,
-    getConfigs: () => ({ customConfig, modbusConfig }),
+    getConfigs: () => ({ modbusConfig }),
     sidebarController,
     transportController,
     pollingController,
     deviceNavigationUi,
     aomasterWaveformUi,
-    customConfigUi,
     modbusConfigUi,
     websocketConfigUi,
     mqttConfigUi,
@@ -279,7 +267,7 @@ async function initialize() {
   appendLog(
     "info",
     i18n("log.system"),
-    `${MODUSIGNAL_APP.name}${i18n("app.ready")}${getDeviceProfile(state.deviceId, customConfig, modbusConfig).name}`,
+    `${MODUSIGNAL_APP.name}${i18n("app.ready")}${getDeviceProfile(state.deviceId, modbusConfig).name}`,
   );
 
   // Language switcher
@@ -326,7 +314,7 @@ async function refreshHartLinkReleaseSummary() {
 }
 
 function refreshAllDynamicUi() {
-  customCommandUi?.localize();
+  canvasPage?.localize();
   modbusController.localize();
   hartMasterController.localize();
   sidebarController.refreshLabels();
@@ -341,7 +329,6 @@ function refreshAllDynamicUi() {
   deviceNavigationUi.updatePage();
   transportController.localize();
   chartController.updatePointLabels();
-  customConfigUi.populate(customConfig);
   modbusConfigUi.populateConfigForm(modbusConfig);
   hartWorkspaceController.refreshLocalizedOptions();
   hartConfigUi.populateConfigForm(hartConfig);
@@ -356,7 +343,7 @@ function initializeChartController() {
   chartController = createChartController({
     elements,
     state,
-    getConfigs: () => ({ customConfig, modbusConfig, hartConfig, websocketConfig, mqttConfig }),
+    getConfigs: () => ({ modbusConfig, hartConfig, websocketConfig, mqttConfig }),
     isDevicePageActive: () => deviceNavigationUi?.isDevicePageActive() ?? false,
     getHartSeriesDefs: () => hartMonitorController?.buildSeriesDefs() ?? [],
     clearAomasterCharts: () => aomasterWaveformUi?.clearCharts(),
@@ -371,7 +358,6 @@ function initializeAomasterController() {
   aomasterController = createAomasterController({
     elements,
     state,
-    getCustomConfig: () => customConfig,
     getModbusConfig: () => modbusConfig,
     getSession: () => session,
     getPollingController: () => pollingController,
@@ -390,17 +376,14 @@ function initializeInfrastructureControllers() {
     getLogElement: () => elements.serialLog,
     bytesToHex,
   });
-  customCommandUi = createCustomCommandUi({
-    elements,
-    getSession: () => session,
-    isActive: () => state.deviceId === CUSTOM_DEVICE_ID && state.pageId === CUSTOM_DEVICE_ID,
-    appendLog,
+  canvasPage = createCanvasPage({
+    root: document.getElementById("customPage"),
+    appShell: elements.appShell,
   });
   sessionEventController = createSessionEventController({
     elements,
     state,
     getConfigs: () => ({
-      customConfig,
       modbusConfig,
       hartConfig,
       websocketConfig,
@@ -415,7 +398,6 @@ function initializeInfrastructureControllers() {
       messageDebugController,
       pollingController,
       transportController,
-      customCommandUi,
       modbusController,
     }),
     queueRxLogDisplay,
@@ -441,32 +423,14 @@ function initializeInfrastructureControllers() {
   deviceNavigationUi = createDeviceNavigationUi({
     elements,
     state,
-    getCustomConfig: () => customConfig,
     getModbusConfig: () => modbusConfig,
   });
   pageNavigation = createPageNavigation({ pageIds: DEVICE_PAGE_IDS, onNavigate: showPage });
-  customConfigUi = createCustomConfigUi({
-    elements,
-    state,
-    storageKey: CUSTOM_CONFIG_STORAGE_KEY,
-    getConfig: () => customConfig,
-    setConfig: (config) => { customConfig = config; },
-    getModbusConfig: () => modbusConfig,
-    syncCurveRows: debugCurveController.syncRows,
-    syncChartPanel: chartController.syncCurvePanelUi,
-    renderNavigation: () => {
-      deviceNavigationUi.renderLibrary();
-      deviceNavigationUi.renderHomeCards();
-    },
-    updateDeviceUi,
-    appendLog,
-  });
   pollingController = createPollingController({
     elements,
     state,
     getSession: () => session,
     getConfigs: () => ({
-      customConfig,
       modbusConfig,
       hartConfig,
       websocketConfig,
@@ -545,18 +509,9 @@ function initializeInfrastructureControllers() {
     normalize: normalizeModbusConfig,
     assign: (config) => { modbusConfig = config; },
   });
-  debugCurveController.register("custom", {
-    readForm: customConfigUi.read,
-    populateForm: customConfigUi.populate,
-    updateDraft: customConfigUi.updateDraft,
-    defaults: DEFAULT_CUSTOM_CONFIG,
-    normalize: normalizeCustomConfig,
-    assign: (config) => { customConfig = config; },
-  });
   aomasterWaveformUi = createAomasterWaveformUi({
     elements,
     state,
-    getCustomConfig: () => customConfig,
     getModbusConfig: () => modbusConfig,
     getSetpointChart: () => chartController.getCharts().setpointChart,
     getActualChart: () => chartController.getCharts().actualChart,
@@ -579,10 +534,8 @@ function initializeInfrastructureControllers() {
   transportController = createTransportController({
     elements,
     state,
-    getConfigs: () => ({ customConfig, modbusConfig }),
+    getConfigs: () => ({ modbusConfig }),
     getSession: () => session,
-    onSessionEnding: () => customCommandUi.stop("disconnected"),
-    onConnectionChange: () => customCommandUi.refresh(),
     setSession: (nextSession) => {
       session = nextSession;
     },
@@ -672,7 +625,7 @@ function initializeChartControllers() {
   chartCsvController = createChartCsvController({
     elements,
     state,
-    getConfigs: () => ({ customConfig, modbusConfig, websocketConfig, mqttConfig }),
+    getConfigs: () => ({ modbusConfig, websocketConfig, mqttConfig }),
     getCharts: chartController.getCharts,
     getChartPointSettings: chartController.getPointSettings,
     getAomasterDisplayUnit: aomasterController.getDisplayUnit,
@@ -708,7 +661,6 @@ function safeUpdateDeviceUi() {
 }
 
 function activateDevice(deviceId) {
-  customCommandUi?.stop();
   hartSessionController.resetLinkProbe();
   const standalone = isStandaloneDevice(deviceId);
   state.pollingActive = false;
@@ -727,16 +679,15 @@ function activateDevice(deviceId) {
 
   if (deviceId === CUSTOM_DEVICE_ID) {
     state.mode = "custom";
-    state.setpoint = normalizeCustomConfig(customConfig).defaultValue;
   } else if (deviceId === MODBUS_DEVICE_ID) {
     const normalized = normalizeModbusConfig(modbusConfig);
     state.mode = getModbusMode(normalized.functionCode);
-    const config = getModeConfig(state.mode, deviceId, customConfig, modbusConfig);
+    const config = getModeConfig(state.mode, deviceId, modbusConfig);
     state.setpoint = config.presets.mid;
   } else if (deviceId === HART_DEVICE_ID) {
     const normalized = normalizeHartConfig(hartConfig);
     state.mode = getHartMode(normalized.activeCommand);
-    const config = getModeConfig(state.mode, deviceId, customConfig, modbusConfig);
+    const config = getModeConfig(state.mode, deviceId, modbusConfig);
     state.setpoint = config.presets.mid;
   } else if (!standalone && deviceId !== WEBSOCKET_DEVICE_ID && deviceId !== MQTT_DEVICE_ID) {
     state.mode = elements.outputModeSelect?.value || "current";
@@ -756,7 +707,7 @@ function activateDevice(deviceId) {
   pollingController.updateActive();
   pollingController.updateUi();
   sidebarController.applyLayout();
-  appendLog("info", i18n("log.device"), `${i18n("log.switchedTo")} ${getDeviceProfile(state.deviceId, customConfig, modbusConfig).name}`);
+  appendLog("info", i18n("log.device"), `${i18n("log.switchedTo")} ${getDeviceProfile(state.deviceId, modbusConfig).name}`);
 
   if (deviceId === HART_DEVICE_ID && state.transportId === DEFAULT_TRANSPORT_ID && session?.connected) {
     void hartSessionController.detectLinkVersion(session);
@@ -764,7 +715,7 @@ function activateDevice(deviceId) {
 }
 
 function showPage(pageId, { source }) {
-  if (pageId !== CUSTOM_DEVICE_ID) customCommandUi?.stop();
+  if (pageId !== CUSTOM_DEVICE_ID) canvasPage?.deactivate();
   if (DEVICE_PAGE_IDS.includes(pageId) && activatedDeviceId !== pageId) {
     activateDevice(pageId);
     activatedDeviceId = pageId;
@@ -772,6 +723,7 @@ function showPage(pageId, { source }) {
   state.pageId = pageId;
   deviceNavigationUi.updatePage();
   updateDeviceUi();
+  if (pageId === CUSTOM_DEVICE_ID && !canvasPage?.isActive()) canvasPage?.activate();
   sidebarController.applyLayout();
   chartController.requestResize();
   if (source === "navigation") {
@@ -793,11 +745,9 @@ function resetViewportScroll() {
 }
 
 function updateDeviceUi() {
-  customCommandUi?.refresh();
   chartController.bindConfigEvents();
   chartController.updatePointLabels();
-  const profile = getDeviceProfile(state.deviceId, customConfig, modbusConfig);
-  const isCustom = state.deviceId === CUSTOM_DEVICE_ID;
+  const profile = getDeviceProfile(state.deviceId, modbusConfig);
   const isModbus = state.deviceId === MODBUS_DEVICE_ID;
   const isHart = state.deviceId === HART_DEVICE_ID;
   const isWebsocket = state.deviceId === WEBSOCKET_DEVICE_ID;
@@ -805,10 +755,6 @@ function updateDeviceUi() {
   const isMessageDebug = isWebsocket || isMqtt;
   const isAomaster = state.deviceId === DEFAULT_DEVICE_ID;
   const isStandalone = isStandaloneDevice(state.deviceId);
-
-  if (elements.customDeviceNavName) {
-    elements.customDeviceNavName.textContent = getDeviceProfile(CUSTOM_DEVICE_ID, customConfig, modbusConfig).name;
-  }
 
   const setpointRow = queryDeviceField("setpointRow");
   const presetRow = queryDeviceField("presetRow");
@@ -841,9 +787,7 @@ function updateDeviceUi() {
 
   const summary = queryDeviceField("deviceSummary");
   if (summary) {
-    if (isCustom) {
-      summary.textContent = `${profile.name}${i18n("custom.deviceConfigDescSummary")}`;
-    } else if (isModbus) {
+    if (isModbus) {
       summary.textContent = describeModbusSummary(modbusConfig);
     } else if (isHart) {
       summary.textContent = describeHartSummary(hartConfig);
@@ -890,7 +834,7 @@ function updateDeviceUi() {
 
   const { chart } = chartController.getCharts();
   if (!isAomaster && !isHart && !isMessageDebug && chart) {
-    const modeConfig = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
+    const modeConfig = getModeConfig(state.mode, state.deviceId, modbusConfig);
     chart.setMeta({ title: i18n("chart.realTimeChart"), unit: modeConfig.unit });
   }
 
@@ -936,7 +880,7 @@ function queryDeviceField(name) {
 }
 
 function updateSetpoint(value) {
-  const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
+  const config = getModeConfig(state.mode, state.deviceId, modbusConfig);
   const sourceValue = aomasterController.isPercentMode() ? aomasterController.getValueFromPercent(value) : value;
   const bounded = Math.min(config.max, Math.max(config.min, sourceValue));
   state.setpoint = Number.isFinite(bounded) ? bounded : config.presets.mid;
@@ -949,7 +893,7 @@ function updateSetpointUi() {
     return;
   }
 
-  const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
+  const config = getModeConfig(state.mode, state.deviceId, modbusConfig);
   const isPercent = aomasterController.isPercentMode();
   const formatted = isPercent
     ? aomasterController.formatDisplayNumber(state.setpoint)
@@ -995,7 +939,6 @@ function updateSetpointUi() {
   const command = createDeviceSetOutputCommand(
     state.deviceId,
     state,
-    customConfig,
     modbusConfig,
     aomasterController.getConfig(),
     hartConfig,
@@ -1083,7 +1026,6 @@ function updateMessageDebugCommandUi() {
   const command = createDeviceSetOutputCommand(
     state.deviceId,
     state,
-    customConfig,
     modbusConfig,
     aomasterController.getConfig(),
     hartConfig,
@@ -1126,7 +1068,6 @@ async function sendDeviceCommand() {
     const command = createDeviceSetOutputCommand(
       state.deviceId,
       state,
-      customConfig,
       modbusConfig,
       aomasterController.getConfig(),
       hartConfig,
@@ -1164,7 +1105,7 @@ async function sendDeviceCommand() {
  * exchange, { status: "invalid" | "declined" } when nothing was sent, or null when the write failed.
  */
 async function sendHartCommand() {
-  const command = createDeviceSetOutputCommand(HART_DEVICE_ID, state, customConfig, modbusConfig, aomasterController.getConfig(), hartConfig);
+  const command = createDeviceSetOutputCommand(HART_DEVICE_ID, state, modbusConfig, aomasterController.getConfig(), hartConfig);
   if (!command.supported || !command.bytes) {
     const message = command.preview || i18n("common.noDriverCmd");
     appendLog("error", i18n("log.send"), message);
@@ -1187,7 +1128,7 @@ function buildHartPollRequest() {
 }
 
 function buildModbusRequest() {
-  const command = createDeviceSetOutputCommand(MODBUS_DEVICE_ID, state, customConfig, modbusConfig);
+  const command = createDeviceSetOutputCommand(MODBUS_DEVICE_ID, state, modbusConfig);
   if (!command.supported || !command.bytes) {
     throw new Error(command.preview || i18n("common.noDriverCmd"));
   }
@@ -1220,22 +1161,6 @@ async function sendManualCommand() {
 }
 
 const PARSER_TEST_SPECS = {
-  [CUSTOM_DEVICE_ID]: {
-    readForm: () => {
-      customConfig = customConfigUi.read();
-      return customConfig;
-    },
-    sampleKey: "customParserSample",
-    previewKey: "customParserPreview",
-    prepareSample(sample, config) {
-      resetCustomRxBuffer(config);
-      try {
-        return { text: null, bytes: parseHexPayload(sample) };
-      } catch {
-        return { text: sample, bytes: null };
-      }
-    },
-  },
   [MODBUS_DEVICE_ID]: {
     readForm: () => {
       modbusConfig = modbusConfigUi.readConfigForm();
@@ -1294,7 +1219,6 @@ function testDeviceParser(deviceId) {
   const telemetry = parseDeviceTelemetry(
     deviceId,
     prepared.text,
-    customConfig,
     modbusConfig,
     prepared.bytes,
     state,
@@ -1340,7 +1264,7 @@ function updateModbusDraftConfig() {
   if (state.deviceId === MODBUS_DEVICE_ID) {
     const normalized = normalizeModbusConfig(modbusConfig);
     state.mode = getModbusMode(normalized.functionCode);
-    const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
+    const config = getModeConfig(state.mode, state.deviceId, modbusConfig);
     state.setpoint = Math.min(config.max, Math.max(config.min, state.setpoint));
     resetModbusRxBuffer();
   }
@@ -1369,7 +1293,7 @@ function resetModbusConfig() {
 
   if (state.deviceId === MODBUS_DEVICE_ID) {
     state.mode = getModbusMode(modbusConfig.functionCode);
-    state.setpoint = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig).presets.mid;
+    state.setpoint = getModeConfig(state.mode, state.deviceId, modbusConfig).presets.mid;
   }
 
   updateDeviceUi();
@@ -1385,7 +1309,7 @@ function updateHartDraftConfig() {
   if (state.deviceId === HART_DEVICE_ID) {
     const normalized = normalizeHartConfig(hartConfig);
     state.mode = getHartMode(normalized.activeCommand);
-    const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
+    const config = getModeConfig(state.mode, state.deviceId, modbusConfig);
     state.setpoint = Math.min(config.max, Math.max(config.min, state.setpoint));
     resetHartRxBuffer();
   }
@@ -1414,7 +1338,7 @@ function resetHartConfig() {
 
   if (state.deviceId === HART_DEVICE_ID) {
     state.mode = getHartMode(normalizeHartConfig(hartConfig).activeCommand);
-    state.setpoint = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig).presets.mid;
+    state.setpoint = getModeConfig(state.mode, state.deviceId, modbusConfig).presets.mid;
   }
 
   updateDeviceUi();

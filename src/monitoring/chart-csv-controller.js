@@ -47,7 +47,7 @@ export function createChartCsvController(options) {
   } = options;
 
   function getSingleSeriesMeta() {
-    const { websocketConfig, mqttConfig, customConfig, modbusConfig } = getConfigs();
+    const { websocketConfig, mqttConfig, modbusConfig } = getConfigs();
     const { chart } = getCharts();
     if (state.deviceId === WEBSOCKET_DEVICE_ID) {
       const normalized = normalizeWebSocketConfig(websocketConfig);
@@ -57,7 +57,7 @@ export function createChartCsvController(options) {
       const normalized = normalizeMqttConfig(mqttConfig);
       return { key: "value", name: normalized.fieldName || "value", unit: normalized.unit || "" };
     }
-    const config = getModeConfig(state.mode, state.deviceId, customConfig, modbusConfig);
+    const config = getModeConfig(state.mode, state.deviceId, modbusConfig);
     return {
       key: "value",
       name: config.fieldName || chart?.title || "value",

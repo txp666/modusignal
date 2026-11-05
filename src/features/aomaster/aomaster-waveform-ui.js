@@ -13,7 +13,6 @@ export function createAomasterWaveformUi(options) {
   const {
     elements,
     state,
-    getCustomConfig,
     getModbusConfig,
     getSetpointChart,
     getActualChart,
@@ -35,7 +34,7 @@ export function createAomasterWaveformUi(options) {
   } = options;
 
   function getModeConfiguration(mode = state.mode) {
-    return getModeConfig(mode, DEFAULT_DEVICE_ID, getCustomConfig(), getModbusConfig());
+    return getModeConfig(mode, DEFAULT_DEVICE_ID, getModbusConfig());
   }
 
   function applyModeDefaults() {
@@ -215,7 +214,7 @@ export function createAomasterWaveformUi(options) {
 
   function populateOutputModes() {
     if (!elements.outputModeSelect) return;
-    const profile = getDeviceProfile(DEFAULT_DEVICE_ID, getCustomConfig(), getModbusConfig());
+    const profile = getDeviceProfile(DEFAULT_DEVICE_ID, getModbusConfig());
     const currentValue = state.mode;
     elements.outputModeSelect.innerHTML = "";
     Object.entries(profile.modes).forEach(([modeId, modeConfig]) => {

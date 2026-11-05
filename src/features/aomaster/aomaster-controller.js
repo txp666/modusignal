@@ -40,7 +40,6 @@ export function createAomasterController(options) {
   const {
     elements,
     state,
-    getCustomConfig,
     getModbusConfig,
     getSession,
     getPollingController,
@@ -58,7 +57,6 @@ export function createAomasterController(options) {
   const getModeConfiguration = (mode = state.mode) => getModeConfig(
     mode,
     DEFAULT_DEVICE_ID,
-    getCustomConfig(),
     getModbusConfig(),
   );
 

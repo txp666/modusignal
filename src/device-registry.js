@@ -4,13 +4,7 @@ import {
   createAOMasterSetOutputCommand,
   parseAOMasterTelemetry,
 } from "./devices/aomaster.js";
-import {
-  createCustomProfile,
-  createCustomSetOutputCommand,
-  CUSTOM_DEVICE_ID,
-  DEFAULT_CUSTOM_CONFIG,
-  parseCustomTelemetry,
-} from "./devices/custom-device.js";
+import { CUSTOM_DEVICE_ID, getCustomProfile } from "./devices/custom-device.js";
 import {
   createModbusSetOutputCommand,
   getModbusProfile,
@@ -69,10 +63,9 @@ export const DEVICE_REGISTRY = [
   {
     id: CUSTOM_DEVICE_ID,
     pagePath: "pages/devices/custom.html",
-    getProfile: (ctx) => createCustomProfile(ctx?.customConfig ?? DEFAULT_CUSTOM_CONFIG),
-    createCommand: (state, ctx, helpers) => createCustomSetOutputCommand(state, ctx.customConfig, helpers),
-    parseTelemetry: (text, bytes, ctx, helpers) =>
-      parseCustomTelemetry(text, ctx.customConfig, helpers.parseNumericTelemetry, bytes, helpers),
+    // A .uidp canvas: its link cards connect, its widgets parse and send (features/canvas/).
+    standalone: true,
+    getProfile: () => getCustomProfile(),
   },
   {
     id: MQTT_DEVICE_ID,

@@ -234,65 +234,6 @@
 .workspace .workspace-pane-tabs button { flex:1; min-height:40px; padding:8px 12px; border:0; border-bottom:2px solid transparent; border-radius:0; background:transparent; color:var(--muted); font-size:13px; }
 .workspace .workspace-pane-tabs button[aria-selected="true"] { border-bottom-color:var(--accent); color:var(--accent-strong); background:var(--surface-selected); }
 
-/* Custom serial commands use the existing page tabs, with one editor per task. */
-.workspace .custom-command-panel { display:grid; gap:12px; flex:none; }
-.workspace .custom-command-panel .panel-heading { margin:0; }
-.workspace .custom-command-panel label { margin:0; min-width:0; }
-.workspace .custom-command-library { display:grid; gap:6px; min-width:0; }
-.workspace .custom-command-list-heading { display:flex; align-items:baseline; justify-content:space-between; gap:8px; }
-.workspace :is(.custom-command-list-heading, .custom-command-save) h3 { margin:0; font-size:13px; font-weight:600; }
-.workspace #customQuickCount { color:var(--muted); font:12px/1.4 ui-monospace,monospace; font-variant-numeric:tabular-nums; }
-.workspace .custom-command-list { margin:0; padding:0; list-style:none; max-height:206px; overflow:auto; border:1px solid var(--line); border-radius:6px; }
-.workspace .custom-command-row { display:flex; align-items:center; gap:4px; padding-right:4px; border-bottom:1px solid var(--line); }
-.workspace .custom-command-row:last-child { border-bottom:0; }
-.workspace .custom-command-row.selected { background:var(--surface-selected); box-shadow:inset 2px 0 0 var(--accent); }
-.workspace .custom-command-load { flex:1; display:flex; align-items:center; gap:8px; min-width:0; min-height:34px; padding:6px 10px; border-radius:0; background:transparent; color:var(--text); font-weight:400; text-align:left; }
-.workspace .custom-command-load:hover:not(:disabled) span { color:var(--accent-strong); text-decoration:underline; }
-.workspace .custom-command-load :is(span, code) { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.workspace .custom-command-load span { flex:none; max-width:45%; font-size:13px; font-weight:600; }
-.workspace .custom-command-load code { flex:1; min-width:0; color:var(--muted); font:12px/1.5 ui-monospace,monospace; }
-.workspace .custom-command-load small { flex:none; color:var(--muted); font:11px/1.5 ui-monospace,monospace; }
-.workspace .custom-command-row-send { flex:none; min-height:28px; padding:0 12px; font-size:12px; }
-.workspace .custom-command-empty { margin:0; padding:10px 12px; border:1px dashed var(--line); border-radius:6px; color:var(--muted); font-size:12px; line-height:1.5; }
-.workspace .custom-command-save { display:flex; align-items:center; gap:8px; padding-top:10px; border-top:1px solid var(--line); }
-.workspace .custom-command-save h3 { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-.workspace .custom-command-panel .custom-command-escapes { display:flex; align-items:center; flex-wrap:wrap; gap:6px; font-size:12px; font-weight:400; }
-.workspace .custom-command-escapes input { width:auto; min-height:0; margin:0; accent-color:var(--accent); }
-.workspace .custom-command-escapes code { color:var(--muted); font:11px/1.4 ui-monospace,monospace; }
-.workspace .custom-command-escapes:has(input:disabled) { color:var(--muted); }
-.workspace .custom-command-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
-.workspace .custom-command-editor { display:grid; gap:6px; }
-.workspace .custom-command-editor textarea { min-height:72px; height:72px; resize:vertical; font:13px/1.5 ui-monospace,monospace; padding:8px 10px; }
-.workspace .custom-byte-preview { display:grid; gap:6px; min-width:0; padding:10px 12px; background:var(--surface-muted); border:1px solid var(--line); border-radius:6px; }
-.workspace .custom-byte-preview > div { display:flex; justify-content:space-between; flex-wrap:wrap; gap:4px 12px; font-size:12px; }
-.workspace .custom-byte-preview strong { font-weight:600; }
-.workspace .custom-byte-preview code { display:block; min-height:36px; max-height:60px; overflow:auto; overflow-wrap:anywhere; white-space:pre-wrap; font:12px/1.5 ui-monospace,monospace; }
-.workspace .custom-command-panel :is(small,.custom-command-status) { font-size:11px; line-height:1.5; color:var(--muted); }
-.workspace .custom-command-panel .invalid { color:var(--red); }
-.workspace .custom-command-send, .workspace .custom-repeat-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-.workspace #customQuickSend { background:var(--accent); color:var(--on-accent); border-radius:6px; min-width:100px; }
-.workspace .custom-repeat-section { border-top:1px solid var(--line); padding-top:12px; display:grid; gap:8px; }
-.workspace .custom-repeat-heading h3 { margin:0; font-size:13px; font-weight:600; }
-.workspace .custom-repeat-controls { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) auto auto; gap:8px; align-items:end; }
-.workspace .custom-command-status { margin:0; min-height:17px; }
-@media (min-width:1051px) {
-  .app-shell:not(.overview-page) .workspace .custom-command-panel { gap:6px; }
-  .app-shell:not(.overview-page) .workspace .custom-command-panel .panel-heading { margin-bottom:0; }
-  .app-shell .workspace .custom-command-editor textarea { height:48px; min-height:48px; }
-  .app-shell .workspace .custom-byte-preview { padding:8px 10px; }
-  .app-shell .workspace .custom-byte-preview code { min-height:20px; max-height:44px; }
-  .app-shell .workspace .custom-repeat-section { padding-top:8px; gap:6px; }
-}
-@media (max-width:600px) {
-  .workspace .custom-command-options { grid-template-columns:repeat(2,minmax(0,1fr)); }
-  .workspace .custom-command-options > label:last-child { grid-column:1/-1; }
-  .workspace .custom-repeat-controls { grid-template-columns:repeat(2,minmax(0,1fr)); }
-  .workspace .custom-command-panel :is(button,select,input) { min-height:44px; }
-}
-@media (min-width:1051px) and (max-height:800px) {
-  .app-shell:not(.overview-page) .workspace .custom-command-panel { gap:4px; }
-}
-
 /* Modbus master: write values, exchange statistics and the register table. */
 .workspace .modbus-write-row { display:grid; grid-template-columns:minmax(0,2fr) repeat(2,minmax(0,1fr)); gap:8px; align-items:end; }
 .workspace .modbus-write-row label { margin:0; }
@@ -565,9 +506,6 @@
   .workspace .log-toolbar { justify-content:flex-start; margin-left:0; }
   .workspace .log-toolbar button, .workspace .log-display-mode select { min-height:44px; }
   .workspace .log-toolbar .icon-button { min-width:44px; }
-  .workspace .custom-command-row-send, .workspace .custom-command-load { min-height:44px; }
-  .workspace .custom-command-save { flex-wrap:wrap; }
-  .workspace .custom-command-save h3 { flex-basis:100%; }
 }
 @media (max-width:400px) {
   .workspace .console-panel .send-grid { grid-template-columns:1fr 1fr; grid-template-areas:"format ending" "checksum checksum" "command command" "send send"; }

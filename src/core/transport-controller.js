@@ -90,8 +90,8 @@ export function createTransportController(options) {
   function getDeviceDefaults(deviceId = state.deviceId) {
     const entry = DEVICE_DEFAULTS[deviceId];
     if (!entry) return null;
-    const { customConfig, modbusConfig } = getConfigs();
-    const preferred = getDeviceDefaultTransportId(deviceId, customConfig, modbusConfig);
+    const { modbusConfig } = getConfigs();
+    const preferred = getDeviceDefaultTransportId(deviceId, modbusConfig);
     return entry[state.transportId] ?? entry[preferred] ?? entry[DEFAULT_TRANSPORT_ID] ?? null;
   }
 
@@ -319,8 +319,8 @@ export function createTransportController(options) {
   }
 
   function applyDeviceDefaultTransport(deviceId = state.deviceId) {
-    const { customConfig, modbusConfig } = getConfigs();
-    const defaultTransportId = getDeviceDefaultTransportId(deviceId, customConfig, modbusConfig);
+    const { modbusConfig } = getConfigs();
+    const defaultTransportId = getDeviceDefaultTransportId(deviceId, modbusConfig);
     if (state.transportId !== defaultTransportId) void setTransport(defaultTransportId);
     else applyDeviceTransportDefaults(deviceId);
   }

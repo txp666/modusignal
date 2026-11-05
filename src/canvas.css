@@ -1,0 +1,731 @@
+/* The custom device canvas (pages/devices/custom.html, src/features/canvas/). */
+
+:root {
+  --hmi-canvas-bg: #ffffff;
+  --hmi-grid-dot: #d4dbe3;
+  --hmi-control-bg: #ffffff;
+  --hmi-control-line: #c7d0da;
+  --hmi-widget-text: #17202a;
+  --hmi-track: #e3e8ee;
+  --hmi-select: #0f766e;
+  /* Studio's LED colours (the same in both themes), its gauge, card and Fluent control greys. */
+  --hmi-led-green: #3cc06a;
+  --hmi-led-red: #e8483f;
+  --hmi-led-yellow: #f7b900;
+  --hmi-led-blue: #298df2;
+  --hmi-led-gray: #9e9e9e;
+  --hmi-led-off: #cdcdcd;
+  --hmi-led-edge: rgba(0, 0, 0, 0.157);
+  --hmi-gauge-track: rgba(0, 0, 0, 0.086);
+  --hmi-gauge-text: #1a1a1a;
+  --hmi-gauge-muted: rgba(0, 0, 0, 0.55);
+  --hmi-ring-track: rgba(0, 0, 0, 0.133);
+  --hmi-caption: #606060;
+  --hmi-card-line: rgba(0, 0, 0, 0.07);
+  --hmi-card-bg: rgba(255, 255, 255, 0.784);
+  --hmi-bar-track: rgba(0, 0, 0, 0.608);
+  --hmi-groove: rgba(0, 0, 0, 0.392);
+  --hmi-handle: #ffffff;
+  --hmi-handle-edge: rgba(0, 0, 0, 0.1);
+  --hmi-switch-off: rgba(0, 0, 0, 0.62);
+  --hmi-button-bg: rgba(255, 255, 255, 0.7);
+  --hmi-button-hover: rgba(249, 249, 249, 0.5);
+  --hmi-button-line: rgba(0, 0, 0, 0.073);
+  --hmi-button-bottom: rgba(0, 0, 0, 0.183);
+  --hmi-row-alt: rgba(0, 0, 0, 0.024);
+  --hmi-group-line: rgba(0, 0, 0, 0.157);
+  --hmi-strong-text: #1e1e1e;
+  --hmi-box-line: rgba(0, 0, 0, 0.141);
+  --hmi-box-bg: rgba(0, 0, 0, 0.02);
+}
+
+:root[data-theme="dark"] {
+  --hmi-canvas-bg: #10171f;
+  --hmi-grid-dot: #2a3644;
+  --hmi-control-bg: #1b2531;
+  --hmi-control-line: #3a4a5c;
+  --hmi-widget-text: #e6edf3;
+  --hmi-track: #2b3846;
+  --hmi-select: #2bb3a7;
+  --hmi-led-off: #464646;
+  --hmi-led-edge: rgba(255, 255, 255, 0.157);
+  --hmi-gauge-track: rgba(255, 255, 255, 0.118);
+  --hmi-gauge-text: #ffffff;
+  --hmi-gauge-muted: rgba(255, 255, 255, 0.59);
+  --hmi-ring-track: rgba(255, 255, 255, 0.133);
+  --hmi-caption: #b3b3b3;
+  --hmi-card-line: rgba(255, 255, 255, 0.078);
+  --hmi-card-bg: rgba(255, 255, 255, 0.051);
+  --hmi-bar-track: rgba(255, 255, 255, 0.608);
+  --hmi-groove: rgba(255, 255, 255, 0.451);
+  --hmi-handle: #454545;
+  --hmi-handle-edge: rgba(0, 0, 0, 0.353);
+  --hmi-switch-off: rgba(255, 255, 255, 0.62);
+  --hmi-button-bg: rgba(255, 255, 255, 0.061);
+  --hmi-button-hover: rgba(255, 255, 255, 0.084);
+  --hmi-button-line: rgba(255, 255, 255, 0.053);
+  --hmi-button-bottom: rgba(255, 255, 255, 0.053);
+  --hmi-row-alt: rgba(255, 255, 255, 0.031);
+  --hmi-group-line: rgba(255, 255, 255, 0.176);
+  --hmi-strong-text: #ffffff;
+  --hmi-box-line: rgba(255, 255, 255, 0.157);
+  --hmi-box-bg: rgba(255, 255, 255, 0.031);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* The page is standalone: it takes the whole workspace; the sidebar and footer are hidden while it
+   shows, and its toolbar sits in the site header row (canvas-page.js moves it there). */
+.app-shell.hmi-page-shown .site-footer,
+.app-shell.hmi-page-shown .brand-block p { display: none; }
+.app-shell.hmi-page-shown .topbar { gap: 12px; min-height: 46px; padding: 5px 12px; }
+.app-shell.hmi-page-shown .topbar .brand-logo { width: auto; height: 28px; }
+.app-shell.hmi-page-shown .topbar .hmi-toolbar { flex: 1; min-width: 0; flex-wrap: nowrap; }
+.app-shell.hmi-page-shown .topbar .hmi-toolbar-group { flex-wrap: nowrap; }
+.app-shell.hmi-page-shown .topbar-actions :is(button, .state-pill) { min-height: 34px; height: 34px; }
+.app-shell.hmi-page-shown .workspace { padding: 8px; }
+.app-shell.hmi-page-shown .workspace .hmi-panel { gap: 8px; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.app-shell.hmi-sidebar-hidden { grid-template-columns: minmax(0, 1fr); }
+.app-shell.hmi-sidebar-hidden .sidebar { display: none; }
+.device-shell.standalone .hmi-page.active { display: flex; flex-direction: column; }
+.workspace:has(.hmi-page.active) { padding: 8px 10px; }
+
+.workspace .hmi-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+  min-height: calc(100dvh - 80px);
+  padding: 8px;
+  position: relative;
+}
+
+.hmi-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.hmi-toolbar-group { display: flex; flex-wrap: wrap; gap: 6px; }
+.app-shell .hmi-toolbar .ghost-button { min-height: 34px; height: 34px; padding: 0 10px; font-size: 13px; font-weight: 600; }
+.app-shell .hmi-toolbar .hmi-icon-button { width: 34px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+.hmi-icon-button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+
+.hmi-segmented {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.app-shell .hmi-segmented button {
+  min-height: 34px;
+  height: 34px;
+  padding: 0 12px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.hmi-segmented button + button { border-left: 1px solid var(--line); }
+.hmi-segmented button[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+
+.hmi-status {
+  flex: 1 1 14rem;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.hmi-narrow-note {
+  margin: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.hmi-workspace {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr) 330px;
+  gap: 8px;
+  min-height: 0;
+  flex: 1;
+}
+
+.hmi-mode-design.hmi-no-palette .hmi-workspace { grid-template-columns: minmax(0, 1fr) 330px; }
+.hmi-mode-design.hmi-no-props .hmi-workspace { grid-template-columns: 190px minmax(0, 1fr); }
+.hmi-mode-design.hmi-no-palette.hmi-no-props .hmi-workspace { grid-template-columns: minmax(0, 1fr); }
+.hmi-no-palette .hmi-palette, .hmi-no-props .hmi-properties { display: none; }
+.hmi-mode-run .hmi-workspace { grid-template-columns: minmax(0, 1fr); }
+.hmi-palette, .hmi-properties { position: relative; }
+.workspace .hmi-panel-collapse {
+  position: absolute;
+  top: 4px;
+  z-index: 1;
+  width: 26px;
+  min-height: 0;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1;
+}
+.workspace .hmi-panel-collapse:hover { color: var(--text); background: var(--surface-muted); }
+.hmi-palette .hmi-panel-collapse { right: 4px; }
+.hmi-properties .hmi-panel-collapse { right: 4px; }
+#hmiPalette > section:first-child h3, #hmiProperties > .hmi-panel-section:first-child h3 { padding-right: 30px; }
+.hmi-mode-run [data-design-only] { display: none !important; }
+
+/* -- palette ---------------------------------------------------------------------------- */
+
+.hmi-palette,
+.hmi-properties {
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+}
+
+.hmi-palette { padding: 8px; }
+.hmi-palette section + section { margin-top: 10px; }
+.hmi-palette h3 { margin: 0 0 6px; color: var(--muted); font-size: 13px; font-weight: 600; }
+.hmi-palette-list { display: grid; gap: 3px; }
+
+.hmi-palette-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: grab;
+}
+
+.hmi-palette-item:hover { border-color: var(--line); background: var(--surface-muted); }
+.hmi-palette-icon { display: inline-flex; color: var(--accent); }
+
+/* -- canvas ----------------------------------------------------------------------------- */
+
+.hmi-viewport {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 0.5rem; /* the site's cards */
+  background: var(--surface-muted);
+}
+
+.hmi-viewport:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.hmi-stage { position: relative; margin: 0 auto; }
+
+.hmi-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  background: var(--hmi-canvas-bg);
+  box-shadow: 0 0 0 1px var(--line);
+  color: var(--hmi-widget-text);
+  font-size: 14px;
+  overflow: hidden;
+  /* The site's card radius on screen, whatever the zoom; grid and children are clipped to it. */
+  border-radius: calc(0.5rem / var(--hmi-scale, 1));
+}
+
+.hmi-design .hmi-canvas {
+  background-image: radial-gradient(circle, var(--hmi-grid-dot) 1px, transparent 1.2px);
+  background-size: var(--hmi-grid, 10px) var(--hmi-grid, 10px);
+  background-position: calc(var(--hmi-grid, 10px) / -2) calc(var(--hmi-grid, 10px) / -2);
+}
+
+.hmi-widget {
+  position: absolute;
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 0;
+}
+
+.hmi-design .hmi-widget { cursor: move; pointer-events: auto; }
+.hmi-design .hmi-tabs > .hmi-tab-bar { pointer-events: auto; }
+.hmi-design .hmi-widget > :not(.hmi-handle):not(.hmi-widget) { pointer-events: none; }
+.hmi-design .hmi-widget:hover { outline: 1px dashed var(--line-strong); }
+.hmi-design .hmi-widget.selected { outline: 2px solid var(--hmi-select); outline-offset: 1px; z-index: 2; }
+.hmi-design .hmi-widget.drop-target { outline: 2px dashed var(--hmi-select); background-color: var(--surface-selected); }
+
+.hmi-handle {
+  position: absolute;
+  z-index: 3;
+  width: 9px;
+  height: 9px;
+  border: 1px solid var(--hmi-select);
+  border-radius: 2px;
+  background: var(--surface);
+}
+
+.hmi-handle-nw { left: -6px; top: -6px; cursor: nwse-resize; }
+.hmi-handle-n { left: calc(50% - 5px); top: -6px; cursor: ns-resize; }
+.hmi-handle-ne { right: -6px; top: -6px; cursor: nesw-resize; }
+.hmi-handle-e { right: -6px; top: calc(50% - 5px); cursor: ew-resize; }
+.hmi-handle-se { right: -6px; bottom: -6px; cursor: nwse-resize; }
+.hmi-handle-s { left: calc(50% - 5px); bottom: -6px; cursor: ns-resize; }
+.hmi-handle-sw { left: -6px; bottom: -6px; cursor: nesw-resize; }
+.hmi-handle-w { left: -6px; top: calc(50% - 5px); cursor: ew-resize; }
+
+/* -- widgets ---------------------------------------------------------------------------- */
+
+.hmi-control {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0 8px;
+  border: 1px solid var(--hmi-control-line);
+  border-radius: 5px;
+  background: var(--hmi-control-bg);
+  color: var(--hmi-widget-text);
+  font-size: 14px;
+}
+
+.hmi-canvas :is(input, select).hmi-control { min-height: 0; height: 100%; }
+.hmi-canvas .hmi-control:disabled { opacity: 1; cursor: default; }
+.hmi-run .hmi-canvas .hmi-control:disabled { opacity: 0.55; }
+
+/* Fluent's standard push button, as Studio's PushButton. */
+.hmi-canvas .hmi-button .hmi-control {
+  border-color: var(--hmi-button-line);
+  border-bottom-color: var(--hmi-button-bottom);
+  background: var(--hmi-button-bg);
+  color: var(--hmi-widget-text);
+  font-weight: 400;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.hmi-run .hmi-canvas .hmi-button .hmi-control:not(:disabled):hover { background: var(--hmi-button-hover); }
+.hmi-run .hmi-canvas .hmi-button .hmi-control:not(:disabled):active { border-bottom-color: var(--hmi-button-line); color: color-mix(in srgb, var(--hmi-widget-text) 62%, transparent); }
+
+.hmi-label { display: flex; align-items: center; }
+.hmi-label-text { width: 100%; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; line-height: 1.3; }
+
+.hmi-spinbox { display: flex; align-items: center; gap: 6px; }
+.hmi-spin-suffix { flex: none; color: var(--muted); font-size: 12px; }
+
+/* Studio's ToggleSwitch: the label on the left, then Fluent's 42 × 22 switch and its 开 / 关 on the right. */
+#hmiCanvas .hmi-switch { display: flex; align-items: center; height: 100%; margin: 0; padding: 0 4px; color: var(--hmi-widget-text); cursor: pointer; font-size: 14px; font-weight: 400; }
+.hmi-switch input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.hmi-switch-label { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hmi-switch-track {
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  width: 40px;
+  height: 20px;
+  margin: 1px 0 1px 2px;
+  border: 1px solid var(--hmi-switch-off);
+  border-radius: 10px;
+  background: transparent;
+  transition: background 120ms ease;
+}
+.hmi-switch-track::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--hmi-switch-off);
+  transition: transform 120ms ease;
+}
+.hmi-switch input:checked + .hmi-switch-track { border-color: var(--accent); background: var(--accent); }
+.hmi-switch input:checked + .hmi-switch-track::after { background: #fff; transform: translateX(20px); }
+.hmi-switch input:focus-visible + .hmi-switch-track { outline: 2px solid var(--accent); outline-offset: 2px; }
+.hmi-switch-state { flex: none; margin-left: 12px; white-space: nowrap; }
+
+/* Fluent's slider: a 4 px groove filled up to a 22 px handle with an accent dot. */
+.hmi-slider { display: flex; align-items: center; }
+.hmi-canvas input.hmi-range { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 22px; min-height: 0; margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
+.hmi-canvas input.hmi-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--accent) var(--fill, 0%), var(--hmi-groove) var(--fill, 0%)) 11px 0 / calc(100% - 22px) 100% no-repeat; }
+.hmi-canvas input.hmi-range::-moz-range-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--accent) var(--fill, 0%), var(--hmi-groove) var(--fill, 0%)) 11px 0 / calc(100% - 22px) 100% no-repeat; }
+.hmi-canvas input.hmi-range::-webkit-slider-thumb { -webkit-appearance: none; box-sizing: border-box; width: 22px; height: 22px; margin-top: -9px; border: 1px solid var(--hmi-handle-edge); border-radius: 50%; background: radial-gradient(circle, var(--accent) 0 5px, var(--hmi-handle) 5.5px); }
+.hmi-canvas input.hmi-range::-moz-range-thumb { box-sizing: border-box; width: 22px; height: 22px; border: 1px solid var(--hmi-handle-edge); border-radius: 50%; background: radial-gradient(circle, var(--accent) 0 5px, var(--hmi-handle) 5.5px); }
+.hmi-run .hmi-canvas input.hmi-range:not(:disabled):hover::-webkit-slider-thumb { background: radial-gradient(circle, var(--accent) 0 6.5px, var(--hmi-handle) 7px); }
+.hmi-canvas input.hmi-range:disabled { opacity: 1; }
+
+/* Studio's LedWidget: the dot (≤ 18 px) and its glow on the left, the label 34 px in. */
+.hmi-led { display: flex; align-items: center; padding: 0 4px 0 34px; font-size: 14px; }
+.hmi-led-dot { position: absolute; box-sizing: border-box; border: 1px solid var(--hmi-led-edge); border-radius: 50%; background: var(--hmi-led-off); }
+.hmi-led.on .hmi-led-dot { background: var(--hmi-led-on); }
+.hmi-led-glow { position: absolute; display: none; border-radius: 50%; background: radial-gradient(circle closest-side, color-mix(in srgb, var(--hmi-led-on) 35%, transparent) 55%, transparent 100%); }
+.hmi-led.on .hmi-led-glow { display: block; }
+.hmi-led-label { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+/* Studio's NumericDisplayWidget: a card, title / value / unit stacked and centred. */
+.hmi-numeric {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  padding: 4px 8px;
+  border: 1px solid var(--hmi-card-line);
+  border-radius: 8px;
+  background: var(--hmi-card-bg);
+  text-align: center;
+}
+.hmi-numeric > div { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.hmi-numeric-title, .hmi-numeric-unit { min-height: 16px; color: var(--hmi-caption); font-size: 12px; line-height: 16px; }
+.hmi-numeric-value { color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.3; }
+
+/* Fluent's progress bar: 4 px, over a 1 px track line. */
+.hmi-progress { display: flex; align-items: center; }
+.hmi-progress-track { position: relative; width: 100%; height: 4px; }
+.hmi-progress-track::before { content: ""; position: absolute; left: 0; right: 0; top: 1.5px; height: 1px; background: var(--hmi-bar-track); }
+.hmi-progress-fill { position: relative; height: 4px; border-radius: 2px; background: var(--accent); }
+
+/* Studio's ProgressRingWidget: the ring centred, the label under it. */
+.hmi-ring { display: flex; flex-direction: column; align-items: stretch; gap: 4px; padding: 4px; }
+.hmi-ring-box { display: flex; flex: 1; min-height: 0; align-items: center; justify-content: center; }
+.hmi-ring-svg { flex: none; overflow: visible; }
+.hmi-ring-track { fill: none; stroke: var(--hmi-ring-track); stroke-width: 6; }
+.hmi-ring-value { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; }
+.hmi-ring-text { fill: var(--hmi-gauge-text); font-size: 14px; }
+.hmi-ring-label { flex: none; overflow: hidden; font-size: 14px; line-height: 20px; text-align: center; white-space: nowrap; text-overflow: ellipsis; }
+
+/* Studio's GaugeWidget, drawn at the widget's size. */
+.hmi-gauge-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.hmi-gauge-track { fill: none; stroke: var(--hmi-gauge-track); stroke-linecap: round; }
+.hmi-gauge-value { fill: none; stroke: var(--accent); stroke-linecap: round; }
+.hmi-gauge-text { fill: var(--hmi-gauge-text); font-weight: 700; font-variant-numeric: tabular-nums; }
+.hmi-gauge-unit, .hmi-gauge-title { fill: var(--hmi-gauge-muted); }
+
+
+/* Studio's GroupBox: a 1 px frame from y = 10 with a gap for the bold caption at the top left. */
+.hmi-group-frame { position: absolute; inset: 0; min-width: 0; margin: 0; padding: 0; border: 1px solid var(--hmi-group-line); border-radius: 6px; pointer-events: none; }
+.hmi-group-frame:not(:has(legend)) { top: 10px; }
+.hmi-group-frame legend { max-width: calc(100% - 20px); height: 20px; margin-left: 9px; padding: 0 6px; overflow: hidden; color: var(--hmi-strong-text); font-size: 14px; font-weight: 700; line-height: 20px; white-space: nowrap; text-overflow: ellipsis; }
+/* Studio's CardContainer: the card fill, the bold title at (12, 4). */
+.hmi-card { border: 1px solid var(--hmi-card-line); border-radius: 8px; background: var(--hmi-card-bg); }
+.hmi-card > .hmi-container-title { position: absolute; top: 4px; left: 12px; right: 12px; height: 22px; overflow: hidden; color: var(--hmi-strong-text); font-size: 14px; font-weight: 700; line-height: 22px; white-space: nowrap; text-overflow: ellipsis; pointer-events: none; }
+
+.hmi-separator { display: flex; align-items: center; }
+.hmi-separator-line { width: 100%; height: 1px; background: var(--line-strong); }
+.hmi-separator.vertical { justify-content: center; }
+.hmi-separator.vertical .hmi-separator-line { width: 1px; height: 100%; }
+
+
+.hmi-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+  overflow: hidden;
+}
+.hmi-placeholder strong { color: var(--text); font: 600 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* -- property panel --------------------------------------------------------------------- */
+
+.hmi-properties { padding: 8px 10px 12px; }
+.hmi-panel-section + .hmi-panel-section { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.hmi-panel-section h3 { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+.workspace .hmi-field { display: grid; gap: 4px; margin: 0 0 10px; font-size: 13px; font-weight: 500; }
+.hmi-field-label { color: var(--muted); }
+.hmi-field input[type="checkbox"] { justify-self: start; width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.workspace .hmi-properties :is(input[type="text"], input[type="number"], select, textarea) { width: 100%; min-height: 36px; height: 36px; padding: 5px 9px; font-size: 14px; }
+.workspace .hmi-properties textarea { height: auto; min-height: 0; padding: 6px 9px; line-height: 20px; overflow-y: hidden; }
+.hmi-properties textarea { resize: vertical; font-family: inherit; }
+.hmi-field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 8px; }
+.hmi-panel-note { margin: 0 0 8px; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.hmi-panel-error { margin: 4px 0 8px; color: var(--red); font-size: 12px; }
+.hmi-json { max-height: 280px; overflow: auto; margin: 0; padding: 8px; border-radius: 5px; background: var(--surface-muted); font-size: 11px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.hmi-curve { margin: 0 0 10px; padding: 6px 8px 0; border: 1px solid var(--line); border-radius: 5px; }
+.hmi-curve legend { padding: 0 4px; font-size: 12px; font-weight: 600; }
+.hmi-fields-table { display: grid; gap: 4px; margin-bottom: 8px; }
+.hmi-fields-title { color: var(--muted); font-size: 12px; }
+.hmi-fields-row { display: grid; grid-template-columns: 1.4fr 0.9fr 0.9fr 1.2fr 1.3fr auto; gap: 3px; }
+.hmi-fields-row :is(input, select) { min-height: 28px !important; padding: 2px 4px !important; font-size: 11px !important; }
+.hmi-fields-row .icon-button { min-height: 28px; width: 28px; padding: 0; }
+.workspace .hmi-properties .ghost-button { min-height: 34px; font-size: 13px; }
+
+.hmi-toast {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  z-index: 10;
+  max-width: min(420px, calc(100% - 32px));
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.16);
+}
+.hmi-toast[data-level="warning"] { border-left-color: var(--amber); }
+.hmi-toast[data-level="error"] { border-left-color: var(--red); }
+
+/* Desktop: the canvas page fills the workspace height. */
+@media (min-width: 1051px) and (min-height: 640px) {
+  .app-shell.hmi-sidebar-hidden:not(.overview-page) { grid-template-columns: minmax(0, 1fr); }
+  .app-shell:not(.overview-page) .device-shell.standalone .hmi-page.active { height: 100%; min-height: 0; }
+  .app-shell:not(.overview-page) .workspace .hmi-panel { min-height: 0; height: 100%; }
+  .app-shell.hmi-page-shown:not(.overview-page) { grid-template-rows: auto minmax(0, 1fr); }
+  .app-shell.hmi-page-shown:not(.overview-page) .topbar { padding: 5px 12px; }
+}
+
+@media (max-width: 1050px) {
+  .hmi-workspace { grid-template-columns: 170px minmax(0, 1fr) 280px; min-height: 560px; }
+}
+
+@media (max-width: 1100px) {
+  .app-shell.hmi-page-shown .topbar { flex-wrap: wrap; row-gap: 6px; }
+  .app-shell.hmi-page-shown .topbar .hmi-toolbar { order: 3; flex-basis: 100%; flex-wrap: wrap; }
+  .app-shell.hmi-page-shown .topbar .hmi-toolbar-group { flex-wrap: wrap; }
+}
+
+@media (max-width: 899.98px) {
+  .hmi-workspace { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+  .hmi-viewport { padding: 6px; }
+  .workspace .hmi-panel { min-height: 0; }
+  .hmi-segmented button, .hmi-toolbar .ghost-button { min-height: 44px; }
+  .hmi-status { flex-basis: 100%; text-align: left; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hmi-switch-track, .hmi-switch-track::after { transition: none; }
+}
+
+/* -- link and debug cards ---------------------------------------------------------------- */
+
+.hmi-cardwidget {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--hmi-card-line);
+  border-radius: 8px;
+  background: var(--hmi-card-bg);
+  overflow: hidden;
+  font-size: 14px;
+}
+.hmi-card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; }
+.hmi-card-title { flex: none; font-size: 14px; font-weight: 600; white-space: nowrap; color: var(--hmi-widget-text); }
+.hmi-card-status { min-width: 0; overflow: hidden; color: var(--muted); font-size: 12px; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
+.hmi-card-status[data-state="connected"] { color: var(--green); }
+.hmi-card-status[data-state="error"] { color: var(--red); }
+.hmi-card-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; min-height: 0; }
+.hmi-card-compact .hmi-card-fields, .hmi-card-fields:has(> .hmi-card-field:only-child) { grid-template-columns: minmax(0, 1fr); }
+.hmi-card-field { display: grid; gap: 2px; margin: 0; font-size: 12px; color: var(--muted); }
+.hmi-card-field:has(input[type="text"], input[type="password"]) { grid-column: 1 / -1; }
+.hmi-canvas .hmi-cardwidget :is(input[type="text"], input[type="password"], select) {
+  width: 100%;
+  height: 30px;
+  min-height: 0;
+  padding: 2px 8px;
+  border: 1px solid var(--hmi-control-line);
+  border-radius: 5px;
+  background: var(--hmi-control-bg);
+  color: var(--hmi-widget-text);
+  font-size: 13px;
+}
+.hmi-card-actions { display: flex; justify-content: flex-end; }
+/* Fluent's primary button. */
+.hmi-canvas .hmi-card-connect {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 0;
+  height: 32px;
+  padding: 0 16px;
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 14px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.hmi-canvas .hmi-card-connect svg { flex: none; width: 16px; height: 16px; }
+.hmi-canvas .hmi-cardwidget button:disabled { opacity: 0.55; }
+.hmi-card-note { color: var(--muted); font-size: 11px; line-height: 1.4; }
+.hmi-card-line { flex-direction: row; align-items: center; gap: 10px; padding: 6px 10px; }
+.hmi-card-line .hmi-card-fields { display: flex; flex: 1; align-items: center; gap: 8px; }
+.hmi-card-line .hmi-card-fields > select, .hmi-card-line .hmi-card-fields > input { width: auto; flex: 0 1 180px; }
+.hmi-card-line .hmi-card-status { flex: 1; }
+.hmi-card-options { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+#hmiCanvas .hmi-check { display: inline-flex; align-items: center; gap: 8px; margin: 0; color: var(--hmi-widget-text); font-size: 14px; font-weight: 400; }
+.hmi-check input[type="checkbox"] { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
+.hmi-canvas .hmi-check select { width: auto; height: 28px; }
+.hmi-canvas .hmi-card-small { width: 64px; min-height: 0; height: 32px; margin-left: auto; padding: 0; border: 1px solid var(--hmi-button-line); border-bottom-color: var(--hmi-button-bottom); border-radius: 5px; background: var(--hmi-button-bg); color: var(--hmi-widget-text); font-size: 14px; font-weight: 400; }
+.hmi-send-row { display: flex; gap: 8px; }
+.hmi-sendcard { gap: 8px; padding: 12px 16px; }
+.hmi-sendcard .hmi-card-options { flex-wrap: nowrap; }
+#hmiCanvas .hmi-sendcard .hmi-send-newline { flex: none; margin-left: auto; white-space: nowrap; }
+.hmi-sendcard .hmi-send-newline select { width: 80px; }
+.hmi-send-row input { flex: 1; }
+.hmi-terminal {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 6px 8px;
+  border-radius: 5px;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+.hmi-logbox { padding: 0; border: 0; background: transparent; }
+.hmi-logbox .hmi-terminal { border: 1px solid #333; font-size: 11px; }
+.hmi-term-time { color: #9399b2; }
+.hmi-term-rx { color: #a6e3a1; }
+.hmi-term-tx { color: #f9e2af; }
+.hmi-term-sys { color: #74c7ec; }
+.hmi-log-info { color: #a8d8ea; }
+.hmi-log-warn { color: #ffd54f; }
+.hmi-log-error { color: #ef5350; }
+.hmi-log-ok { color: #81c784; }
+
+/* -- tabs, layout boxes and the data table ------------------------------------------------ */
+
+.hmi-tabs { display: flex; flex-direction: column; }
+.hmi-tab-bar { display: flex; flex: none; gap: 2px; height: 33px; padding: 0 2px; align-items: flex-end; overflow: hidden; }
+.hmi-canvas .hmi-tab {
+  min-height: 0;
+  height: 31px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 5px 5px 0 0;
+  background: var(--surface-muted);
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.hmi-canvas .hmi-tab[aria-selected="true"] { border-color: var(--line); border-top: 2px solid var(--accent); background: var(--surface); color: var(--text); }
+.hmi-tab-page { position: absolute; top: 33px; right: 0; bottom: 0; left: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-subtle); overflow: hidden; }
+.hmi-tab-page > .hmi-widget[hidden] { display: none; }
+/* Studio's box layouts: a dashed, faintly filled frame with a small caption. */
+.hmi-box { border: 1.5px dashed var(--hmi-box-line); border-radius: 6px; background: var(--hmi-box-bg); }
+.hmi-box-title { position: absolute; top: 3px; left: 8px; right: 8px; height: 16px; overflow: hidden; color: var(--hmi-caption); font-size: 11px; line-height: 16px; white-space: nowrap; text-overflow: ellipsis; pointer-events: none; }
+/* Fluent's TableWidget, as Studio's DataTable: no frame, centred headers split by thin lines, tall rows, alternate rows tinted. */
+.hmi-table { display: flex; padding: 2px; }
+.hmi-table-scroll { flex: 1; min-height: 0; overflow: auto; }
+.hmi-table table { width: 100%; border-collapse: separate; border-spacing: 0; color: var(--hmi-widget-text); font-size: 14px; font-variant-numeric: tabular-nums; }
+.hmi-table th { position: sticky; top: 0; z-index: 1; height: 40px; padding: 0 8px; border-bottom: 1px solid var(--hmi-card-line); background: var(--hmi-canvas-bg); font-weight: 400; text-align: center; white-space: nowrap; }
+.hmi-table th + th { border-left: 1px solid var(--hmi-card-line); }
+.hmi-table td { height: 40px; padding: 0 16px; white-space: nowrap; }
+.hmi-table tbody tr:nth-child(even) td { background: var(--hmi-row-alt); }
+.hmi-table tbody tr td:first-child { border-radius: 5px 0 0 5px; }
+.hmi-table tbody tr td:last-child { border-radius: 0 5px 5px 0; }
+.hmi-table .hmi-table-rownum { width: 1%; color: var(--muted); text-align: right; }
+
+/* -- selection actions and the context menu ----------------------------------------------- */
+
+.hmi-panel-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 34px 10px 0; }
+.workspace .hmi-panel-actions .ghost-button { min-height: 32px; height: 32px; padding: 0 12px; font-size: 13px; }
+.workspace .hmi-panel-actions .hmi-danger { color: var(--red); border-color: var(--red); }
+.hmi-context-menu {
+  position: fixed;
+  z-index: 100;
+  display: grid;
+  min-width: 190px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.22);
+}
+.hmi-context-menu button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+  text-align: left;
+}
+.hmi-context-menu button:hover:not(:disabled), .hmi-context-menu button:focus-visible { background: var(--surface-muted); outline: none; }
+.hmi-context-menu kbd { color: var(--muted); font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.hmi-menu-separator { height: 1px; margin: 4px 6px; background: var(--line); }
+
+/* -- the running chart -------------------------------------------------------------------- */
+
+/* As Studio's chart: no frame of its own; the plot is the rounded panel. */
+.hmi-chart.hmi-chart-run { display: flex; flex-direction: column; gap: 2px; padding: 0; border: 0; background: transparent; }
+.hmi-chart-header { display: flex; flex: none; flex-wrap: wrap; align-items: center; gap: 0 14px; padding: 0 8px; min-height: 24px; }
+.hmi-chart-title { margin-right: 6px; color: var(--hmi-widget-text); font-size: 13px; font-weight: 400; line-height: 24px; white-space: nowrap; }
+.hmi-canvas .hmi-chart-entry { display: inline-flex; align-items: center; gap: 6px; min-height: 0; height: 24px; padding: 0; border: 0; border-radius: 0; background: transparent; color: var(--hmi-widget-text); font-size: 12px; font-weight: 400; text-align: left; white-space: nowrap; font-variant-numeric: tabular-nums; cursor: pointer; }
+.hmi-canvas .hmi-chart-entry:hover { background: transparent; }
+.hmi-chart-mark { flex: none; width: 20px; height: 0; border-top: 2px solid var(--curve); }
+.hmi-chart-mark.dashed { border-top-style: dashed; }
+.hmi-canvas .hmi-chart-entry.hidden-curve { color: color-mix(in srgb, var(--hmi-widget-text) 34%, transparent); }
+.hmi-canvas .hmi-chart-entry.hidden-curve .hmi-chart-mark { border-top-color: color-mix(in srgb, var(--hmi-widget-text) 32%, transparent); }
+.hmi-chart-plot { position: relative; flex: 1; min-height: 0; overflow: hidden; cursor: default; }
+.hmi-chart-plot.on-cursor { cursor: ew-resize; }
+.hmi-chart-plot canvas { position: absolute; inset: 0; display: block; }
+.hmi-chart-toolbar { display: flex; flex: none; align-items: center; gap: 6px; padding: 2px 4px 0; }
+.hmi-chart-points span { font-weight: 400; }
+#hmiCanvas .hmi-chart-points { display: inline-flex; align-items: center; gap: 6px; margin: 0; color: var(--hmi-widget-text); font-size: 14px; font-weight: 400; line-height: 20px; white-space: nowrap; }
+#hmiCanvas .hmi-chart-points input { box-sizing: border-box; width: 80px; height: 32px; min-height: 0; margin: 0; padding: 0 10px; border: 1px solid var(--hmi-control-line); border-bottom-color: color-mix(in srgb, var(--hmi-widget-text) 45%, var(--hmi-control-line)); border-radius: 5px; background: var(--hmi-control-bg); color: var(--hmi-widget-text); font-size: 14px; line-height: 30px; }
+#hmiCanvas .hmi-chart-points input:focus { border-bottom: 2px solid var(--accent); outline: none; }
+.hmi-chart-mode { min-width: 1px; overflow: hidden; color: #0078d4; font-size: 12px; line-height: 32px; text-overflow: ellipsis; white-space: nowrap; }
+:root[data-theme="dark"] .hmi-chart-mode { color: #4aa3df; }
+.hmi-chart-mode.error { color: var(--red); }
+.hmi-chart-spacer { flex: 1; }
+.hmi-canvas .hmi-chart-tool { box-sizing: border-box; display: inline-flex; flex: none; align-items: center; justify-content: center; width: 36px; min-width: 0; height: 32px; min-height: 0; margin: 0; padding: 0; border: 1px solid var(--hmi-control-line); border-bottom-color: color-mix(in srgb, var(--hmi-widget-text) 22%, var(--hmi-control-line)); border-radius: 5px; background: var(--hmi-control-bg); color: var(--hmi-widget-text); box-shadow: none; }
+.hmi-canvas .hmi-chart-tool:hover { background: color-mix(in srgb, var(--hmi-control-bg) 92%, var(--hmi-widget-text)); }
+.hmi-canvas .hmi-chart-tool:active { color: color-mix(in srgb, var(--hmi-widget-text) 70%, transparent); }
+.hmi-canvas .hmi-chart-tool[hidden] { display: none; }
+.hmi-chart-tool svg { flex: none; width: 16px; height: 16px; }
+.hmi-chart-still :is(.hmi-chart-header, .hmi-chart-plot, .hmi-chart-toolbar) { pointer-events: none; }
+
+/* -- rubber band, grid toggle, submenus ---------------------------------------------------- */
+
+.hmi-marquee { position: absolute; z-index: 5; border: 1px solid var(--hmi-select); background: color-mix(in srgb, var(--hmi-select) 12%, transparent); pointer-events: none; }
+.hmi-design.hmi-no-grid .hmi-canvas { background-image: none; }
+.app-shell .hmi-toolbar #hmiAlign { display: inline-flex; align-items: center; gap: 5px; }
+.app-shell .hmi-segmented #hmiZoomIn, .app-shell .hmi-segmented #hmiZoomOut { min-width: 32px; padding: 0 8px; font-size: 16px; }
+.hmi-submenu { position: relative; }
+.hmi-submenu > button { width: 100%; }
+.hmi-submenu-list { display: none; position: absolute; top: -4px; left: 100%; margin-left: 2px; }
+.hmi-submenu-list.open { display: grid; }
+.hmi-submenu-list.left { left: auto; right: 100%; margin: 0 2px 0 0; }

@@ -47,14 +47,6 @@ const SLOT_DOM_SUFFIX = {
 
 export const MESSAGE_DEBUG_CURVE_SECTIONS = [
   {
-    prefix: "custom",
-    sectionId: "chartCurveCustomSection",
-    testParserId: "testCustomParser",
-    firstCurveHasUnit: false,
-    parserSampleValue: '{"value":12.34}',
-    parserSamplePlaceholder: 'JSON：{"value":12.34}；HEX/Modbus：02 00 64 03',
-  },
-  {
     prefix: "websocket",
     sectionId: "chartCurveWebsocketSection",
     testParserId: "testWebsocketParser",

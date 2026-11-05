@@ -5,11 +5,7 @@ import {
   DEFAULT_AOMASTER_CONFIG,
   normalizeAomasterConfig,
 } from "./devices/aomaster.js";
-import {
-  CUSTOM_DEVICE_ID,
-  DEFAULT_CUSTOM_CONFIG,
-  normalizeCustomConfig,
-} from "./devices/custom-device.js";
+import { CUSTOM_DEVICE_ID } from "./devices/custom-device.js";
 import {
   DEFAULT_MODBUS_CONFIG,
   MODBUS_DEVICE_ID,
@@ -40,12 +36,10 @@ import {
 export {
   CUSTOM_DEVICE_ID,
   DEFAULT_AOMASTER_CONFIG,
-  DEFAULT_CUSTOM_CONFIG,
   DEFAULT_MODBUS_CONFIG,
   MODBUS_DEVICE_ID,
   MODUSIGNAL_APP,
   normalizeAomasterConfig,
-  normalizeCustomConfig,
   normalizeModbusConfig,
 };
 
@@ -82,7 +76,6 @@ export {
 export const DEFAULT_DEVICE_ID = AOMASTER_DEVICE_ID;
 
 function buildDeviceContext({
-  customConfig = DEFAULT_CUSTOM_CONFIG,
   modbusConfig = DEFAULT_MODBUS_CONFIG,
   aomasterConfig = DEFAULT_AOMASTER_CONFIG,
   hartConfig = DEFAULT_HART_CONFIG,
@@ -91,7 +84,6 @@ function buildDeviceContext({
   deviceState = null,
 } = {}) {
   return {
-    customConfig,
     modbusConfig,
     aomasterConfig,
     hartConfig,
@@ -117,21 +109,17 @@ function buildParseHelpers() {
   };
 }
 
-export function getDeviceProfile(
-  deviceId = DEFAULT_DEVICE_ID,
-  customConfig = DEFAULT_CUSTOM_CONFIG,
-  modbusConfig = DEFAULT_MODBUS_CONFIG,
-) {
+export function getDeviceProfile(deviceId = DEFAULT_DEVICE_ID, modbusConfig = DEFAULT_MODBUS_CONFIG) {
   const entry = getDeviceRegistryEntry(deviceId);
   if (entry?.getProfile) {
-    return entry.getProfile(buildDeviceContext({ customConfig, modbusConfig }));
+    return entry.getProfile(buildDeviceContext({ modbusConfig }));
   }
 
   return DEVICE_PROFILES[DEFAULT_DEVICE_ID];
 }
 
-export function listDeviceLibrary(customConfig = DEFAULT_CUSTOM_CONFIG, modbusConfig = DEFAULT_MODBUS_CONFIG) {
-  const ctx = buildDeviceContext({ customConfig, modbusConfig });
+export function listDeviceLibrary(modbusConfig = DEFAULT_MODBUS_CONFIG) {
+  const ctx = buildDeviceContext({ modbusConfig });
   const entries = DEVICE_REGISTRY.map((entry) => ({
     deviceId: entry.id,
     pageTarget: entry.id,
@@ -150,13 +138,8 @@ export function listDeviceLibrary(customConfig = DEFAULT_CUSTOM_CONFIG, modbusCo
   });
 }
 
-export function getModeConfig(
-  mode,
-  deviceId = DEFAULT_DEVICE_ID,
-  customConfig = DEFAULT_CUSTOM_CONFIG,
-  modbusConfig = DEFAULT_MODBUS_CONFIG,
-) {
-  const profile = getDeviceProfile(deviceId, customConfig, modbusConfig);
+export function getModeConfig(mode, deviceId = DEFAULT_DEVICE_ID, modbusConfig = DEFAULT_MODBUS_CONFIG) {
+  const profile = getDeviceProfile(deviceId, modbusConfig);
   const modes = profile.modes;
 
   if (!modes) {
@@ -170,21 +153,16 @@ export function getModeConfig(
     };
   }
 
-  return modes[mode] ?? modes.custom ?? modes.current ?? modes.readHolding;
+  return modes[mode] ?? modes.current ?? modes.readHolding;
 }
 
-export function getDeviceDefaultTransportId(
-  deviceId = DEFAULT_DEVICE_ID,
-  customConfig = DEFAULT_CUSTOM_CONFIG,
-  modbusConfig = DEFAULT_MODBUS_CONFIG,
-) {
-  return getDeviceProfile(deviceId, customConfig, modbusConfig).defaultTransportId ?? "serial";
+export function getDeviceDefaultTransportId(deviceId = DEFAULT_DEVICE_ID, modbusConfig = DEFAULT_MODBUS_CONFIG) {
+  return getDeviceProfile(deviceId, modbusConfig).defaultTransportId ?? "serial";
 }
 
 export function createDeviceSetOutputCommand(
   deviceId,
   state,
-  customConfig = DEFAULT_CUSTOM_CONFIG,
   modbusConfig = DEFAULT_MODBUS_CONFIG,
   aomasterConfig = DEFAULT_AOMASTER_CONFIG,
   hartConfig = DEFAULT_HART_CONFIG,
@@ -202,7 +180,7 @@ export function createDeviceSetOutputCommand(
 
   return entry.createCommand(
     state,
-    buildDeviceContext({ customConfig, modbusConfig, aomasterConfig, hartConfig, websocketConfig, mqttConfig }),
+    buildDeviceContext({ modbusConfig, aomasterConfig, hartConfig, websocketConfig, mqttConfig }),
     buildCommandHelpers(),
   );
 }
@@ -210,7 +188,6 @@ export function createDeviceSetOutputCommand(
 export function parseDeviceTelemetry(
   deviceId,
   text,
-  customConfig = DEFAULT_CUSTOM_CONFIG,
   modbusConfig = DEFAULT_MODBUS_CONFIG,
   bytes = null,
   deviceState = null,
@@ -228,7 +205,6 @@ export function parseDeviceTelemetry(
     text,
     bytes,
     buildDeviceContext({
-      customConfig,
       modbusConfig,
       aomasterConfig,
       hartConfig,

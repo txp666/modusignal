@@ -56,7 +56,8 @@ export function updateChartCurvePanel(options = {}) {
     return;
   }
 
-  const showPanel = Boolean(isDevicePage && deviceId);
+  // The custom device draws its curves on its canvas.
+  const showPanel = Boolean(isDevicePage && deviceId && deviceId !== "custom");
   elements.chartCurveConfigBlock.hidden = !showPanel;
 
   if (!showPanel || elements.chartCurveConfigDialog?.dataset.deviceId !== deviceId) {
@@ -74,7 +75,6 @@ export function updateChartCurvePanel(options = {}) {
     aomaster: deviceId === "aomaster",
     modbus: deviceId === "modbus",
     hart: deviceId === "hart",
-    custom: deviceId === "custom",
     websocket: deviceId === "websocket",
     mqtt: deviceId === "mqtt",
   };
@@ -82,7 +82,6 @@ export function updateChartCurvePanel(options = {}) {
   elements.chartCurveAomasterSection && (elements.chartCurveAomasterSection.hidden = !sectionMap.aomaster);
   elements.chartCurveModbusSection && (elements.chartCurveModbusSection.hidden = !sectionMap.modbus);
   elements.chartCurveHartSection && (elements.chartCurveHartSection.hidden = !sectionMap.hart);
-  elements.chartCurveCustomSection && (elements.chartCurveCustomSection.hidden = !sectionMap.custom);
   elements.chartCurveWebsocketSection && (elements.chartCurveWebsocketSection.hidden = !sectionMap.websocket);
   elements.chartCurveMqttSection && (elements.chartCurveMqttSection.hidden = !sectionMap.mqtt);
 }
