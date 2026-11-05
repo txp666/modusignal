@@ -1,0 +1,574 @@
+{
+ "cases": [
+  {
+   "name": "button text CRLF default",
+   "widget": "PushButton",
+   "props": {
+    "command": "START"
+   },
+   "event": {},
+   "out": "53544152540d0a"
+  },
+  {
+   "name": "button text trimmed",
+   "widget": "PushButton",
+   "props": {
+    "command": "  START  "
+   },
+   "event": {},
+   "out": "53544152540d0a"
+  },
+  {
+   "name": "button empty sends nothing",
+   "widget": "PushButton",
+   "props": {
+    "command": "   "
+   },
+   "event": {},
+   "out": null
+  },
+  {
+   "name": "button template",
+   "widget": "PushButton",
+   "props": {
+    "command": "1",
+    "commandTemplate": "LED={value}"
+   },
+   "event": {},
+   "out": "4c45443d310d0a"
+  },
+  {
+   "name": "button template without placeholder",
+   "widget": "PushButton",
+   "props": {
+    "command": "1",
+    "commandTemplate": "PING"
+   },
+   "event": {},
+   "out": "50494e470d0a"
+  },
+  {
+   "name": "button newline none",
+   "widget": "PushButton",
+   "props": {
+    "command": "AT",
+    "commandNewline": "无"
+   },
+   "event": {},
+   "out": "4154"
+  },
+  {
+   "name": "button newline LF",
+   "widget": "PushButton",
+   "props": {
+    "command": "AT",
+    "commandNewline": "\\n"
+   },
+   "event": {},
+   "out": "41540a"
+  },
+  {
+   "name": "button utf-8",
+   "widget": "PushButton",
+   "props": {
+    "command": "温度?"
+   },
+   "event": {},
+   "out": "e6b8a9e5baa63f0d0a"
+  },
+  {
+   "name": "toggle on",
+   "widget": "ToggleSwitch",
+   "props": {
+    "onCommand": "START",
+    "offCommand": "STOP"
+   },
+   "event": {
+    "checked": true
+   },
+   "out": "53544152540d0a"
+  },
+  {
+   "name": "toggle off",
+   "widget": "ToggleSwitch",
+   "props": {
+    "onCommand": "START",
+    "offCommand": "STOP"
+   },
+   "event": {
+    "checked": false
+   },
+   "out": "53544f500d0a"
+  },
+  {
+   "name": "toggle off empty",
+   "widget": "ToggleSwitch",
+   "props": {
+    "onCommand": "START",
+    "offCommand": ""
+   },
+   "event": {
+    "checked": false
+   },
+   "out": null
+  },
+  {
+   "name": "slider template",
+   "widget": "Slider",
+   "props": {
+    "sendOnChange": true,
+    "commandTemplate": "SPEED={value}"
+   },
+   "event": {
+    "value": 1500
+   },
+   "out": "53504545443d313530300d0a"
+  },
+  {
+   "name": "slider sendOnChange off",
+   "widget": "Slider",
+   "props": {
+    "commandTemplate": "SPEED={value}"
+   },
+   "event": {
+    "value": 1500
+   },
+   "out": null
+  },
+  {
+   "name": "spinbox negative",
+   "widget": "SpinBox",
+   "props": {
+    "sendOnChange": true,
+    "commandTemplate": "T={value}"
+   },
+   "event": {
+    "value": -5
+   },
+   "out": "543d2d350d0a"
+  },
+  {
+   "name": "lineedit enter",
+   "widget": "LineEdit",
+   "props": {
+    "sendOnEnter": true
+   },
+   "event": {
+    "text": "  hello  "
+   },
+   "out": "68656c6c6f0d0a"
+  },
+  {
+   "name": "lineedit empty",
+   "widget": "LineEdit",
+   "props": {
+    "sendOnEnter": true
+   },
+   "event": {
+    "text": "   "
+   },
+   "out": null
+  },
+  {
+   "name": "lineedit no sendOnEnter",
+   "widget": "LineEdit",
+   "props": {},
+   "event": {
+    "text": "x"
+   },
+   "out": null
+  },
+  {
+   "name": "combo command line",
+   "widget": "ComboBox",
+   "props": {
+    "sendOnSelect": true,
+    "items": "低\n中\n高",
+    "commands": "L\n\nH"
+   },
+   "event": {
+    "index": 2
+   },
+   "out": "480d0a"
+  },
+  {
+   "name": "combo empty line sends item",
+   "widget": "ComboBox",
+   "props": {
+    "sendOnSelect": true,
+    "items": "低\n中\n高",
+    "commands": "L\n\nH"
+   },
+   "event": {
+    "index": 1
+   },
+   "out": "e4b8ad0d0a"
+  },
+  {
+   "name": "combo fewer commands than items",
+   "widget": "ComboBox",
+   "props": {
+    "sendOnSelect": true,
+    "items": "a\nb\nc",
+    "commands": "X"
+   },
+   "event": {
+    "index": 2
+   },
+   "out": "630d0a"
+  },
+  {
+   "name": "hex string",
+   "widget": "PushButton",
+   "props": {
+    "commandMode": "HEX",
+    "command": "01 03 00 00 00 02"
+   },
+   "event": {},
+   "out": "010300000002"
+  },
+  {
+   "name": "hex odd length gets leading zero",
+   "widget": "PushButton",
+   "props": {
+    "commandMode": "HEX",
+    "command": "123"
+   },
+   "event": {},
+   "out": "0123"
+  },
+  {
+   "name": "hex header tail",
+   "widget": "PushButton",
+   "props": {
+    "commandMode": "HEX",
+    "command": "01",
+    "frameHeader": "AA55",
+    "frameTail": "0D"
+   },
+   "event": {},
+   "out": "aa55010d"
+  },
+  {
+   "name": "hex template string",
+   "widget": "Slider",
+   "props": {
+    "commandMode": "HEX",
+    "sendOnChange": true,
+    "commandTemplate": "AA{value}55"
+   },
+   "event": {
+    "value": 12
+   },
+   "out": "aa1255"
+  },
+  {
+   "name": "hex packed uint16 BE",
+   "widget": "Slider",
+   "props": {
+    "commandMode": "HEX",
+    "sendOnChange": true,
+    "dataType": "uint16",
+    "commandTemplate": "A0{value}"
+   },
+   "event": {
+    "value": 1500
+   },
+   "out": "a005dc"
+  },
+  {
+   "name": "hex packed int16 LE",
+   "widget": "SpinBox",
+   "props": {
+    "commandMode": "HEX",
+    "sendOnChange": true,
+    "dataType": "int16",
+    "byteOrder": "小端(LE)"
+   },
+   "event": {
+    "value": -2
+   },
+   "out": "feff"
+  },
+  {
+   "name": "hex packed float32",
+   "widget": "LineEdit",
+   "props": {
+    "commandMode": "HEX",
+    "sendOnEnter": true,
+    "dataType": "float32"
+   },
+   "event": {
+    "text": "25.5"
+   },
+   "out": "41cc0000"
+  },
+  {
+   "name": "hex packed uint8 overflow",
+   "widget": "Slider",
+   "props": {
+    "commandMode": "HEX",
+    "sendOnChange": true,
+    "dataType": "uint8"
+   },
+   "event": {
+    "value": 300
+   },
+   "error": true
+  },
+  {
+   "name": "hex packed int from text fails",
+   "widget": "LineEdit",
+   "props": {
+    "commandMode": "HEX",
+    "sendOnEnter": true,
+    "dataType": "uint16"
+   },
+   "event": {
+    "text": "1.5"
+   },
+   "error": true
+  },
+  {
+   "name": "hex invalid",
+   "widget": "PushButton",
+   "props": {
+    "commandMode": "HEX",
+    "command": "ZZ"
+   },
+   "event": {},
+   "error": true
+  },
+  {
+   "name": "hex toggle",
+   "widget": "ToggleSwitch",
+   "props": {
+    "commandMode": "HEX",
+    "onCommand": "01 05",
+    "offCommand": "01 06"
+   },
+   "event": {
+    "checked": true
+   },
+   "out": "0105"
+  },
+  {
+   "name": "modbus button default read",
+   "widget": "PushButton",
+   "props": {
+    "commandMode": "Modbus",
+    "mbSlave": 1,
+    "mbAddress": 0,
+    "mbValue": 2
+   },
+   "event": {},
+   "out": "010300000002c40b"
+  },
+  {
+   "name": "modbus button write 06",
+   "widget": "PushButton",
+   "props": {
+    "commandMode": "Modbus",
+    "mbFunc": "06 写单寄存器",
+    "mbSlave": 2,
+    "mbAddress": 10,
+    "mbValue": 300
+   },
+   "event": {},
+   "out": "0206000a012ca9b6"
+  },
+  {
+   "name": "modbus button write 06 int16",
+   "widget": "PushButton",
+   "props": {
+    "commandMode": "Modbus",
+    "mbFunc": "06 写单寄存器",
+    "mbAddress": 1,
+    "mbValue": -1,
+    "mbDataType": "int16"
+   },
+   "event": {},
+   "out": "01060001ffffd9ba"
+  },
+  {
+   "name": "modbus toggle coil on",
+   "widget": "ToggleSwitch",
+   "props": {
+    "commandMode": "Modbus",
+    "mbSlave": 1,
+    "mbAddress": 5
+   },
+   "event": {
+    "checked": true
+   },
+   "out": "01050005ff009c3b"
+  },
+  {
+   "name": "modbus toggle coil off",
+   "widget": "ToggleSwitch",
+   "props": {
+    "commandMode": "Modbus",
+    "mbSlave": 1,
+    "mbAddress": 5
+   },
+   "event": {
+    "checked": false
+   },
+   "out": "010500050000ddcb"
+  },
+  {
+   "name": "modbus slider 06 without sendOnChange",
+   "widget": "Slider",
+   "props": {
+    "commandMode": "Modbus",
+    "mbAddress": 3
+   },
+   "event": {
+    "value": 1500
+   },
+   "out": "0106000305dc7b03"
+  },
+  {
+   "name": "modbus spinbox 16 float32",
+   "widget": "SpinBox",
+   "props": {
+    "commandMode": "Modbus",
+    "mbFunc": "16 写多个寄存器",
+    "mbAddress": 0,
+    "mbDataType": "float32"
+   },
+   "event": {
+    "value": 25
+   },
+   "out": "0110000000020441c80000666d"
+  },
+  {
+   "name": "modbus lineedit 16 float32 CD AB",
+   "widget": "LineEdit",
+   "props": {
+    "commandMode": "Modbus",
+    "mbFunc": "16 写多个寄存器",
+    "mbAddress": 0,
+    "mbDataType": "float32",
+    "mbRegOrder": "小端(CD AB)"
+   },
+   "event": {
+    "text": "25.5"
+   },
+   "out": "01100000000204000041ccc3aa"
+  },
+  {
+   "name": "modbus lineedit 16 int32",
+   "widget": "LineEdit",
+   "props": {
+    "commandMode": "Modbus",
+    "mbFunc": "16 写多个寄存器",
+    "mbAddress": 100,
+    "mbDataType": "int32"
+   },
+   "event": {
+    "text": "-2"
+   },
+   "out": "01100064000204fffffffe3420"
+  },
+  {
+   "name": "modbus 06 rejects 32-bit",
+   "widget": "PushButton",
+   "props": {
+    "commandMode": "Modbus",
+    "mbFunc": "06 写单寄存器",
+    "mbValue": 1,
+    "mbDataType": "uint32"
+   },
+   "event": {},
+   "error": true
+  },
+  {
+   "name": "modbus bad slave",
+   "widget": "PushButton",
+   "props": {
+    "commandMode": "Modbus",
+    "mbFunc": "06 写单寄存器",
+    "mbSlave": 0,
+    "mbValue": 1
+   },
+   "event": {},
+   "error": true
+  },
+  {
+   "name": "modbus read count too big",
+   "widget": "PushButton",
+   "props": {
+    "commandMode": "Modbus",
+    "mbValue": 126
+   },
+   "event": {},
+   "error": true
+  },
+  {
+   "name": "modbus 06 value overflow",
+   "widget": "Slider",
+   "props": {
+    "commandMode": "Modbus",
+    "mbAddress": 0
+   },
+   "event": {
+    "value": 70000
+   },
+   "error": true
+  },
+  {
+   "name": "modbus lineedit 06 decimal rejected",
+   "widget": "LineEdit",
+   "props": {
+    "commandMode": "Modbus",
+    "mbAddress": 0
+   },
+   "event": {
+    "text": "1.5"
+   },
+   "error": true
+  },
+  {
+   "name": "modbus tcp frame",
+   "widget": "PushButton",
+   "props": {
+    "commandMode": "Modbus",
+    "mbFunc": "06 写单寄存器",
+    "mbSlave": 1,
+    "mbAddress": 1,
+    "mbValue": 7
+   },
+   "event": {},
+   "link": "modbus_tcp",
+   "out": "000100000006010600010007"
+  },
+  {
+   "name": "modbus ascii frame",
+   "widget": "PushButton",
+   "props": {
+    "commandMode": "Modbus",
+    "mbFunc": "06 写单寄存器",
+    "mbSlave": 1,
+    "mbAddress": 1,
+    "mbValue": 7
+   },
+   "event": {},
+   "link": "modbus_ascii",
+   "out": "3a30313036303030313030303746310d0a"
+  },
+  {
+   "name": "modbus tcp toggle",
+   "widget": "ToggleSwitch",
+   "props": {
+    "commandMode": "Modbus",
+    "mbAddress": 2
+   },
+   "event": {
+    "checked": true
+   },
+   "link": "modbus_tcp",
+   "out": "00010000000601050002ff00"
+  }
+ ]
+}

@@ -1,0 +1,1583 @@
+{
+ "cases": [
+  {
+   "name": "kv number on NumericDisplay",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "temp"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "temp": 25.3,
+      "hum": 60
+     }
+    }
+   ],
+   "expect": [
+    25.3
+   ]
+  },
+  {
+   "name": "kv missing key pushes nothing",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "temp"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "hum": 60
+     }
+    }
+   ],
+   "expect": []
+  },
+  {
+   "name": "kv text on Label",
+   "widget": {
+    "type": "Label",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "state"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "state": "RUN"
+     }
+    }
+   ],
+   "expect": [
+    "RUN"
+   ]
+  },
+  {
+   "name": "kv float on Label",
+   "widget": {
+    "type": "Label",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 3.75
+     }
+    }
+   ],
+   "expect": [
+    "3.75"
+   ]
+  },
+  {
+   "name": "kv int on Label",
+   "widget": {
+    "type": "Label",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 42
+     }
+    }
+   ],
+   "expect": [
+    "42"
+   ]
+  },
+  {
+   "name": "kv binary noise rounded (decimals auto)",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v",
+     "expression": "value * 0.1"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 267
+     }
+    }
+   ],
+   "expect": [
+    26.7
+   ]
+  },
+  {
+   "name": "kv decimals 2",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {
+     "decimals": "2"
+    },
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 25.3
+     }
+    }
+   ],
+   "expect": [
+    "25.30"
+   ]
+  },
+  {
+   "name": "kv decimals 0 rounds half even",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {
+     "decimals": "0"
+    },
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 2.5
+     }
+    },
+    {
+     "data": {
+      "v": 3.5
+     }
+    },
+    {
+     "data": {
+      "v": 2.675
+     }
+    }
+   ],
+   "expect": [
+    "2",
+    "4",
+    "3"
+   ]
+  },
+  {
+   "name": "kv decimals on text keeps text",
+   "widget": {
+    "type": "Label",
+    "properties": {
+     "decimals": "1"
+    },
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": "abc"
+     }
+    }
+   ],
+   "expect": [
+    "abc"
+   ]
+  },
+  {
+   "name": "display HEX",
+   "widget": {
+    "type": "Label",
+    "properties": {
+     "displayFormat": "十六进制(HEX)"
+    },
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 255
+     }
+    },
+    {
+     "data": {
+      "v": -10
+     }
+    },
+    {
+     "data": {
+      "v": 7.9
+     }
+    }
+   ],
+   "expect": [
+    "0xFF",
+    "-0x0A",
+    "0x07"
+   ]
+  },
+  {
+   "name": "display BIN",
+   "widget": {
+    "type": "Label",
+    "properties": {
+     "displayFormat": "二进制(BIN)"
+    },
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 5
+     }
+    },
+    {
+     "data": {
+      "v": 300
+     }
+    }
+   ],
+   "expect": [
+    "0b00000101",
+    "0b100101100"
+   ]
+  },
+  {
+   "name": "display 十进制 truncates",
+   "widget": {
+    "type": "Label",
+    "properties": {
+     "displayFormat": "十进制"
+    },
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 25.9
+     }
+    },
+    {
+     "data": {
+      "v": -25.9
+     }
+    }
+   ],
+   "expect": [
+    "25",
+    "-25"
+   ]
+  },
+  {
+   "name": "display HEX on text keeps text",
+   "widget": {
+    "type": "Label",
+    "properties": {
+     "displayFormat": "十六进制(HEX)"
+    },
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": "zz"
+     }
+    }
+   ],
+   "expect": [
+    "zz"
+   ]
+  },
+  {
+   "name": "slider truncates float",
+   "widget": {
+    "type": "Slider",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 25.9
+     }
+    },
+    {
+     "data": {
+      "v": -3.7
+     }
+    }
+   ],
+   "expect": [
+    25,
+    -3
+   ]
+  },
+  {
+   "name": "slider rejects text",
+   "widget": {
+    "type": "Slider",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": "abc"
+     }
+    },
+    {
+     "data": {
+      "v": 7
+     }
+    }
+   ],
+   "expect": [
+    7
+   ]
+  },
+  {
+   "name": "progress int",
+   "widget": {
+    "type": "ProgressBar",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 55.5
+     }
+    }
+   ],
+   "expect": [
+    55
+   ]
+  },
+  {
+   "name": "gauge float",
+   "widget": {
+    "type": "GaugeMeter",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 1500
+     }
+    },
+    {
+     "data": {
+      "v": "12.5"
+     }
+    }
+   ],
+   "expect": [
+    1500.0,
+    12.5
+   ]
+  },
+  {
+   "name": "toggle tokens",
+   "widget": {
+    "type": "ToggleSwitch",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 1
+     }
+    },
+    {
+     "data": {
+      "v": 0
+     }
+    },
+    {
+     "data": {
+      "v": "ON"
+     }
+    },
+    {
+     "data": {
+      "v": " off "
+     }
+    },
+    {
+     "data": {
+      "v": "yes"
+     }
+    },
+    {
+     "data": {
+      "v": "2"
+     }
+    },
+    {
+     "data": {
+      "v": "maybe"
+     }
+    },
+    {
+     "data": {
+      "v": true
+     }
+    }
+   ],
+   "expect": [
+    true,
+    false,
+    true,
+    false,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "name": "led default",
+   "widget": {
+    "type": "LEDIndicator",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 1
+     }
+    },
+    {
+     "data": {
+      "v": 0
+     }
+    },
+    {
+     "data": {
+      "v": "1"
+     }
+    },
+    {
+     "data": {
+      "v": 1.0
+     }
+    },
+    {
+     "data": {
+      "v": 5
+     }
+    }
+   ],
+   "expect": [
+    true,
+    false,
+    true,
+    true,
+    false
+   ]
+  },
+  {
+   "name": "led custom values",
+   "widget": {
+    "type": "LEDIndicator",
+    "properties": {
+     "onValue": "RUN",
+     "offValue": "STOP"
+    },
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": "RUN"
+     }
+    },
+    {
+     "data": {
+      "v": "STOP"
+     }
+    },
+    {
+     "data": {
+      "v": " RUN "
+     }
+    },
+    {
+     "data": {
+      "v": "true"
+     }
+    },
+    {
+     "data": {
+      "v": 0
+     }
+    }
+   ],
+   "expect": [
+    true,
+    false,
+    true,
+    true,
+    false
+   ]
+  },
+  {
+   "name": "led bit expression",
+   "widget": {
+    "type": "LEDIndicator",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "s",
+     "expression": "(value >> 1) & 1"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "s": 2
+     }
+    },
+    {
+     "data": {
+      "s": 5
+     }
+    }
+   ],
+   "expect": [
+    true,
+    false
+   ]
+  },
+  {
+   "name": "led comparison",
+   "widget": {
+    "type": "LEDIndicator",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v",
+     "expression": "value * 3.3 / 4095 < 1"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 1000
+     }
+    },
+    {
+     "data": {
+      "v": 4000
+     }
+    }
+   ],
+   "expect": [
+    true,
+    false
+   ]
+  },
+  {
+   "name": "json path nested",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "JSON路径",
+     "jsonPath": "data.sensors.0.temp"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "data": {
+       "sensors": [
+        {
+         "temp": 21.5
+        },
+        {
+         "temp": 22.5
+        }
+       ]
+      }
+     }
+    }
+   ],
+   "expect": [
+    21.5
+   ]
+  },
+  {
+   "name": "json path negative index",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "JSON路径",
+     "jsonPath": "a.-1"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "a": [
+       1,
+       2,
+       3
+      ]
+     }
+    }
+   ],
+   "expect": [
+    3
+   ]
+  },
+  {
+   "name": "json path out of range",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "JSON路径",
+     "jsonPath": "a.5"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "a": [
+       1,
+       2,
+       3
+      ]
+     }
+    }
+   ],
+   "expect": []
+  },
+  {
+   "name": "json path through scalar",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "JSON路径",
+     "jsonPath": "a.b"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "a": 3
+     }
+    }
+   ],
+   "expect": []
+  },
+  {
+   "name": "json path array root key",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "JSON路径",
+     "jsonPath": "1"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "0": 10,
+      "1": 11
+     }
+    }
+   ],
+   "expect": [
+    11
+   ]
+  },
+  {
+   "name": "expr floor div and mod negative",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v",
+     "expression": "value // 3"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": -7
+     }
+    }
+   ],
+   "expect": [
+    -3
+   ]
+  },
+  {
+   "name": "expr python mod",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v",
+     "expression": "value % 3"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": -7
+     }
+    },
+    {
+     "data": {
+      "v": 7.5
+     }
+    }
+   ],
+   "expect": [
+    2,
+    1.5
+   ]
+  },
+  {
+   "name": "expr true division",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v",
+     "expression": "value / 4"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 10
+     }
+    }
+   ],
+   "expect": [
+    2.5
+   ]
+  },
+  {
+   "name": "expr power",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v",
+     "expression": "value ** 2 + 1"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 3
+     }
+    }
+   ],
+   "expect": [
+    10
+   ]
+  },
+  {
+   "name": "expr precedence unary",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v",
+     "expression": "-value ** 2"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 3
+     }
+    }
+   ],
+   "expect": [
+    -9
+   ]
+  },
+  {
+   "name": "expr bit ops",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v",
+     "expression": "(value & 0xF0) >> 4 | 1 ^ 3"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 171
+     }
+    }
+   ],
+   "expect": [
+    10
+   ]
+  },
+  {
+   "name": "expr invert",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v",
+     "expression": "~value"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 5
+     }
+    }
+   ],
+   "expect": [
+    -6
+   ]
+  },
+  {
+   "name": "expr bit op on float keeps raw",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v",
+     "expression": "value >> 1"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 2.5
+     }
+    }
+   ],
+   "expect": [
+    2.5
+   ]
+  },
+  {
+   "name": "expr divide by zero keeps raw",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v",
+     "expression": "1 / (value - 4)"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 4
+     }
+    }
+   ],
+   "expect": [
+    4
+   ]
+  },
+  {
+   "name": "expr chained comparison",
+   "widget": {
+    "type": "LEDIndicator",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v",
+     "expression": "0 < value < 40"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 25
+     }
+    },
+    {
+     "data": {
+      "v": 45
+     }
+    }
+   ],
+   "expect": [
+    true,
+    false
+   ]
+  },
+  {
+   "name": "expr and/or not",
+   "widget": {
+    "type": "LEDIndicator",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v",
+     "expression": "not (value > 5 and value < 10) or value == 7"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 6
+     }
+    },
+    {
+     "data": {
+      "v": 7
+     }
+    },
+    {
+     "data": {
+      "v": 12
+     }
+    }
+   ],
+   "expect": [
+    false,
+    true,
+    true
+   ]
+  },
+  {
+   "name": "expr on toggle",
+   "widget": {
+    "type": "ToggleSwitch",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v",
+     "expression": "value >= 100"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 150
+     }
+    },
+    {
+     "data": {
+      "v": 50
+     }
+    }
+   ],
+   "expect": [
+    true,
+    false
+   ]
+  },
+  {
+   "name": "expr hex and scientific literals",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v",
+     "expression": "value * 1e-3 + 0x10"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 2500
+     }
+    }
+   ],
+   "expect": [
+    18.5
+   ]
+  },
+  {
+   "name": "expr garbage keeps raw",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v",
+     "expression": "value +* 2"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 9
+     }
+    }
+   ],
+   "expect": [
+    9
+   ]
+  },
+  {
+   "name": "expr scale to slider",
+   "widget": {
+    "type": "Slider",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "v",
+     "expression": "value / 10"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "v": 1234
+     }
+    }
+   ],
+   "expect": [
+    123
+   ]
+  },
+  {
+   "name": "hex int16 BE no frame",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "HEX字节提取",
+     "byteOffset": 1,
+     "dataType": "int16"
+    }
+   },
+   "input": [
+    {
+     "raw": "00fff6"
+    }
+   ],
+   "expect": [
+    -10
+   ]
+  },
+  {
+   "name": "hex uint16 LE",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "HEX字节提取",
+     "byteOffset": 0,
+     "dataType": "uint16",
+     "byteOrder": "小端(LE)"
+    }
+   },
+   "input": [
+    {
+     "raw": "3412"
+    }
+   ],
+   "expect": [
+    4660
+   ]
+  },
+  {
+   "name": "hex float32 BE",
+   "widget": {
+    "type": "GaugeMeter",
+    "properties": {},
+    "binding": {
+     "parseMode": "HEX字节提取",
+     "byteOffset": 0,
+     "dataType": "float32"
+    }
+   },
+   "input": [
+    {
+     "raw": "41c80000"
+    }
+   ],
+   "expect": [
+    25.0
+   ]
+  },
+  {
+   "name": "hex framed split across feeds",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "HEX字节提取",
+     "byteOffset": 1,
+     "dataType": "uint16",
+     "frameHeader": "AA55",
+     "frameTail": "0D0A"
+    }
+   },
+   "input": [
+    {
+     "raw": "ffaa5501"
+    },
+    {
+     "raw": "02030d0aaa5501ff"
+    },
+    {
+     "raw": "ff0d0a"
+    }
+   ],
+   "expect": [
+    515,
+    65535
+   ]
+  },
+  {
+   "name": "hex too short",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "HEX字节提取",
+     "byteOffset": 3,
+     "dataType": "uint16"
+    }
+   },
+   "input": [
+    {
+     "raw": "010203"
+    }
+   ],
+   "expect": []
+  },
+  {
+   "name": "hex ascii",
+   "widget": {
+    "type": "Label",
+    "properties": {},
+    "binding": {
+     "parseMode": "HEX字节提取",
+     "byteOffset": 1,
+     "dataType": "ASCII",
+     "frameHeader": "02",
+     "frameTail": "03"
+    }
+   },
+   "input": [
+    {
+     "raw": "02004f4b0003"
+    }
+   ],
+   "expect": [
+    "OK"
+   ]
+  },
+  {
+   "name": "hex with expression",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "HEX字节提取",
+     "byteOffset": 0,
+     "dataType": "int16",
+     "expression": "value * 0.1"
+    }
+   },
+   "input": [
+    {
+     "raw": "00fa"
+    }
+   ],
+   "expect": [
+    25.0
+   ]
+  },
+  {
+   "name": "modbus hr uint16",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "Modbus",
+     "mbRegIndex": 100
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "slave": 1,
+      "fc": 3,
+      "hr100": 1234,
+      "hr101": 5
+     }
+    }
+   ],
+   "expect": [
+    1234
+   ]
+  },
+  {
+   "name": "modbus hr int16",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "Modbus",
+     "mbRegIndex": 100,
+     "mbDataType": "int16"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "slave": 1,
+      "fc": 3,
+      "hr100": 65526
+     }
+    }
+   ],
+   "expect": [
+    -10
+   ]
+  },
+  {
+   "name": "modbus hr float32 AB CD",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "Modbus",
+     "mbRegIndex": 0,
+     "mbDataType": "float32"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "slave": 1,
+      "fc": 3,
+      "hr0": 16840,
+      "hr1": 0
+     }
+    }
+   ],
+   "expect": [
+    25.0
+   ]
+  },
+  {
+   "name": "modbus hr int32 CD AB",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "Modbus",
+     "mbRegIndex": 0,
+     "mbDataType": "int32",
+     "mbRegOrder": "小端(CD AB)"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "slave": 1,
+      "fc": 3,
+      "hr0": 65534,
+      "hr1": 65535
+     }
+    }
+   ],
+   "expect": [
+    -2
+   ]
+  },
+  {
+   "name": "modbus 32-bit needs both registers",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "Modbus",
+     "mbRegIndex": 1,
+     "mbDataType": "uint32"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "slave": 1,
+      "fc": 3,
+      "hr0": 1,
+      "hr1": 2
+     }
+    }
+   ],
+   "expect": []
+  },
+  {
+   "name": "modbus input register area",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "Modbus",
+     "mbRegIndex": 5,
+     "mbArea": "输入寄存器"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "slave": 1,
+      "fc": 3,
+      "hr5": 1
+     }
+    },
+    {
+     "data": {
+      "slave": 1,
+      "fc": 4,
+      "ir5": 2
+     }
+    }
+   ],
+   "expect": [
+    2
+   ]
+  },
+  {
+   "name": "modbus coil to led",
+   "widget": {
+    "type": "LEDIndicator",
+    "properties": {},
+    "binding": {
+     "parseMode": "Modbus",
+     "mbRegIndex": 3,
+     "mbArea": "线圈"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "slave": 1,
+      "fc": 1,
+      "co3": 1
+     }
+    },
+    {
+     "data": {
+      "slave": 1,
+      "fc": 1,
+      "co3": 0
+     }
+    }
+   ],
+   "expect": [
+    true,
+    false
+   ]
+  },
+  {
+   "name": "modbus slave filter",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "Modbus",
+     "mbRegIndex": 0,
+     "mbSlaveFilter": 2
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "slave": 1,
+      "fc": 3,
+      "hr0": 11
+     }
+    },
+    {
+     "data": {
+      "slave": 2,
+      "fc": 3,
+      "hr0": 22
+     }
+    }
+   ],
+   "expect": [
+    22
+   ]
+  },
+  {
+   "name": "modbus fc filter",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "Modbus",
+     "mbRegIndex": 0,
+     "mbFcFilter": 3
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "slave": 1,
+      "fc": 6,
+      "hr0": 11
+     }
+    },
+    {
+     "data": {
+      "slave": 1,
+      "fc": 3,
+      "hr0": 22
+     }
+    }
+   ],
+   "expect": [
+    22
+   ]
+  },
+  {
+   "name": "modbus register out of range dropped",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "Modbus",
+     "mbRegIndex": 0
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "slave": 1,
+      "fc": 3,
+      "hr0": 70000
+     }
+    }
+   ],
+   "expect": []
+  },
+  {
+   "name": "modbus scaled",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "Modbus",
+     "mbRegIndex": 0,
+     "mbDataType": "int16",
+     "expression": "value * 0.1"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "slave": 1,
+      "fc": 3,
+      "hr0": 65286
+     }
+    }
+   ],
+   "expect": [
+    -25.0
+   ]
+  },
+  {
+   "name": "mqtt topic as key",
+   "widget": {
+    "type": "NumericDisplay",
+    "properties": {},
+    "binding": {
+     "parseMode": "键值匹配",
+     "key": "sensor/temp"
+    }
+   },
+   "input": [
+    {
+     "data": {
+      "sensor/temp": 25.3
+     }
+    }
+   ],
+   "expect": [
+    25.3
+   ]
+  }
+ ]
+}
