@@ -7,16 +7,20 @@ export function initSoftwareShowcase(root = document) {
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const finePointer = matchMedia("(pointer: fine)").matches;
 
-  cards.forEach((card, i) => card.style.setProperty("--sw-d", `${(i % 2) * 0.08 + Math.floor(i / 2) * 0.06}s`));
-  const reveal = new IntersectionObserver((entries) => {
-    for (const entry of entries) {
-      if (entry.isIntersecting) {
-        entry.target.classList.add("in");
-        reveal.unobserve(entry.target);
+  // The entrance only plays on wide screens with a mouse; elsewhere the cards are simply shown.
+  if (!reduced && finePointer && matchMedia("(min-width: 861px)").matches && cards.length) {
+    cards.forEach((card, i) => card.style.setProperty("--sw-d", `${(i % 2) * 0.08 + Math.floor(i / 2) * 0.06}s`));
+    cards[0].parentElement.classList.add("sw-reveal");
+    const reveal = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("in");
+          reveal.unobserve(entry.target);
+        }
       }
-    }
-  }, { threshold: 0.12 });
-  cards.forEach((card) => reveal.observe(card));
+    }, { threshold: 0.12 });
+    cards.forEach((card) => reveal.observe(card));
+  }
 
   const play = new IntersectionObserver((entries) => {
     for (const entry of entries) {
