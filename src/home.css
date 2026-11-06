@@ -175,7 +175,7 @@
   .app-shell .topbar-actions #secureState { max-width: none; width: 100%; }
   .app-shell.standalone-device .topbar-actions { display: flex; width: auto; }
   .home-page .home-grid,
-  .home-page .home-product-grid,
+  .home-page .home-product-grid { grid-template-columns: minmax(0, 1fr); }
   .home-page .home-card { min-height: 0; padding: 1rem; }
   .home-page .home-card-meta { grid-column: 2; }
   .home-page .home-hero h1 { max-width: 12em; font-size: 2rem; }
