@@ -17,7 +17,9 @@
 
 .skip-link:focus { top: 1rem; }
 
-.app-shell.overview-page:not(.session-connected) :is(#connectButton, #disconnectButton, #secureState),
+.app-shell.overview-page:not(.session-connected) #connectButton,
+.app-shell.overview-page:not(.session-connected) #disconnectButton,
+.app-shell.overview-page:not(.session-connected) #secureState,
 .app-shell.overview-page [data-sidebar-panel="transport"] { display: none; }
 
 .sidebar .device-item {
@@ -123,9 +125,9 @@
 .home-page .aomaster-product-highlights { gap: 0.4rem; }
 .home-page .aomaster-product-highlights span { padding: 0.2rem 0.45rem; min-height: 1.5rem; border: 0; border-radius: 0.25rem; color: var(--muted); background: var(--surface-muted); font-size: 0.65rem; font-weight: 500; }
 .home-page .aomaster-product-content .panel-actions { justify-content: flex-start; gap: 0.5rem; margin-top: auto; padding-top: 0.75rem; }
-.home-page .aomaster-product-content .panel-actions > :is(a, button) { min-height: 2.75rem; font-size: 0.75rem; font-weight: 600; padding: 0 0.7rem; border: 1px solid var(--line); background: var(--surface); color: var(--text); }
+.home-page .aomaster-product-content .panel-actions > a, .home-page .aomaster-product-content .panel-actions > button { min-height: 2.75rem; font-size: 0.75rem; font-weight: 600; padding: 0 0.7rem; border: 1px solid var(--line); background: var(--surface); color: var(--text); }
 .home-page .aomaster-product-content .panel-actions > :first-child { border-color: var(--accent); color: var(--accent-strong); }
-.home-page .aomaster-product-content .panel-actions > :is(a, button):hover { background: var(--surface-selected); border-color: var(--accent); }
+.home-page .aomaster-product-content .panel-actions > a:hover, .home-page .aomaster-product-content .panel-actions > button:hover { background: var(--surface-selected); border-color: var(--accent); }
 .home-page .architecture-card { padding: 1.2rem 1.5rem; background: transparent; }
 .home-page .architecture-card summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; font-weight: 500; }
 .home-page .architecture-card[open] summary { margin-bottom: 1.5rem; color: var(--text); }
@@ -155,7 +157,7 @@
   .home-page.active { gap: 2rem; padding: 0 0 1rem; }
   .home-page .home-protocols { gap: 0.5rem 0.85rem; }
   .app-shell .sidebar-collapse-toggle { min-width: 2.75rem; min-height: 2.75rem; }
-  .app-shell .topbar-actions :is(.lang-switch, .theme-switch) { min-height: 2.75rem; min-width: 2.75rem; }
+  .app-shell .topbar-actions .lang-switch, .app-shell .topbar-actions .theme-switch { min-height: 2.75rem; min-width: 2.75rem; }
   .app-shell .topbar-actions #secureState { max-width: 5rem; min-width: 0; color: var(--state-marquee-color); text-overflow: ellipsis; }
   .app-shell .topbar-actions #secureState::before { content: none; animation: none; }
 }
@@ -171,7 +173,7 @@
     width: 100%;
     gap: 0.25rem;
   }
-  .app-shell .topbar-actions :is(.primary-button, .icon-button) { min-height: 2.75rem; }
+  .app-shell .topbar-actions .primary-button, .app-shell .topbar-actions .icon-button { min-height: 2.75rem; }
   .app-shell .topbar-actions #secureState { max-width: none; width: 100%; }
   .app-shell.standalone-device .topbar-actions { display: flex; width: auto; }
   .home-page .home-grid,
@@ -188,7 +190,7 @@
 
 /* Hardware photography uses one crop and one display area across all three cards. */
 .home-page .home-product-grid .aomaster-product-media { position:relative; height:auto; aspect-ratio:16 / 9; padding:0; overflow:hidden; }
-.home-page .home-product-grid .aomaster-product-media img { position:absolute; inset:0; width:100%; height:100%; max-height:none; object-fit:cover; object-position:var(--photo-position,50% 50%); }
+.home-page .home-product-grid .aomaster-product-media img { position:absolute; top:0; left:0; width:100%; height:100%; max-height:none; object-fit:cover; object-position:var(--photo-position,50% 50%); }
 
 /* Product details share the same flat, readable surfaces as the workbench. */
 .app-shell .aomaster-dialog-header { padding:16px 20px; background:var(--surface); }
@@ -222,8 +224,15 @@
 .home-page .sw-card:hover::before, .home-page .sw-card:hover::after { opacity: 1; }
 @keyframes sw-spin { to { --sw-a: 360deg; } }
 .home-page .sw-media { position: relative; display: block; margin: 0.9rem 0.9rem 0; aspect-ratio: 16 / 10; border-radius: 0.6rem; overflow: hidden; background: var(--surface-muted); border: 1px solid var(--line); perspective: 60rem; }
-.home-page .sw-media :is(video, .sw-still) { display: block; width: 100%; height: 100%; object-fit: cover; transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(var(--sc, 1)); transition: transform 0.6s cubic-bezier(.2, .7, .2, 1); }
-.home-page .sw-card:hover .sw-media :is(video, .sw-still) { --sc: 1.035; }
+/* No :is() in this file: older phone browsers (system WebViews, QQ / UC) cannot parse it and drop the whole rule,
+   which showed the 1280x800 videos at full size and the connect buttons on the home topbar. */
+.home-page .sw-media video, .home-page .sw-media .sw-still { position: absolute; top: 0; left: 0; display: block; width: 100%; height: 100%; object-fit: cover; transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) scale(var(--sc, 1)); transition: transform 0.6s cubic-bezier(.2, .7, .2, 1); }
+.home-page .sw-card:hover .sw-media video, .home-page .sw-card:hover .sw-media .sw-still { --sc: 1.035; }
+/* Older phone browsers (system WebViews, QQ / UC) lack aspect-ratio: hold the media boxes open with padding instead. */
+@supports not (aspect-ratio: 1 / 1) {
+  .home-page .sw-media { height: 0; padding-top: 58%; }
+  .home-page .home-product-grid .aomaster-product-media { height: 0; padding-top: 56.25%; }
+}
 .home-page .sw-media::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, color-mix(in srgb, var(--pc) 22%, transparent)); opacity: 0.8; pointer-events: none; }
 .home-page .sw-live { position: absolute; left: 0.7rem; bottom: 0.7rem; z-index: 1; display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.6rem; border-radius: 999px; background: rgba(10, 14, 20, 0.62); color: #fff; font-size: 0.68rem; font-weight: 600; backdrop-filter: blur(6px); }
 .home-page .sw-live::before { content: ""; width: 0.45rem; height: 0.45rem; border-radius: 50%; background: #ff5f57; box-shadow: 0 0 0 0 rgba(255, 95, 87, 0.6); animation: sw-ping 1.8s infinite; }
@@ -247,7 +256,7 @@
 .home-page .sw-actions .sw-primary { background: var(--pc); border-color: var(--pc); color: #fff; box-shadow: 0 0.5rem 1.1rem -0.6rem var(--pc); }
 .home-page .sw-actions .sw-primary::after { content: "↗"; margin-left: 0.35rem; transition: transform 0.2s; }
 .home-page .sw-actions .sw-primary:hover::after { transform: translate(2px, -2px); }
-@media (max-width: 860px) { .home-page .sw-board { grid-template-columns: 1fr; } }
+@media (max-width: 860px) { .home-page .sw-board { grid-template-columns: minmax(0, 1fr); } }
 @media (prefers-reduced-motion: reduce) {
   .home-page .sw-card { opacity: 1; transform: none; transition: none; }
   .home-page .sw-card::before, .home-page .software-showcase .home-section-heading::after { animation: none; }
