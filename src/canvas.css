@@ -241,6 +241,7 @@
   background: var(--surface-muted);
 }
 
+.hmi-viewport.hmi-panning, .hmi-viewport.hmi-panning * { cursor: grabbing !important; }
 .hmi-viewport:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .hmi-stage { position: relative; margin: 0 auto; }
 

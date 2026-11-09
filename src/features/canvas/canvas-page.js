@@ -733,6 +733,44 @@ export function createCanvasPage(options) {
     dom.viewport.setPointerCapture(event.pointerId);
   }
 
+  // -- middle-button pan --------------------------------------------------------------------
+  // The viewport is the scroll container, so panning is scrolling it. The listeners run in the capture phase
+  // so a middle press over a widget (or a chart/control inside it) pans instead of reaching that widget.
+
+  let pan = null;
+
+  function onPanDown(event) {
+    if (event.button !== 1) return;
+    event.preventDefault(); // no autoscroll circle, no middle-click paste
+    event.stopPropagation();
+    if (pan || drag) return;
+    pan = { id: event.pointerId, x: event.clientX, y: event.clientY, left: dom.viewport.scrollLeft, top: dom.viewport.scrollTop };
+    dom.viewport.classList.add("hmi-panning");
+    dom.viewport.setPointerCapture(event.pointerId);
+  }
+
+  function onPanMove(event) {
+    if (!pan || event.pointerId !== pan.id) return;
+    event.stopPropagation();
+    if (!(event.buttons & 4)) { endPan(event); return; } // middle released while another button was still down: no pointerup
+    dom.viewport.scrollLeft = pan.left - (event.clientX - pan.x);
+    dom.viewport.scrollTop = pan.top - (event.clientY - pan.y);
+  }
+
+  function endPan(event) {
+    if (!pan || (event.pointerId !== undefined && event.pointerId !== pan.id)) return;
+    if (event.type === "pointerup" && event.button !== 1) return;
+    if (event.type === "pointerup" || event.type === "pointercancel") event.stopPropagation();
+    pan = null;
+    dom.viewport.classList.remove("hmi-panning");
+  }
+
+  function suppressMiddle(event) {
+    if (event.button !== 1) return;
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
   function onPointerMove(event) {
     if (!drag) return;
     const point = canvasPoint(event);
@@ -1248,6 +1286,14 @@ export function createCanvasPage(options) {
     const rect = dom.alignButton.getBoundingClientRect();
     openMenu(rect.left, rect.bottom + 4, alignItems());
   });
+  dom.viewport.addEventListener("pointerdown", onPanDown, true);
+  dom.viewport.addEventListener("mousedown", suppressMiddle, true);
+  dom.viewport.addEventListener("auxclick", suppressMiddle, true);
+  dom.viewport.addEventListener("pointermove", onPanMove, true);
+  dom.viewport.addEventListener("pointerup", endPan, true);
+  dom.viewport.addEventListener("pointercancel", endPan, true);
+  dom.viewport.addEventListener("lostpointercapture", endPan);
+  window.addEventListener("blur", endPan);
   dom.viewport.addEventListener("pointerdown", onPointerDown);
   dom.viewport.addEventListener("pointermove", onPointerMove);
   dom.viewport.addEventListener("pointerup", onPointerUp);
