@@ -111,6 +111,7 @@ export const WIDGET_TYPES = {
     { name: "minimum", kind: "int", default: 0, min: -99999, max: 99999, label: "最小值" },
     { name: "maximum", kind: "int", default: 100, min: -99999, max: 99999, label: "最大值" },
     { name: "value", kind: "int", default: 50, min: -99999, max: 99999, label: "默认值" },
+    { name: "showRange", kind: "bool", default: false, label: "显示上下限" },
     { name: "sendOnChange", kind: "bool", default: false, label: "变化发送" },
     { name: "commandMode", kind: "option", default: "文本", options: ["文本", "HEX", "JSON", "Modbus", "CAN"], label: "发送模式" },
     { name: "commandTemplate", kind: "text", default: "{value}", label: "发送模板" },
