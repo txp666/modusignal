@@ -216,7 +216,17 @@ function slider(widget, ctx) {
     held = false;
     ctx.send(widget, { value: Number(input.value) });
   });
-  view.el.append(input);
+  // showRange: the minimum and maximum at the ends, as Studio's caption labels beside its slider.
+  if (flag(widget, "showRange")) {
+    const limit = (text) => {
+      const label = el("span", "hmi-slider-limit");
+      label.textContent = text;
+      return label;
+    };
+    view.el.append(limit(input.min), input, limit(input.max));
+  } else {
+    view.el.append(input);
+  }
   view.setValue = (value) => {
     if (held) return;
     input.value = String(value);

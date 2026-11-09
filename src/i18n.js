@@ -1460,6 +1460,7 @@ Offset 0 → 100, Offset 2 → 200</code></pre>
   "hmi.prop.minimum": { zh: "最小值", en: "Minimum" },
   "hmi.prop.maximum": { zh: "最大值", en: "Maximum" },
   "hmi.prop.value": { zh: "默认值", en: "Default value" },
+  "hmi.prop.showRange": { zh: "显示上下限", en: "Show limits" },
   "hmi.prop.sendOnChange": { zh: "变化发送", en: "Send on change" },
   "hmi.prop.suffix": { zh: "后缀", en: "Suffix" },
   "hmi.prop.color": { zh: "颜色", en: "Colour" },

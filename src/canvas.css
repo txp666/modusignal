@@ -370,7 +370,8 @@
 .hmi-switch-state { flex: none; margin-left: 12px; white-space: nowrap; }
 
 /* Fluent's slider: a 4 px groove filled up to a 22 px handle with an accent dot. */
-.hmi-slider { display: flex; align-items: center; }
+.hmi-slider { display: flex; align-items: center; gap: 6px; }
+.hmi-slider-limit { flex: none; font-size: 12px; line-height: 16px; white-space: nowrap; }
 .hmi-canvas input.hmi-range { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0; height: 22px; min-height: 0; margin: 0; padding: 0; border: 0; background: transparent; box-shadow: none; }
 .hmi-canvas input.hmi-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--accent) var(--fill, 0%), var(--hmi-groove) var(--fill, 0%)) 11px 0 / calc(100% - 22px) 100% no-repeat; }
 .hmi-canvas input.hmi-range::-moz-range-track { height: 4px; border-radius: 2px; background: linear-gradient(to right, var(--accent) var(--fill, 0%), var(--hmi-groove) var(--fill, 0%)) 11px 0 / calc(100% - 22px) 100% no-repeat; }
