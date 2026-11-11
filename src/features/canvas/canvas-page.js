@@ -450,6 +450,7 @@ export function createCanvasPage(options) {
       // A binding on a hidden tab page is not polled.
       isShown: (widget) => isShown(project, widget, pageOf),
       onValue: (id, value) => views.get(id)?.setValue(value),
+      onBindingState: (id, state) => views.get(id)?.setBindingState?.(state),
       onCurvePoint: (id, index, number) => views.get(id)?.addPoint?.(index, number),
       onStatus: (status) => {
         runStatus = status;

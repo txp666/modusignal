@@ -3,6 +3,7 @@
 // The document is kept as parsed, so everything the page does not know is written back as it
 // was. Pure: no DOM.
 
+import industrialCatalog from "./industrial-catalog.js";
 import { createParser } from "./parsers.js";
 import { WIDGET_TYPES } from "./widget-registry.js";
 import { MODBUS_AREAS, PARSE_MODES } from "./binding.js";
@@ -12,6 +13,7 @@ export const FORMAT_VERSION = "1.0";
 
 /** The widget types the page edits and runs; every other type is a placeholder kept as it is. */
 export const SUPPORTED_TYPES = new Set([
+  ...industrialCatalog.map((item) => item.type),
   "PushButton", "Label", "LineEdit", "ComboBox", "ToggleSwitch", "Slider", "SpinBox",
   "LEDIndicator", "NumericDisplay", "ProgressBar", "ProgressRingDisplay", "GaugeMeter",
   "RealtimeChart", "DataTable", "GroupBox", "CardContainer", "TabWidget", "HBoxLayout", "VBoxLayout", "FlexLayout", "Separator",
@@ -31,6 +33,9 @@ export const PALETTE = [
   { id: "chart", types: ["RealtimeChart", "GaugeMeter", "DataTable"] },
   { id: "container", types: ["GroupBox", "CardContainer", "TabWidget", "HBoxLayout", "VBoxLayout", "FlexLayout", "Separator"] },
   { id: "comm", types: [...LINK_CARD_TYPES, "DataRecvCard", "DataSendCard", "LogBox"] },
+  { id: "industrialEquipment", types: industrialCatalog.filter((item) => item.group === "equipment").map((item) => item.type) },
+  { id: "industrialInstrument", types: industrialCatalog.filter((item) => item.group === "instrument").map((item) => item.type) },
+  ...["automotive", "diy", "embedded"].map((id) => ({ id, types: industrialCatalog.filter((item) => item.group === id).map((item) => item.type) })),
 ];
 
 export class ProjectError extends Error {

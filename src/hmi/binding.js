@@ -1,3 +1,7 @@
+import { EXTENDED_FEEDBACK_TYPES, extendedFeedbackValue } from "./extended-feedback.js";
+import industrialCatalog from "./industrial-catalog.js";
+import { INDUSTRIAL_CATALOG, industrialValue } from "./industrial.js";
+
 // Data bindings of a .uidp runtime, as PyQt UI Designer's data_binding.py, binding_values.py and
 // chart_runtime.py have them: a value is taken from a parsed message (键值匹配 / JSON路径 / Modbus)
 // or from the raw frame bytes (HEX字节提取), put through the expression, formatted for display and
@@ -31,6 +35,9 @@ export const BIND_PROPERTIES = {
   Slider: "value",
   SpinBox: "value",
 };
+
+export const INDUSTRIAL_TYPES = new Set(industrialCatalog.map((item) => item.type));
+for (const type of INDUSTRIAL_TYPES) BIND_PROPERTIES[type] = "value";
 
 export const PARSE_MODES = ["键值匹配", "JSON路径", "HEX字节提取", "Modbus"];
 export const MODBUS_AREAS = { 保持寄存器: "hr", 输入寄存器: "ir", 线圈: "co", 离散输入: "di" };
@@ -122,23 +129,24 @@ function unpackRaw(payload, offset, dataType, bigEndian) {
 }
 
 /** JSON path through parsed data: dot-separated, list indexes may count from the end. */
-export function resolvePath(data, path) {
+export function resolvePath(data, path, missing = null) {
   let node = data;
   for (const part of String(path).split(".")) {
-    if (node === null || node === undefined) return null;
+    if (node === null || node === undefined) return missing;
     if (Array.isArray(node)) {
       const index = parsePyInt(part);
-      if (index === null) return null;
+      if (index === null) return missing;
       const at = index < 0 ? node.length + index : index;
-      if (at < 0 || at >= node.length) return null;
+      if (at < 0 || at >= node.length) return missing;
       node = node[at];
     } else if (typeof node === "object" && !isNumber(node)) {
-      node = Object.hasOwn(node, part) ? node[part] : null;
+      if (!Object.hasOwn(node, part)) return missing;
+      node = node[part];
     } else {
-      return null;
+      return missing;
     }
   }
-  return node ?? null;
+  return node === undefined ? missing : node;
 }
 
 function bindingRegister(value) {
@@ -285,19 +293,24 @@ export function bindingConfigured(binding) {
     || mode === "HEX字节提取" || mode === "Modbus";
 }
 
+const MISSING_FEEDBACK = Symbol("missing feedback");
+
 export class BindingEntry {
   /** The binding of a widget (its JSON), or null when it has none that is configured. */
-  static fromWidget(widget) {
+  static fromWidget(widget, project = {}) {
     const binding = widget?.binding;
     if (!bindingConfigured(binding)) return null;
-    return new BindingEntry(widget);
+    return new BindingEntry(widget, project);
   }
 
-  constructor(widget) {
+  constructor(widget, project = {}) {
     const binding = widget.binding;
     const props = widget.properties ?? {};
+    this.project = project;
+    this.observations = [];
     this.widgetId = widget.id;
     this.type = widget.type;
+    if (INDUSTRIAL_TYPES.has(this.type)) this.bindingState = "waiting";
     this.prop = BIND_PROPERTIES[widget.type] ?? "text";
     this.parseMode = binding.parseMode ?? "键值匹配";
     this.key = String(binding.key ?? "");
@@ -335,10 +348,11 @@ export class BindingEntry {
   }
 
   extractFromParsed(data) {
-    if (this.parseMode === "键值匹配") return Object.hasOwn(data, this.key) ? data[this.key] : null;
-    if (this.parseMode === "JSON路径") return resolvePath(data, this.jsonPath);
+    const missing = EXTENDED_FEEDBACK_TYPES.has(this.type) ? MISSING_FEEDBACK : null;
+    if (this.parseMode === "键值匹配") return Object.hasOwn(data, this.key) ? data[this.key] : missing;
+    if (this.parseMode === "JSON路径") return resolvePath(data, this.jsonPath, missing);
     if (this.parseMode === "Modbus") {
-      return modbusValue(data, this.mbRegIndex, this.mbDataType, this.mbRegOrder, this.mbFcFilter, this.mbSlaveFilter, this.mbArea);
+      return modbusValue(data, this.mbRegIndex, this.mbDataType, this.mbRegOrder, this.mbFcFilter, this.mbSlaveFilter, this.mbArea) ?? missing;
     }
     return null;
   }
@@ -368,17 +382,44 @@ export class BindingEntry {
 
   /** The value the widget takes for an extracted one; throws Rejected for one it cannot show. */
   push(raw) {
+    if (INDUSTRIAL_TYPES.has(this.type)) {
+      try {
+        const value = EXTENDED_FEEDBACK_TYPES.has(this.type)
+          ? extendedFeedbackValue(this.type, this.evaluate(raw), this.props, this.project)
+          : industrialValue(INDUSTRIAL_CATALOG.get(this.type), bindingFloat(this.evaluate(raw)), this.props);
+        if (value === null) throw new Rejected();
+        this.bindingState = "ready";
+        if (EXTENDED_FEEDBACK_TYPES.has(this.type)) this.observations.push({ value, state: "ready" });
+        return value;
+      } catch (error) {
+        if (error instanceof Rejected) {
+          this.bindingState = "invalid";
+          if (EXTENDED_FEEDBACK_TYPES.has(this.type)) this.observations.push({ value: null, state: "invalid" });
+        }
+        throw error;
+      }
+    }
     return toWidgetValue(this.type, this.format(this.evaluate(raw)), this.props);
+  }
+
+  takeObservations() {
+    return this.observations.splice(0);
   }
 
   /** The values the widget takes for one parsed message (none or one). */
   onParsed(data) {
     if (this.usesRaw) return [];
+    const before = this.observations.length;
     try {
       const value = this.extractFromParsed(data);
-      return value === null || value === undefined ? [] : [this.push(value)];
+      if (value === MISSING_FEEDBACK) return [];
+      return (value === null || value === undefined) && !EXTENDED_FEEDBACK_TYPES.has(this.type) ? [] : [this.push(value)];
     } catch (error) {
-      if (error instanceof Rejected) return [];
+      if (error instanceof Rejected) {
+        if (INDUSTRIAL_TYPES.has(this.type)) this.bindingState = "invalid";
+        if (EXTENDED_FEEDBACK_TYPES.has(this.type) && this.observations.length === before) this.observations.push({ value: null, state: "invalid" });
+        return [];
+      }
       throw error;
     }
   }

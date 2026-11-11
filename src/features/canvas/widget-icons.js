@@ -1,3 +1,6 @@
+import industrialCatalog from "../../hmi/industrial-catalog.js";
+import { renderIndustrialSvg } from "../../hmi/industrial.js";
+
 // Palette icons (16 × 16, currentColor).
 
 const icon = (body) => `<svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
@@ -31,3 +34,5 @@ export const WIDGET_ICONS = {
   DataSendCard: icon('<rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="M8 11.5v-5M5.5 8.5L8 6l2.5 2.5M4.5 4.5h7"/>'),
   LogBox: icon('<rect x="1.5" y="2.5" width="13" height="11" rx="1.5"/><path d="M4 5.5h1M6.5 5.5h5.5M4 8h1M6.5 8h4M4 10.5h1M6.5 10.5h5"/>'),
 };
+
+for (const item of industrialCatalog) WIDGET_ICONS[item.type] = renderIndustrialSvg(item);

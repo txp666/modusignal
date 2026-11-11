@@ -1,3 +1,4 @@
+import { EXTENDED_FEEDBACK_TYPES, createExtendedFeedbackState } from "../../hmi/extended-feedback.js";
 // The running .uidp project. Every link card is a link of its own (Web Serial, a WebSocket
 // client, MQTT over WebSocket) with its own parser; what any link reads goes through the same
 // bindings and chart curves. Controls send to every connected link (Modbus framed per link);
@@ -43,9 +44,11 @@ export function createCanvasRuntime(options) {
   const bindings = [];
   const bindingWidget = new Map();
   const curves = [];
+  const feedbackStates = new Map();
   for (const { widget } of walkWidgets(project.widgets)) {
     if (!isSupported(widget)) continue;
-    const entry = BindingEntry.fromWidget(widget);
+    if (EXTENDED_FEEDBACK_TYPES.has(widget.type)) feedbackStates.set(widget.id, createExtendedFeedbackState(widget.type, widget.properties));
+    const entry = BindingEntry.fromWidget(widget, project);
     if (entry) {
       bindings.push(entry);
       bindingWidget.set(entry, widget);
@@ -53,6 +56,12 @@ export function createCanvasRuntime(options) {
     if (widget.type === "RealtimeChart") {
       curveConfigs(widget.properties ?? {}).forEach((cfg, index) => curves.push({ widgetId: widget.id, index, entry: new CurveEntry(cfg) }));
     }
+  }
+  function deliverBinding(entry, values) {
+    const feedback = feedbackStates.get(entry.widgetId);
+    for (const observation of entry.takeObservations()) feedback?.observe(observation.value, observation.state);
+    for (const value of values) onValue(entry.widgetId, value);
+    if (entry.bindingState) options.onBindingState?.(entry.widgetId, entry.bindingState);
   }
   const events = { links: emitter(), traffic: emitter(), log: emitter(), data: emitter() };
   let stopped = false;
@@ -62,7 +71,7 @@ export function createCanvasRuntime(options) {
   function deliver(link, unit, parser, topic = null) {
     for (const entry of bindings) {
       if (!entry.usesRaw) continue;
-      for (const value of entry.onRaw(unit)) onValue(entry.widgetId, value);
+      deliverBinding(entry, entry.onRaw(unit));
     }
     for (const curve of curves) {
       for (const number of curve.entry.onRaw(unit)) onCurvePoint(curve.widgetId, curve.index, number);
@@ -78,7 +87,7 @@ export function createCanvasRuntime(options) {
       link.master.handleMessage(message);
       events.data.emit(message);
       for (const entry of bindings) {
-        for (const value of entry.onParsed(message)) onValue(entry.widgetId, value);
+        deliverBinding(entry, entry.onParsed(message));
       }
       for (const curve of curves) {
         for (const number of curve.entry.onParsed(message)) onCurvePoint(curve.widgetId, curve.index, number);
@@ -241,7 +250,7 @@ export function createCanvasRuntime(options) {
       getMaster: () => pollingLink()?.master ?? null,
       // Bindings on screen (not on a hidden tab page) and every chart curve, as the reference polls them.
       getNeeds: () => [
-        ...bindings.filter((entry) => isShown(bindingWidget.get(entry))).map((entry) => entry.modbusNeed()),
+        ...bindings.filter((entry) => entry.type === "DigitalTimingChart" || isShown(bindingWidget.get(entry))).map((entry) => entry.modbusNeed()),
         ...curves.map((curve) => curve.entry.modbusNeed()),
       ].filter(Boolean),
       getSettings: () => {
@@ -290,6 +299,7 @@ export function createCanvasRuntime(options) {
 
   return {
     events,
+    feedbackState: (id) => feedbackStates.get(id)?.snapshot() ?? null,
     links,
     linkOf: (card) => linkOf.get(card) ?? null,
     /** What is on screen changed (a tab page): plan the Modbus reads again. */
