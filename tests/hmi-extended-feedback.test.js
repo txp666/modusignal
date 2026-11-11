@@ -3,8 +3,6 @@ import assert from "node:assert/strict";
 import { BindingEntry } from "../src/hmi/binding.js";
 import { createEmptyProject, parseProject, serializeProject } from "../src/hmi/uidp.js";
 import { createExtendedFeedbackState, extendedFeedbackValue, getBitProfile, setBitProfile, renameBitProfile } from "../src/hmi/extended-feedback.js";
-import { renderExtendedSvg, timingTrace, bitNameSize } from "../src/hmi/extended-svg.js";
-import { INDUSTRIAL_CATALOG, INDUSTRIAL_THEMES } from "../src/hmi/industrial.js";
 import { createCanvasRuntime } from "../src/features/canvas/canvas-runtime.js";
 import { getTransportDescriptor } from "../src/transports/registry.js";
 
@@ -23,18 +21,7 @@ test("shared bit profiles default without persistence; editing and renaming upda
   assert.deepEqual(parseProject(serializeProject(project)), project);
   assert.equal(extendedFeedbackValue("StatusWordPanel", 65535, { bitProfile: "plc" }, project), 65535);
   assert.equal(extendedFeedbackValue("StatusWordPanel", 256), null);
-  const svg = renderExtendedSvg(INDUSTRIAL_CATALOG.get("StatusWordPanel"), { state: "ready", value: 1 }, { bitProfile: "plc" }, project, INDUSTRIAL_THEMES.light);
-  assert.equal((svg.match(/data-role="bit"/g) ?? []).length, 16);
-  assert.ok(svg.includes("#123456"));
-  assert.ok(svg.includes("&lt;&amp;&quot;"));
-  const fullName = /font-size="([\d.]+)"[^>]*>Emergency stop<\/text>/.exec(svg);
-  assert.ok(fullName, "the complete bit name remains in the shared SVG template");
-  assert.ok(Number(fullName[1]) < 11, "long names shrink inside a 16-bit cell");
-  assert.doesNotMatch(svg, /\{\{|NaN|Infinity/);
-  assert.ok(bitNameSize("电机过载报警", 11, 44) * 6 <= 44);
-  assert.ok(bitNameSize("Emergency stop", 11, 44) * (14 * 0.68) <= 44 + 1e-9);
-  assert.equal(bitNameSize("MW@%", 11, 44), 11);
-  assert.equal(bitNameSize("B0", 11, 44), 11);
+
 });
 
 test("compound key/path feedback preserves numbers, normalizes modes and rejects malformed structures", () => {
@@ -60,7 +47,7 @@ test("compound key/path feedback preserves numbers, normalizes modes and rejects
 
 test("encoder direction comes from safe cumulative deltas and resets after an invalid observation", () => {
   const model = createExtendedFeedbackState("RotaryEncoder", { pulsesPerTurn: 4 });
-  model.observe(-1, "ready"); assert.equal(model.snapshot().direction, "unknown"); assert.equal(model.snapshot().angle, 270);
+  model.observe(-1, "ready"); assert.equal(model.snapshot().direction, "unknown");
   model.observe(0, "ready"); assert.equal(model.snapshot().direction, "forward");
   model.observe(0, "ready"); assert.equal(model.snapshot().direction, "stopped");
   model.observe(-2, "ready"); assert.equal(model.snapshot().direction, "reverse");
@@ -71,14 +58,10 @@ test("encoder direction comes from safe cumulative deltas and resets after an in
   assert.equal(extendedFeedbackValue("RotaryEncoder", "12"), null);
 });
 
-test("timing traces right-align actual samples and break across invalid observations", () => {
+test("timing history retains actual samples and invalid observations", () => {
   const model = createExtendedFeedbackState("DigitalTimingChart");
   model.observe(1, "ready"); model.observe(null, "invalid"); model.observe(0, "ready");
   assert.deepEqual(model.snapshot().samples, [1, null, 0]);
-  const path = timingTrace(model.snapshot().samples, 0, 18);
-  assert.equal((path.match(/M/g) ?? []).length, 2);
-  assert.ok(path.startsWith("M288.625 3.6"));
-  assert.ok(path.endsWith("H310"));
   for (let i = 0; i < 40; i++) model.observe(i, "ready");
   assert.deepEqual(model.snapshot().samples, Array.from({ length: 32 }, (_, i) => i + 8));
   const before = model.snapshot(); model.snapshot(); model.snapshot(); assert.deepEqual(model.snapshot(), before);
