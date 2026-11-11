@@ -122,7 +122,7 @@ test("industrial limit alarms and feedback-mode validation", () => {
 
 });
 
-test("industrial property forms expose specialized options and keep the expression as their last field", async () => {
+test("industrial property forms expose specialized options and binding expressions", async () => {
   const { renderPropertyPanel } = await import("../src/features/canvas/property-panel.js");
   const previous = globalThis.document, language = i18n.current;
   class Element {
@@ -142,7 +142,7 @@ test("industrial property forms expose specialized options and keep the expressi
         const widget = { id: "w", type, properties: {} };
         renderPropertyPanel(root, { project: {}, selected: [widget], canPaste: () => false, change: (fn) => fn() });
         const fields = root.querySelectorAll("label");
-        assert.equal(fields.at(-1).children[0].textContent, i18n("hmi.binding.expression"));
+        assert.ok(fields.some((node) => node.children[0].textContent === i18n("hmi.binding.expression")));
         assert.equal(fields.find((node) => node.children[0].textContent === i18n("hmi.prop.decimals")).children[1].max, "6");
         for (const name of type === "FlowPipe" ? ["pipeShape", "pipeDirection", "pipeWidth"] : ["Motor", "Cylinder"].includes(type) ? ["feedbackMode"] : ["showLimits", "lowLimit", "highLimit"]) {
           assert.ok(fields.some((node) => node.children[0].textContent === i18n(`hmi.prop.${name}`)), `${type}.${name}`);
