@@ -23,3 +23,16 @@ for (const vector of cases) {
     assert.equal(sent(commandForEvent(vector.widget, vector.props, vector.event), link), vector.out);
   });
 }
+
+test("Modbus button accepts a logical coil value and sends the FC05 wire value", () => {
+  const props = { commandMode: "Modbus", mbFunc: "05 写单线圈" };
+  const click = (settings) => sent(commandForEvent("PushButton", { ...props, ...settings }), "modbus");
+  for (const settings of [{}, { mbValue: 1 }, { mbValue: "1" }, { mbValue: 65280 }]) {
+    assert.equal(click(settings), "01050000ff008c3a");
+  }
+  assert.equal(click({ mbValue: 0 }), "010500000000cdca");
+  assert.throws(() => click({ mbValue: 2 }), CommandError);
+  assert.throws(() => click({ mbValue: 1.5 }), CommandError);
+  assert.equal(click({ mbFunc: "01 读线圈", mbValue: 1 }), "010100000001fdca");
+  assert.equal(click({ mbFunc: "06 写单寄存器", mbValue: 1 }), "010600000001480a");
+});

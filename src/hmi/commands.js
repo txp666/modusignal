@@ -392,6 +392,10 @@ export function commandForEvent(type, props, event = {}) {
     case "PushButton": {
       if (modbus) {
         const settings = { mbFunc: "03 读保持寄存器", ...props };
+        if (MODBUS_FUNCTIONS[settings.mbFunc] === 0x05) {
+          const value = prop(settings, "mbValue", 1);
+          if ((typeof value === "string" ? parsePyInt(value) : value) === 1) settings.mbValue = 0xff00;
+        }
         return { kind: "modbus", request: modbusFromProps(settings, null) };
       }
       const command = strip(prop(props, "command", ""));
