@@ -27,9 +27,8 @@ test("curve form renders every expression in both languages, edits separately an
       ["键值匹配", "JSON路径", "HEX字节提取", "Modbus"].forEach((mode, index) => { widget.properties[`_curve_${index}_parseMode`] = mode; });
       renderPropertyPanel(root, ctx);
       const expressions = root.querySelectorAll("fieldset").map((box) => {
-        const last = box.children.at(-1);
-        assert.equal(last.children[0].textContent, label);
-        return last.children[1];
+        const field = box.querySelectorAll("label").find((node) => node.children[0]?.textContent === label);
+        return field.children[1];
       });
       assert.equal(expressions.length, 4);
       expressions.forEach((input, index) => { input.value = `value + ${index}`; input.listeners.input(); });
