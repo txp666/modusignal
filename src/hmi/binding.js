@@ -404,7 +404,7 @@ export class BindingEntry {
 
 export const MAX_CURVES = 8;
 export const CURVE_FIELDS = {
-  parseMode: "键值匹配", key: "", jsonPath: "", byteOffset: 0, dataType: "float32", byteOrder: "大端(BE)",
+  expression: "", parseMode: "键值匹配", key: "", jsonPath: "", byteOffset: 0, dataType: "float32", byteOrder: "大端(BE)",
   frameHeader: "", frameTail: "", regIndex: 0, mbDataType: "uint16", mbRegOrder: "大端(AB CD)",
   mbFcFilter: -1, mbSlaveFilter: -1, mbArea: "保持寄存器",
 };
@@ -449,6 +449,18 @@ export class CurveEntry {
     return modbusNeed(this.cfg.mbArea, this.cfg.regIndex, this.cfg.mbDataType, this.cfg.mbSlaveFilter, 0);
   }
 
+  // Transform once after extraction, before the sample reaches the chart/history.
+  sample(raw) {
+    const original = toReal(raw);
+    if (original === null || !Number.isFinite(original)) return [];
+    if (!this.cfg.expression) return [original];
+    // Numeric text is a float, while actual integers retain bitwise expression semantics.
+    const input = typeof raw === "string" ? pyFloat(original) : raw;
+    const result = evaluateExpression(this.cfg.expression, input);
+    const number = result === null || result === undefined ? null : toReal(result);
+    return [number === null || !Number.isFinite(number) ? original : number];
+  }
+
   onParsed(data) {
     const { cfg } = this;
     let value = null;
@@ -465,8 +477,7 @@ export class CurveEntry {
       if (error instanceof Rejected) return [];
       throw error;
     }
-    const number = value === null || value === undefined ? null : toReal(value);
-    return number === null || !Number.isFinite(number) ? [] : [number];
+    return value === null || value === undefined ? [] : this.sample(value);
   }
 
   onRaw(raw) {
@@ -478,7 +489,7 @@ export class CurveEntry {
       const payload = stripFrame(frame, this.header, this.tail);
       if (payload === null) continue;
       const value = unpackRaw(payload, offset, cfg.dataType, cfg.byteOrder === "大端(BE)");
-      if (value !== null && Number.isFinite(numberOf(value))) out.push(numberOf(value));
+      if (value !== null) out.push(...this.sample(value));
     }
     return out;
   }

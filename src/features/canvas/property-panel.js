@@ -452,6 +452,7 @@ function renderCurves(root, widget, ctx) {
         field(i18n("hmi.binding.mbSlaveFilter"), numberInput(get("mbSlaveFilter"), (v) => set("mbSlaveFilter", v), { min: -1, max: 247 })),
       );
     }
+    box.append(field(i18n("hmi.prop.curveExpression"), textInput(get("expression"), (v) => set("expression", v.trim(), { coalesce: `${prefix}expression` }), { placeholder: "value * 0.1" }), i18n("hmi.binding.expressionHint")));
     curves.append(box);
   }
   root.append(curves);

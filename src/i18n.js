@@ -1478,6 +1478,7 @@ Offset 0 → 100, Offset 2 → 200</code></pre>
   "hmi.prop.currentCurve": { zh: "当前编辑曲线", en: "Curve being edited" },
   "hmi.prop.curveName": { zh: "曲线名称", en: "Curve name" },
   "hmi.prop.curveParseMode": { zh: "解析模式", en: "Parse mode" },
+  "hmi.prop.curveExpression": { zh: "转换表达式", en: "Conversion expression" },
   "hmi.prop.curveKey": { zh: "匹配键", en: "Key" },
   "hmi.prop.curveJsonPath": { zh: "JSON路径", en: "JSON path" },
   "hmi.prop.curveByteOffset": { zh: "字节偏移", en: "Byte offset" },

@@ -227,6 +227,7 @@ export const WIDGET_TYPES = {
     { name: "curveMbRegOrder", kind: "option", default: "大端(AB CD)", options: ["大端(AB CD)", "小端(CD AB)"], label: "寄存器序(MB)" },
     { name: "curveMbFcFilter", kind: "int", default: -1, min: -1, max: 255, label: "功能码过滤" },
     { name: "curveMbSlaveFilter", kind: "int", default: -1, min: -1, max: 255, label: "从站过滤" },
+    { name: "curveExpression", kind: "text", default: "", label: "转换表达式" },
   ] },
   GaugeMeter: { group: "chart", name: "仪表盘", size: [180, 180], min: [80, 80], props: [
     { name: "title", kind: "text", default: "仪表", label: "标题" },
