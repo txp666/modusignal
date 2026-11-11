@@ -89,6 +89,10 @@ function injectStaticAssetVersion(version) {
 function copyStaticAssets() {
   const copies = [
     ["pages", "pages"],
+    ...["index.html", "动态控件全景.uidp", "动态反馈.jsonl"].map(name => {
+      const path = join("examples", "industrial", name);
+      return [path, path];
+    }),
     ["_redirects", "_redirects"],
     [
       "images",
@@ -197,11 +201,13 @@ function createAssetVersionPlugin(version) {
 
 async function bundleApp(version) {
   await esbuild.build({
-    entryPoints: {
-      app: join(projectRoot, "src/app.js"),
-      styles: join(projectRoot, "src/styles.css"),
-    },
-    outdir: distDir,
+    entryPoints: [
+      { in: join(projectRoot, "src/app.js"), out: "dist/app" },
+      { in: join(projectRoot, "src/styles.css"), out: "dist/styles" },
+      { in: join(projectRoot, "examples/industrial/gallery.js"), out: "examples/industrial/gallery" },
+      { in: join(projectRoot, "examples/industrial/gallery.css"), out: "examples/industrial/gallery" },
+    ],
+    outdir: siteRoot,
     bundle: true,
     splitting: true,
     format: "esm",
@@ -209,9 +215,9 @@ async function bundleApp(version) {
     target: ["es2020", "chrome90", "edge90", "firefox90", "safari14"],
     minify: true,
     legalComments: "none",
-    entryNames: "[name]",
-    chunkNames: "chunks/[name]-[hash]",
-    assetNames: "assets/[name]-[hash]",
+    entryNames: "[dir]/[name]",
+    chunkNames: "dist/chunks/[name]-[hash]",
+    assetNames: "dist/assets/[name]-[hash]",
     plugins: [createAssetVersionPlugin(version)],
     logLevel: "info",
   });

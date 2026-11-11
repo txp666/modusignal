@@ -83,6 +83,14 @@
 - **Modbus RTU**：一问一答收发，超时与异常码诊断；寄存器表支持 16 / 32 位整数和 Float32 等多种格式。
 - **HART**：地址扫描、通用命令、PV/SV/TV/QV 轮询，仪表参数设置与输入输出校正；应答超时和响应码诊断，写操作发送前确认。
 - **自定义设备**：和 [FluentHMI Studio](https://github.com/txp666/FluentHMI-Studio) 一样的拖拽画布。按钮、开关、滑块、数值显示、仪表盘、指示灯、实时曲线等控件按键值、JSON 路径、HEX 字节或 Modbus 寄存器取值（可加换算表达式），按文本、HEX、JSON 或 Modbus 发命令；串口、TCP（经 WebSocket）、MQTT 链路卡片在画布上配置和连接，可放多张，Modbus 绑定自动轮询；数据接收、数据发送、日志也是卡片。工程存成 `.uidp`，能在 FluentHMI Studio / PyQt UI Designer 中打开，也能导入它们的工程。
+
+  给 AI 生成浏览器工程时，串口选择 Web Serial（Chrome/Edge，HTTPS 或 localhost），TCP 选择 WebSocket 网关端点，MQTT 选择 broker 的 WebSocket 端点；HTTPS 页面使用 WSS。格式与模板见共享的 [`.uidp` AI 入口](https://raw.githubusercontent.com/txp666/FluentHMI-Studio/main/docs/uidp-format.md)。
+
+  控件栏的「工业仪表」（12 款）和「工业设备」（25 款）覆盖压力、流量、液位、泵阀、输送和配电。导入[工业控件回放](examples/industrial/工业控件回放.uidp)可用模拟反馈查看 36 种控件。[运行方法和控件属性](https://raw.githubusercontent.com/txp666/FluentHMI-Studio/main/docs/uidp/industrial.md)
+
+  「汽车电子」13 款、「电子 DIY」14 款、「嵌入式」14 款均为只读反馈控件。导入[电子控件回放](examples/industrial/电子控件回放.uidp)，沿用 `replay.py --frames 电子反馈.jsonl --web` 回放电子反馈。[控件属性与类型](https://raw.githubusercontent.com/txp666/FluentHMI-Studio/main/docs/uidp/electronics.md)
+
+  本地运行 `npm run build` 和 `npm run preview` 后，可自动回放全部动态控件，也可选帧观察正反转、故障和恢复。进入「信号与诊断」可对照同一个状态字的指示灯和时序，并查看编码器、电芯、电源和换向阀。页面可下载同一份桌面工程。[本地动态控件演示](http://127.0.0.1:4173/examples/industrial/) · [信号与诊断](http://127.0.0.1:4173/examples/industrial/?page=%E4%BF%A1%E5%8F%B7%E4%B8%8E%E8%AF%8A%E6%96%AD)
 - **实时曲线**：多曲线显示，CSV 导入导出。
 - **其它**：中英文界面、深浅色主题。
 

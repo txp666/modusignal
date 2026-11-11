@@ -83,6 +83,14 @@ Switching devices also switches the transport and its defaults.
 - **Modbus RTU**: request/response exchanges with timeout and exception diagnostics; a register table in 16 / 32-bit integer, Float32 and other formats.
 - **HART**: address scan, universal commands, PV/SV/TV/QV polling, instrument settings and I/O calibration; response timeout and response-code diagnostics, with confirmation before writes.
 - **Custom device**: a drag-and-drop canvas like [FluentHMI Studio](https://github.com/txp666/FluentHMI-Studio). Buttons, switches, sliders, numeric displays, gauges, LEDs, live charts and more take their values by key, JSON path, HEX bytes or Modbus register (with an optional expression) and send text, HEX, JSON or Modbus commands. Serial, TCP (through WebSocket) and MQTT link cards are configured and connected on the canvas, several at once, and Modbus bindings are polled automatically; receiving, sending and the log are cards too. Projects are `.uidp` files that open in FluentHMI Studio / PyQt UI Designer, and their projects import.
+
+  For AI-generated browser projects, use Web Serial for serial (Chrome/Edge, HTTPS or localhost), a WebSocket gateway endpoint for TCP, and the broker’s WebSocket endpoint for MQTT. Use WSS on HTTPS pages. Find the format and templates in the shared [`.uidp` AI entry point](https://raw.githubusercontent.com/txp666/FluentHMI-Studio/main/docs/uidp-format.md).
+
+  The Industrial Instruments (12 widgets) and Industrial Equipment (25 widgets) groups include pressure, flow, level, pumps, valves, conveyors, and electrical devices. The original [industrial feedback replay project](examples/industrial/工业控件回放.uidp) covers 36 of them. The full gallery also demonstrates the three-position directional valve.
+
+  Automotive electronics provides 13 read-only feedback widgets, Electronics DIY 14, and Embedded systems 14. Open the [electronics replay project](examples/industrial/电子控件回放.uidp) and use `replay.py --frames 电子反馈.jsonl --web` with the electronics frames. See the [widget types and properties](https://raw.githubusercontent.com/txp666/FluentHMI-Studio/main/docs/uidp/electronics.md).
+
+  Run `npm run build` and `npm run preview` to open the local gallery. Select a frame to inspect motion, faults, bit patterns, and recovery, or download the same project for desktop use. The Signals and Diagnostics tab pairs a status word with its timing trace and displays encoder, battery, power supply, and valve feedback. [Local dynamic widget gallery](http://127.0.0.1:4173/examples/industrial/) · [Signals and Diagnostics](http://127.0.0.1:4173/examples/industrial/?page=%E4%BF%A1%E5%8F%B7%E4%B8%8E%E8%AF%8A%E6%96%AD)
 - **Live chart**: multiple series, CSV import and export.
 - **Also**: Chinese and English UI, light and dark themes.
 
