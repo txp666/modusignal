@@ -1,0 +1,33 @@
+@import "../../src/canvas.css";
+
+:root { font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #1a3343; background: #f2f6f8; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+main { width: min(1160px, 100%); margin: 0 auto; padding: 32px 24px; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 22px; }
+h1 { font-size: clamp(24px, 3vw, 34px); margin: 0; }
+header a { color: #135c80; text-underline-offset: 3px; }
+nav { display: flex; gap: 4px; flex-wrap: wrap; border-bottom: 1px solid #cbd7df; }
+button, select { color: inherit; font: inherit; cursor: pointer; }
+nav button { border: 0; border-bottom: 3px solid transparent; background: transparent; padding: 11px 15px; }
+nav button[aria-pressed="true"] { color: #125b7a; font-weight: 650; border-color: #15779a; }
+.playback { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
+.playback label { font-weight: 600; }
+.playback button, select { padding: 7px 12px; border: 1px solid #b9c9d3; border-radius: 5px; background: white; }
+select { max-width: 100%; }
+:focus-visible { outline: 2px solid #15779a; outline-offset: 2px; }
+#cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+#cards[data-count="6"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+#cards .hmi-industrial { position: relative; height: 156px; padding: 9px; background: white; border: 1px solid #d2dce3; border-radius: 7px; }
+#cards[data-count="6"] .hmi-industrial { height: 192px; }
+#cards .hmi-industrial-title, #cards .hmi-industrial-reading { font-size: 13px; }
+#error { color: #9f2842; }
+@media (max-width: 760px) {
+  main { padding: 18px 12px; }
+  header { margin-bottom: 12px; }
+  nav button { padding: 9px; }
+  #cards, #cards[data-count="6"] { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+}
+@media (max-width: 480px) {
+  #cards[data-count="6"] .hmi-industrial:is([data-type="StatusWordPanel"], [data-type="DigitalTimingChart"], [data-type="BmsCellMatrix"]) { grid-column: 1 / -1; }
+}

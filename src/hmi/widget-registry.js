@@ -1,3 +1,6 @@
+import { BIT_PROFILE_TYPES } from "./extended-feedback.js";
+import industrialCatalog from "./industrial-catalog.js";
+
 // The .uidp widget types, their default sizes and properties, from FluentHMI Studio's
 // docs/uidp-widgets.md (generated from its widget registry). Option values stay in Chinese:
 // they are what the file holds. Pure data: no DOM.
@@ -227,6 +230,7 @@ export const WIDGET_TYPES = {
     { name: "curveMbRegOrder", kind: "option", default: "大端(AB CD)", options: ["大端(AB CD)", "小端(CD AB)"], label: "寄存器序(MB)" },
     { name: "curveMbFcFilter", kind: "int", default: -1, min: -1, max: 255, label: "功能码过滤" },
     { name: "curveMbSlaveFilter", kind: "int", default: -1, min: -1, max: 255, label: "从站过滤" },
+    { name: "curveExpression", kind: "text", default: "", label: "转换表达式" },
   ] },
   GaugeMeter: { group: "chart", name: "仪表盘", size: [180, 180], min: [80, 80], props: [
     { name: "title", kind: "text", default: "仪表", label: "标题" },
@@ -324,6 +328,40 @@ export const WIDGET_TYPES = {
   CanMonitor: { group: "comm", name: "报文监视", size: [560, 280], min: [240, 100] },
   ModbusSlaveTable: { group: "comm", name: "从站寄存器表", size: [260, 300], min: [160, 120] },
 };
+
+// One metadata source shared with the desktop renderers and SVG templates.
+for (const item of industrialCatalog) {
+  WIDGET_TYPES[item.type] = { group: ({ equipment: "industrialEquipment", instrument: "industrialInstrument" })[item.group] ?? item.group, name: item.name, size: item.size ?? [160, 140], min: [80, 72], props: [
+    { name: "title", kind: "text", default: item.name, label: "标题" },
+    { name: "unit", kind: "text", default: item.unit, label: "单位" },
+    { name: "value", kind: "float", default: item.value, min: -1e12, max: 1e12, label: "当前值" },
+    { name: "minimum", kind: "float", default: item.minimum, min: -1e12, max: 1e12, label: "最小值" },
+    { name: "maximum", kind: "float", default: item.maximum, min: -1e12, max: 1e12, label: "最大值" },
+    { name: "decimals", kind: "int", default: item.decimals, min: 0, max: 6, label: "小数位" },
+    ...(item.limits ? [
+      { name: "showLimits", kind: "bool", default: item.limitsOn, label: "显示上下限" },
+      { name: "lowLimit", kind: "float", default: item.limits[0], min: -1e12, max: 1e12, label: "下限" },
+      { name: "highLimit", kind: "float", default: item.limits[1], min: -1e12, max: 1e12, label: "上限" },
+    ] : []),
+    ...(item.type === "FlowPipe" ? [
+      { name: "pipeShape", kind: "option", default: "弯管", options: ["弯管", "直管"], label: "管道形状" },
+      { name: "pipeDirection", kind: "option", default: "正向布局", options: ["正向布局", "镜像布局"], label: "管道布局" },
+      { name: "pipeWidth", kind: "int", default: 16, min: 8, max: 26, label: "管道宽度" },
+    ] : []),
+    ...(item.type === "Motor" ? [{ name: "feedbackMode", kind: "option", default: "转速", options: ["转速", "运行位"], label: "反馈模式" }] : []),
+    ...(item.type === "Cylinder" ? [{ name: "feedbackMode", kind: "option", default: "行程", options: ["行程", "端位状态"], label: "反馈模式" }] : []),
+  ] };
+  const title = WIDGET_TYPES[item.type].props[0];
+  if (BIT_PROFILE_TYPES.has(item.type)) WIDGET_TYPES[item.type].props = [title,
+    { name: "value", kind: "int", default: item.value, min: 0, max: 65535, label: "示意值" },
+    { name: "bitProfile", kind: "text", default: "default", label: "位配置" },
+  ];
+  if (item.type === "RotaryEncoder") WIDGET_TYPES[item.type].props = [title,
+    { name: "value", kind: "int", default: item.value, min: -Number.MAX_SAFE_INTEGER, max: Number.MAX_SAFE_INTEGER, label: "累计脉冲" },
+    { name: "pulsesPerTurn", kind: "int", default: 1024, min: 1, max: Number.MAX_SAFE_INTEGER, label: "每圈脉冲数" },
+  ];
+  if (["BmsCellMatrix", "DcPowerSupply"].includes(item.type)) WIDGET_TYPES[item.type].props = [title];
+}
 
 /** Properties whose label differs on this widget type from the one other types show. */
 export const LABEL_OVERRIDES = new Set(["LineEdit.text", "ToggleSwitch.mbAddress", "ToggleSwitch.notify", "NumericDisplay.value", "ProgressBar.value", "ProgressRingDisplay.value", "GaugeMeter.value", "MqttConfigCard.defaultHost"]);

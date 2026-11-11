@@ -1,3 +1,5 @@
+import industrialCatalog from "./hmi/industrial-catalog.js";
+
 const SUPPORTED_LANGS = ["zh", "en"];
 
 const TRANSLATIONS = {
@@ -1478,6 +1480,7 @@ Offset 0 → 100, Offset 2 → 200</code></pre>
   "hmi.prop.currentCurve": { zh: "当前编辑曲线", en: "Curve being edited" },
   "hmi.prop.curveName": { zh: "曲线名称", en: "Curve name" },
   "hmi.prop.curveParseMode": { zh: "解析模式", en: "Parse mode" },
+  "hmi.prop.curveExpression": { zh: "转换表达式", en: "Conversion expression" },
   "hmi.prop.curveKey": { zh: "匹配键", en: "Key" },
   "hmi.prop.curveJsonPath": { zh: "JSON路径", en: "JSON path" },
   "hmi.prop.curveByteOffset": { zh: "字节偏移", en: "Byte offset" },
@@ -1888,6 +1891,34 @@ Offset 0 → 100, Offset 2 → 200</code></pre>
   "hmi.zoomInTitle": { zh: "放大（⌘/Ctrl +）", en: "Zoom in (⌘/Ctrl +)" },
   "hmi.zoomOutTitle": { zh: "缩小（⌘/Ctrl −）", en: "Zoom out (⌘/Ctrl −)" },
 };
+
+for (const item of industrialCatalog) {
+  TRANSLATIONS[`hmi.widget.${item.type}`] = { zh: item.name, en: item.en };
+}
+for (const [key, zh, en] of [
+  ["prop.showLimits", "显示上下限", "Show limits"], ["prop.lowLimit", "下限", "Low limit"], ["prop.highLimit", "上限", "High limit"],
+  ["prop.pipeShape", "管道形状", "Pipe shape"], ["prop.pipeDirection", "管道布局", "Pipe layout"], ["prop.pipeWidth", "管道宽度", "Pipe width"], ["prop.feedbackMode", "反馈模式", "Feedback mode"],
+  ["opt.弯管", "弯管", "Elbow"], ["opt.直管", "直管", "Straight"], ["opt.正向布局", "正向布局", "Normal layout"], ["opt.镜像布局", "镜像布局", "Mirrored layout"],
+  ["opt.转速", "转速", "Speed"], ["opt.运行位", "运行位", "Run bit"], ["opt.行程", "行程", "Stroke"], ["opt.端位状态", "端位状态", "End positions"],
+  ["industrial.forward", "正向", "Forward"], ["industrial.reverse", "反向", "Reverse"], ["industrial.stopped", "停止", "Stopped"], ["industrial.zeroFlow", "零流量", "Zero flow"],
+  ["industrial.input", "输入", "Input"], ["industrial.output", "输出", "Output"], ["industrial.running", "运行", "Running"],
+  ["industrial.between", "两端未到位", "Neither end reached"], ["industrial.retracted", "缩回", "Retracted"], ["industrial.extended", "伸出", "Extended"],
+  ["industrial.lowAlarm", "低限报警", "Low limit alarm"], ["industrial.highAlarm", "高限报警", "High limit alarm"],
+]) TRANSLATIONS[`hmi.${key}`] = { zh, en };
+for (const [key, zh, en] of [
+  ["bitProfile.title", "共享位配置", "Shared bit profile"], ["bitProfile.use", "使用配置", "Use profile"], ["bitProfile.name", "配置名称", "Profile name"],
+  ["bitProfile.width", "位宽", "Bit width"], ["bitProfile.bitName", "位名", "Bit name"], ["bitProfile.color", "点亮色", "Active color"],
+  ["bitProfile.sharedHint", "修改位宽、位名或颜色会更新所有使用此配置的控件；改名也会更新全部引用。", "Width, names and colors update every widget using this profile; renaming updates all references."],
+  ["prop.pulsesPerTurn", "每圈脉冲数", "Pulses per turn"], ["extended.unknown", "方向未知", "Direction unknown"],
+  ["extended.turns", "圈", "turns"], ["extended.minCell", "最低", "Minimum"], ["extended.maxCell", "最高", "Maximum"],
+]) TRANSLATIONS[`hmi.${key}`] = { zh, en };
+TRANSLATIONS["hmi.group.industrialEquipment"] = { zh: "工业设备", en: "Industrial equipment" };
+TRANSLATIONS["hmi.group.industrialInstrument"] = { zh: "工业仪表", en: "Industrial instruments" };
+TRANSLATIONS["hmi.group.automotive"] = { zh: "汽车电子", en: "Automotive electronics" };
+TRANSLATIONS["hmi.group.diy"] = { zh: "电子 DIY", en: "Electronics DIY" };
+TRANSLATIONS["hmi.group.embedded"] = { zh: "嵌入式", en: "Embedded systems" };
+TRANSLATIONS["hmi.industrial.waiting"] = { zh: "待数据", en: "Waiting for data" };
+TRANSLATIONS["hmi.industrial.invalid"] = { zh: "数据异常", en: "Invalid data" };
 
 let currentLang = null;
 

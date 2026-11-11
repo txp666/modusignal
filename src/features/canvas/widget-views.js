@@ -1,3 +1,6 @@
+import { INDUSTRIAL_CATALOG } from "../../hmi/industrial.js";
+import { industrialView } from "./industrial-view.js";
+
 // How each .uidp widget looks on the canvas, in design (inert) and run mode (live controls).
 // A view is { el, body, setValue(value), destroy(), resize() }; bound values arrive through
 // setValue and never send a command back.
@@ -573,7 +576,7 @@ const FACTORIES = {
 
 /** The view of one widget, positioned by its geometry (relative to its container). */
 export function createWidgetView(widget, ctx) {
-  const factory = isSupported(widget) ? FACTORIES[widget.type] : placeholder;
+  const factory = INDUSTRIAL_CATALOG.has(widget.type) ? industrialView : isSupported(widget) ? FACTORIES[widget.type] : placeholder;
   const view = factory(widget, ctx);
   const { x, y, w, h } = geometryOf(widget);
   // A tab page starts below the tab bar; its children's coordinates count from the TabWidget.

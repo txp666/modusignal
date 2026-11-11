@@ -1,3 +1,4 @@
+import { BIT_PROFILE_TYPES, bitProfileName, getBitProfile, setBitProfile, renameBitProfile } from "../../hmi/extended-feedback.js";
 // The property panel of the canvas editor: the project (name, canvas, frame format) when nothing is
 // selected, else the selected widget's id, geometry, properties, data binding and command. Every edit
 // goes through ctx.change(mutate, options), which records undo and redraws.
@@ -394,7 +395,8 @@ function bindingFieldControl(widget, name, ctx, label) {
 function renderBinding(root, widget, ctx) {
   const binding = section(i18n("hmi.panel.binding"));
   const mode = bindingValue(widget, "parseMode");
-  binding.append(field(i18n("hmi.binding.parseMode"), select(PARSE_MODES, mode, (v) => ctx.change(() => setBindingField(widget, "parseMode", v), { panel: true }))));
+  const modes = ["BmsCellMatrix", "DcPowerSupply"].includes(widget.type) ? PARSE_MODES.slice(0, 2) : PARSE_MODES;
+  binding.append(field(i18n("hmi.binding.parseMode"), select(modes, mode, (v) => ctx.change(() => setBindingField(widget, "parseMode", v), { panel: true }))));
   for (const name of PARSE_MODE_FIELDS[mode] ?? []) {
     const control = bindingFieldControl(widget, name, ctx, i18n(`hmi.binding.${name}`));
     if (control) binding.append(control);
@@ -452,6 +454,7 @@ function renderCurves(root, widget, ctx) {
         field(i18n("hmi.binding.mbSlaveFilter"), numberInput(get("mbSlaveFilter"), (v) => set("mbSlaveFilter", v), { min: -1, max: 247 })),
       );
     }
+    box.append(field(i18n("hmi.prop.curveExpression"), textInput(get("expression"), (v) => set("expression", v.trim(), { coalesce: `${prefix}expression` }), { placeholder: "value * 0.1" }), i18n("hmi.binding.expressionHint")));
     curves.append(box);
   }
   root.append(curves);
@@ -475,6 +478,35 @@ function renderCardParser(root, widget, ctx) {
     widget.properties.parserConfig = config;
     return true;
   }, { coalesce: coalesce ? `card.${coalesce}` : undefined, panel: !coalesce }));
+  root.append(box);
+}
+
+function renderBitProfile(root, widget, ctx) {
+  const name = bitProfileName(widget), profile = getBitProfile(ctx.project, name);
+  const box = section(i18n("hmi.bitProfile.title"));
+  const names = [...new Set(["default", ...Object.keys(ctx.project.bitProfiles ?? {}), name])];
+  box.append(field(i18n("hmi.bitProfile.use"), select(names, name, (next) => ctx.change(() => setProp(widget, "bitProfile", next), { panel: true }))));
+  const rename = textInput(name, () => {});
+  rename.addEventListener("change", () => {
+    const next = rename.value.trim();
+    if (next === name) return;
+    if (!next || Object.hasOwn(ctx.project.bitProfiles ?? {}, next)) {
+      rename.value = name; return;
+    }
+    ctx.change(() => renameBitProfile(ctx.project, name, next), { panel: true });
+  });
+  box.append(field(i18n("hmi.bitProfile.name"), rename));
+  const update = (mutate, options = {}) => ctx.change(() => {
+    const next = getBitProfile(ctx.project, name); mutate(next); setBitProfile(ctx.project, name, next);
+  }, options);
+  box.append(field(i18n("hmi.bitProfile.width"), select([8, 16], profile.width, (width) => update((next) => { next.width = width; }, { panel: true }), String)));
+  profile.bits.forEach((bit, index) => {
+    box.append(field(`B${index} · ${i18n("hmi.bitProfile.bitName")}`, textInput(bit.name, (value) => update((next) => { next.bits[index].name = value; }, { coalesce: `bitProfile.${name}.${index}.name` }))));
+    const color = document.createElement("input"); color.type = "color"; color.value = bit.color;
+    color.addEventListener("input", () => update((next) => { next.bits[index].color = color.value; }, { coalesce: `bitProfile.${name}.${index}.color` }));
+    box.append(field(`B${index} · ${i18n("hmi.bitProfile.color")}`, color));
+  });
+  box.append(el("p", "hmi-panel-note", i18n("hmi.bitProfile.sharedHint")));
   root.append(box);
 }
 
@@ -515,6 +547,7 @@ function renderWidget(root, widget, ctx) {
   const props = section(i18n("hmi.panel.properties"));
   for (const def of widgetMeta(widget.type).props) {
     if (COMMAND_TYPES.has(widget.type) && COMMAND_PROPS.has(def.name)) continue;
+    if (BIT_PROFILE_TYPES.has(widget.type) && def.name === "bitProfile") continue;
     if (widget.type === "RealtimeChart" && (CURVE_EDITOR_PROPS.test(def.name) || def.name === "curveCount")) continue;
     if (!propertyRowVisible(widget, def.name)) continue;
     const control = propControl(widget, def, ctx);
@@ -525,6 +558,7 @@ function renderWidget(root, widget, ctx) {
     renderCardParser(root, widget, ctx);
     if (propValue(widget, "modbusRole") === "从站") root.append(el("p", "hmi-panel-note", i18n("hmi.card.slaveNote")));
   }
+  if (BIT_PROFILE_TYPES.has(widget.type)) renderBitProfile(root, widget, ctx);
   if (widget.type === "RealtimeChart") renderCurves(root, widget, ctx);
   if (BIND_PROPERTIES[widget.type]) renderBinding(root, widget, ctx);
   if (COMMAND_TYPES.has(widget.type)) renderCommand(root, widget, ctx);

@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>动态控件全景 · ModuSignal</title>
+  <link rel="stylesheet" href="./gallery.css">
+  <script type="module" src="./gallery.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>动态控件全景</h1>
+      <a href="./动态控件全景.uidp" download>下载 .uidp 工程</a>
+    </header>
+    <nav id="pages" aria-label="控件分类"></nav>
+    <div class="playback">
+      <label for="stage">反馈阶段</label>
+      <select id="stage" disabled></select>
+      <button id="playback" type="button" disabled>暂停换帧</button>
+    </div>
+    <section id="cards" aria-label="动态控件"></section>
+    <p id="error" role="alert" hidden></p>
+  </main>
+</body>
+</html>
