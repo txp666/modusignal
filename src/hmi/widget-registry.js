@@ -89,6 +89,8 @@ export const WIDGET_TYPES = {
   ToggleSwitch: { group: "basic", name: "开关", size: [140, 30], min: [30, 20], props: [
     { name: "label", kind: "text", default: "开关", label: "标签" },
     { name: "checked", kind: "bool", default: false, label: "默认开启" },
+    { name: "onCondition", kind: "option", default: "非零为开", options: ["非零为开", "等于指定值"], label: "开启判定" },
+    { name: "onValue", kind: "text", default: "1", label: "判定值" },
     { name: "commandMode", kind: "option", default: "文本", options: ["文本", "HEX", "JSON", "Modbus", "CAN"], label: "发送模式" },
     { name: "onCommand", kind: "command", default: "", label: "开启命令" },
     { name: "offCommand", kind: "command", default: "", label: "关闭命令" },
@@ -100,7 +102,8 @@ export const WIDGET_TYPES = {
     { name: "byteOrder", kind: "option", default: "大端(BE)", options: ["大端(BE)", "小端(LE)"], label: "字节序" },
     { name: "commandNewline", kind: "option", default: "\\r\\n", options: ["无", "\\r\\n", "\\n", "\\r"], label: "换行符" },
     { name: "mbSlave", kind: "int", default: 1, min: 1, max: 247, label: "从站地址" },
-    { name: "mbAddress", kind: "int", default: 0, min: 0, max: 65535, label: "线圈地址" },
+    { name: "mbArea", kind: "option", default: "线圈", options: ["线圈", "保持寄存器"], label: "地址类型" },
+    { name: "mbAddress", kind: "int", default: 0, min: 0, max: 65535, label: "线圈/寄存器地址" },
     { name: "canId", kind: "text", default: "", label: "CAN 报文" },
     { name: "canFd", kind: "bool", default: false, label: "CAN FD 帧" },
     { name: "canCycle", kind: "int", default: 0, min: 0, max: 60000, label: "循环周期(ms)" },
@@ -364,4 +367,4 @@ for (const item of industrialCatalog) {
 }
 
 /** Properties whose label differs on this widget type from the one other types show. */
-export const LABEL_OVERRIDES = new Set(["LineEdit.text", "ToggleSwitch.mbAddress", "ToggleSwitch.notify", "NumericDisplay.value", "ProgressBar.value", "ProgressRingDisplay.value", "GaugeMeter.value", "MqttConfigCard.defaultHost"]);
+export const LABEL_OVERRIDES = new Set(["LineEdit.text", "ToggleSwitch.onValue", "ToggleSwitch.mbArea", "ToggleSwitch.mbAddress", "ToggleSwitch.notify", "NumericDisplay.value", "ProgressBar.value", "ProgressRingDisplay.value", "GaugeMeter.value", "MqttConfigCard.defaultHost"]);

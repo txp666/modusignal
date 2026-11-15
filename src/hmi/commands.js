@@ -403,7 +403,9 @@ export function commandForEvent(type, props, event = {}) {
     }
     case "ToggleSwitch": {
       if (modbus) {
-        return { kind: "modbus", request: modbusFromProps({ ...props, mbFunc: "05 写单线圈" }, event.checked ? 0xff00 : 0) };
+        const holding = textProp(props, "mbArea", "线圈") === "保持寄存器";
+        const settings = { ...props, mbFunc: holding ? "06 写单寄存器" : "05 写单线圈", mbDataType: "uint16" };
+        return { kind: "modbus", request: modbusFromProps(settings, event.checked ? (holding ? 1 : 0xff00) : 0) };
       }
       const command = strip(prop(props, event.checked ? "onCommand" : "offCommand", ""));
       return command ? applyTemplate(props, command) : null;
