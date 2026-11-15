@@ -268,7 +268,8 @@ export function formatDisplay(value, displayFormat = "自动", decimals = "自�
 /** The value a widget takes for a bound value (Label text, a switch's state, a slider's integer…). */
 export function toWidgetValue(type, value, props = {}) {
   switch (type) {
-    case "ToggleSwitch": return bindingBoolean(value);
+    case "ToggleSwitch": return props.onCondition === "等于指定值"
+      ? bindingFloat(value) === bindingFloat(props.onValue ?? "1") : bindingBoolean(value);
     case "Slider":
     case "SpinBox":
     case "ProgressBar":

@@ -21,3 +21,14 @@ for (const vector of cases) {
     assert.deepStrictEqual(plainValue(got), plainValue(vector.expect));
   });
 }
+
+test("switch receive-state rules support nonzero, a custom value and zero as ON", () => {
+  for (const props of [{}, { onCondition: "等于指定值", onValue: "5" }, { onCondition: "等于指定值", onValue: "0" }]) {
+    const entry = BindingEntry.fromWidget({ id: "switch", type: "ToggleSwitch", properties: props, binding: { key: "state" } });
+    for (const state of [0, 1, 5, -1]) {
+      const expected = props.onCondition ? state === Number(props.onValue) : state !== 0;
+      assert.deepEqual(entry.onParsed({ state }), [expected]);
+    }
+    assert.deepEqual(entry.onParsed({ state: "invalid" }), []);
+  }
+});

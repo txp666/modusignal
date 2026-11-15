@@ -63,6 +63,8 @@ A static web app for debugging devices from a browser. No installer, no backend.
 
 Not for long-running data acquisition, plant monitoring or SCADA; it is a debugging tool.
 
+For a Modbus switch on the Custom Device canvas, choose a coil (default, FC05) or a holding register (FC06: ON writes `1`, OFF writes `0`). Bind its state to a holding register. In the switch properties, choose an ON condition: Nonzero is ON (default), or Equals comparison value and enter the value (default `1`). This rule applies to received state; register commands still write 1/0. These settings are shared with FluentHMI Studio and PyQt UI Designer `.uidp` projects.
+
 ## Built-in devices
 
 | Device | Transport | Default | Notes |

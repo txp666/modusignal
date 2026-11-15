@@ -18,7 +18,7 @@ import { parserErrorText } from "./canvas-messages.js";
 
 const COMMAND_PROPS = new Set([
   "commandMode", "command", "commandTemplate", "commandJsonNewline", "frameHeader", "frameTail", "dataType",
-  "byteOrder", "commandNewline", "mbSlave", "mbFunc", "mbAddress", "mbDataType", "mbRegOrder", "mbValue",
+  "byteOrder", "commandNewline", "mbSlave", "mbFunc", "mbArea", "mbAddress", "mbDataType", "mbRegOrder", "mbValue",
   "canId", "canFd", "canCycle", "onCommand", "offCommand", "sendOnChange", "sendOnEnter", "sendOnSelect", "commands",
 ]);
 const CURVE_EDITOR_PROPS = /^curve(?!Count$)|^currentCurve$/;
@@ -308,7 +308,7 @@ const MODE_VISIBILITY = {
   文本: ["command", "onCommand", "offCommand", "commandNewline", "commandTemplate"],
   HEX: ["command", "onCommand", "offCommand", "commandTemplate", "frameHeader", "frameTail", "dataType", "byteOrder"],
   JSON: ["command", "onCommand", "offCommand", "commandTemplate", "commandJsonNewline"],
-  Modbus: ["mbSlave", "mbFunc", "mbAddress", "mbValue", "mbDataType", "mbRegOrder"],
+  Modbus: ["mbSlave", "mbFunc", "mbArea", "mbAddress", "mbValue", "mbDataType", "mbRegOrder"],
   CAN: ["command", "onCommand", "offCommand", "commandTemplate", "dataType", "byteOrder", "canId", "canFd", "canCycle"],
 };
 const MODE_FIELDS = new Set(Object.values(MODE_VISIBILITY).flat());
@@ -324,6 +324,7 @@ const NOTIFY_FIELDS = new Set(["notifyTitle", "notifyContent", "notifyType", "no
 
 /** Whether a property's row shows for the widget's current settings. */
 export function propertyRowVisible(widget, name) {
+  if (widget.type === "ToggleSwitch" && name === "onValue") return propValue(widget, "onCondition") === "等于指定值";
   const has = (prop) => Boolean(propDef(widget.type, prop));
   if (has("parserConfig") || has("modbusRole")) {
     const modbus = MODBUS_PARSERS.includes(String(propValue(widget, "defaultParser")));
