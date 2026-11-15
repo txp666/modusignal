@@ -47,6 +47,19 @@ const TRANSLATIONS = {
   "nav.collapseParams": { zh: "折叠连接参数", en: "Collapse Connection Params" },
   "nav.transportMode": { zh: "传输方式", en: "Transport" },
 
+  // App settings / repository information
+  "settings.title": { zh: "设置与关于", en: "Settings & About" },
+  "settings.repositoryDescription": { zh: "浏览器设备调试台，支持串口、WebUSB、WebSocket、MQTT 与可视化自定义设备。", en: "Browser device debugger with Web Serial, WebUSB, WebSocket, MQTT and a visual Custom Device workspace." },
+  "settings.repositoryLinks": { zh: "仓库入口", en: "Repository links" },
+  "settings.source": { zh: "源代码", en: "Source" },
+  "settings.issues": { zh: "问题反馈", en: "Issues" },
+  "settings.license": { zh: "许可证", en: "License" },
+  "settings.relatedTools": { zh: "相关工具", en: "Related tools" },
+  "settings.fluentHmiDescription": { zh: "原生 C++/Qt 6 上位机设计器与运行时导出。", en: "Native C++/Qt 6 HMI designer and runtime export." },
+  "settings.pythonDescription": { zh: "Python/PyQt5 上位机设计器，支持源码导出与 Nuitka 打包。", en: "Python/PyQt5 HMI designer with source export and Nuitka packaging." },
+  "settings.simulatorDescription": { zh: "独立的经典 S7comm 服务端，用于客户端测试。", en: "Independent classic S7comm server for client testing." },
+  "settings.close": { zh: "关闭", en: "Close" },
+
   // 环境状态
   "env.needHttps": { zh: "需要 HTTPS 或 localhost", en: "HTTPS or localhost required" },
   "env.notSupported": { zh: "当前环境不支持", en: "Not supported: " },
