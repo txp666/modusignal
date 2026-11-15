@@ -72,6 +72,7 @@
         <p data-i18n="app.subtitle">在线设备调试平台（串口·WebSocket·HART·MQTT）</p>
       </div>
       <div class="topbar-actions">
+        <button id="appSettingsButton" class="ghost-button settings-trigger" type="button" aria-haspopup="dialog" aria-controls="appSettingsDialog" data-i18n-aria-label="settings.title" data-i18n-title="settings.title" aria-label="设置与关于" title="设置与关于">⚙</button>
         <button id="themeSwitchButton" class="ghost-button theme-switch" type="button" aria-label="切换到深色主题" title="切换到深色主题">☾</button>
         <button id="langSwitchButton" class="ghost-button lang-switch" type="button" data-i18n="lang.switch" data-i18n-aria-label="nav.switchLanguage" data-i18n-title="nav.switchLanguage" aria-label="切换语言" title="切换语言">EN</button>
         <span id="secureState" class="state-pill" data-i18n="nav.checkingEnv" data-marquee="检测环境">检测环境</span>
@@ -180,6 +181,39 @@
       </p>
     </footer>
   </div>
+
+  <dialog id="appSettingsDialog" class="app-settings-dialog" aria-labelledby="appSettingsTitle">
+    <form method="dialog" class="app-settings-shell">
+      <header class="app-settings-header">
+        <h2 id="appSettingsTitle" data-i18n="settings.title">设置与关于</h2>
+        <button class="ghost-button" type="submit" value="close" data-i18n-aria-label="settings.close" aria-label="关闭">×</button>
+      </header>
+      <section class="app-settings-section" aria-labelledby="appRepositoryTitle">
+        <div class="app-repository-identity">
+          <h3 id="appRepositoryTitle">modusignal</h3>
+          <span class="state-pill">Apache-2.0</span>
+        </div>
+        <p data-i18n="settings.repositoryDescription">浏览器设备调试台，支持串口、WebUSB、WebSocket、MQTT 与可视化自定义设备。</p>
+        <a class="app-repository-url" href="https://github.com/txp666/modusignal" target="_blank" rel="noopener noreferrer">https://github.com/txp666/modusignal</a>
+        <nav class="app-repository-actions" data-i18n-aria-label="settings.repositoryLinks" aria-label="仓库入口">
+          <a class="action-link" href="https://github.com/txp666/modusignal" target="_blank" rel="noopener noreferrer" data-i18n="settings.source">源代码</a>
+          <a class="action-link" href="https://github.com/txp666/modusignal/issues" target="_blank" rel="noopener noreferrer" data-i18n="settings.issues">问题反馈</a>
+          <a class="action-link" href="https://github.com/txp666/modusignal/blob/main/LICENSE.txt" target="_blank" rel="noopener noreferrer" data-i18n="settings.license">许可证</a>
+        </nav>
+      </section>
+      <section class="app-settings-section" aria-labelledby="relatedRepositoriesTitle">
+        <h3 id="relatedRepositoriesTitle" data-i18n="settings.relatedTools">相关工具</h3>
+        <ul class="app-related-repositories">
+          <li><a href="https://github.com/txp666/FluentHMI-Studio" target="_blank" rel="noopener noreferrer"><strong>FluentHMI Studio</strong><span data-i18n="settings.fluentHmiDescription">原生 C++/Qt 6 上位机设计器与运行时导出。</span></a></li>
+          <li><a href="https://github.com/txp666/PyQt-UI-Designer" target="_blank" rel="noopener noreferrer"><strong>PyQt UI Designer</strong><span data-i18n="settings.pythonDescription">Python/PyQt5 上位机设计器，支持源码导出与 Nuitka 打包。</span></a></li>
+          <li><a href="https://github.com/txp666/FluentPLC-Simulator" target="_blank" rel="noopener noreferrer"><strong>FluentPLC Simulator</strong><span data-i18n="settings.simulatorDescription">独立的经典 S7comm 服务端，用于客户端测试。</span></a></li>
+        </ul>
+      </section>
+      <footer class="app-settings-footer">
+        <button class="primary-button" type="submit" value="close" data-i18n="settings.close">关闭</button>
+      </footer>
+    </form>
+  </dialog>
 
   <script type="module" src="./src/app.js?v=__ASSET_VERSION__"></script>
 </body>

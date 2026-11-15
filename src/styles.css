@@ -226,7 +226,8 @@ label {
   color: var(--muted);
 }
 
-.theme-switch {
+.theme-switch,
+.settings-trigger {
   min-width: 2rem;
   min-height: 2rem;
   padding: 0;
@@ -234,6 +235,40 @@ label {
   font-size: 1rem;
   line-height: 1;
 }
+
+.app-settings-dialog {
+  width: min(680px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  margin: auto;
+  padding: 0;
+  overflow: auto;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+}
+
+.app-settings-dialog::backdrop { background: rgba(0, 0, 0, 0.42); }
+.app-settings-shell { display: grid; }
+.app-settings-header,
+.app-settings-footer { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 24px; }
+.app-settings-header { border-bottom: 1px solid var(--line); }
+.app-settings-header h2 { font-size: 20px; }
+.app-settings-header button { min-width: 36px; padding: 0; font-size: 22px; }
+.app-settings-footer { justify-content: flex-end; border-top: 1px solid var(--line); }
+.app-settings-section { display: grid; gap: 12px; padding: 20px 24px; }
+.app-settings-section + .app-settings-section { border-top: 1px solid var(--line); }
+.app-settings-section h3 { margin: 0; font-size: 16px; }
+.app-settings-section p { color: var(--muted); line-height: 1.6; }
+.app-repository-identity { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.app-repository-url { color: var(--accent-strong); overflow-wrap: anywhere; font-size: 13px; }
+.app-repository-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.app-repository-actions .action-link { min-height: 36px; padding: 0 14px; font-size: 13px; }
+.app-related-repositories { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.app-related-repositories a { display: grid; gap: 4px; padding: 12px 14px; color: var(--text); border: 1px solid var(--line); border-radius: 8px; text-decoration: none; }
+.app-related-repositories a:hover { border-color: var(--accent); background: var(--surface-muted); }
+.app-related-repositories span { color: var(--muted); font-size: 13px; line-height: 1.5; }
 
 .lang-switch:hover {
   background: var(--surface);

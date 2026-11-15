@@ -1,125 +1,114 @@
 <p align="center">
-  <img src="./images/modusignal-logo.svg" alt="modusignal" width="520" />
+  <img src="images/modusignal-logo.svg" width="300" alt="modusignal">
+  <h1 align="center">modusignal</h1>
+  <p align="center">A browser device debugger and visual HMI workspace for hardware engineers</p>
+  <p align="center">English · <a href="README_zh.md">简体中文</a> · <a href="https://modusignal.cn/">Open the app</a> · <a href="CONTRIBUTING.md">Contributing</a></p>
 </p>
 
-<p align="center">
-  <b>在浏览器里直接调设备。</b><br/>
-  <sub>串口 · WebUSB · WebSocket · MQTT · Modbus RTU · HART · 自定义协议</sub>
-</p>
+modusignal is the browser workspace in the hardware tool family alongside [FluentHMI Studio](https://github.com/txp666/FluentHMI-Studio) and [PyQt UI Designer](https://github.com/txp666/PyQt-UI-Designer). Its static HTML/JavaScript app connects to serial, WebUSB, WebSocket and MQTT-over-WebSocket devices, shows traffic and live values, and provides a Custom Device canvas for the supported subset of shared `.uidp` projects. Open it in a browser; no desktop installation is required.
+
+> **Language**: English and Simplified Chinese are available in the app. Device access depends on the browser and transport; see [Browser support](#browser-support).
+
+## Screenshots
 
 <p align="center">
-  <a href="https://modusignal.cn/"><img src="https://img.shields.io/badge/live%20demo-modusignal.cn-0f766e?style=flat-square" alt="在线使用"></a>
-  <a href="./LICENSE.txt"><img src="https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square" alt="License"></a>
-  <a href="https://github.com/txp666/modusignal/stargazers"><img src="https://img.shields.io/github/stars/txp666/modusignal?style=flat-square" alt="Stars"></a>
-  <a href="https://github.com/txp666/modusignal/issues"><img src="https://img.shields.io/github/issues/txp666/modusignal?style=flat-square" alt="Issues"></a>
-  <a href="https://github.com/txp666/modusignal/commits"><img src="https://img.shields.io/github/last-commit/txp666/modusignal?style=flat-square" alt="Last commit"></a>
-</p>
-
-<p align="center">
-  <b>中文</b> ·
-  <a href="./README_EN.md">English</a> ·
-  <a href="https://modusignal.cn/">立即使用 →</a> ·
-  <a href="https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82">请求设备</a>
-</p>
-
-<p align="center">
-  <img src="./images/show.gif" alt="modusignal 演示" width="880" />
+  <img src="./images/show.gif" alt="modusignal demo" width="880" />
 </p>
 
 <table>
   <tr>
     <td width="25%" align="center">
       <img src="./images/AOMaster.png" alt="AOMaster" width="210" /><br/>
-      <sub><b>AOMaster</b><br/>4-20 mA / 0-10 V<br/>6 种波形</sub>
+      <sub><b>AOMaster</b><br/>4-20 mA / 0-10 V<br/>6 waveforms</sub>
     </td>
     <td width="25%" align="center">
       <img src="./images/hart.png" alt="HART" width="210" /><br/>
-      <sub><b>HART</b><br/>通用仪表调试<br/>PV / SV / TV / QV</sub>
+      <sub><b>HART</b><br/>Field instrument debugging<br/>PV / SV / TV / QV</sub>
     </td>
     <td width="25%" align="center">
       <img src="./images/websocket.png" alt="WebSocket" width="210" /><br/>
-      <sub><b>WebSocket</b><br/>JSON / HEX / Modbus<br/>实时曲线</sub>
+      <sub><b>WebSocket</b><br/>JSON / HEX / Modbus<br/>Live chart</sub>
     </td>
     <td width="25%" align="center">
       <img src="./images/mqtt.png" alt="MQTT" width="210" /><br/>
-      <sub><b>MQTT</b><br/>发布 / 订阅 · QoS<br/>保留消息 · 统计</sub>
+      <sub><b>MQTT</b><br/>Pub / sub · QoS<br/>Retain · stats</sub>
     </td>
   </tr>
 </table>
 
-## 简介
+## What it is
 
-浏览器里的设备调试台，纯静态前端，没有上位机要装、没有后端要起。打开网页、选设备、连上，就能看原始报文、手动发命令、看实时曲线。
+A static web app for debugging devices from a browser. No installer, no backend. Open the page, pick a device, connect, and you get raw frames, manual send, parsed values and a real-time chart.
 
-> 一个标签页，一根线，跟设备直接对话。
+> Open a tab. Plug in a device. Talk to it.
 
-**适用场景**
+**Use cases**
 
-- 临时调一块 Modbus RTU 板子，不想装厂家几百 MB 的上位机
-- 进车间带个 HART 调制解调器，笔记本插上就是 HART 调试工具
-- 新设备走 WebSocket 或 MQTT，想边看流量边看曲线
-- 把链接发给同事，比发 `setup.exe` 省事
-- 内部协议没有现成工具，在 *自定义设备* 页面拖控件搭一个上位机，不用写代码
+- Bench-test a Modbus RTU board without a several-hundred-MB vendor tool
+- Plug a HART modem into a laptop on site and you have a HART debugger
+- Bring up a WebSocket or MQTT device and watch its traffic on a live chart
+- Hand a colleague a URL instead of a `setup.exe`
+- Build a control panel for an in-house protocol by dragging widgets onto the *Custom device* canvas, no code required
 
-不适合长时间数据采集、生产监控或 SCADA，这是个调试工具。
+Not for long-running data acquisition, plant monitoring or SCADA; it is a debugging tool.
 
-自定义设备中的 Modbus 开关可选择线圈（默认，FC05）或保持寄存器（FC06，开启写 `1`、关闭写 `0`）。在数据绑定中选择保持寄存器即可读取状态，在开关属性中将「开启判定」设为「非零为开」（默认）或「等于指定值」，后者可填写「判定值」（默认 `1`）。判定用于接收状态，寄存器控制仍写 1/0。该设置与 FluentHMI Studio、PyQt UI Designer 的 `.uidp` 工程一致。
+For a Modbus switch on the Custom Device canvas, choose a coil (default, FC05) or a holding register (FC06: ON writes `1`, OFF writes `0`). Bind its state to a holding register. In the switch properties, choose an ON condition: Nonzero is ON (default), or Equals comparison value and enter the value (default `1`). This rule applies to received state; register commands still write 1/0. These settings are shared with FluentHMI Studio and PyQt UI Designer `.uidp` projects.
 
-## 内置设备
+## Built-in devices
 
-| 设备 | 传输 | 默认参数 | 说明 |
-|------|------|----------|------|
-| Modbus RTU | 串口 | 9600 8N1 | 读写保持 / 输入寄存器 |
-| HART | 串口 | 1200 8O1 | 设备搜索、通用命令、PV/SV/TV/QV、仪表设置与校正 |
-| WebSocket | WebSocket | — | JSON / HEX / Modbus 报文调试 |
-| MQTT | MQTT over WS | — | 发布订阅、QoS、保留消息、统计 |
-| AOMaster | 串口 | 115200 8N1 | 4-20 mA / 0-10 V 信号源 |
-| MicroScope Power | WebUSB | — | 小电流波形采集（[硬件](https://oshwhub.com/txp666/project_iupheygc) · [固件](https://github.com/txp666/MicroScope-Power)） |
-| 自定义设备 | 串口 / WebSocket / MQTT（画布上的链路卡片） | — | 拖拽画布，控件绑定协议、发送命令；`.uidp` 工程 |
+| Device | Transport | Default | Notes |
+|--------|-----------|---------|-------|
+| Modbus RTU | Serial | 9600 8N1 | Read / write holding and input registers |
+| HART | Serial | 1200 8O1 | Device search, universal commands, PV/SV/TV/QV, instrument settings and calibration |
+| WebSocket | WebSocket | — | JSON / HEX / Modbus message debugging |
+| MQTT | MQTT over WS | — | Pub / sub, QoS, retain, message stats |
+| AOMaster | Serial | 115200 8N1 | 4-20 mA / 0-10 V signal source |
+| MicroScope Power | WebUSB | — | Low-current waveform capture ([hardware](https://oshwhub.com/txp666/project_iupheygc) · [firmware](https://github.com/txp666/MicroScope-Power)) |
+| Custom | Serial / WebSocket / MQTT (link cards on the canvas) | — | Drag-and-drop canvas; widgets bind to the protocol and send commands; `.uidp` projects |
 
-切换设备时，通讯方式和默认参数会跟着切换。
+Switching devices also switches the transport and its defaults.
 
-## 主要功能
+## Features
 
-- **收发调试**：毫秒时间戳，HEX / 文本显示切换，暂停滚动，收发字节统计，日志保存为 .txt。
-- **Modbus RTU**：一问一答收发，超时与异常码诊断；寄存器表支持 16 / 32 位整数和 Float32 等多种格式。
-- **HART**：地址扫描、通用命令、PV/SV/TV/QV 轮询，仪表参数设置与输入输出校正；应答超时和响应码诊断，写操作发送前确认。
-- **自定义设备**：和 [FluentHMI Studio](https://github.com/txp666/FluentHMI-Studio) 一样的拖拽画布。按钮、开关、滑块、数值显示、仪表盘、指示灯、实时曲线等控件按键值、JSON 路径、HEX 字节或 Modbus 寄存器取值（可加换算表达式），按文本、HEX、JSON 或 Modbus 发命令；串口、TCP（经 WebSocket）、MQTT 链路卡片在画布上配置和连接，可放多张，Modbus 绑定自动轮询；数据接收、数据发送、日志也是卡片。工程存成 `.uidp`，能在 FluentHMI Studio / PyQt UI Designer 中打开，也能导入它们的工程。
+- **Transceiver log**: millisecond timestamps, HEX / text view, pause scroll, RX / TX byte counts, save as .txt.
+- **Modbus RTU**: request/response exchanges with timeout and exception diagnostics; a register table in 16 / 32-bit integer, Float32 and other formats.
+- **HART**: address scan, universal commands, PV/SV/TV/QV polling, instrument settings and I/O calibration; response timeout and response-code diagnostics, with confirmation before writes.
+- **Custom device**: a drag-and-drop canvas like [FluentHMI Studio](https://github.com/txp666/FluentHMI-Studio). Buttons, switches, sliders, numeric displays, gauges, LEDs, live charts and more take their values by key, JSON path, HEX bytes or Modbus register (with an optional expression) and send text, HEX, JSON or Modbus commands. Serial, TCP (through WebSocket) and MQTT link cards are configured and connected on the canvas, several at once, and Modbus bindings are polled automatically; receiving, sending and the log are cards too. Projects are `.uidp` files that open in FluentHMI Studio / PyQt UI Designer, and their projects import.
 
-  给 AI 生成浏览器工程时，串口选择 Web Serial（Chrome/Edge，HTTPS 或 localhost），TCP 选择 WebSocket 网关端点，MQTT 选择 broker 的 WebSocket 端点；HTTPS 页面使用 WSS。格式与模板见共享的 [`.uidp` AI 入口](https://raw.githubusercontent.com/txp666/FluentHMI-Studio/main/docs/uidp-format.md)。
+  For AI-generated browser projects, use Web Serial for serial (Chrome/Edge, HTTPS or localhost), a WebSocket gateway endpoint for TCP, and the broker’s WebSocket endpoint for MQTT. Use WSS on HTTPS pages. Find the format and templates in the shared [`.uidp` AI entry point](https://raw.githubusercontent.com/txp666/FluentHMI-Studio/main/docs/uidp-format.md).
 
-  控件栏的「工业仪表」（12 款）和「工业设备」（25 款）覆盖压力、流量、液位、泵阀、输送和配电。导入[工业控件回放](examples/industrial/工业控件回放.uidp)可用模拟反馈查看 36 种控件。[运行方法和控件属性](https://raw.githubusercontent.com/txp666/FluentHMI-Studio/main/docs/uidp/industrial.md)
+  The Industrial Instruments (12 widgets) and Industrial Equipment (25 widgets) groups include pressure, flow, level, pumps, valves, conveyors, and electrical devices. The original [industrial feedback replay project](examples/industrial/工业控件回放.uidp) covers 36 of them. The full gallery also demonstrates the three-position directional valve.
 
-  「汽车电子」13 款、「电子 DIY」14 款、「嵌入式」14 款均为只读反馈控件。导入[电子控件回放](examples/industrial/电子控件回放.uidp)，沿用 `replay.py --frames 电子反馈.jsonl --web` 回放电子反馈。[控件属性与类型](https://raw.githubusercontent.com/txp666/FluentHMI-Studio/main/docs/uidp/electronics.md)
+  Automotive electronics provides 13 read-only feedback widgets, Electronics DIY 14, and Embedded systems 14. Open the [electronics replay project](examples/industrial/电子控件回放.uidp) and use `replay.py --frames 电子反馈.jsonl --web` with the electronics frames. See the [widget types and properties](https://raw.githubusercontent.com/txp666/FluentHMI-Studio/main/docs/uidp/electronics.md).
 
-  本地运行 `npm run build` 和 `npm run preview` 后，可自动回放全部动态控件，也可选帧观察正反转、故障和恢复。进入「信号与诊断」可对照同一个状态字的指示灯和时序，并查看编码器、电芯、电源和换向阀。页面可下载同一份桌面工程。[本地动态控件演示](http://127.0.0.1:4173/examples/industrial/) · [信号与诊断](http://127.0.0.1:4173/examples/industrial/?page=%E4%BF%A1%E5%8F%B7%E4%B8%8E%E8%AF%8A%E6%96%AD)
-- **实时曲线**：多曲线显示，CSV 导入导出。
-- **其它**：中英文界面、深浅色主题。
+  Run `npm run build` and `npm run preview` to open the local gallery. Select a frame to inspect motion, faults, bit patterns, and recovery, or download the same project for desktop use. The Signals and Diagnostics tab pairs a status word with its timing trace and displays encoder, battery, power supply, and valve feedback. [Local dynamic widget gallery](http://127.0.0.1:4173/examples/industrial/) · [Signals and Diagnostics](http://127.0.0.1:4173/examples/industrial/?page=%E4%BF%A1%E5%8F%B7%E4%B8%8E%E8%AF%8A%E6%96%AD)
+- **Live chart**: multiple series, CSV import and export.
+- **Also**: Chinese and English UI, light and dark themes.
 
-## 桌面软件
+## Desktop software
 
-首页的"桌面软件"一栏介绍这几款软件，每款都有自己的官网：
+The "Desktop software" section of the home page introduces these apps; each has its own site:
 
-| 软件 | 官网 |
-|------|------|
-| HARTLink Studio · HART 主站与 DD 设备调试 | <https://hart.modusignal.cn/>（附 [HART 知识库](https://hart.modusignal.cn/wiki/)） |
-| Fluent 串口助手 · 串口调试、协议解析与 AI 控制 | <https://serial.modusignal.cn/> |
-| FluentHMI Studio · 拖拽做上位机（附 Python 版 PyQt UI Designer） | <https://hmi.modusignal.cn/> |
-| PageBridge · 原页版式的 PDF 阅读与翻译 | <https://pagebridge.modusignal.cn/> |
+| App | Site |
+|-----|------|
+| HARTLink Studio · HART master and DD device commissioning | <https://hart.modusignal.cn/> (with the [HART wiki](https://hart.modusignal.cn/wiki/)) |
+| Fluent Serial Assistant · serial debugging, protocol parsing and AI control | <https://serial.modusignal.cn/> |
+| FluentHMI Studio · drag-and-drop HMIs (with the Python edition, PyQt UI Designer) | <https://hmi.modusignal.cn/> |
+| PageBridge · PDF reading and translation in the original layout | <https://pagebridge.modusignal.cn/> |
 
-本站原先的软件介绍页、教程和 HART 知识库已经搬到上面这些站点，旧地址由 `_redirects` 跳转过去。
+The product pages, tutorials and HART wiki that used to live here moved to those sites; `_redirects` sends the old addresses there.
 
-## 快速开始
+## Quick start
 
-开发时不用构建，起一个静态服务即可：
+No build is needed for development; serve the repo as static files:
 
 ```bash
 python3 -m http.server 4173
 ```
 
-用 Chrome / Edge 打开 `http://localhost:4173`。
+Open `http://localhost:4173` in Chrome or Edge.
 
-构建线上版本：
+To build the site:
 
 ```bash
 npm install
@@ -127,40 +116,51 @@ npm run build
 npm run preview
 ```
 
-构建脚本是 `scripts/build.mjs`（基于 esbuild），产物在 `_site/`。网站部署在 Cloudflare Workers（`wrangler.jsonc`），构建后运行 `npx wrangler deploy`；本仓库不发 Release。
+The build script is `scripts/build.mjs` (esbuild); output goes to `_site/`. The site runs on Cloudflare Workers (`wrangler.jsonc`): build, then `npx wrangler deploy`. This repository has no Releases.
 
-## 浏览器要求
+## Browser support
 
-| 功能 | 浏览器 |
-|------|--------|
-| 串口（Web Serial） | Chrome / Edge 89+，需要 HTTPS 或 localhost |
-| WebUSB | Chrome / Edge，需要 HTTPS 或 localhost |
-| WebSocket、MQTT over WebSocket | 现代浏览器均可 |
+| Feature | Browsers |
+|---------|----------|
+| Serial (Web Serial) | Chrome / Edge 89+, HTTPS or localhost |
+| WebUSB | Chrome / Edge, HTTPS or localhost |
+| WebSocket, MQTT over WebSocket | any modern browser |
 
-Firefox 和 Safari 不支持 Web Serial / WebUSB，串口和 WebUSB 设备用不了，其它功能正常。
+Firefox and Safari don't support Web Serial or WebUSB, so serial and WebUSB devices won't work there; everything else does.
 
-## 开发
+## Development
 
-设备层和传输层分开：加一个新设备通常就是在 `src/devices/` 写驱动、在 `src/device-registry.js` 注册、在 `pages/devices/` 加页面。
+Devices and transports are kept separate. Adding a device is usually a driver in `src/devices/`, an entry in `src/device-registry.js` and a page in `pages/devices/`.
 
-- [`CONTRIBUTING.md`](./CONTRIBUTING.md)：添加设备的步骤
-- [`docs/architecture.md`](./docs/architecture.md)：模块分层
-- [`DESIGN.md`](./DESIGN.md)：界面设计规范
-- [`AI.md`](./AI.md)：各设备的协议约定与实现说明
+- [`CONTRIBUTING.md`](./CONTRIBUTING.md): steps for adding a device (in Chinese)
+- [`docs/architecture.md`](./docs/architecture.md): module layers
+- [`DESIGN.md`](./DESIGN.md): UI design guidelines
+- [`AI.md`](./AI.md): per-device protocol contracts and implementation notes (in Chinese)
 
-测试：`npm test`。
+Tests: `npm test`.
 
-`workers/cos-download-proxy/` 是 `download.modusignal.cn`（HARTLink Studio 安装包与更新清单的下载代理），单独部署。
+`workers/cos-download-proxy/` is `download.modusignal.cn`, the download proxy for HARTLink Studio packages and update manifests; it is deployed on its own.
 
-## 参与
+## Get involved
 
-项目在持续迭代。需要新设备但不方便自己写驱动的，[提一个 issue](https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82)，附上协议文档、报文样例和默认连接参数即可。也欢迎 PR 增加设备或修复驱动。
+modusignal is actively developed. If you need a device supported but don't want to write the driver, [open a request](https://github.com/txp666/modusignal/issues/new?title=%E6%96%B0%E8%AE%BE%E5%A4%87%E6%94%AF%E6%8C%81%E8%AF%B7%E6%B1%82) with the protocol document, sample frames and default connection parameters. PRs that add devices or fix drivers are welcome.
 
-## 许可证
+## Related projects
 
-[Apache License 2.0](./LICENSE.txt)。
+| Project | Role |
+| --- | --- |
+| [FluentHMI Studio](https://github.com/txp666/FluentHMI-Studio) | Native C++/Qt 6 HMI designer with standalone runtime export |
+| [PyQt UI Designer](https://github.com/txp666/PyQt-UI-Designer) | Python/PyQt5 HMI designer with editable Python source export and Nuitka packaging |
+| [modusignal](https://github.com/txp666/modusignal) | Browser device debugger and `.uidp` Custom Device editor, within browser transport limits |
+| [FluentPLC Simulator](https://github.com/txp666/FluentPLC-Simulator) | Independent desktop and CLI classic S7comm server for testing S7 clients |
 
-如果 modusignal 帮你省下了一个下午跟厂家上位机较劲的时间，点个 star 能让更多人看到它。
+The HMI tools share `.uidp` projects where their widgets and transports are supported. FluentPLC Simulator uses its own `.plcsim.json` format. S7 client support is not currently implemented in FluentHMI Studio, PyQt UI Designer or modusignal.
+
+## License
+
+[Apache License 2.0](./LICENSE.txt).
+
+If modusignal saved you an afternoon of fighting with a vendor installer, a star helps other people find it.
 
 ---
 

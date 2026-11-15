@@ -159,6 +159,10 @@ boot();
 async function boot() {
   initI18n();
   themeController = initTheme(document.getElementById("themeSwitchButton"));
+  const settingsDialog = document.getElementById("appSettingsDialog");
+  document.getElementById("appSettingsButton")?.addEventListener("click", () => {
+    if (settingsDialog && !settingsDialog.open) settingsDialog.showModal();
+  });
   try {
     await loadAppPages();
     i18n.apply(document.body);
