@@ -18,6 +18,9 @@ const SAMPLE_CAPACITY = SAMPLE_BUFFER_SECONDS * MAX_SAMPLE_RATE;
 const DRAW_INTERVAL_MS = 33;
 const STATS_INTERVAL_MS = 100;
 const MIN_VISIBLE_SAMPLES = 2;
+const USB_READ_BYTES = 2048;
+const USB_DRAIN_IDLE_MS = 100;
+const USB_DRAIN_TIMEOUT_MS = 2000;
 const ADS_REF_MV = 2500;
 const FRONTEND_GAIN = 50;
 const VOLTAGE_MAX_AGE_US = 1500000;
@@ -253,6 +256,31 @@ function setState(nextState) {
   dom.stateValue.textContent = STATE_LABELS[state] || state;
 }
 
+async function setUsbSession(usbDevice, enabled) {
+  const result = await usbDevice.controlTransferOut({
+    requestType: "class",
+    recipient: "interface",
+    request: 0x22,
+    value: enabled ? 1 : 0,
+    index: USB_CONFIG.interfaceNumber,
+  });
+  if (result.status !== "ok") throw new Error(`USB 握手失败：${result.status}`);
+}
+
+async function drainUsbInput(usbDevice) {
+  const deadline = performance.now() + USB_DRAIN_TIMEOUT_MS;
+  while (performance.now() < deadline) {
+    const pendingRead = usbDevice.transferIn(USB_CONFIG.endpointIn, USB_READ_BYTES);
+    let timer;
+    const idle = new Promise((resolve) => { timer = setTimeout(resolve, USB_DRAIN_IDLE_MS); });
+    const result = await Promise.race([pendingRead, idle]).finally(() => clearTimeout(timer));
+    // Reuse the pending transfer for the new session so it receives the first reply.
+    if (result === undefined) return { pendingRead };
+    if (result.status !== "ok" || !result.data) throw new Error(`清理 USB 接收缓存失败：${result.status}`);
+  }
+  throw new Error("USB 接收缓存尚未清空，请重新插拔设备");
+}
+
 async function connectDevice() {
   if (!("usb" in navigator)) {
     appendLog("当前浏览器不支持 WebUSB，请使用 Chrome 或 Edge。");
@@ -260,28 +288,29 @@ async function connectDevice() {
   }
 
   try {
-    device = await navigator.usb.requestDevice({
+    const connectedDevice = await navigator.usb.requestDevice({
       filters: [{ vendorId: USB_CONFIG.vendorId, productId: USB_CONFIG.productId }],
     });
+    device = connectedDevice;
+    await connectedDevice.open();
 
-    await device.open();
-    // A USB bus reset clears stale endpoint replies from an earlier browser
-    // session; it does not reboot the RP2040 or reset the output setpoint.
-    await device.reset();
-    if (!device.configuration) {
-      await device.selectConfiguration(1);
+    const isWindows = navigator.userAgentData?.platform === "Windows" || navigator.platform?.startsWith("Win");
+    // Chromium's WinUSB backend cannot reset a device. Where supported, a bus
+    // reset clears stale endpoint data without rebooting the RP2040.
+    if (!isWindows) await connectedDevice.reset();
+    if (!connectedDevice.configuration) {
+      await connectedDevice.selectConfiguration(1);
     }
+    await connectedDevice.claimInterface(USB_CONFIG.interfaceNumber);
 
-    await device.claimInterface(USB_CONFIG.interfaceNumber);
-    await device.controlTransferOut({
-      requestType: "class",
-      recipient: "interface",
-      request: 0x22,
-      value: 1,
-      index: USB_CONFIG.interfaceNumber,
-    });
+    let pendingRead;
+    if (isWindows) {
+      // Stop the previous session before discarding any queued frames and replies.
+      await setUsbSession(connectedDevice, false);
+      ({ pendingRead } = await drainUsbInput(connectedDevice));
+    }
+    await setUsbSession(connectedDevice, true);
 
-    const connectedDevice = device;
     commandTransport = new CommandTransport({
       transferOut: (payload) => connectedDevice.transferOut(USB_CONFIG.endpointOut, payload),
       onInvalidated: (error) => {
@@ -290,12 +319,13 @@ async function connectDevice() {
       },
     });
     resetCaptureState();
-    setConnectedUi(true);
     setState("IDLE");
-    appendLog(`已连接设备 VID=0x${USB_CONFIG.vendorId.toString(16)} PID=0x${USB_CONFIG.productId.toString(16)}`);
     reading = true;
-    readLoop(connectedDevice);
+    readLoop(connectedDevice, pendingRead);
     await sendCommand("GET_STATUS");
+    if (device !== connectedDevice) return;
+    setConnectedUi(true);
+    appendLog(`已连接设备 VID=0x${USB_CONFIG.vendorId.toString(16)} PID=0x${USB_CONFIG.productId.toString(16)}`);
     acceptFrames = state === "RUNNING";
     nextStatusPollAt = performance.now() + (useDeviceVoltage && deviceVoltageHistory.length > 0 ? 500 : 2000);
   } catch (err) {
@@ -331,15 +361,7 @@ async function cleanupDevice(expectedDevice = device) {
   updateEnergyStats();
 
   if (closingDevice?.opened) {
-    try {
-        await closingDevice.controlTransferOut({
-          requestType: "class",
-          recipient: "interface",
-          request: 0x22,
-          value: 0,
-          index: USB_CONFIG.interfaceNumber,
-        });
-    } catch {}
+    try { await setUsbSession(closingDevice, false); } catch {}
     try { await closingDevice.releaseInterface(USB_CONFIG.interfaceNumber); } catch {}
     try { await closingDevice.close(); } catch {}
   }
@@ -539,10 +561,11 @@ async function sendCommand(text) {
   return commandTransport.send(text);
 }
 
-async function readLoop(readDevice) {
+async function readLoop(readDevice, pendingRead) {
   while (reading && device === readDevice && readDevice.opened) {
     try {
-      const result = await readDevice.transferIn(USB_CONFIG.endpointIn, 2048);
+      const result = await (pendingRead ?? readDevice.transferIn(USB_CONFIG.endpointIn, USB_READ_BYTES));
+      pendingRead = undefined;
       if (device !== readDevice) return;
       if (result.status !== "ok" || !result.data) throw new Error(`USB 接收失败：${result.status}`);
 

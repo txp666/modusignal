@@ -74,7 +74,7 @@ function frame(seq, t0Us, sampleRate = 100000, flags = protocol.FRAME_FLAGS.adcD
   return bytes;
 }
 
-function appHarness(t, { fetch: fetchRelease } = {}) {
+function appHarness(t, { fetch: fetchRelease, platform } = {}) {
   const html = readFileSync(new URL("../../pages/devices/microscope-power/index.html", import.meta.url), "utf8");
   const ids = new Set([...html.matchAll(/\bid="([^"]+)"/g)].map((match) => match[1]));
   const elements = new Map();
@@ -130,7 +130,7 @@ function appHarness(t, { fetch: fetchRelease } = {}) {
       return element(selector.slice(1));
     }, activeElement: null,
       createElement: () => element("download"), body: { appendChild() {} } },
-    navigator: { usb: {
+    navigator: { platform, usb: {
       requestDevice: async () => { assert.ok(devices.length); return devices.shift(); },
       addEventListener: (type, callback) => usbListeners.set(type, callback),
     } },
@@ -436,6 +436,27 @@ test("complete app startup renders and START only enters RUNNING after a complet
   assert.equal(app.state().state, "RUNNING");
   assert.equal(app.element("stateValue").textContent, "采集中");
   assert.equal(app.element("startBtn").disabled, false);
+});
+
+test("Windows connects without a bus reset and discards replies from the previous session", async (t) => {
+  const app = appHarness(t, { platform: "Win32" });
+  const device = new UsbDevice();
+  device.configuration = { configurationValue: 1 };
+  device.reset = async () => { throw new Error("Unable to reset the device."); };
+  device.emit("OK\nERR BAD_CMD\nSTATUS state=FAULT fw=stale\n");
+  const sessionValues = [];
+  device.controlTransferOut = async ({ value }) => {
+    sessionValues.push(value);
+    return { status: "ok" };
+  };
+
+  await app.connect(device);
+  assert.deepEqual(sessionValues, [0, 1]);
+  assert.deepEqual(device.writes, ["GET_STATUS"]);
+  assert.equal(device.reads.length, 1);
+  assert.equal(app.element("connectionLabel").textContent, "已连接");
+  assert.equal(app.element("firmwareValue").textContent, "test");
+  assert.doesNotMatch(app.element("logOutput").textContent, /stale|BAD_CMD/);
 });
 
 test("background diagnostics preserve unsubmitted calibration and surface timing faults", async (t) => {
